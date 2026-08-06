@@ -6,7 +6,7 @@
 
 **Architecture:** A FastAPI API and worker share one Python package while the React/Vite site consumes only OpenAPI. PostgreSQL stores catalog metadata and canonical JSON recipe revisions. The public recipe JSON Schema is the cross-repository contract and all immutable identities derive from RFC 8785-style canonical JSON bytes produced by one constrained serializer.
 
-**Tech Stack:** Python 3.12, uv, FastAPI 0.116.1, SQLAlchemy 2.0.42, Alembic 1.16.4, psycopg 3.2.9, Pydantic 2, PostgreSQL 18, pytest 9, React 19, TypeScript 7, Vite 8, Vitest 4, Playwright, Docker, Railway.
+**Tech Stack:** Python 3.12, uv, FastAPI 0.116.1, SQLAlchemy 2.0.42, Alembic 1.16.4, psycopg 3.2.9, Pydantic 2, PostgreSQL 18, pytest 9, React 19, TypeScript 5.9, Vite 8, Vitest 4, Playwright, Docker, Railway.
 
 ## Global Constraints
 
@@ -140,7 +140,7 @@ Expected: FAIL because `web/package.json` or `App` does not exist.
 
 - [ ] **Step 3: Add the pinned frontend workspace**
 
-Use React `19.2.8`, React DOM `19.2.8`, TypeScript `7.0.2`, Vite `8.2.0`, Vitest `4.1.10`, Testing Library React `16.3.2`, jest-dom `6.9.1`, jsdom `29.0.1`, and `openapi-fetch` `0.13.8`.
+Use React `19.2.8`, React DOM `19.2.8`, TypeScript `5.9.3`, Vite `8.2.0`, Vitest `4.1.10`, Testing Library React `16.3.2`, jest-dom `6.9.1`, jsdom `29.0.1`, and `openapi-fetch` `0.13.8`. TypeScript 5.9 is intentionally pinned because the OpenAPI generator's stable peer contract does not yet include TypeScript 7.
 
 Run: `npm --prefix web install`
 

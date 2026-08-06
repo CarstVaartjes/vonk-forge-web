@@ -2,6 +2,8 @@ from collections.abc import Callable
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+from .problems import install_problem_handling
+from .public_api import SessionProvider, build_public_router
 
 
 ReadinessProbe = Callable[[], None]
@@ -11,8 +13,12 @@ def _ready() -> None:
     """Default probe used before database wiring is configured."""
 
 
-def create_app(readiness_probe: ReadinessProbe = _ready) -> FastAPI:
+def create_app(
+    readiness_probe: ReadinessProbe = _ready,
+    database_sessions: SessionProvider | None = None,
+) -> FastAPI:
     app = FastAPI(title="Vonk Forge Catalog API", version="1.0.0")
+    install_problem_handling(app)
 
     @app.get("/health/live", include_in_schema=False)
     def live() -> dict[str, str]:
@@ -39,4 +45,5 @@ def create_app(readiness_probe: ReadinessProbe = _ready) -> FastAPI:
             )
         return {"service": "vonk-catalog-api", "status": "ready"}
 
+    app.include_router(build_public_router(database_sessions))
     return app

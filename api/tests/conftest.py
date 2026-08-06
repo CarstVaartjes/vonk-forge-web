@@ -5,6 +5,8 @@ import pytest
 from alembic.config import Config
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import StaticPool
 
 
 @pytest.fixture
@@ -19,7 +21,11 @@ def alembic_config(tmp_path: Path) -> Config:
 def engine() -> Iterator[Engine]:
     from vonk_catalog.models import Base
 
-    value = create_engine("sqlite+pysqlite:///:memory:")
+    value = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     Base.metadata.create_all(value)
     yield value
     value.dispose()
@@ -28,4 +34,15 @@ def engine() -> Iterator[Engine]:
 @pytest.fixture
 def session(engine: Engine) -> Iterator[Session]:
     with Session(engine) as value:
+        yield value
+
+
+@pytest.fixture
+def client(engine: Engine):
+    from fastapi.testclient import TestClient
+
+    from vonk_catalog.api import create_app
+
+    sessions = sessionmaker(bind=engine, expire_on_commit=False)
+    with TestClient(create_app(database_sessions=sessions)) as value:
         yield value

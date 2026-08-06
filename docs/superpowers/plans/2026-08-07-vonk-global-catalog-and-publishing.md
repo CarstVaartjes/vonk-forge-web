@@ -6,7 +6,7 @@
 
 **Architecture:** OAuth identities join publisher namespaces. Drafts are mutable with optimistic locking; publication creates an immutable canonical recipe revision only after schema, OCI, topology, security, and submitted local-test evidence checks pass. A PostgreSQL-leased worker validates public registry metadata with SSRF defenses, and the public site reads only published revisions and derived search facets.
 
-**Tech Stack:** FastAPI, Authlib/OIDC, SQLAlchemy, PostgreSQL, Alembic, httpx, React, TypeScript, Vite, PostgreSQL full-text/trigram search, GitHub/Google OAuth, Railway.
+**Tech Stack:** FastAPI, Authlib/OIDC, SQLAlchemy, PostgreSQL, Alembic, httpx, React, TypeScript 5.9, Vite, PostgreSQL full-text/trigram search, GitHub/Google OAuth, Railway.
 
 ---
 
