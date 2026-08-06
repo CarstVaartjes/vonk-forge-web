@@ -43,3 +43,18 @@ docker compose -f deploy/compose.yaml down
 Railway service definitions live under `deploy/railway`. Production database
 credentials and OAuth settings belong in Railway secrets, never in this
 repository.
+
+## Contract verification
+
+The public JSON Schemas, canonical fixture hashes, OpenAPI document, and
+generated TypeScript declarations are checked together:
+
+```bash
+npm --prefix web ci
+scripts/verify-contracts
+scripts/export-contract
+```
+
+The export is a deterministic `dist/vonk-contracts-v1.tar.gz` archive. Local
+Vonk Forge installations pin a released archive and its SHA-256; they never
+load schema definitions from this repository's moving `main` branch.
