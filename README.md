@@ -16,3 +16,30 @@ VONK_DATABASE_URL=postgresql+psycopg://vonk:vonk@127.0.0.1:5432/vonk_catalog \
 
 Liveness is available at `/health/live`; readiness is available at
 `/health/ready`.
+
+## Local deployment
+
+The reference stack contains four services: PostgreSQL, the public API, the
+static web site, and a private validation worker. PostgreSQL and the worker do
+not publish host ports. API and web bind to loopback for local development.
+
+Before first start, create `deploy/secrets/postgres-password.txt` containing a
+local database password. This directory is ignored by Git. Then use:
+
+```bash
+docker compose -f deploy/compose.yaml build
+docker compose -f deploy/compose.yaml up -d --wait
+docker compose -f deploy/compose.yaml exec -T api \
+  alembic -c /app/api/alembic.ini upgrade head
+```
+
+The API is at `http://127.0.0.1:8000` and the web site at
+`http://127.0.0.1:8080`. Stop without deleting PostgreSQL data with:
+
+```bash
+docker compose -f deploy/compose.yaml down
+```
+
+Railway service definitions live under `deploy/railway`. Production database
+credentials and OAuth settings belong in Railway secrets, never in this
+repository.

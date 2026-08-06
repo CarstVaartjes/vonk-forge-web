@@ -1,0 +1,7 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "web/Dockerfile"
+
+[deploy]
+healthcheckPath = "/health/live"
+restartPolicyType = "ON_FAILURE"

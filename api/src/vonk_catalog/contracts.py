@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from collections.abc import Mapping
 from pathlib import Path
 
@@ -13,7 +14,20 @@ class RecipeContractError(ValueError):
 
 
 def _schema_path() -> Path:
-    return Path(__file__).resolve().parents[3] / "schemas" / "recipe" / "v1.schema.json"
+    return contract_path("recipe", "v1.schema.json")
+
+
+def contract_path(*parts: str) -> Path:
+    configured = os.environ.get("VONK_CONTRACT_ROOT")
+    root = (
+        Path(configured)
+        if configured is not None
+        else Path(__file__).resolve().parents[3] / "schemas"
+    )
+    path = root.joinpath(*parts)
+    if not path.is_file():
+        raise RuntimeError(f"required contract is not installed: {'/'.join(parts)}")
+    return path
 
 
 def recipe_validator() -> Draft202012Validator:

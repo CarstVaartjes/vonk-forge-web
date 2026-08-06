@@ -1,0 +1,7 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "worker/Dockerfile"
+
+[deploy]
+startCommand = "python -m vonk_catalog_worker.main"
+restartPolicyType = "ON_FAILURE"

@@ -5,7 +5,9 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
+from vonk_catalog.db import database_url_with_password
 from vonk_catalog.models import Base
+from vonk_catalog.settings import Settings
 
 
 config = context.config
@@ -13,6 +15,15 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
+
+if not config.get_main_option("sqlalchemy.url"):
+    settings = Settings()
+    runtime_url = database_url_with_password(
+        settings.database_url, settings.database_password_file
+    )
+    config.set_main_option(
+        "sqlalchemy.url", runtime_url.render_as_string(hide_password=False)
+    )
 
 
 def run_migrations_offline() -> None:

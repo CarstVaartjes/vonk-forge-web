@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-import json
 from collections.abc import Callable, Iterator
-from pathlib import Path
 
 from fastapi import APIRouter, Depends, Header, Query, Response
 from sqlalchemy.orm import Session
 
+from .contracts import contract_path
 from .problems import Problem
 from .repositories import CatalogRepository, PublishedRecipe
 
@@ -97,13 +96,10 @@ def build_public_router(session_provider: SessionProvider | None) -> APIRouter:
 
     @router.get("/schemas/recipe/v1")
     def recipe_schema(response: Response) -> dict[str, object]:
-        root = Path(__file__).resolve().parents[3]
         response.headers["Cache-Control"] = "public, max-age=3600"
-        return json.loads(
-            (root / "schemas" / "recipe" / "v1.schema.json").read_text(
-                encoding="utf-8"
-            )
-        )
+        import json
+
+        return json.loads(contract_path("recipe", "v1.schema.json").read_text())
 
     return router
 

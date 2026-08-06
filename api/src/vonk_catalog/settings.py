@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -12,4 +14,4 @@ class Settings(BaseSettings):
     database_url: str = Field(
         default="postgresql+psycopg://vonk:vonk@127.0.0.1:5432/vonk_catalog"
     )
-
+    database_password_file: Path | None = None

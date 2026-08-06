@@ -391,8 +391,8 @@ git commit -m "feat: expose public recipe catalog API"
 - Create: `api/Dockerfile`
 - Create: `web/Dockerfile`
 - Create: `worker/Dockerfile`
-- Create: `worker/src/vonk_worker/__init__.py`
-- Create: `worker/src/vonk_worker/main.py`
+- Create: `worker/src/vonk_catalog_worker/__init__.py`
+- Create: `worker/src/vonk_catalog_worker/main.py`
 - Create: `worker/tests/test_worker_health.py`
 - Create: `deploy/compose.yaml`
 - Create: `deploy/railway/api.toml`

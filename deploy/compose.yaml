@@ -1,0 +1,73 @@
+name: vonk-forge-web
+
+services:
+  postgres:
+    image: postgres:18.0-bookworm
+    environment:
+      POSTGRES_DB: vonk_catalog
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_USER: vonk
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vonk -d vonk_catalog"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    secrets: [postgres_password]
+    volumes:
+      - postgres-data:/var/lib/postgresql
+
+  api:
+    build:
+      context: ..
+      dockerfile: api/Dockerfile
+    read_only: true
+    tmpfs: [/tmp]
+    environment:
+      VONK_DATABASE_URL: postgresql+psycopg://vonk@postgres:5432/vonk_catalog
+      VONK_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "127.0.0.1:8000:8000"
+    secrets:
+      - postgres_password
+
+  web:
+    build:
+      context: ..
+      dockerfile: web/Dockerfile
+    read_only: true
+    tmpfs: [/config, /data, /tmp]
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  worker:
+    build:
+      context: ..
+      dockerfile: worker/Dockerfile
+    read_only: true
+    tmpfs: [/tmp]
+    environment:
+      VONK_DATABASE_URL: postgresql+psycopg://vonk@postgres:5432/vonk_catalog
+      VONK_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    secrets:
+      - postgres_password
+
+secrets:
+  postgres_password:
+    file: ./secrets/postgres-password.txt
+
+volumes:
+  postgres-data:
