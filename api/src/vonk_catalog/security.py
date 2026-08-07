@@ -12,6 +12,8 @@ from collections.abc import Callable
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
+from sqlalchemy.orm import Session, sessionmaker
 from starlette.middleware.cors import CORSMiddleware
 
 from .settings import Settings
@@ -48,12 +50,48 @@ class SlidingWindowLimiter:
         return True, self.window_seconds
 
 
+class DatabaseRateLimiter:
+    def __init__(
+        self,
+        sessions: sessionmaker[Session],
+        limit: int,
+        window_seconds: int,
+    ) -> None:
+        self.sessions = sessions
+        self.limit = limit
+        self.window_seconds = window_seconds
+
+    def allow(self, key: str, now: float) -> tuple[bool, int]:
+        bucket_start = int(now // self.window_seconds) * self.window_seconds
+        with self.sessions.begin() as session:
+            count = session.scalar(
+                text(
+                    """
+                    INSERT INTO request_rate_limit_buckets
+                        (key_digest, bucket_start, request_count)
+                    VALUES (:key, :bucket_start, 1)
+                    ON CONFLICT (key_digest, bucket_start)
+                    DO UPDATE SET request_count = request_rate_limit_buckets.request_count + 1
+                    RETURNING request_count
+                    """
+                ),
+                {"key": key, "bucket_start": bucket_start},
+            )
+            if count == 1:
+                session.execute(
+                    text(
+                        "DELETE FROM request_rate_limit_buckets WHERE bucket_start < :cutoff"
+                    ),
+                    {"cutoff": bucket_start - 2 * self.window_seconds},
+                )
+        retry_after = max(1, int(bucket_start + self.window_seconds - now) + 1)
+        return bool(count is not None and count <= self.limit), retry_after
+
+
 def _client_key(request: Request) -> str:
-    token = request.cookies.get("__Host-vonk_session") or request.cookies.get(
-        "vonk_session"
-    )
-    identity = token if token is not None else request.state.client_ip
-    return hashlib.sha256(identity.encode("utf-8", errors="replace")).hexdigest()
+    return hashlib.sha256(
+        request.state.client_ip.encode("utf-8", errors="replace")
+    ).hexdigest()
 
 
 def _client_ip(request: Request, trusted_proxy_hops: int) -> str:
@@ -102,7 +140,11 @@ def _add_headers(response, production: bool) -> None:
         )
 
 
-def install_security(app: FastAPI, settings: Settings) -> None:
+def install_security(
+    app: FastAPI,
+    settings: Settings,
+    database_sessions: sessionmaker[Session] | None = None,
+) -> None:
     LOGGER.disabled = False
     LOGGER.setLevel(logging.INFO)
     app.add_middleware(
@@ -121,13 +163,22 @@ def install_security(app: FastAPI, settings: Settings) -> None:
         expose_headers=["ETag", "Location", "X-Request-ID"],
         max_age=600,
     )
-    limiter = SlidingWindowLimiter(
-        settings.rate_limit_requests, settings.rate_limit_window_seconds
+    limiter = (
+        DatabaseRateLimiter(
+            database_sessions,
+            settings.rate_limit_requests,
+            settings.rate_limit_window_seconds,
+        )
+        if database_sessions is not None
+        else SlidingWindowLimiter(
+            settings.rate_limit_requests, settings.rate_limit_window_seconds
+        )
     )
 
     @app.middleware("http")
     async def secure_request(request: Request, call_next: Callable):
         started = time.monotonic()
+        wall_time = time.time()
         supplied = request.headers.get("X-Request-ID", "")
         request_id = supplied if REQUEST_ID.fullmatch(supplied) else str(uuid.uuid4())
         request.state.request_id = request_id
@@ -136,7 +187,7 @@ def install_security(app: FastAPI, settings: Settings) -> None:
         if request.url.path.startswith("/health/") or request.method == "OPTIONS":
             allowed, retry_after = True, settings.rate_limit_window_seconds
         else:
-            allowed, retry_after = limiter.allow(_client_key(request), started)
+            allowed, retry_after = limiter.allow(_client_key(request), wall_time)
         if allowed:
             response = await call_next(request)
         else:

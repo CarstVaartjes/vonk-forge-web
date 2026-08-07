@@ -186,10 +186,8 @@ def _summary(
 
 
 def _visible(session: Session, item: PublishedRecipe) -> bool:
-    moderation = ModerationService(session)
-    return (
-        not moderation.publisher_suspended(item.publisher.id)
-        and not moderation.revision_state(item.revision.id).hidden
+    return ModerationService(session).revision_visible(
+        item.revision.id, item.publisher.id
     )
 
 
@@ -252,7 +250,7 @@ def _immutable_revision(
 ) -> dict[str, object] | Response:
     etag = f'"sha256:{item.revision.content_sha256}"'
     headers = {
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "public, max-age=0, must-revalidate",
         "ETag": etag,
     }
     if if_none_match == etag:

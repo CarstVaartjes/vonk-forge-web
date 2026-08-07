@@ -6,6 +6,7 @@ from typing import Any
 
 from sqlalchemy import (
     JSON,
+    BigInteger,
     CheckConstraint,
     DateTime,
     ForeignKey,
@@ -331,6 +332,14 @@ class RecipeSearchDocument(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow
     )
+
+
+class RequestRateLimitBucket(Base):
+    __tablename__ = "request_rate_limit_buckets"
+
+    key_digest: Mapped[str] = mapped_column(String(64), primary_key=True)
+    bucket_start: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    request_count: Mapped[int] = mapped_column(Integer)
 
 
 class ValidationResult(Base):

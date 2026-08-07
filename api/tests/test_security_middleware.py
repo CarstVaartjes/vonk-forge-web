@@ -4,6 +4,7 @@ import logging
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import ValidationError
+from sqlalchemy.orm import sessionmaker
 from vonk_catalog.api import create_app
 from vonk_catalog.settings import Settings
 
@@ -76,6 +77,30 @@ def test_rate_limit_is_bounded_and_returns_a_stable_problem() -> None:
     assert limited.headers["retry-after"] == "60"
     assert limited.json()["code"] == "request.rate_limited"
     assert limited.json()["request_id"] == limited.headers["x-request-id"]
+
+
+def test_cookie_rotation_cannot_change_anonymous_rate_identity() -> None:
+    settings = production_settings(rate_limit_requests=1, rate_limit_window_seconds=60)
+    with TestClient(create_app(settings=settings)) as client:
+        client.cookies.set("__Host-vonk_session", "attacker-selected-a")
+        assert client.get("/missing").status_code == 404
+        client.cookies.set("__Host-vonk_session", "attacker-selected-b")
+        limited = client.get("/missing")
+
+    assert limited.status_code == 429
+
+
+def test_rate_limit_is_shared_by_app_instances(engine) -> None:
+    settings = production_settings(rate_limit_requests=1, rate_limit_window_seconds=60)
+    sessions = sessionmaker(bind=engine, expire_on_commit=False)
+    with (
+        TestClient(create_app(database_sessions=sessions, settings=settings)) as first,
+        TestClient(create_app(database_sessions=sessions, settings=settings)) as second,
+    ):
+        assert first.get("/missing").status_code == 404
+        limited = second.get("/missing")
+
+    assert limited.status_code == 429
 
 
 def test_production_rejects_wildcard_or_non_https_cors_origins() -> None:

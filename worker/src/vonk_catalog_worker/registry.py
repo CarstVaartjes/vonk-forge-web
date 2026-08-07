@@ -5,12 +5,14 @@ import ipaddress
 import json
 import re
 import socket
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Mapping
 from dataclasses import dataclass
 from email.utils import parsedate_to_datetime
 from urllib.parse import quote, urlencode, urljoin, urlsplit
 
+import httpcore
 import httpx
+from httpcore._backends.sync import SyncBackend
 
 MAX_METADATA_BYTES = 1_048_576
 MAX_REDIRECTS = 3
@@ -40,6 +42,39 @@ class RegistryTemporaryProblem(RegistryProblem):
 
 
 Resolver = Callable[[str], Iterable[str]]
+
+
+class PinnedNetworkBackend:
+    """Connect an HTTP origin to the IP that passed policy validation."""
+
+    def __init__(self, addresses: Mapping[str, str], *, backend=None) -> None:
+        self._addresses = {host.lower(): address for host, address in addresses.items()}
+        self._backend = backend or SyncBackend()
+
+    def connect_tcp(self, host: str, port: int, **kwargs):
+        normalized = host.decode("ascii") if isinstance(host, bytes) else host
+        address = self._addresses.get(normalized.lower())
+        if address is None:
+            raise RegistryProblem("registry connection host was not DNS-pinned")
+        return self._backend.connect_tcp(address, port, **kwargs)
+
+    def connect_unix_socket(self, path: str, **kwargs):
+        raise RegistryProblem("registry Unix sockets are not permitted")
+
+    def sleep(self, seconds: float) -> None:
+        self._backend.sleep(seconds)
+
+
+class PinnedHTTPTransport(httpx.HTTPTransport):
+    def __init__(self, hostname: str, address: str) -> None:
+        super().__init__(trust_env=False)
+        self._pool.close()
+        self._pool = httpcore.ConnectionPool(
+            ssl_context=httpx.create_ssl_context(trust_env=False),
+            network_backend=PinnedNetworkBackend({hostname: address}),
+            max_connections=2,
+            max_keepalive_connections=0,
+        )
 
 
 def _resolve(host: str) -> tuple[str, ...]:
@@ -91,13 +126,21 @@ class RegistryClient:
         client: httpx.Client | None = None,
         resolver: Resolver = _resolve,
     ) -> None:
-        self.client = client or httpx.Client(
+        self.client = client
+        self.resolver = resolver
+
+    @staticmethod
+    def _pinned_client(url: str, address: str) -> httpx.Client:
+        hostname = urlsplit(url).hostname
+        if hostname is None:
+            raise RegistryProblem("registry URL has no hostname")
+        return httpx.Client(
             timeout=httpx.Timeout(10.0, connect=5.0),
             follow_redirects=False,
             trust_env=False,
             headers={"User-Agent": "vonk-catalog-validator/1"},
+            transport=PinnedHTTPTransport(hostname, address),
         )
-        self.resolver = resolver
 
     def _validate_url(self, url: str) -> tuple[str, ...]:
         parsed = urlsplit(url)
@@ -148,10 +191,13 @@ class RegistryClient:
         current = url
         for redirects in range(MAX_REDIRECTS + 1):
             before = self._validate_url(current)
+            client = self.client or self._pinned_client(current, before[0])
             try:
-                request = self.client.build_request("GET", current, headers=headers)
-                streamed = self.client.send(request, stream=True)
+                request = client.build_request("GET", current, headers=headers)
+                streamed = client.send(request, stream=True)
             except (httpx.TimeoutException, httpx.NetworkError) as error:
+                if self.client is None:
+                    client.close()
                 raise RegistryTemporaryProblem(
                     "registry request timed out or failed"
                 ) from error
@@ -184,6 +230,8 @@ class RegistryClient:
                 ) from error
             finally:
                 streamed.close()
+                if self.client is None:
+                    client.close()
             after = self._validate_url(current)
             if before != after:
                 raise RegistryProblem("registry DNS answer changed during validation")

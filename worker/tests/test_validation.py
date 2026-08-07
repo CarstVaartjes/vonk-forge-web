@@ -4,13 +4,13 @@ from pathlib import Path
 from vonk_catalog_worker.registry import ImageMetadata
 from vonk_catalog_worker.validation import (
     validate_image_contract,
+    validate_resource_envelope,
     validate_test_evidence,
 )
 
 SCHEMA = Path(__file__).resolve().parents[2] / "schemas/test-report/v1.schema.json"
 POLICY = (
-    Path(__file__).resolve().parents[2]
-    / "schemas/container-runtime-policy/v1.json"
+    Path(__file__).resolve().parents[2] / "schemas/container-runtime-policy/v1.json"
 )
 
 
@@ -40,6 +40,34 @@ def test_image_contract_matches_rootless_single_uid_agent_policy() -> None:
     ):
         checks = validate_image_contract(rejected, policy_path=POLICY)
         assert not all(check["passed"] for check in checks)
+
+
+def test_declared_resource_envelope_covers_observed_image_and_artifacts() -> None:
+    document = {
+        "artifacts": [
+            {"kind": "http.file", "expected_bytes": 100},
+            {"kind": "huggingface.snapshot", "expected_bytes": 200},
+        ],
+        "resources": {
+            "per_node": {
+                "download_bytes": 756,
+                "installed_bytes": 756,
+                "staging_bytes": 200,
+            }
+        },
+    }
+    assert all(
+        check["passed"]
+        for check in validate_resource_envelope(document, image_layer_bytes=456)
+    )
+
+    document["resources"]["per_node"]["download_bytes"] = 755
+    checks = validate_resource_envelope(document, image_layer_bytes=456)
+    assert not next(
+        check["passed"]
+        for check in checks
+        if check["code"] == "resources.download_bytes"
+    )
 
 
 def _report(recipe_hash: str, image_digest: str, nodes: int = 1) -> dict[str, object]:

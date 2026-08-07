@@ -33,7 +33,7 @@ def create_app(
     resolved_settings = settings or Settings()
     app = FastAPI(title="Vonk Forge Catalog API", version="1.0.0")
     install_problem_handling(app)
-    install_security(app, resolved_settings)
+    install_security(app, resolved_settings, database_sessions)
 
     @app.get("/health/live", include_in_schema=False)
     def live() -> dict[str, str]:

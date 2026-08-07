@@ -38,13 +38,15 @@ def publish(engine, *, slug: str = "qwen3") -> RecipeRevision:
         return revision
 
 
-def test_revision_response_is_immutable_and_etagged(client, engine) -> None:
+def test_revision_bytes_are_etagged_but_moderation_is_revalidated(
+    client, engine
+) -> None:
     published = publish(engine)
 
     response = client.get("/v1/recipes/vonk/qwen3/revisions/1")
 
     assert response.status_code == 200
-    assert response.headers["cache-control"] == "public, max-age=31536000, immutable"
+    assert response.headers["cache-control"] == "public, max-age=0, must-revalidate"
     assert response.headers["etag"] == f'"sha256:{published.content_sha256}"'
     assert response.json()["content_sha256"] == published.content_sha256
     assert response.json()["document"]["identity"]["slug"] == "qwen3"

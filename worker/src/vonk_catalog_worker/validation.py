@@ -55,6 +55,39 @@ def validate_image_contract(
     )
 
 
+def validate_resource_envelope(
+    document: dict[str, object], *, image_layer_bytes: int
+) -> tuple[dict[str, object], ...]:
+    try:
+        artifacts = document["artifacts"]
+        per_node = document["resources"]["per_node"]
+        artifact_sizes = [int(artifact["expected_bytes"]) for artifact in artifacts]
+        download_bytes = int(per_node["download_bytes"])
+        installed_bytes = int(per_node["installed_bytes"])
+        staging_bytes = int(per_node["staging_bytes"])
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValidationJobProblem("draft resource envelope is invalid") from error
+    total_observed = image_layer_bytes + sum(artifact_sizes)
+    largest_artifact = max(artifact_sizes, default=0)
+    return (
+        _check(
+            "resources.download_bytes",
+            download_bytes >= total_observed,
+            "declared download bytes cover observed image layers and artifacts",
+        ),
+        _check(
+            "resources.installed_bytes",
+            installed_bytes >= total_observed,
+            "declared installed bytes cover observed image layers and artifacts",
+        ),
+        _check(
+            "resources.staging_bytes",
+            staging_bytes >= largest_artifact,
+            "declared staging bytes cover the largest immutable artifact",
+        ),
+    )
+
+
 def _timestamp(value: object) -> datetime | None:
     if not isinstance(value, str):
         return None
@@ -262,6 +295,9 @@ def process_validation_job(
             },
         },
     ]
+    checks.extend(
+        validate_resource_envelope(document, image_layer_bytes=image.layer_bytes)
+    )
     evidence_results: list[EvidenceValidation] = []
     for raw in reports[:20]:
         report = json.loads(raw) if isinstance(raw, str) else raw

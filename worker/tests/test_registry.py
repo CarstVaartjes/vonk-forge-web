@@ -4,6 +4,7 @@ import json
 import httpx
 import pytest
 from vonk_catalog_worker.registry import (
+    PinnedNetworkBackend,
     RegistryClient,
     RegistryProblem,
     RegistryTemporaryProblem,
@@ -60,6 +61,33 @@ INDEX_BODY = json.dumps(
 ).encode()
 DIGEST = "sha256:" + hashlib.sha256(INDEX_BODY).hexdigest()
 PUBLIC_IP = ("93.184.216.34",)
+
+
+class RecordingBackend:
+    def __init__(self) -> None:
+        self.hosts: list[tuple[str, int]] = []
+
+    def connect_tcp(self, host, port, **kwargs):
+        self.hosts.append((host, port))
+        return object()
+
+    def connect_unix_socket(self, path, **kwargs):
+        raise AssertionError(path)
+
+    def sleep(self, seconds):
+        raise AssertionError(seconds)
+
+
+def test_pinned_backend_connects_to_validated_ip_not_a_second_dns_answer() -> None:
+    underlying = RecordingBackend()
+    backend = PinnedNetworkBackend(
+        {"registry.example": "93.184.216.34"}, backend=underlying
+    )
+
+    stream = backend.connect_tcp("registry.example", 443, timeout=1.0)
+
+    assert stream is not None
+    assert underlying.hosts == [("93.184.216.34", 443)]
 
 
 def _response(request: httpx.Request) -> httpx.Response:

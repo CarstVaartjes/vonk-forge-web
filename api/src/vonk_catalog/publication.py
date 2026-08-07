@@ -21,6 +21,7 @@ from .models import (
     RecipeRevision,
     ValidationResult,
 )
+from .moderation import ModerationService
 from .problems import Problem
 from .publishers import PublisherService
 from .search import search_document
@@ -203,6 +204,15 @@ class PublicationService:
         assert recipe is not None
         source_publisher = self.database.get(Publisher, recipe.publisher_id)
         assert source_publisher is not None
+        if not ModerationService(self.database).revision_visible(
+            source.id, source_publisher.id
+        ):
+            raise Problem(
+                404,
+                "publication.source_not_found",
+                "Source revision not found",
+                "Choose an existing immutable public revision.",
+            )
         document = copy.deepcopy(source.document)
         identity = document.get("identity")
         provenance = document.get("provenance")

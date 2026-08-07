@@ -65,3 +65,30 @@ def test_faceted_search_official_capability_topology_resources_and_cursor(
     assert first.next_cursor is not None and first.items[0].recipe.slug == "qwen"
     second = search.search(limit=1, cursor=first.next_cursor)
     assert second.items[0].recipe.slug == "deepseek"
+
+
+def test_sql_filters_can_find_matches_after_more_than_one_thousand_candidates(
+    session,
+) -> None:
+    publisher = Publisher(slug="large-catalog", name="Large Catalog")
+    session.add(publisher)
+    session.flush()
+    minimal = json.loads(FIXTURE.read_text())
+    for index in range(1001):
+        _add(
+            session,
+            publisher,
+            f"model-{index:04d}",
+            f"Model {index:04d}",
+            minimal,
+            index + 1,
+        )
+    matching = copy.deepcopy(minimal)
+    matching["workload"]["capabilities"] = ["openai.embeddings"]
+    _add(session, publisher, "target", "Target", matching, 0)
+
+    page = SearchService(session).search(
+        capability="openai.embeddings", sort="title", limit=20
+    )
+
+    assert [item.recipe.slug for item in page.items] == ["target"]

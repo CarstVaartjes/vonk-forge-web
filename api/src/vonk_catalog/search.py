@@ -3,8 +3,9 @@ from __future__ import annotations
 import base64
 import json
 from dataclasses import dataclass
+from datetime import datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, exists, func, or_, select
 from sqlalchemy.orm import Session
 
 from .models import Publisher, Recipe, RecipeRevision, RecipeSearchDocument
@@ -161,6 +162,16 @@ class SearchService:
             statement = statement.where(
                 RecipeSearchDocument.installed_bytes <= max_installed_bytes
             )
+        if capability is not None:
+            statement = statement.where(
+                self._array_contains(RecipeSearchDocument.capabilities, capability)
+            )
+        if tested_node_count is not None:
+            statement = statement.where(
+                self._array_contains(
+                    RecipeSearchDocument.tested_node_counts, tested_node_count
+                )
+            )
         if query is not None:
             if (
                 self.database.bind is not None
@@ -175,43 +186,89 @@ class SearchService:
                 statement = statement.where(
                     RecipeSearchDocument.search_text.ilike(f"%{query}%")
                 )
-        rows = self.database.execute(statement.limit(1000)).all()
-        filtered = [
-            row
-            for row in rows
-            if (capability is None or capability in row[3].capabilities)
-            and (
-                tested_node_count is None
-                or tested_node_count in row[3].tested_node_counts
-            )
-        ]
         if sort == "newest":
-            filtered.sort(
-                key=lambda row: (row[2].published_at, row[2].id), reverse=True
-            )
-            key = lambda row: (row[2].published_at.isoformat(), row[2].id)
+            sort_column = RecipeRevision.published_at
+            descending = True
         elif sort == "title":
-            filtered.sort(key=lambda row: (row[1].title.lower(), row[2].id))
-            key = lambda row: (row[1].title.lower(), row[2].id)
+            sort_column = func.lower(Recipe.title)
+            descending = False
         elif sort == "disk":
-            filtered.sort(key=lambda row: (row[3].installed_bytes, row[2].id))
-            key = lambda row: (row[3].installed_bytes, row[2].id)
+            sort_column = RecipeSearchDocument.installed_bytes
+            descending = False
         else:
-            filtered.sort(key=lambda row: (row[3].resident_memory_bytes, row[2].id))
-            key = lambda row: (row[3].resident_memory_bytes, row[2].id)
+            sort_column = RecipeSearchDocument.resident_memory_bytes
+            descending = False
         decoded = _decode_cursor(cursor, sort)
         if decoded is not None:
-            filtered = (
-                [row for row in filtered if key(row) > decoded]
-                if sort != "newest"
-                else [row for row in filtered if key(row) < decoded]
+            raw_value, revision_id = decoded
+            cursor_value = self._cursor_value(sort, raw_value)
+            comparison = (
+                sort_column < cursor_value if descending else sort_column > cursor_value
             )
-        page = filtered[: limit + 1]
-        has_more = len(page) > limit
-        page = page[:limit]
+            tie_break = (
+                RecipeRevision.id < revision_id
+                if descending
+                else RecipeRevision.id > revision_id
+            )
+            statement = statement.where(
+                or_(
+                    comparison,
+                    and_(sort_column == cursor_value, tie_break),
+                )
+            )
+        order = (
+            (sort_column.desc(), RecipeRevision.id.desc())
+            if descending
+            else (sort_column.asc(), RecipeRevision.id.asc())
+        )
+        rows = self.database.execute(statement.order_by(*order).limit(limit + 1)).all()
+        has_more = len(rows) > limit
+        page = rows[:limit]
         items = tuple(PublishedRecipe(row[0], row[1], row[2]) for row in page)
         next_cursor = None
         if has_more and page:
-            value, revision_id = key(page[-1])
+            value = self._row_sort_value(sort, page[-1])
+            revision_id = page[-1][2].id
             next_cursor = _encode_cursor(sort, value, revision_id)
         return SearchPage(items, next_cursor)
+
+    def _array_contains(self, column, value: str | int):
+        if (
+            self.database.bind is not None
+            and self.database.bind.dialect.name == "postgresql"
+        ):
+            return column.contains([value])
+        values = func.json_each(column).table_valued("key", "value").alias()
+        return exists(select(1).select_from(values).where(values.c.value == value))
+
+    @staticmethod
+    def _cursor_value(sort: str, value: object) -> str | int | datetime:
+        try:
+            if sort == "newest" and isinstance(value, str):
+                return datetime.fromisoformat(value)
+            if sort == "title" and isinstance(value, str):
+                return value
+            if (
+                sort in {"disk", "memory"}
+                and isinstance(value, int)
+                and not isinstance(value, bool)
+            ):
+                return value
+        except ValueError:
+            pass
+        raise Problem(
+            400,
+            "catalog.cursor_invalid",
+            "Search cursor is invalid",
+            "Restart the search from the first page.",
+        )
+
+    @staticmethod
+    def _row_sort_value(sort: str, row) -> str | int:
+        if sort == "newest":
+            return row[2].published_at.isoformat()
+        if sort == "title":
+            return row[1].title.lower()
+        if sort == "disk":
+            return row[3].installed_bytes
+        return row[3].resident_memory_bytes

@@ -229,6 +229,12 @@ class ModerationService:
                 warning = None
         return RevisionModerationState(hidden, warning)
 
+    def revision_visible(self, revision_id: str, publisher_id: str) -> bool:
+        return (
+            not self.publisher_suspended(publisher_id)
+            and not self.revision_state(revision_id).hidden
+        )
+
     def _publisher_action(
         self,
         actor_user_id: str,

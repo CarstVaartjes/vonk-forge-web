@@ -1,6 +1,6 @@
 from alembic import command
 from alembic.script import ScriptDirectory
-from sqlalchemy import create_engine, inspect, text
+from sqlalchemy import BigInteger, create_engine, inspect, text
 
 EXPECTED_TABLES = {
     "alembic_version",
@@ -21,6 +21,7 @@ EXPECTED_TABLES = {
     "recipe_forks",
     "recipe_revisions",
     "recipe_search_documents",
+    "request_rate_limit_buckets",
     "recipes",
     "test_reports",
     "users",
@@ -30,7 +31,7 @@ EXPECTED_TABLES = {
 
 def test_catalog_has_one_migration_head(alembic_config) -> None:
     assert ScriptDirectory.from_config(alembic_config).get_heads() == [
-        "0007_recipe_search"
+        "0008_shared_rate_limits"
     ]
 
 
@@ -38,6 +39,11 @@ def test_catalog_migration_upgrades_and_downgrades(alembic_config) -> None:
     command.upgrade(alembic_config, "head")
     engine = create_engine(alembic_config.get_main_option("sqlalchemy.url"))
     assert set(inspect(engine).get_table_names()) == EXPECTED_TABLES
+    rate_limit_columns = {
+        column["name"]: column
+        for column in inspect(engine).get_columns("request_rate_limit_buckets")
+    }
+    assert isinstance(rate_limit_columns["bucket_start"]["type"], BigInteger)
     with engine.connect() as connection:
         triggers = {
             row[0]

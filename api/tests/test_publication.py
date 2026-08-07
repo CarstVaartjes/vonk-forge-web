@@ -13,6 +13,7 @@ from vonk_catalog.models import (
     User,
     ValidationResult,
 )
+from vonk_catalog.moderation import ModerationService
 from vonk_catalog.problems import Problem
 from vonk_catalog.publication import PublicationService
 
@@ -141,3 +142,52 @@ def test_fork_preserves_source_revision_hash_and_requires_own_validation(
             user.id, community.slug, fork.id, idempotency_key="fork-publish"
         )
     assert missing.value.code == "publication.validation_required"
+
+
+def test_hidden_or_suspended_source_revision_cannot_be_forked(session) -> None:
+    user, official, community = _setup(session)
+    user.system_role = "admin"
+    source_draft = _draft(session, user, official, "moderated-source")
+    _pass(session, source_draft)
+    service = PublicationService(session)
+    source = service.publish(
+        user.id, official.slug, source_draft.id, idempotency_key="moderated-publish"
+    )
+    moderation = ModerationService(session)
+    moderation.revision_action(
+        user.id,
+        source.revision.id,
+        "hide",
+        "Safety investigation",
+        step_up_confirmed=True,
+    )
+
+    with pytest.raises(Problem) as hidden:
+        service.fork(
+            user.id,
+            community.slug,
+            source.revision.id,
+            new_slug="hidden-copy",
+            idempotency_key="hidden-copy",
+        )
+    assert hidden.value.code == "publication.source_not_found"
+
+    moderation.revision_action(
+        user.id,
+        source.revision.id,
+        "unhide",
+        "Safety review complete",
+        step_up_confirmed=True,
+    )
+    moderation.suspend_publisher(
+        user.id, official.id, "Publisher investigation", step_up_confirmed=True
+    )
+    with pytest.raises(Problem) as suspended:
+        service.fork(
+            user.id,
+            community.slug,
+            source.revision.id,
+            new_slug="suspended-copy",
+            idempotency_key="suspended-copy",
+        )
+    assert suspended.value.code == "publication.source_not_found"
