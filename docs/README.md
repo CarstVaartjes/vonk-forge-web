@@ -1,4 +1,4 @@
-# vonk-forge-web documentation
+# Vonk Forge Web documentation
 
 The web repository is the global catalog and publishing service. It is not the
 control plane that installs workloads on Sparks. Keep the boundary explicit:
