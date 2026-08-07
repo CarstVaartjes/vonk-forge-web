@@ -59,3 +59,21 @@ def test_multinode_recipe_requires_explicit_rank_records() -> None:
 
     with pytest.raises(RecipeContractError, match="ranks"):
         validate_recipe(recipe)
+
+
+def test_recipe_requires_standard_runtime_interface_and_mounts() -> None:
+    recipe = fixture("recipe-v1-minimal.json")
+    runtime = recipe["runtime"]
+    security = recipe["security"]
+    assert isinstance(runtime, dict) and isinstance(security, dict)
+
+    runtime["interface"] = "publisher-specific.v1"
+    with pytest.raises(RecipeContractError, match="interface"):
+        validate_recipe(recipe)
+
+    runtime["interface"] = "vonk.runtime.v1"
+    security["mounts"] = [
+        {"source": "model", "target": "/models", "read_only": True}
+    ]
+    with pytest.raises(RecipeContractError, match="mounts"):
+        validate_recipe(recipe)
