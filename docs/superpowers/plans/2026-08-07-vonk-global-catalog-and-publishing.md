@@ -213,3 +213,11 @@ git diff --check
 ```
 
 Completion requires a staging OAuth sign-in, publisher namespace, local draft upload, public-registry metadata validation, immutable publication, anonymous search/download, moderation hide/unhide, and successful database restore drill.
+
+## Task 10: Complete the local/global immutable bridge
+
+- [x] Add a permanent public revision endpoint addressed directly by publisher, slug, and canonical SHA-256 so copied `vonk://` URIs remain importable after newer revisions publish.
+- [x] Return stable recipe and revision identities, immutable caching, and ETags without exposing drafts or internal validation routes.
+- [x] Keep global OAuth browser-only and accept the local metadata envelope through the existing private-draft upload flow.
+- [x] Verify the installable repository vendors the exact recipe/test-report schemas used by draft validation.
+- [x] Commit the global endpoint separately from the local database/import/export implementation.
