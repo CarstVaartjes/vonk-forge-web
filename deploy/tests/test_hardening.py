@@ -83,6 +83,8 @@ def test_ci_scans_secrets_vulnerabilities_sboms_and_signs_images() -> None:
     assert "CLOUDFLARE_API_TOKEN" in pages
     assert "CLOUDFLARE_ACCOUNT_ID" in pages
     assert "pages deploy web/dist" in pages
+    assert "CLOUDFLARE_PAGES_PROJECT is missing" in pages
+    assert "gitHubToken:" not in pages
     assert "RAILWAY_" not in pages
     assert not (ROOT / ".github" / "workflows" / "deploy.yml").exists()
     assert not (ROOT / "scripts" / "railway-deploy-images").exists()
