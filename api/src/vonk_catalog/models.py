@@ -290,6 +290,27 @@ def _keep_revision_immutable(*_: object) -> None:
     raise ValueError("published recipe revisions are immutable")
 
 
+class PublicationRequest(Base):
+    __tablename__ = "publication_requests"
+    __table_args__ = (UniqueConstraint("publisher_id", "idempotency_key"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    publisher_id: Mapped[str] = mapped_column(
+        ForeignKey("publishers.id", ondelete="RESTRICT"), index=True
+    )
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    idempotency_key: Mapped[str] = mapped_column(String(128))
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    revision_id: Mapped[str] = mapped_column(
+        ForeignKey("recipe_revisions.id", ondelete="RESTRICT"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+
+
 class ValidationResult(Base):
     __tablename__ = "validation_results"
     __table_args__ = (

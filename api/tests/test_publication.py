@@ -1,0 +1,143 @@
+import copy
+import json
+from datetime import UTC, datetime
+from pathlib import Path
+
+import pytest
+from sqlalchemy import select
+from vonk_catalog.drafts import DraftService
+from vonk_catalog.models import (
+    Publisher,
+    PublisherMembership,
+    RecipeFork,
+    User,
+    ValidationResult,
+)
+from vonk_catalog.problems import Problem
+from vonk_catalog.publication import PublicationService
+
+FIXTURE = (
+    Path(__file__).resolve().parents[2] / "schemas/fixtures/recipe-v1-minimal.json"
+)
+
+
+def _setup(session):
+    user = User(display_name="Ada")
+    official = Publisher(slug="vonk", name="Vonk Forge", system_role="official")
+    community = Publisher(slug="ada-lab", name="Ada Lab")
+    session.add_all([user, official, community])
+    session.flush()
+    session.add_all(
+        [
+            PublisherMembership(
+                publisher_id=official.id, user_id=user.id, role="owner"
+            ),
+            PublisherMembership(
+                publisher_id=community.id, user_id=user.id, role="owner"
+            ),
+        ]
+    )
+    session.flush()
+    return user, official, community
+
+
+def _draft(session, user: User, publisher: Publisher, key: str = "upload"):
+    return DraftService(session).create(
+        user.id,
+        publisher.slug,
+        json.loads(FIXTURE.read_text()),
+        idempotency_key=key,
+    )
+
+
+def _pass(session, draft) -> None:
+    session.add(
+        ValidationResult(
+            draft_id=draft.id,
+            draft_version=draft.version,
+            content_sha256=draft.content_sha256,
+            status="passed",
+            checks=[{"code": "all", "passed": True}],
+        )
+    )
+    session.flush()
+
+
+def test_validation_is_required_and_changed_draft_must_revalidate(session) -> None:
+    user, _, publisher = _setup(session)
+    draft = _draft(session, user, publisher)
+    service = PublicationService(session)
+    with pytest.raises(Problem) as missing:
+        service.publish(user.id, publisher.slug, draft.id, idempotency_key="publish-1")
+    assert missing.value.code == "publication.validation_required"
+
+    _pass(session, draft)
+    changed = copy.deepcopy(draft.document)
+    changed["metadata"]["title"] = "Changed after validation"
+    DraftService(session).update(
+        user.id, publisher.slug, draft.id, changed, expected_version=1
+    )
+    with pytest.raises(Problem) as stale:
+        service.publish(user.id, publisher.slug, draft.id, idempotency_key="publish-2")
+    assert stale.value.code == "publication.validation_required"
+
+
+def test_publish_is_immutable_numbered_idempotent_and_official_is_derived(
+    session,
+) -> None:
+    user, official, _ = _setup(session)
+    draft = _draft(session, user, official)
+    _pass(session, draft)
+    service = PublicationService(
+        session, clock=lambda: datetime(2026, 8, 7, tzinfo=UTC)
+    )
+    first = service.publish(user.id, official.slug, draft.id, idempotency_key="publish")
+    replay = service.publish(
+        user.id, official.slug, draft.id, idempotency_key="publish"
+    )
+    assert first.revision.id == replay.revision.id
+    assert first.revision.revision_number == 1
+    assert first.official
+    assert first.revision.content_sha256 == draft.content_sha256
+
+    with pytest.raises(Problem) as conflict:
+        service.publish(
+            user.id, official.slug, draft.id, idempotency_key="different-key"
+        )
+    assert conflict.value.code == "publication.already_published"
+
+
+def test_fork_preserves_source_revision_hash_and_requires_own_validation(
+    session,
+) -> None:
+    user, official, community = _setup(session)
+    source_draft = _draft(session, user, official, "source")
+    _pass(session, source_draft)
+    service = PublicationService(session)
+    source = service.publish(
+        user.id, official.slug, source_draft.id, idempotency_key="source-publish"
+    )
+    fork = service.fork(
+        user.id,
+        community.slug,
+        source.revision.id,
+        new_slug="community-copy",
+        idempotency_key="fork",
+    )
+    assert fork.document["identity"] == {
+        "publisher": "ada-lab",
+        "slug": "community-copy",
+    }
+    assert fork.document["provenance"]["source_kind"] == "fork"
+    assert (
+        source.revision.content_sha256
+        in fork.document["provenance"]["source_reference"]
+    )
+    assert session.scalar(
+        select(RecipeFork).where(RecipeFork.recipe_id == fork.recipe_id)
+    )
+    with pytest.raises(Problem) as missing:
+        service.publish(
+            user.id, community.slug, fork.id, idempotency_key="fork-publish"
+        )
+    assert missing.value.code == "publication.validation_required"

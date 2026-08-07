@@ -99,14 +99,14 @@
 - Create: `api/tests/test_revision_immutability.py`
 - Modify: `api/src/vonk_catalog/repositories.py`
 
-- [ ] Write failing tests for publish-before-validation denial, changed-draft revalidation, successful publication, canonical hash/idempotency, revision numbering, byte mutation rejection, deletion rejection, publisher authorization, fork attribution, and official derivation.
-- [ ] Run the tests; confirm missing publication service.
-- [ ] Implement explicit `POST .../drafts/{id}/validate` and `POST .../drafts/{id}/publish`. Publication locks the draft and validation record, rehashes canonical JSON, verifies all checks refer to that hash, and inserts one immutable revision transactionally.
-- [ ] Return an existing revision for a repeated idempotent publish of identical content; reject reuse of an idempotency key for different content.
-- [ ] Implement fork creation as a new draft in the caller's publisher, retaining source revision ID/hash and attribution while requiring its own validation and publication.
-- [ ] Enforce immutability in both repository methods and PostgreSQL trigger/permissions so ORM bypass cannot update/delete revision identity/content.
-- [ ] Run publication, migration, and authorization tests.
-- [ ] Commit: `feat(publication): publish immutable recipe revisions`
+- [x] Write failing tests for publish-before-validation denial, changed-draft revalidation, successful publication, canonical hash/idempotency, revision numbering, byte mutation rejection, deletion rejection, publisher authorization, fork attribution, and official derivation.
+- [x] Run the tests; confirm missing publication service.
+- [x] Implement explicit `POST .../drafts/{id}/validate` and `POST .../drafts/{id}/publish`. Publication locks the draft and recipe, rehashes canonical JSON, verifies validation binds that hash/version, and inserts one immutable revision transactionally.
+- [x] Return an existing revision for a repeated idempotent publish of identical content; reject reuse of an idempotency key for different content.
+- [x] Implement fork creation as a new draft in the caller's publisher, retaining source revision ID/hash and attribution while requiring its own validation and publication.
+- [x] Enforce immutability in ORM services and PostgreSQL/SQLite database triggers so bypass cannot update or delete revision bytes.
+- [x] Run publication, migration, and authorization tests.
+- [x] Commit: `feat(publication): publish immutable recipe revisions`
 
 ## Task 6: Add moderation without rewriting history
 

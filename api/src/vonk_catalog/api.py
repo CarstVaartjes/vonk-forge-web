@@ -10,6 +10,7 @@ from .draft_api import build_draft_router
 from .oauth import HttpOAuthBackend, OAuthBackend
 from .problems import install_problem_handling
 from .public_api import SessionProvider, build_public_router
+from .publication_api import build_publication_router
 from .publisher_api import build_publisher_router
 from .session import SessionService
 from .settings import Settings
@@ -80,4 +81,5 @@ def create_app(
         )
         app.include_router(build_publisher_router(auth_services))
         app.include_router(build_draft_router(auth_services))
+        app.include_router(build_publication_router(auth_services))
     return app

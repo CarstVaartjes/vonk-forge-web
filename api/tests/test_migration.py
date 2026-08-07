@@ -1,6 +1,6 @@
 from alembic import command
 from alembic.script import ScriptDirectory
-from sqlalchemy import create_engine, inspect
+from sqlalchemy import create_engine, inspect, text
 
 EXPECTED_TABLES = {
     "alembic_version",
@@ -13,6 +13,7 @@ EXPECTED_TABLES = {
     "publisher_memberships",
     "publisher_invitations",
     "publisher_audit_events",
+    "publication_requests",
     "publishers",
     "recipe_drafts",
     "recipe_forks",
@@ -26,7 +27,7 @@ EXPECTED_TABLES = {
 
 def test_catalog_has_one_migration_head(alembic_config) -> None:
     assert ScriptDirectory.from_config(alembic_config).get_heads() == [
-        "0004_private_drafts"
+        "0005_immutable_publication"
     ]
 
 
@@ -34,6 +35,17 @@ def test_catalog_migration_upgrades_and_downgrades(alembic_config) -> None:
     command.upgrade(alembic_config, "head")
     engine = create_engine(alembic_config.get_main_option("sqlalchemy.url"))
     assert set(inspect(engine).get_table_names()) == EXPECTED_TABLES
+    with engine.connect() as connection:
+        triggers = {
+            row[0]
+            for row in connection.execute(
+                text("SELECT name FROM sqlite_master WHERE type = 'trigger'")
+            )
+        }
+    assert {
+        "recipe_revisions_immutable_update",
+        "recipe_revisions_immutable_delete",
+    } <= triggers
 
     command.downgrade(alembic_config, "base")
     assert inspect(engine).get_table_names() == ["alembic_version"]
