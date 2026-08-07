@@ -9,7 +9,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from sqlalchemy import Engine, text
 
 from .leases import LeasedJob
-from .registry import RegistryClient
+from .registry import ImageMetadata, RegistryClient
 
 REQUIRED_CHECKS = {
     "container.started",
@@ -27,6 +27,32 @@ class EvidenceValidation:
 
 def _check(code: str, passed: bool, detail: str) -> dict[str, object]:
     return {"code": code, "passed": passed, "detail": detail}
+
+
+def validate_image_contract(
+    image: ImageMetadata, *, policy_path: Path
+) -> tuple[dict[str, object], ...]:
+    policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    label = policy["required_image_label"]
+    accepted_users = policy["accepted_config_users"]
+    configured_user = image.config_user if image.config_user is not None else ""
+    return (
+        _check(
+            "registry.arm64_available",
+            image.architecture == policy["architecture"],
+            "image architecture matches the Vonk runtime contract",
+        ),
+        _check(
+            "registry.runtime_interface",
+            image.labels.get(label["name"]) == label["value"],
+            "image declares the required Vonk runtime interface label",
+        ),
+        _check(
+            "registry.container_root",
+            configured_user in accepted_users,
+            "image runs as container root inside the agent's rootless single-UID namespace",
+        ),
+    )
 
 
 def _timestamp(value: object) -> datetime | None:
@@ -212,22 +238,14 @@ def process_validation_job(
     ):
         raise ValidationJobProblem("draft runtime or topology is invalid")
     image = registry.inspect(image_reference)
+    policy_path = schema_path.parents[1] / "container-runtime-policy/v1.json"
     checks: list[dict[str, object]] = [
         _check(
             "registry.digest_verified",
             True,
             "registry bytes match the submitted digest",
         ),
-        _check(
-            "registry.arm64_available",
-            True,
-            "linux/arm64 manifest and config are available",
-        ),
-        _check(
-            "registry.container_non_root",
-            image.config_user not in (None, "", "0", "root", "0:0", "root:root"),
-            "image declares a non-root runtime user",
-        ),
+        *validate_image_contract(image, policy_path=policy_path),
         {
             "code": "registry.metadata_observed",
             "passed": True,

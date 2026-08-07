@@ -1,9 +1,45 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
-from vonk_catalog_worker.validation import validate_test_evidence
+from vonk_catalog_worker.registry import ImageMetadata
+from vonk_catalog_worker.validation import (
+    validate_image_contract,
+    validate_test_evidence,
+)
 
 SCHEMA = Path(__file__).resolve().parents[2] / "schemas/test-report/v1.schema.json"
+POLICY = (
+    Path(__file__).resolve().parents[2]
+    / "schemas/container-runtime-policy/v1.json"
+)
+
+
+def _image(*, user: str | None = "root", label: str | None = "v1") -> ImageMetadata:
+    labels = {} if label is None else {"ai.vonkforge.runtime-interface": label}
+    return ImageMetadata(
+        submitted_digest="sha256:" + "1" * 64,
+        manifest_digest="sha256:" + "2" * 64,
+        architecture="linux/arm64",
+        layer_bytes=456,
+        manifest_media_type="application/vnd.oci.image.manifest.v1+json",
+        config_media_type="application/vnd.oci.image.config.v1+json",
+        layer_media_types=("application/vnd.oci.image.layer.v1.tar+gzip",),
+        config_user=user,
+        labels=labels,
+    )
+
+
+def test_image_contract_matches_rootless_single_uid_agent_policy() -> None:
+    accepted = validate_image_contract(_image(), policy_path=POLICY)
+    assert all(check["passed"] for check in accepted)
+
+    for rejected in (
+        _image(user="10001"),
+        _image(label=None),
+        _image(label="v2"),
+    ):
+        checks = validate_image_contract(rejected, policy_path=POLICY)
+        assert not all(check["passed"] for check in checks)
 
 
 def _report(recipe_hash: str, image_digest: str, nodes: int = 1) -> dict[str, object]:

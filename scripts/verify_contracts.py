@@ -18,6 +18,7 @@ from vonk_catalog.canonical import canonical_json, content_sha256
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_FILES = (
+    Path("schemas/container-runtime-policy/v1.json"),
     Path("schemas/recipe/v1.schema.json"),
     Path("schemas/problem/v1.schema.json"),
     Path("schemas/test-report/v1.schema.json"),
@@ -29,6 +30,24 @@ def verify(*, update: bool = False) -> None:
     schemas = sorted((ROOT / "schemas").glob("*/*.schema.json"))
     for path in schemas:
         Draft202012Validator.check_schema(json.loads(path.read_text(encoding="utf-8")))
+
+    runtime_policy = json.loads(
+        (ROOT / "schemas/container-runtime-policy/v1.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    if runtime_policy != {
+        "schema_version": 1,
+        "runtime_interface": "vonk.runtime.v1",
+        "architecture": "linux/arm64",
+        "required_image_label": {
+            "name": "ai.vonkforge.runtime-interface",
+            "value": "v1",
+        },
+        "accepted_config_users": ["", "0", "root", "0:0", "root:root"],
+        "host_isolation": "rootless-podman-single-uid",
+    }:
+        raise SystemExit("container runtime policy v1 is invalid")
 
     recipe_schema = json.loads(
         (ROOT / "schemas/recipe/v1.schema.json").read_text(encoding="utf-8")
