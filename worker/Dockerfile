@@ -6,12 +6,14 @@ COPY pyproject.toml uv.lock ./
 COPY api/pyproject.toml api/pyproject.toml
 COPY worker/pyproject.toml worker/pyproject.toml
 COPY worker/src worker/src
+COPY schemas schemas
 RUN uv sync --frozen --no-dev --no-editable --project worker
 
 FROM python:3.12.11-slim-bookworm
 RUN groupadd --gid 10001 vonk && useradd --uid 10001 --gid 10001 --no-create-home vonk
 WORKDIR /app
 COPY --from=build --chown=10001:10001 /app/.venv /app/.venv
+COPY --from=build --chown=10001:10001 /app/schemas /app/schemas
 ENV PATH=/app/.venv/bin:$PATH PYTHONDONTWRITEBYTECODE=1
 USER 10001:10001
 CMD ["python", "-m", "vonk_catalog_worker.main"]

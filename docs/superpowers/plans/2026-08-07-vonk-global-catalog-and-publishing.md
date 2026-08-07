@@ -80,15 +80,15 @@
 - Create: `api/src/vonk_catalog/jobs.py`
 - Modify: `pyproject.toml`
 
-- [ ] Write failing registry tests for public OCI digest resolution, manifest list with `linux/arm64`, missing ARM64, mutable tag, authentication challenge, redirect to loopback/private/link-local/metadata IP, DNS rebinding, oversized response, timeout, rate limit, and retry-after handling.
-- [ ] Run `uv run --project worker pytest worker/tests/test_registry.py -q`; confirm missing package.
-- [ ] Implement PostgreSQL job claiming with `FOR UPDATE SKIP LOCKED`, lease renewal, idempotency keys, bounded attempts, and stable retryable/terminal problem codes.
-- [ ] Build a registry client that permits HTTPS public registries only, validates each resolved/redirected address, disables ambient proxy credentials, caps redirects/body/time, and never accepts publisher registry credentials.
-- [ ] Resolve the submitted digest to a manifest, require ARM64 support, capture media types/layer sizes/config labels, and confirm the canonical digest. Do not pull layer blobs.
-- [ ] Validate submitted local test evidence against `schemas/test-report/v1.schema.json`, recipe hash, image digest, tested node count, runtime identity, timestamps, and minimum required checks. Label evidence as publisher-submitted rather than Vonk-certified.
-- [ ] Persist every check and evidence summary; retry transient registry failures without converting them into schema or trust success.
-- [ ] Run worker tests and network isolation tests.
-- [ ] Commit: `feat(validation): verify public image metadata and evidence`
+- [x] Write failing registry tests for public OCI digest resolution, manifest list with `linux/arm64`, missing ARM64, mutable tag, authentication challenge, redirect to loopback/private/link-local/metadata IP, DNS rebinding, oversized response, timeout, rate limit, and retry-after handling.
+- [x] Run `uv run --project worker pytest worker/tests/test_registry.py -q`; confirm missing package.
+- [x] Implement PostgreSQL job claiming with `FOR UPDATE SKIP LOCKED`, lease renewal, idempotency keys, bounded attempts, and stable retryable/terminal problem codes.
+- [x] Build a registry client that permits HTTPS public registries only, revalidates every resolved/redirected address, disables ambient proxy credentials, streams within redirect/body/time caps, and never accepts publisher registry credentials.
+- [x] Resolve and byte-verify the submitted digest, require ARM64 support, capture media types/layer sizes/config labels, and read only bounded config metadata—not layer blobs.
+- [x] Validate submitted local test evidence against `schemas/test-report/v1.schema.json`, recipe hash, image digest, tested node count, runtime identity, timestamps, and minimum required checks. Label evidence as publisher-submitted rather than Vonk-certified.
+- [x] Persist every check and evidence summary; retry transient registry failures without converting them into schema or trust success.
+- [x] Run worker tests covering network isolation policy.
+- [x] Commit: `feat(validation): verify public image metadata and evidence`
 
 ## Task 5: Publish immutable revisions and forks
 

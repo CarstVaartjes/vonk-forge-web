@@ -12,6 +12,10 @@ from pathlib import Path
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import make_url
 
+from .leases import JobLeases
+from .registry import RegistryClient, RegistryProblem, RegistryTemporaryProblem
+from .validation import ValidationJobProblem, process_validation_job
+
 
 @dataclass(frozen=True, slots=True)
 class WorkerHeartbeat:
@@ -37,6 +41,14 @@ def main() -> None:
     interval = max(1, int(os.environ.get("VONK_WORKER_HEARTBEAT_SECONDS", "15")))
     process_id = str(uuid.uuid4())
     engine = create_engine(database_url, pool_pre_ping=True)
+    leases = JobLeases(engine)
+    registry = RegistryClient()
+    schema_path = Path(
+        os.environ.get(
+            "VONK_TEST_REPORT_SCHEMA",
+            "/app/schemas/test-report/v1.schema.json",
+        )
+    )
     stopping = False
 
     def stop(*_: object) -> None:
@@ -46,6 +58,22 @@ def main() -> None:
     signal.signal(signal.SIGTERM, stop)
     signal.signal(signal.SIGINT, stop)
     while not stopping:
+        job = leases.claim()
+        if job is not None:
+            try:
+                process_validation_job(
+                    engine, job, registry=registry, schema_path=schema_path
+                )
+            except RegistryTemporaryProblem as error:
+                leases.fail(job, error.code, retryable=True)
+            except (RegistryProblem, ValidationJobProblem) as error:
+                leases.fail(job, error.code, retryable=False)
+            except Exception:
+                leases.fail(job, "validation.internal_error", retryable=True)
+                raise
+            else:
+                leases.complete(job.id)
+            continue
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
         heartbeat = WorkerHeartbeat(process_id, datetime.now(UTC))

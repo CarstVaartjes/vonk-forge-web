@@ -1,0 +1,209 @@
+import hashlib
+import json
+
+import httpx
+import pytest
+from vonk_catalog_worker.registry import (
+    RegistryClient,
+    RegistryProblem,
+    RegistryTemporaryProblem,
+)
+
+CONFIG_BODY = json.dumps(
+    {
+        "architecture": "arm64",
+        "os": "linux",
+        "config": {
+            "User": "10001",
+            "Labels": {
+                "org.opencontainers.image.source": "https://example.test/source"
+            },
+        },
+    },
+    separators=(",", ":"),
+).encode()
+CONFIG = "sha256:" + hashlib.sha256(CONFIG_BODY).hexdigest()
+CHILD_BODY = json.dumps(
+    {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "config": {
+            "digest": CONFIG,
+            "size": len(CONFIG_BODY),
+            "mediaType": "application/vnd.oci.image.config.v1+json",
+        },
+        "layers": [
+            {
+                "digest": "sha256:" + "d" * 64,
+                "size": 456,
+                "mediaType": "application/vnd.oci.image.layer.v1.tar+gzip",
+            }
+        ],
+    },
+    separators=(",", ":"),
+).encode()
+CHILD = "sha256:" + hashlib.sha256(CHILD_BODY).hexdigest()
+INDEX_BODY = json.dumps(
+    {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.oci.image.index.v1+json",
+        "manifests": [
+            {
+                "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                "digest": CHILD,
+                "size": len(CHILD_BODY),
+                "platform": {"os": "linux", "architecture": "arm64"},
+            }
+        ],
+    },
+    separators=(",", ":"),
+).encode()
+DIGEST = "sha256:" + hashlib.sha256(INDEX_BODY).hexdigest()
+PUBLIC_IP = ("93.184.216.34",)
+
+
+def _response(request: httpx.Request) -> httpx.Response:
+    if request.url.path.endswith(f"/manifests/{DIGEST}"):
+        return httpx.Response(
+            200,
+            content=INDEX_BODY,
+            headers={"Docker-Content-Digest": DIGEST},
+            request=request,
+        )
+    if request.url.path.endswith(f"/manifests/{CHILD}"):
+        return httpx.Response(
+            200,
+            content=CHILD_BODY,
+            headers={"Docker-Content-Digest": CHILD},
+            request=request,
+        )
+    if request.url.path.endswith(f"/blobs/{CONFIG}"):
+        return httpx.Response(200, content=CONFIG_BODY, request=request)
+    raise AssertionError(request.url)
+
+
+def _client(handler=_response, resolver=lambda _: PUBLIC_IP) -> RegistryClient:
+    return RegistryClient(
+        client=httpx.Client(transport=httpx.MockTransport(handler), trust_env=False),
+        resolver=resolver,
+    )
+
+
+def test_resolves_digest_index_arm64_and_only_reads_config_metadata() -> None:
+    result = _client().inspect(f"registry.example/org/image@{DIGEST}")
+    assert result.submitted_digest == DIGEST
+    assert result.manifest_digest == CHILD
+    assert result.architecture == "linux/arm64"
+    assert result.layer_bytes == 456
+    assert result.config_user == "10001"
+    assert (
+        result.labels["org.opencontainers.image.source"]
+        == "https://example.test/source"
+    )
+
+
+def test_rejects_mutable_tag_missing_arm64_and_digest_mismatch() -> None:
+    with pytest.raises(RegistryProblem, match="digest-pinned"):
+        _client().inspect("registry.example/org/image:latest")
+
+    missing_body = json.dumps(
+        {
+            "schemaVersion": 2,
+            "mediaType": "application/vnd.oci.image.index.v1+json",
+            "manifests": [],
+        },
+        separators=(",", ":"),
+    ).encode()
+    missing_digest = "sha256:" + hashlib.sha256(missing_body).hexdigest()
+
+    def missing(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            content=missing_body,
+            headers={"Docker-Content-Digest": missing_digest},
+            request=request,
+        )
+
+    with pytest.raises(RegistryProblem, match="ARM64"):
+        _client(missing).inspect(f"registry.example/org/image@{missing_digest}")
+
+    def mismatch(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={},
+            headers={"Docker-Content-Digest": "sha256:" + "f" * 64},
+            request=request,
+        )
+
+    with pytest.raises(RegistryProblem, match="digest"):
+        _client(mismatch).inspect(f"registry.example/org/image@{DIGEST}")
+
+
+def test_rejects_private_redirect_dns_rebinding_oversize_and_rate_limit() -> None:
+    def redirect(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            307,
+            headers={"Location": "https://169.254.169.254/latest/meta-data"},
+            request=request,
+        )
+
+    with pytest.raises(RegistryProblem, match="public"):
+        _client(redirect).inspect(f"registry.example/org/image@{DIGEST}")
+
+    calls = [PUBLIC_IP, ("127.0.0.1",)]
+    with pytest.raises(RegistryProblem, match="public"):
+        _client(resolver=lambda _: calls.pop(0) if calls else ("127.0.0.1",)).inspect(
+            f"registry.example/org/image@{DIGEST}"
+        )
+
+    def oversized(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"x" * 1_048_577, request=request)
+
+    with pytest.raises(RegistryProblem, match="oversized"):
+        _client(oversized).inspect(f"registry.example/org/image@{DIGEST}")
+
+    def rate_limited(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(429, headers={"Retry-After": "17"}, request=request)
+
+    with pytest.raises(RegistryTemporaryProblem) as error:
+        _client(rate_limited).inspect(f"registry.example/org/image@{DIGEST}")
+    assert error.value.retry_after_seconds == 17
+
+    def timeout(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout("timed out", request=request)
+
+    with pytest.raises(RegistryTemporaryProblem, match="timed out"):
+        _client(timeout).inspect(f"registry.example/org/image@{DIGEST}")
+
+
+def test_bearer_auth_is_public_bounded_and_does_not_accept_basic_credentials() -> None:
+    token = "registry-token"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.host == "auth.example":
+            assert request.url.params["scope"] == "repository:org/image:pull"
+            return httpx.Response(
+                200, json={"token": token, "expires_in": 300}, request=request
+            )
+        if request.headers.get("Authorization") == f"Bearer {token}":
+            return _response(request)
+        return httpx.Response(
+            401,
+            headers={
+                "WWW-Authenticate": 'Bearer realm="https://auth.example/token",service="registry.example",scope="repository:org/image:pull"'
+            },
+            request=request,
+        )
+
+    assert (
+        _client(handler).inspect(f"registry.example/org/image@{DIGEST}").manifest_digest
+        == CHILD
+    )
+
+    def basic(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            401, headers={"WWW-Authenticate": 'Basic realm="registry"'}, request=request
+        )
+
+    with pytest.raises(RegistryProblem, match="authentication"):
+        _client(basic).inspect(f"registry.example/org/image@{DIGEST}")
