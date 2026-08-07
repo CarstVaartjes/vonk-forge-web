@@ -10,6 +10,8 @@ EXPECTED_TABLES = {
     "oauth_accounts",
     "oauth_flows",
     "publisher_memberships",
+    "publisher_invitations",
+    "publisher_audit_events",
     "publishers",
     "recipe_drafts",
     "recipe_forks",
@@ -23,7 +25,7 @@ EXPECTED_TABLES = {
 
 def test_catalog_has_one_migration_head(alembic_config) -> None:
     assert ScriptDirectory.from_config(alembic_config).get_heads() == [
-        "0002_browser_auth"
+        "0003_publisher_security"
     ]
 
 

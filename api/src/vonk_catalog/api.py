@@ -9,6 +9,7 @@ from .auth_api import build_auth_router
 from .oauth import HttpOAuthBackend, OAuthBackend
 from .problems import install_problem_handling
 from .public_api import SessionProvider, build_public_router
+from .publisher_api import build_publisher_router
 from .session import SessionService
 from .settings import Settings
 
@@ -76,4 +77,5 @@ def create_app(
                 resolved_settings,
             )
         )
+        app.include_router(build_publisher_router(auth_services))
     return app

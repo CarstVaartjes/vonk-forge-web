@@ -40,13 +40,13 @@
 - Create: `api/tests/test_publisher_authorization.py`
 - Modify: `api/src/vonk_catalog/models.py`
 
-- [ ] Write failing tests for namespace claim, normalized reserved slugs, owner/editor/viewer capabilities, invitation acceptance, last-owner protection, membership removal, audit history, and denial across publishers.
-- [ ] Run the scoped tests; confirm missing service/routes.
-- [ ] Implement publisher creation and membership management with explicit role checks in the service layer and route dependency. Reserve `vonk`, `vonk-forge`, `official`, `admin`, support/lookalike variants, and provider names.
-- [ ] Seed the `vonk` publisher through an idempotent production administration command tied to the configured founder OAuth subject. `official` is derived only from this publisher's immutable system role; community users cannot set it in JSON.
-- [ ] Add append-only audit events for namespace, membership, role, and ownership changes.
-- [ ] Run authorization matrix tests including direct repository/service calls, not only HTTP routes.
-- [ ] Commit: `feat(publishers): add publisher namespaces and roles`
+- [x] Write failing tests for namespace claim, normalized reserved slugs, owner/editor/viewer capabilities, invitation acceptance, last-owner protection, membership removal, audit history, and denial across publishers.
+- [x] Run the scoped tests; confirm missing service/routes.
+- [x] Implement publisher creation and membership management with explicit role checks in the service layer and route boundary. Reserve `vonk`, `vonk-forge`, `official`, `admin`, support/lookalike variants, and provider names.
+- [x] Seed the `vonk` publisher through an idempotent production administration command tied to the configured founder OAuth subject. `official` is derived only from this publisher's immutable system role; community users cannot set it in JSON.
+- [x] Add append-only audit events for namespace, membership, role, and ownership changes.
+- [x] Run authorization matrix tests including direct service calls, not only HTTP routes.
+- [x] Commit: `feat(publishers): add publisher namespaces and roles`
 
 ## Task 3: Add versioned private drafts and local upload API
 

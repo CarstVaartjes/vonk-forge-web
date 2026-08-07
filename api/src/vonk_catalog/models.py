@@ -141,6 +141,61 @@ class PublisherMembership(Base):
     )
 
 
+class PublisherInvitation(Base):
+    __tablename__ = "publisher_invitations"
+    __table_args__ = (
+        CheckConstraint(
+            "role IN ('owner', 'editor', 'viewer')",
+            name="ck_publisher_invitation_role",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    publisher_id: Mapped[str] = mapped_column(
+        ForeignKey("publishers.id", ondelete="CASCADE"), index=True
+    )
+    invited_by_user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    email: Mapped[str] = mapped_column(String(320))
+    role: Mapped[str] = mapped_column(String(16))
+    token_digest: Mapped[str] = mapped_column(String(64), unique=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    accepted_by_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+
+
+class PublisherAuditEvent(Base):
+    __tablename__ = "publisher_audit_events"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    publisher_id: Mapped[str] = mapped_column(
+        ForeignKey("publishers.id", ondelete="RESTRICT"), index=True
+    )
+    actor_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    action: Mapped[str] = mapped_column(String(48))
+    subject_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    details: Mapped[dict[str, Any]] = mapped_column(JSON_DOCUMENT, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+
+
+@event.listens_for(PublisherAuditEvent, "before_update")
+@event.listens_for(PublisherAuditEvent, "before_delete")
+def _keep_publisher_audit_immutable(*_: object) -> None:
+    raise ValueError("publisher audit events are append-only")
+
+
 class Recipe(Base):
     __tablename__ = "recipes"
     __table_args__ = (

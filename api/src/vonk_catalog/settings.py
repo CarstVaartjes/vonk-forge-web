@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     github_client_secret: SecretStr | None = None
     google_client_id: str | None = None
     google_client_secret: SecretStr | None = None
+    founder_oauth_provider: str | None = None
+    founder_oauth_subject: str | None = None
 
     @model_validator(mode="after")
     def secure_production(self) -> "Settings":
@@ -37,4 +39,10 @@ class Settings(BaseSettings):
             client_secret = getattr(self, f"{provider}_client_secret")
             if (client_id is None) != (client_secret is None):
                 raise ValueError(f"{provider} OAuth configuration is incomplete")
+        if (self.founder_oauth_provider is None) != (
+            self.founder_oauth_subject is None
+        ):
+            raise ValueError("founder OAuth configuration is incomplete")
+        if self.founder_oauth_provider not in (None, "github", "google"):
+            raise ValueError("founder OAuth provider is unsupported")
         return self
