@@ -11,7 +11,8 @@ installation, placement, and execution.
 The initial Vonk Forge product does not require this global service. The target
 hosted layout is:
 
-- Cloudflare Pages serves the static frontend at `vonkforge.ai`.
+- Cloudflare Pages serves the static frontend at [`vonkforge.ai`](https://vonkforge.ai).
+  The default Pages hostname is `vonk-forge-web.pages.dev`.
 - Railway is reserved for the future global API, validation worker, and
   PostgreSQL database; do not provision it for the initial local release.
 - GitHub Actions in `vonk-forge` builds and publishes the signed

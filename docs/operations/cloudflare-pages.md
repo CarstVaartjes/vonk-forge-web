@@ -5,6 +5,9 @@ initial local product does not require this repository, its global API, or
 Railway. The future global API and validation worker can be enabled separately
 when the shared catalog is needed.
 
+The live production site is [vonkforge.ai](https://vonkforge.ai). Cloudflare's
+default Pages hostname is `vonk-forge-web.pages.dev`.
+
 ## One-time Cloudflare setup
 
 1. In Cloudflare Workers & Pages, create a Pages project named
