@@ -18,4 +18,5 @@ def create_app():
     return create_base_app(
         readiness_probe=lambda: readiness_probe(engine),
         database_sessions=session_factory(engine),
+        settings=settings,
     )

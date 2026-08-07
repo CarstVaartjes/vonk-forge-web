@@ -1,10 +1,16 @@
 from collections.abc import Callable
+from datetime import timedelta
 
 from fastapi import FastAPI
 from fastapi.responses import JSONResponse
+
+from .auth import AuthServices
+from .auth_api import build_auth_router
+from .oauth import HttpOAuthBackend, OAuthBackend
 from .problems import install_problem_handling
 from .public_api import SessionProvider, build_public_router
-
+from .session import SessionService
+from .settings import Settings
 
 ReadinessProbe = Callable[[], None]
 
@@ -16,6 +22,8 @@ def _ready() -> None:
 def create_app(
     readiness_probe: ReadinessProbe = _ready,
     database_sessions: SessionProvider | None = None,
+    settings: Settings | None = None,
+    oauth_backend: OAuthBackend | None = None,
 ) -> FastAPI:
     app = FastAPI(title="Vonk Forge Catalog API", version="1.0.0")
     install_problem_handling(app)
@@ -34,8 +42,7 @@ def create_app(
                 media_type="application/problem+json",
                 content={
                     "type": (
-                        "https://api.vonkforge.ai/problems/"
-                        "catalog.database_unavailable"
+                        "https://api.vonkforge.ai/problems/catalog.database_unavailable"
                     ),
                     "title": "Catalog database unavailable",
                     "status": 503,
@@ -46,4 +53,27 @@ def create_app(
         return {"service": "vonk-catalog-api", "status": "ready"}
 
     app.include_router(build_public_router(database_sessions))
+    if database_sessions is not None:
+        resolved_settings = settings or Settings()
+        auth_services = AuthServices(
+            database_sessions=database_sessions,
+            sessions=SessionService(
+                database_sessions,
+                resolved_settings.session_secret.get_secret_value().encode(),
+                ttl=timedelta(seconds=resolved_settings.session_ttl_seconds),
+            ),
+            cookie_name=(
+                "__Host-vonk_session"
+                if resolved_settings.production
+                else "vonk_session"
+            ),
+            secure_cookie=resolved_settings.production,
+        )
+        app.include_router(
+            build_auth_router(
+                auth_services,
+                oauth_backend or HttpOAuthBackend.from_settings(resolved_settings),
+                resolved_settings,
+            )
+        )
     return app

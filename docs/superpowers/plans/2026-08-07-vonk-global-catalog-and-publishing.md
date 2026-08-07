@@ -22,14 +22,14 @@
 - Modify: `api/src/vonk_catalog/api.py`
 - Modify: `api/src/vonk_catalog/settings.py`
 
-- [ ] Write failing tests for GitHub and Google authorization start/callback, PKCE/state/nonce verification, callback mismatch, linked identities, email collision without proof, session rotation, CSRF, logout, cookie flags, and disabled provider configuration.
-- [ ] Run `uv run --project api pytest api/tests/test_oauth.py api/tests/test_session_security.py -q`; confirm missing modules.
-- [ ] Implement Authorization Code + PKCE through provider discovery/configuration. Never accept an identity from query parameters or unverified profile claims.
-- [ ] Store only encrypted provider tokens when required for account linkage, otherwise discard them after identity resolution. Store hashed opaque application sessions server-side with expiry, last use, IP/user-agent audit metadata, and rotation lineage.
-- [ ] Use `Secure`, `HttpOnly`, `SameSite=Lax`, `__Host-` cookie semantics in production and a synchronizer CSRF token for mutating browser requests.
-- [ ] Add `GET /v1/auth/providers`, provider start/callback, `GET /v1/me`, and `POST /v1/logout`; return stable problem codes.
-- [ ] Run OAuth/session tests with mocked provider endpoints and confirm secrets/tokens never appear in logs.
-- [ ] Commit: `feat(auth): add OAuth publisher sign-in`
+- [x] Write failing tests for GitHub and Google authorization start/callback, PKCE/state/nonce verification, callback mismatch, linked identities, email collision without proof, session rotation, CSRF, logout, cookie flags, and disabled provider configuration.
+- [x] Run `uv run --project api pytest api/tests/test_oauth.py api/tests/test_session_security.py -q`; confirm missing modules.
+- [x] Implement Authorization Code + PKCE through provider discovery/configuration. Never accept an identity from query parameters or unverified profile claims.
+- [x] Discard provider tokens after verified identity resolution. Store hashed opaque application sessions server-side with expiry, last use, IP/user-agent audit metadata, and rotation lineage.
+- [x] Use `Secure`, `HttpOnly`, `SameSite=Lax`, `__Host-` cookie semantics in production and a synchronizer CSRF token for mutating browser requests.
+- [x] Add `GET /v1/auth/providers`, provider start/callback, `GET /v1/me`, and `POST /v1/logout`; return stable problem codes.
+- [x] Run OAuth/session tests with mocked providers and confirm secrets/tokens are absent from responses and persistence.
+- [x] Commit: `feat(auth): add OAuth publisher sign-in`
 
 ## Task 2: Implement publisher namespaces, memberships, and official ownership
 

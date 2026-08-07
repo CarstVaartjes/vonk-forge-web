@@ -2,12 +2,13 @@ from alembic import command
 from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine, inspect
 
-
 EXPECTED_TABLES = {
     "alembic_version",
     "catalog_jobs",
+    "browser_sessions",
     "moderation_events",
     "oauth_accounts",
+    "oauth_flows",
     "publisher_memberships",
     "publishers",
     "recipe_drafts",
@@ -22,7 +23,7 @@ EXPECTED_TABLES = {
 
 def test_catalog_has_one_migration_head(alembic_config) -> None:
     assert ScriptDirectory.from_config(alembic_config).get_heads() == [
-        "0001_catalog_foundation"
+        "0002_browser_auth"
     ]
 
 
