@@ -79,6 +79,17 @@ def test_ci_scans_secrets_vulnerabilities_sboms_and_signs_images() -> None:
     assert "RAILWAY_PRODUCTION_TOKEN" in deploy
 
 
+def test_railway_deploys_the_signed_registry_digest_without_source_rebuild() -> None:
+    deploy = yaml.safe_load((ROOT / ".github" / "workflows" / "deploy.yml").read_text())
+    serialized = json.dumps(deploy)
+
+    assert "service source connect" in serialized
+    assert "--image" in serialized
+    assert "deployment-${{ matrix.name }}.txt" in serialized
+    assert "cosign verify" in serialized
+    assert "up --ci" not in serialized
+
+
 @pytest.mark.skipif(
     os.getenv("VONK_TEST_CONTAINER_IMAGES") != "1",
     reason="set after building test images",

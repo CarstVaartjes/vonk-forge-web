@@ -21,11 +21,15 @@ Create these services in both `staging` and `production`:
 | `postgres` | Railway PostgreSQL | no | primary database |
 | `restore-postgres` | Railway PostgreSQL | no | isolated drill target |
 
-Railway applies one config-as-code file per service. Set each service's config
-file path to the corresponding path above. Cron services must exit; Railway
-skips a schedule while its previous execution remains active. These definitions
-follow Railway's current [config-as-code reference](https://docs.railway.com/config-as-code/reference)
-and [cron contract](https://docs.railway.com/cron-jobs).
+Use the files above to bootstrap each service's deploy settings, start command,
+health check, and cron schedule. The release workflow then changes each service
+source to the signed GHCR digest with `railway service source connect --image`;
+Railway skips its build phase for an image source. Keep the settings on the
+service when disconnecting the repository source. Cron services must exit, and
+Railway skips a schedule while its previous execution remains active. The
+behavior follows Railway's current [service-source CLI](https://docs.railway.com/cli/service),
+[Docker-image service](https://docs.railway.com/services), and
+[cron contract](https://docs.railway.com/cron-jobs).
 
 ## Variables
 
@@ -72,15 +76,20 @@ staging. Duplicate service topology, then replace every secret.
 ## First release and promotion
 
 1. Create production, duplicate it as staging, and replace staging secrets.
-2. Connect every code service to this repository and its config source path.
-3. Deploy `migration` and require a successful completed deployment.
-4. Deploy `api`, `worker`, and `web`; verify `/health/live` and
+2. Bootstrap every code service from its config file, then disconnect its
+   repository source. Make the four GHCR packages public, or configure Railway
+   GHCR credentials with `read:packages` on a Pro workspace.
+3. Run the protected GitHub deploy workflow. It verifies each Cosign signature,
+   connects `migration` and the application services to exact image digests,
+   and never uploads source with `railway up`.
+4. Require the `migration` deployment to complete successfully.
+5. Verify `api`, `worker`, and `web` through `/health/live` and
    `/health/ready` through the public web domain.
-5. Sign in with a staging OAuth account, claim a staging namespace, upload the
+6. Sign in with a staging OAuth account, claim a staging namespace, upload the
    public test recipe/evidence, wait for registry validation, publish it, find
    it anonymously, then hide and unhide it as a staging moderator.
-6. Run a backup and restore drill and retain the object name plus verifier JSON.
-7. Record the commit, revision hash, request IDs, and restore object in the
+7. Run a backup and restore drill and retain the object name plus verifier JSON.
+8. Record the commit, revision hash, request IDs, and restore object in the
    release evidence. Only then approve the protected GitHub `production`
    environment and repeat migration before the long-running services.
 
