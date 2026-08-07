@@ -1,11 +1,31 @@
+import { HomePage } from "./pages/home";
+import { PublisherPage } from "./pages/publisher";
+import { RecipeDetailPage } from "./pages/recipe-detail";
+import { RecipesPage } from "./pages/recipes";
+
+
+function CurrentPage() {
+  const parts = window.location.pathname.split("/").filter(Boolean);
+  if (parts.length === 0) return <main><HomePage /></main>;
+  if (parts[0] === "recipes" && parts.length === 1) return <RecipesPage />;
+  if (parts[0] === "recipes" && parts.length === 3) {
+    return <RecipeDetailPage publisher={parts[1] ?? ""} slug={parts[2] ?? ""} />;
+  }
+  if (parts[0] === "publishers" && parts.length === 2) {
+    return <PublisherPage publisher={parts[1] ?? ""} />;
+  }
+  if (parts[0] === "publish") {
+    return <main className="status-panel"><h1>Publisher workspace</h1><p>Sign in to upload a locally tested private draft.</p></main>;
+  }
+  return <main className="status-panel"><h1>Not found</h1><p>This spark has not been forged.</p></main>;
+}
+
 export function App() {
   return (
     <div className="site-shell">
       <header className="site-header">
         <a className="brand" href="/" aria-label="Vonk Forge home">
-          <span aria-hidden="true" className="brand-mark">
-            V
-          </span>
+          <span aria-hidden="true" className="brand-mark">V</span>
           <span>Vonk Forge</span>
         </a>
         <nav aria-label="Primary navigation">
@@ -13,35 +33,7 @@ export function App() {
           <a href="/publish">Publish</a>
         </nav>
       </header>
-
-      <main>
-        <section className="hero" aria-labelledby="hero-title">
-          <p className="eyebrow">A typed catalog for DGX Spark</p>
-          <h1 id="hero-title">Many sparks. One forge.</h1>
-          <p className="lede">
-            Discover reproducible recipes, inspect their exact runtime and
-            capacity needs, then import them into your own Vonk Forge.
-          </p>
-          <div className="hero-actions">
-            <a className="button primary" href="/recipes">
-              Explore recipes
-            </a>
-            <a className="button secondary" href="/publish">
-              Publish yours
-            </a>
-          </div>
-        </section>
-
-        <section className="boundary" aria-labelledby="boundary-title">
-          <p className="eyebrow">A clean boundary</p>
-          <h2 id="boundary-title">Metadata here. Payloads where they belong.</h2>
-          <p>
-            Images and weights stay in their registries. Vonk Forge stores the
-            typed recipe, immutable digests, sizing, topology, and test
-            evidence needed to decide whether it belongs on your cluster.
-          </p>
-        </section>
-      </main>
+      <CurrentPage />
     </div>
   );
 }

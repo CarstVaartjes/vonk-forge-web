@@ -96,6 +96,22 @@
           },
           {
             "in": "query",
+            "name": "official",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Official"
+            }
+          },
+          {
+            "in": "query",
             "name": "runtime",
             "required": false,
             "schema": {
@@ -130,6 +146,23 @@
           },
           {
             "in": "query",
+            "name": "capability",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 64,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Capability"
+            }
+          },
+          {
+            "in": "query",
             "name": "topology",
             "required": false,
             "schema": {
@@ -143,6 +176,24 @@
                 }
               ],
               "title": "Topology"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tested_node_count",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maximum": 16,
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tested Node Count"
             }
           },
           {
@@ -213,6 +264,34 @@
                 }
               ],
               "title": "Max Installed Bytes"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "newest",
+              "pattern": "^(newest|title|disk|memory)$",
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "maxLength": 512,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cursor"
             }
           },
           {

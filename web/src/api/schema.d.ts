@@ -104,13 +104,18 @@ export interface operations {
             query?: {
                 q?: string | null;
                 publisher?: string | null;
+                official?: boolean | null;
                 runtime?: string | null;
                 workload_family?: string | null;
+                capability?: string | null;
                 topology?: string | null;
+                tested_node_count?: number | null;
                 min_nodes?: number | null;
                 max_nodes?: number | null;
                 max_memory_bytes?: number | null;
                 max_installed_bytes?: number | null;
+                sort?: string;
+                cursor?: string | null;
                 limit?: number;
             };
             header?: never;

@@ -312,6 +312,27 @@ class PublicationRequest(Base):
     )
 
 
+class RecipeSearchDocument(Base):
+    __tablename__ = "recipe_search_documents"
+
+    revision_id: Mapped[str] = mapped_column(
+        ForeignKey("recipe_revisions.id", ondelete="CASCADE"), primary_key=True
+    )
+    search_text: Mapped[str] = mapped_column(Text)
+    runtime_family: Mapped[str] = mapped_column(String(64), index=True)
+    workload_family: Mapped[str] = mapped_column(String(64), index=True)
+    topology_kind: Mapped[str] = mapped_column(String(16), index=True)
+    min_nodes: Mapped[int] = mapped_column(Integer, index=True)
+    max_nodes: Mapped[int] = mapped_column(Integer, index=True)
+    tested_node_counts: Mapped[list[int]] = mapped_column(JSON_DOCUMENT)
+    installed_bytes: Mapped[int] = mapped_column(Integer, index=True)
+    resident_memory_bytes: Mapped[int] = mapped_column(Integer, index=True)
+    capabilities: Mapped[list[str]] = mapped_column(JSON_DOCUMENT)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+
+
 class ValidationResult(Base):
     __tablename__ = "validation_results"
     __table_args__ = (

@@ -20,6 +20,7 @@ EXPECTED_TABLES = {
     "recipe_drafts",
     "recipe_forks",
     "recipe_revisions",
+    "recipe_search_documents",
     "recipes",
     "test_reports",
     "users",
@@ -29,7 +30,7 @@ EXPECTED_TABLES = {
 
 def test_catalog_has_one_migration_head(alembic_config) -> None:
     assert ScriptDirectory.from_config(alembic_config).get_heads() == [
-        "0006_moderation_controls"
+        "0007_recipe_search"
     ]
 
 

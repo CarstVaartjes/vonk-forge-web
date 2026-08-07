@@ -139,14 +139,14 @@
 - Modify: `web/src/app.tsx`
 - Modify: `web/src/styles.css`
 
-- [ ] Write backend and frontend tests first for text search, publisher, official/community, runtime family, workload family, capability, single/multi-node, tested node count, disk/memory range, sort, pagination, hidden state, and URL-preserved filters.
-- [ ] Run scoped pytest and Vitest; confirm missing search/page behavior.
-- [ ] Implement PostgreSQL search using a maintained `tsvector`, trigram indexes for names/slugs, keyset pagination, deterministic tie-breaking, and bounded filter ranges.
-- [ ] Show on each card/detail: immutable revision/hash, publisher, official/community status, source/fork, runtime/image digest, weight references, ARM64 validation, declared disk/RAM, topology, capabilities, publisher-submitted test evidence, last validation, and exact local import link/instructions.
-- [ ] Clearly separate declared, registry-observed, publisher-tested, and future Vonk-verified facts. Never display community evidence as an endorsement.
-- [ ] Add metadata/structured data, accessible filter controls, mobile layout, loading/empty/error states, and canonical public URLs.
-- [ ] Run API, component, accessibility, and Playwright tests.
-- [ ] Commit: `feat(web): add searchable public recipe catalog`
+- [x] Write backend and frontend tests first for text search, publisher, official/community, runtime/workload/capability, topology, tested nodes, disk/memory, sort, pagination, hidden state, and URL-preserved filters.
+- [x] Run scoped pytest and Vitest; confirm missing search/page behavior.
+- [x] Implement a typed PostgreSQL search projection using a maintained generated `tsvector`, trigram and facet indexes, opaque keyset cursors, deterministic tie-breaking, and bounded ranges.
+- [x] Show immutable revision/hash, publisher status, source/fork, runtime/image digest, weight references, observed ARM64 metadata, declared disk/RAM, topology, capabilities, publisher-submitted evidence, last validation, and exact local import instructions.
+- [x] Clearly separate declared, registry-observed, publisher-tested, and future Vonk-verified facts. Never display community evidence as an endorsement.
+- [x] Add structured data, accessible filter controls, desktop/mobile layouts, loading/empty/error states, and canonical public URLs.
+- [x] Run API, component, production-build, desktop Playwright, and mobile Playwright tests.
+- [x] Commit: `feat(web): add searchable public recipe catalog`
 
 ## Task 8: Add publisher workspace and local-first publication UX
 

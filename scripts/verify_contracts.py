@@ -25,7 +25,7 @@ CONTRACT_FILES = (
 )
 
 
-def verify() -> None:
+def verify(*, update: bool = False) -> None:
     schemas = sorted((ROOT / "schemas").glob("*/*.schema.json"))
     for path in schemas:
         Draft202012Validator.check_schema(json.loads(path.read_text(encoding="utf-8")))
@@ -54,7 +54,9 @@ def verify() -> None:
     ).encode()
     actual_openapi = (ROOT / "openapi/openapi.json").read_bytes()
     if actual_openapi != expected_openapi:
-        raise SystemExit("openapi/openapi.json is stale")
+        if not update:
+            raise SystemExit("openapi/openapi.json is stale")
+        (ROOT / "openapi/openapi.json").write_bytes(expected_openapi)
 
     generator = ROOT / "web/node_modules/.bin/openapi-typescript"
     if not generator.is_file():
@@ -66,8 +68,12 @@ def verify() -> None:
             cwd=ROOT,
             check=True,
         )
-        if generated.read_bytes() != (ROOT / "web/src/api/schema.d.ts").read_bytes():
-            raise SystemExit("web/src/api/schema.d.ts is stale")
+        generated_types = generated.read_bytes()
+        types_path = ROOT / "web/src/api/schema.d.ts"
+        if generated_types != types_path.read_bytes():
+            if not update:
+                raise SystemExit("web/src/api/schema.d.ts is stale")
+            types_path.write_bytes(generated_types)
 
 
 def create_archive(destination: Path) -> None:
@@ -99,8 +105,9 @@ def create_archive(destination: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--archive", type=Path)
+    parser.add_argument("--update", action="store_true")
     arguments = parser.parse_args()
-    verify()
+    verify(update=arguments.update)
     if arguments.archive is not None:
         create_archive(arguments.archive)
 

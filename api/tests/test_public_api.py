@@ -1,8 +1,8 @@
 from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
-
 from vonk_catalog.models import Publisher, Recipe, RecipeRevision
+from vonk_catalog.search import search_document
 
 
 def publish(engine, *, slug: str = "qwen3") -> RecipeRevision:
@@ -24,12 +24,16 @@ def publish(engine, *, slug: str = "qwen3") -> RecipeRevision:
                 "metadata": {"title": "Qwen3", "description": "Demo", "tags": []},
                 "workload": {"family": "qwen3", "capabilities": ["openai.chat"]},
                 "runtime": {"family": "vllm"},
-                "resources": {"per_node": {"installed_bytes": 66, "resident_memory_bytes": 72}},
+                "resources": {
+                    "per_node": {"installed_bytes": 66, "resident_memory_bytes": 72}
+                },
                 "topology": {"kind": "single", "min_nodes": 1, "max_nodes": 1},
             },
             published_at=datetime(2026, 8, 7, 12, 0, tzinfo=UTC),
         )
         session.add(revision)
+        session.flush()
+        session.add(search_document(publisher, recipe, revision))
         session.commit()
         return revision
 

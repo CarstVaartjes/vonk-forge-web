@@ -23,6 +23,7 @@ from .models import (
 )
 from .problems import Problem
 from .publishers import PublisherService
+from .search import search_document
 
 Clock = Callable[[], datetime]
 
@@ -160,6 +161,7 @@ class PublicationService:
         )
         self.database.add(revision)
         self.database.flush()
+        self.database.add(search_document(publisher, recipe, revision))
         self.database.add(
             PublicationRequest(
                 publisher_id=publisher.id,

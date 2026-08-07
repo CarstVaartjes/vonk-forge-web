@@ -3,12 +3,15 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator
 
 from fastapi import APIRouter, Depends, Header, Query, Response
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .contracts import contract_path
+from .models import RecipeDraft, ValidationResult
 from .moderation import ModerationService
 from .problems import Problem
 from .repositories import CatalogRepository, PublishedRecipe
+from .search import SearchService
 
 SessionProvider = Callable[[], Session]
 
@@ -31,32 +34,45 @@ def build_public_router(session_provider: SessionProvider | None) -> APIRouter:
     def list_recipes(
         q: str | None = Query(default=None, min_length=1, max_length=120),
         publisher: str | None = Query(default=None, max_length=63),
+        official: bool | None = Query(default=None),
         runtime: str | None = Query(default=None, max_length=64),
         workload_family: str | None = Query(default=None, max_length=64),
+        capability: str | None = Query(default=None, max_length=64),
         topology: str | None = Query(default=None, pattern="^(single|gang)$"),
+        tested_node_count: int | None = Query(default=None, ge=1, le=16),
         min_nodes: int | None = Query(default=None, ge=1, le=16),
         max_nodes: int | None = Query(default=None, ge=1, le=16),
         max_memory_bytes: int | None = Query(default=None, ge=1),
         max_installed_bytes: int | None = Query(default=None, ge=1),
+        sort: str = Query(default="newest", pattern="^(newest|title|disk|memory)$"),
+        cursor: str | None = Query(default=None, max_length=512),
         limit: int = Query(default=20, ge=1, le=100),
         session: Session = Depends(database_session),
     ) -> dict[str, object]:
-        items = CatalogRepository(session).list_latest(
+        page = SearchService(session).search(
             query=q,
             publisher=publisher,
+            official=official,
             runtime=runtime,
             workload_family=workload_family,
+            capability=capability,
             topology=topology,
             min_nodes=min_nodes,
             max_nodes=max_nodes,
+            tested_node_count=tested_node_count,
             max_memory_bytes=max_memory_bytes,
             max_installed_bytes=max_installed_bytes,
+            sort=sort,
+            cursor=cursor,
             limit=limit,
         )
-        visible = [item for item in items if _visible(session, item)]
+        visible = [item for item in page.items if _visible(session, item)]
         return {
-            "items": [_summary(item, _warning(session, item)) for item in visible],
-            "next_cursor": None,
+            "items": [
+                _summary(item, _warning(session, item), _facts(session, item))
+                for item in visible
+            ],
+            "next_cursor": page.next_cursor,
         }
 
     @router.get("/recipes/{publisher}/{slug}")
@@ -69,7 +85,7 @@ def build_public_router(session_provider: SessionProvider | None) -> APIRouter:
         if item is None or not _visible(session, item):
             raise _not_found()
         return {
-            **_summary(item, _warning(session, item)),
+            **_summary(item, _warning(session, item), _facts(session, item)),
             "latest_revision": _revision(item),
         }
 
@@ -117,7 +133,11 @@ def _not_found() -> Problem:
     )
 
 
-def _summary(item: PublishedRecipe, warning: str | None = None) -> dict[str, object]:
+def _summary(
+    item: PublishedRecipe,
+    warning: str | None = None,
+    facts: dict[str, object] | None = None,
+) -> dict[str, object]:
     document = item.revision.document
     return {
         "publisher": item.publisher.slug,
@@ -128,10 +148,23 @@ def _summary(item: PublishedRecipe, warning: str | None = None) -> dict[str, obj
         "content_sha256": item.revision.content_sha256,
         "published_at": item.revision.published_at.isoformat(),
         "runtime": document.get("runtime"),
+        "artifacts": document.get("artifacts"),
+        "provenance": document.get("provenance"),
         "workload": document.get("workload"),
         "resources": document.get("resources"),
         "topology": document.get("topology"),
         "moderation_warning": warning,
+        "facts": facts,
+        "import": {
+            "uri": (
+                f"vonk://catalog/{item.publisher.slug}/{item.recipe.slug}"
+                f"@sha256:{item.revision.content_sha256}"
+            ),
+            "instruction": (
+                "Open this recipe in your local Vonk Forge and review its exact "
+                "sizing before import."
+            ),
+        },
     }
 
 
@@ -145,6 +178,42 @@ def _visible(session: Session, item: PublishedRecipe) -> bool:
 
 def _warning(session: Session, item: PublishedRecipe) -> str | None:
     return ModerationService(session).revision_state(item.revision.id).warning
+
+
+def _facts(session: Session, item: PublishedRecipe) -> dict[str, object]:
+    validation = session.scalar(
+        select(ValidationResult)
+        .join(RecipeDraft, RecipeDraft.id == ValidationResult.draft_id)
+        .where(
+            RecipeDraft.recipe_id == item.recipe.id,
+            ValidationResult.content_sha256 == item.revision.content_sha256,
+        )
+        .order_by(ValidationResult.created_at.desc())
+    )
+    checks = [] if validation is None else validation.checks
+    registry = next(
+        (
+            check.get("observed")
+            for check in checks
+            if check.get("code") == "registry.metadata_observed"
+        ),
+        None,
+    )
+    publisher_tested = any(
+        check.get("code") == "evidence.publisher_submitted_accepted"
+        and check.get("passed") is True
+        for check in checks
+    )
+    return {
+        "declared": True,
+        "registry_observed": registry,
+        "publisher_tested": publisher_tested,
+        "publisher_tested_label": "Publisher-submitted; not Vonk-certified",
+        "vonk_verified": False,
+        "last_validation": (
+            None if validation is None else validation.created_at.isoformat()
+        ),
+    }
 
 
 def _revision(item: PublishedRecipe) -> dict[str, object]:
