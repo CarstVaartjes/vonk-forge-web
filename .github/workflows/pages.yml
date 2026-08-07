@@ -41,7 +41,7 @@ jobs:
           test -n "$CLOUDFLARE_API_TOKEN" || { echo "CLOUDFLARE_API_TOKEN is missing from the production environment" >&2; exit 1; }
           test -n "$CLOUDFLARE_PAGES_PROJECT" || { echo "CLOUDFLARE_PAGES_PROJECT is missing from the production environment" >&2; exit 1; }
       - name: Publish production Pages deployment
-        uses: cloudflare/wrangler-action@9681c2997648301493e78cacbfb790a9f19c833f
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
