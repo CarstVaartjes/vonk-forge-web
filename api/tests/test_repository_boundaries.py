@@ -53,7 +53,7 @@ def test_schema_cannot_enable_commands_or_privilege() -> None:
         (ROOT / "schemas" / "fixtures" / "recipe-v1-minimal.json").read_text()
     )
     recipe["runtime"]["command"] = ["sh", "-c", "id"]
-    recipe["security"]["privileged"] = True
+    recipe["runtime"]["security"]["privileged"] = True
 
     with pytest.raises(RecipeContractError):
         validate_recipe(recipe)

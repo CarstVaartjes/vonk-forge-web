@@ -44,8 +44,11 @@ def verify(*, update: bool = False) -> None:
             "name": "ai.vonkforge.runtime-interface",
             "value": "v1",
         },
-        "accepted_config_users": ["", "0", "root", "0:0", "root:root"],
-        "host_isolation": "rootless-podman-single-uid",
+        "config_user_policy": {
+            "kind": "numeric-non-root",
+            "pattern": "^[1-9][0-9]*(?::[1-9][0-9]*)?$",
+        },
+        "host_isolation": "rootless-podman-subuid",
     }:
         raise SystemExit("container runtime policy v1 is invalid")
 

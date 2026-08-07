@@ -11,6 +11,8 @@ from vonk_catalog.models import (
     PublisherMembership,
     Recipe,
     RecipeFork,
+    RevisionSourceBundle,
+    SourceBundle,
     User,
     ValidationResult,
 )
@@ -38,6 +40,18 @@ def _setup(session):
                 publisher_id=community.id, user_id=user.id, role="owner"
             ),
         ]
+    )
+    session.add(
+        SourceBundle(
+            sha256="a" * 64,
+            media_type="application/vnd.vonk.source-bundle.v1+tar",
+            archive_bytes=1,
+            total_bytes=1,
+            file_count=1,
+            storage_key=f"aa/{'a' * 64}.tar",
+            manifest={"schema_version": 1, "files": [{"path": "Dockerfile"}]},
+            verified_at=datetime(2026, 8, 7, tzinfo=UTC),
+        )
     )
     session.flush()
     return user, official, community
@@ -101,12 +115,28 @@ def test_publish_is_immutable_numbered_idempotent_and_official_is_derived(
     assert first.revision.revision_number == 1
     assert first.official
     assert first.revision.content_sha256 == draft.content_sha256
+    assert (
+        session.get(RevisionSourceBundle, first.revision.id).source_bundle_sha256
+        == "a" * 64
+    )
 
     with pytest.raises(Problem) as conflict:
         service.publish(
             user.id, official.slug, draft.id, idempotency_key="different-key"
         )
     assert conflict.value.code == "publication.already_published"
+
+
+def test_validation_and_publication_require_the_exact_uploaded_source(session) -> None:
+    user, official, _ = _setup(session)
+    draft = _draft(session, user, official)
+    session.delete(session.get(SourceBundle, "a" * 64))
+    session.flush()
+
+    with pytest.raises(Problem) as missing:
+        PublicationService(session).request_validation(user.id, official.slug, draft.id)
+
+    assert missing.value.code == "publication.source_bundle_required"
 
 
 def test_fork_preserves_source_revision_hash_and_requires_own_validation(

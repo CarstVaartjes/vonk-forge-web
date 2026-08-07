@@ -3,20 +3,31 @@ from __future__ import annotations
 from collections.abc import Callable, Iterator
 
 from fastapi import APIRouter, Depends, Header, Query, Response
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from .contracts import contract_path
-from .models import RecipeDraft, ValidationResult
+from .models import (
+    Publisher,
+    Recipe,
+    RecipeDraft,
+    RecipeRevision,
+    RevisionSourceBundle,
+    ValidationResult,
+)
 from .moderation import ModerationService
 from .problems import Problem
 from .repositories import CatalogRepository, PublishedRecipe
 from .search import SearchService
+from .source_bundles import SourceBundleError, SourceBundleStore
 
 SessionProvider = Callable[[], Session]
 
 
-def build_public_router(session_provider: SessionProvider | None) -> APIRouter:
+def build_public_router(
+    session_provider: SessionProvider | None, source_bundles: SourceBundleStore
+) -> APIRouter:
     router = APIRouter(prefix="/v1")
 
     def database_session() -> Iterator[Session]:
@@ -136,6 +147,46 @@ def build_public_router(session_provider: SessionProvider | None) -> APIRouter:
 
         return json.loads(contract_path("recipe", "v1.schema.json").read_text())
 
+    @router.get("/source-bundles/{sha256}", response_model=None)
+    def download_source_bundle(
+        sha256: str, session: Session = Depends(database_session)
+    ) -> FileResponse:
+        if len(sha256) != 64 or any(
+            character not in "0123456789abcdef" for character in sha256
+        ):
+            raise _not_found()
+        published = session.execute(
+            select(Publisher, Recipe, RecipeRevision)
+            .join(Recipe, Recipe.publisher_id == Publisher.id)
+            .join(RecipeRevision, RecipeRevision.recipe_id == Recipe.id)
+            .join(
+                RevisionSourceBundle,
+                RevisionSourceBundle.revision_id == RecipeRevision.id,
+            )
+            .where(
+                RevisionSourceBundle.source_bundle_sha256 == sha256,
+                Recipe.state == "active",
+            )
+        ).first()
+        if published is None:
+            raise _not_found()
+        item = PublishedRecipe(published[0], published[1], published[2])
+        if not _visible(session, item):
+            raise _not_found()
+        try:
+            stored = source_bundles.get(sha256)
+        except SourceBundleError:
+            raise _not_found() from None
+        return FileResponse(
+            stored.path,
+            media_type="application/vnd.vonk.source-bundle.v1+tar",
+            headers={
+                "Cache-Control": "public, max-age=31536000, immutable",
+                "ETag": f'"sha256:{sha256}"',
+                "Content-Disposition": f'attachment; filename="{sha256}.tar"',
+            },
+        )
+
     return router
 
 
@@ -154,6 +205,32 @@ def _summary(
     facts: dict[str, object] | None = None,
 ) -> dict[str, object]:
     document = item.revision.document
+    profiles = document.get("deployment_profiles", [])
+    role_resources = [
+        role.get("resources", {})
+        for profile in profiles
+        if isinstance(profile, dict)
+        for role in profile.get("roles", [])
+        if isinstance(role, dict)
+    ]
+    disk_fields = (
+        "image_bytes",
+        "artifact_bytes",
+        "staging_bytes",
+        "cache_bytes",
+        "rollback_bytes",
+        "safety_margin_bytes",
+    )
+    disk = [
+        sum(int(resources.get("disk", {}).get(field, 0)) for field in disk_fields)
+        for resources in role_resources
+        if isinstance(resources, dict)
+    ]
+    memory = [
+        int(resources.get("memory", {}).get("startup_peak_bytes", 0))
+        for resources in role_resources
+        if isinstance(resources, dict)
+    ]
     return {
         "publisher": item.publisher.slug,
         "slug": item.recipe.slug,
@@ -165,11 +242,22 @@ def _summary(
         "content_sha256": item.revision.content_sha256,
         "published_at": item.revision.published_at.isoformat(),
         "runtime": document.get("runtime"),
+        "build": document.get("build"),
         "artifacts": document.get("artifacts"),
         "provenance": document.get("provenance"),
         "workload": document.get("workload"),
-        "resources": document.get("resources"),
-        "topology": document.get("topology"),
+        "deployment_profiles": profiles,
+        "capacity": {
+            "profile_node_counts": sorted(
+                {
+                    int(profile["node_count"])
+                    for profile in profiles
+                    if isinstance(profile, dict) and "node_count" in profile
+                }
+            ),
+            "maximum_installed_bytes_per_node": max(disk, default=0),
+            "maximum_runtime_memory_bytes_per_node": max(memory, default=0),
+        },
         "moderation_warning": warning,
         "facts": facts,
         "import": {
@@ -206,13 +294,9 @@ def _facts(session: Session, item: PublishedRecipe) -> dict[str, object]:
         .order_by(ValidationResult.created_at.desc())
     )
     checks = [] if validation is None else validation.checks
-    registry = next(
-        (
-            check.get("observed")
-            for check in checks
-            if check.get("code") == "registry.metadata_observed"
-        ),
-        None,
+    source_observed = any(
+        check.get("code") == "source.bundle_verified" and check.get("passed") is True
+        for check in checks
     )
     publisher_tested = any(
         check.get("code") == "evidence.publisher_submitted_accepted"
@@ -221,7 +305,7 @@ def _facts(session: Session, item: PublishedRecipe) -> dict[str, object]:
     )
     return {
         "declared": True,
-        "registry_observed": registry,
+        "source_bundle_observed": source_observed,
         "publisher_tested": publisher_tested,
         "publisher_tested_label": "Publisher-submitted; not Vonk-certified",
         "vonk_verified": False,

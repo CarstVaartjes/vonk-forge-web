@@ -545,6 +545,43 @@
         },
         "summary": "Recipe Schema"
       }
+    },
+    "/v1/source-bundles/{sha256}": {
+      "get": {
+        "operationId": "download_source_bundle_v1_source_bundles__sha256__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "sha256",
+            "required": true,
+            "schema": {
+              "title": "Sha256",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Source Bundle"
+      }
     }
   }
 }

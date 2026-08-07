@@ -9,7 +9,7 @@ from jsonschema import Draft202012Validator, FormatChecker
 from sqlalchemy import Engine, text
 
 from .leases import LeasedJob
-from .registry import ImageMetadata, RegistryClient
+from .registry import RegistryClient
 
 REQUIRED_CHECKS = {
     "container.started",
@@ -29,50 +29,38 @@ def _check(code: str, passed: bool, detail: str) -> dict[str, object]:
     return {"code": code, "passed": passed, "detail": detail}
 
 
-def validate_image_contract(
-    image: ImageMetadata, *, policy_path: Path
-) -> tuple[dict[str, object], ...]:
-    policy = json.loads(policy_path.read_text(encoding="utf-8"))
-    label = policy["required_image_label"]
-    accepted_users = policy["accepted_config_users"]
-    configured_user = image.config_user if image.config_user is not None else ""
-    return (
-        _check(
-            "registry.arm64_available",
-            image.architecture == policy["architecture"],
-            "image architecture matches the Vonk runtime contract",
-        ),
-        _check(
-            "registry.runtime_interface",
-            image.labels.get(label["name"]) == label["value"],
-            "image declares the required Vonk runtime interface label",
-        ),
-        _check(
-            "registry.container_root",
-            configured_user in accepted_users,
-            "image runs as container root inside the agent's rootless single-UID namespace",
-        ),
-    )
-
-
 def validate_resource_envelope(
-    document: dict[str, object], *, image_layer_bytes: int, artifact_sizes: list[int]
+    document: dict[str, object], *, artifact_sizes: list[int]
 ) -> tuple[dict[str, object], ...]:
     try:
         artifacts = document["artifacts"]
-        per_node = document["resources"]["per_node"]
-        declared_artifact_sizes = [
-            int(artifact["expected_bytes"]) for artifact in artifacts
-        ]
-        download_bytes = int(per_node["download_bytes"])
-        installed_bytes = int(per_node["installed_bytes"])
-        staging_bytes = int(per_node["staging_bytes"])
+        download_by_id = {
+            str(artifact["id"]): int(artifact["download_bytes"])
+            for artifact in artifacts
+        }
+        declared_artifact_sizes = list(download_by_id.values())
+        installed_by_id = {
+            str(artifact["id"]): int(artifact["installed_bytes"])
+            for artifact in artifacts
+        }
+        profiles = document["deployment_profiles"]
     except (KeyError, TypeError, ValueError) as error:
         raise ValidationJobProblem("draft resource envelope is invalid") from error
     if len(artifact_sizes) != len(declared_artifact_sizes):
         raise ValidationJobProblem("artifact size observations are incomplete")
-    total_observed = image_layer_bytes + sum(artifact_sizes)
-    largest_artifact = max(artifact_sizes, default=0)
+    profiles_cover_artifacts = True
+    staging_covers_download = True
+    for profile in profiles:
+        for role in profile["roles"]:
+            disk = role["resources"]["disk"]
+            required = sum(
+                installed_by_id[identifier] for identifier in role["artifacts"]
+            )
+            profiles_cover_artifacts &= int(disk["artifact_bytes"]) >= required
+            staging_covers_download &= int(disk["staging_bytes"]) >= max(
+                (download_by_id[identifier] for identifier in role["artifacts"]),
+                default=0,
+            )
     return (
         _check(
             "resources.artifact_sizes",
@@ -80,19 +68,14 @@ def validate_resource_envelope(
             "declared immutable artifact sizes match independently observed metadata",
         ),
         _check(
-            "resources.download_bytes",
-            download_bytes >= total_observed,
-            "declared download bytes cover observed image layers and artifacts",
+            "resources.profile_artifact_bytes",
+            profiles_cover_artifacts,
+            "every role's disk envelope covers its immutable installed artifacts",
         ),
         _check(
-            "resources.installed_bytes",
-            installed_bytes >= total_observed,
-            "declared installed bytes cover observed image layers and artifacts",
-        ),
-        _check(
-            "resources.staging_bytes",
-            staging_bytes >= largest_artifact,
-            "declared staging bytes cover the largest immutable artifact",
+            "resources.profile_staging_bytes",
+            staging_covers_download,
+            "every role's staging envelope covers its largest artifact download",
         ),
     )
 
@@ -113,8 +96,8 @@ def validate_test_evidence(
     report: dict[str, object],
     *,
     recipe_sha256: str,
-    image_digest: str,
-    tested_node_counts: set[int],
+    source_bundle_sha256: str,
+    deployment_profiles: dict[str, int],
     schema_path: Path,
     now: datetime,
 ) -> EvidenceValidation:
@@ -144,17 +127,20 @@ def validate_test_evidence(
     )
     checks.append(
         _check(
-            "evidence.image_mismatch",
-            report.get("image_digest") == image_digest,
-            "report is bound to the submitted image digest",
+            "evidence.source_bundle_mismatch",
+            report.get("source_bundle_sha256") == source_bundle_sha256,
+            "report is bound to the published source bundle",
         )
     )
     node_count = report.get("node_count")
+    profile = report.get("deployment_profile")
     checks.append(
         _check(
             "evidence.node_count_unverified",
-            isinstance(node_count, int) and node_count in tested_node_counts,
-            "report node count is declared as tested by the recipe",
+            isinstance(profile, str)
+            and isinstance(node_count, int)
+            and deployment_profiles.get(profile) == node_count,
+            "report names an exact recipe deployment profile and node count",
         )
     )
     runtime = report.get("runtime")
@@ -269,40 +255,43 @@ def process_validation_job(
     if not isinstance(document, dict):
         raise ValidationJobProblem("draft document is invalid")
     try:
-        runtime = document["runtime"]
-        topology = document["topology"]
-        image_reference = runtime["image"]
-        tested_node_counts = set(topology["tested_node_counts"])
+        build = document["build"]
+        source_bundle_sha256 = build["context"]["sha256"]
+        deployment_profiles = {
+            str(profile["name"]): int(profile["node_count"])
+            for profile in document["deployment_profiles"]
+        }
     except (KeyError, TypeError) as error:
-        raise ValidationJobProblem("draft runtime or topology is invalid") from error
-    if not isinstance(image_reference, str) or not all(
-        isinstance(value, int) for value in tested_node_counts
-    ):
-        raise ValidationJobProblem("draft runtime or topology is invalid")
-    image = registry.inspect(image_reference)
-    policy_path = schema_path.parents[1] / "container-runtime-policy/v1.json"
+        raise ValidationJobProblem(
+            "draft source or deployment profiles are invalid"
+        ) from error
+    with engine.connect() as connection:
+        source = connection.execute(
+            text("SELECT manifest FROM source_bundles WHERE sha256 = :sha256"),
+            {"sha256": source_bundle_sha256},
+        ).scalar_one_or_none()
+    if source is None:
+        raise ValidationJobProblem("draft source bundle is unavailable")
+    if isinstance(source, str):
+        source = json.loads(source)
+    files = source.get("files") if isinstance(source, dict) else None
+    dockerfile = build.get("dockerfile") if isinstance(build, dict) else None
+    source_files = (
+        {item.get("path") for item in files if isinstance(item, dict)}
+        if isinstance(files, list)
+        else set()
+    )
     checks: list[dict[str, object]] = [
         _check(
-            "registry.digest_verified",
+            "source.bundle_verified",
             True,
-            "registry bytes match the submitted digest",
+            "canonical source bundle digest is present in the catalog",
         ),
-        *validate_image_contract(image, policy_path=policy_path),
-        {
-            "code": "registry.metadata_observed",
-            "passed": True,
-            "detail": "registry metadata observed without pulling layer blobs",
-            "observed": {
-                "submitted_digest": image.submitted_digest,
-                "arm64_manifest_digest": image.manifest_digest,
-                "layer_bytes": image.layer_bytes,
-                "manifest_media_type": image.manifest_media_type,
-                "config_media_type": image.config_media_type,
-                "layer_media_types": list(image.layer_media_types),
-                "config_user": image.config_user,
-                "labels": image.labels,
-            },
-        },
+        _check(
+            "source.dockerfile_present",
+            isinstance(dockerfile, str) and dockerfile in source_files,
+            "the declared Dockerfile exists in the verified source manifest",
+        ),
     ]
     raw_artifacts = document.get("artifacts")
     if not isinstance(raw_artifacts, list) or not all(
@@ -321,7 +310,6 @@ def process_validation_job(
     checks.extend(
         validate_resource_envelope(
             document,
-            image_layer_bytes=image.layer_bytes,
             artifact_sizes=artifact_sizes,
         )
     )
@@ -333,8 +321,8 @@ def process_validation_job(
                 validate_test_evidence(
                     report,
                     recipe_sha256=expected_hash,
-                    image_digest=image.submitted_digest,
-                    tested_node_counts=tested_node_counts,
+                    source_bundle_sha256=source_bundle_sha256,
+                    deployment_profiles=deployment_profiles,
                     schema_path=schema_path,
                     now=datetime.now(UTC),
                 )

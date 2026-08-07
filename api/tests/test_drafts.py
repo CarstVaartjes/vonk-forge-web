@@ -81,11 +81,11 @@ def test_schema_paths_evidence_hash_and_cross_publisher_access(session) -> None:
     owner, outsider, publisher = _setup(session)
     service = DraftService(session)
     invalid = _recipe()
-    invalid["resources"]["per_node"]["installed_bytes"] = 0
+    invalid["deployment_profiles"][0]["node_count"] = 0
     with pytest.raises(Problem) as schema:
         service.create(owner.id, publisher.slug, invalid, idempotency_key="bad")
     assert schema.value.code == "draft.schema_invalid"
-    assert "resources.per_node.installed_bytes" in schema.value.detail
+    assert "deployment_profiles.0.node_count" in schema.value.detail
 
     valid = _recipe()
     draft = service.create(owner.id, publisher.slug, valid, idempotency_key="good")

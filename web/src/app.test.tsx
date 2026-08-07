@@ -10,7 +10,7 @@ test("explains the public catalog boundary", () => {
     screen.getByRole("heading", { name: /many sparks\. one forge/i }),
   ).toBeVisible();
   expect(
-    screen.getByText(/images and weights stay in their registries/i),
+    screen.getByText(/verified build source here.*weights at their origin/i),
   ).toBeVisible();
 });
 

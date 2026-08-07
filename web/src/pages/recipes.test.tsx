@@ -12,12 +12,17 @@ const recipe = {
   revision_id: "revision-qwen-3",
   content_sha256: "a".repeat(64),
   published_at: "2026-08-07T10:00:00Z",
-  runtime: { family: "vllm", image: `registry.example/vonk/qwen@sha256:${"b".repeat(64)}` },
+  runtime: { adapter: "vllm", entrypoint: ["vllm", "serve", "/models"] },
+  build: { context: { sha256: "b".repeat(64), expected_bytes: 2048 }, dockerfile: "Dockerfile" },
   workload: { family: "qwen", capabilities: ["openai.chat"] },
-  resources: { per_node: { installed_bytes: 20 * 1024 ** 3, resident_memory_bytes: 48 * 1024 ** 3 }, measurement: "measured" },
-  topology: { kind: "single", min_nodes: 1, max_nodes: 1, tested_node_counts: [1] },
+  deployment_profiles: [{ name: "solo", node_count: 1 }],
+  capacity: {
+    profile_node_counts: [1],
+    maximum_installed_bytes_per_node: 20 * 1024 ** 3,
+    maximum_runtime_memory_bytes_per_node: 48 * 1024 ** 3,
+  },
   moderation_warning: null,
-  facts: { declared: true, registry_observed: { layer_bytes: 1 }, publisher_tested: true, publisher_tested_label: "Publisher-submitted; not Vonk-certified", vonk_verified: false, last_validation: "2026-08-07T10:00:00Z" },
+  facts: { declared: true, source_bundle_observed: true, publisher_tested: true, publisher_tested_label: "Publisher-submitted; not Vonk-certified", vonk_verified: false, last_validation: "2026-08-07T10:00:00Z" },
 };
 
 
@@ -37,7 +42,7 @@ test("shows sizing, immutable identity, and evidence provenance", async () => {
   expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
   expect(screen.getByText("20 GiB")).toBeVisible();
   expect(screen.getByText("48 GiB")).toBeVisible();
-  expect(screen.getByText("Registry observed")).toBeVisible();
+  expect(screen.getByText("Source verified")).toBeVisible();
   expect(screen.getByText("Publisher-tested")).toBeVisible();
   expect(screen.getByText(/not a Vonk endorsement/i)).toBeVisible();
   expect(screen.getByText(/sha256:aaaa/)).toBeVisible();

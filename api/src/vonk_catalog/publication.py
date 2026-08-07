@@ -19,6 +19,8 @@ from .models import (
     RecipeDraft,
     RecipeFork,
     RecipeRevision,
+    RevisionSourceBundle,
+    SourceBundle,
     ValidationResult,
 )
 from .moderation import ModerationService
@@ -60,6 +62,7 @@ class PublicationService:
     ) -> CatalogJob:
         PublisherService(self.database).require_role(user_id, publisher_slug, "editor")
         draft = DraftService(self.database).get(user_id, publisher_slug, draft_id)
+        self._require_source_bundle(draft)
         job = enqueue_draft_validation(self.database, draft)
         draft.state = "validating"
         self.database.flush()
@@ -87,6 +90,7 @@ class PublicationService:
                 "Draft integrity check failed",
                 "Save the draft again before validation.",
             )
+        source_bundle = self._require_source_bundle(draft)
         previous = self.database.scalar(
             select(PublicationRequest).where(
                 PublicationRequest.publisher_id == publisher.id,
@@ -162,6 +166,12 @@ class PublicationService:
         )
         self.database.add(revision)
         self.database.flush()
+        self.database.add(
+            RevisionSourceBundle(
+                revision_id=revision.id,
+                source_bundle_sha256=source_bundle.sha256,
+            )
+        )
         self.database.add(search_document(publisher, recipe, revision))
         self.database.add(
             PublicationRequest(
@@ -179,6 +189,22 @@ class PublicationService:
         draft.state = "published"
         self.database.flush()
         return Published(revision, publisher.system_role == "official")
+
+    def _require_source_bundle(self, draft: RecipeDraft) -> SourceBundle:
+        build = draft.document.get("build")
+        context = build.get("context") if isinstance(build, dict) else None
+        digest = context.get("sha256") if isinstance(context, dict) else None
+        bundle = (
+            self.database.get(SourceBundle, digest) if isinstance(digest, str) else None
+        )
+        if bundle is None:
+            raise Problem(
+                409,
+                "publication.source_bundle_required",
+                "Recipe source bundle is unavailable",
+                "Upload and verify the exact source bundle before validation or publication.",
+            )
+        return bundle
 
     def fork(
         self,

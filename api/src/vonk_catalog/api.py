@@ -16,6 +16,8 @@ from .publisher_api import build_publisher_router
 from .security import install_security
 from .session import SessionService
 from .settings import Settings
+from .source_api import build_source_router
+from .source_bundles import SourceBundleStore
 
 ReadinessProbe = Callable[[], None]
 
@@ -31,6 +33,7 @@ def create_app(
     oauth_backend: OAuthBackend | None = None,
 ) -> FastAPI:
     resolved_settings = settings or Settings()
+    source_bundles = SourceBundleStore(resolved_settings.source_bundle_path)
     app = FastAPI(title="Vonk Forge Catalog API", version="1.0.0")
     install_problem_handling(app)
     install_security(app, resolved_settings, database_sessions)
@@ -59,7 +62,7 @@ def create_app(
             )
         return {"service": "vonk-catalog-api", "status": "ready"}
 
-    app.include_router(build_public_router(database_sessions))
+    app.include_router(build_public_router(database_sessions, source_bundles))
     if database_sessions is not None:
         auth_services = AuthServices(
             database_sessions=database_sessions,
@@ -84,6 +87,7 @@ def create_app(
         )
         app.include_router(build_publisher_router(auth_services))
         app.include_router(build_draft_router(auth_services))
+        app.include_router(build_source_router(auth_services, source_bundles))
         app.include_router(build_publication_router(auth_services))
         app.include_router(
             build_moderation_router(

@@ -20,11 +20,11 @@ export function HomePage() {
 
       <section className="boundary" aria-labelledby="boundary-title">
         <p className="eyebrow">A clean boundary</p>
-        <h2 id="boundary-title">Metadata here. Payloads where they belong.</h2>
+        <h2 id="boundary-title">Verified build source here. Weights at their origin.</h2>
         <p>
-          Images and weights stay in their registries. Vonk Forge stores the
-          typed recipe, immutable digests, sizing, topology, and test evidence
-          needed to decide whether it belongs on your cluster.
+          Vonk Forge stores each small content-addressed source bundle with the
+          typed recipe, sizing, deployment profiles, and test evidence. Your Sparks
+          build it rootlessly; model weights remain at their immutable origin.
         </p>
       </section>
     </>

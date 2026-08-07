@@ -10,7 +10,7 @@ function bytes(value: number | undefined): string {
 }
 
 export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
-  const perNode = recipe.resources?.per_node;
+  const counts = recipe.capacity?.profile_node_counts ?? [];
   return (
     <article className="recipe-card">
       <div className="card-heading">
@@ -24,20 +24,20 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
       </div>
       {recipe.moderation_warning ? <p className="warning" role="status">{recipe.moderation_warning}</p> : null}
       <dl className="recipe-facts">
-        <div><dt>Runtime</dt><dd>{recipe.runtime?.family ?? "Unknown"}</dd></div>
-        <div><dt>Topology</dt><dd>{recipe.topology?.kind === "gang" ? `${recipe.topology.min_nodes}–${recipe.topology.max_nodes} nodes` : "Single Spark"}</dd></div>
-        <div><dt>Disk / node</dt><dd>{bytes(perNode?.installed_bytes)}</dd></div>
-        <div><dt>RAM / node</dt><dd>{bytes(perNode?.resident_memory_bytes)}</dd></div>
+        <div><dt>Runtime</dt><dd>{recipe.runtime?.adapter ?? "Unknown"}</dd></div>
+        <div><dt>Profiles</dt><dd>{counts.length ? counts.map(value => `${value} node${value === 1 ? "" : "s"}`).join(", ") : "Unknown"}</dd></div>
+        <div><dt>Disk / node</dt><dd>{bytes(recipe.capacity?.maximum_installed_bytes_per_node)}</dd></div>
+        <div><dt>RAM / node</dt><dd>{bytes(recipe.capacity?.maximum_runtime_memory_bytes_per_node)}</dd></div>
       </dl>
       <div className="trust-row" aria-label="Evidence provenance">
         <span>Declared</span>
-        <span>{recipe.facts?.registry_observed ? "Registry observed" : "Registry pending"}</span>
+        <span>{recipe.facts?.source_bundle_observed ? "Source verified" : "Source pending"}</span>
         <span>{recipe.facts?.publisher_tested ? "Publisher-tested" : "No accepted test report"}</span>
       </div>
       {recipe.provenance?.source_kind === "fork" ? (
         <p className="evidence-note">Fork · {recipe.provenance.source_reference}</p>
       ) : null}
-      <p className="hash">Image · {recipe.runtime?.image ?? "Not declared"}</p>
+      <p className="hash">Source · sha256:{recipe.build?.context?.sha256 ?? "Not declared"}</p>
       {recipe.artifacts?.[0] ? (
         <p className="hash">
           Weights · {recipe.artifacts[0].repository}@{recipe.artifacts[0].revision}

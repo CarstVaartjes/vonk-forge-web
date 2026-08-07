@@ -9,6 +9,8 @@ from vonk_catalog.models import (
     PublisherMembership,
     Recipe,
     RecipeRevision,
+    RevisionSourceBundle,
+    SourceBundle,
     User,
 )
 
@@ -18,7 +20,9 @@ def persist_identity(session):
     publisher = Publisher(slug="community", name="Community")
     session.add_all([user, publisher])
     session.flush()
-    session.add(PublisherMembership(user_id=user.id, publisher_id=publisher.id, role="owner"))
+    session.add(
+        PublisherMembership(user_id=user.id, publisher_id=publisher.id, role="owner")
+    )
     recipe = Recipe(publisher_id=publisher.id, slug="demo", title="Demo")
     session.add(recipe)
     session.flush()
@@ -92,6 +96,48 @@ def test_published_revision_cannot_be_mutated_or_deleted(session) -> None:
     session.commit()
 
     revision.document = {"schema_version": 2}
+    with pytest.raises(ValueError, match="immutable"):
+        session.flush()
+
+
+def test_published_revision_source_association_is_immutable(session) -> None:
+    _, _, recipe = persist_identity(session)
+    revision = RecipeRevision(
+        recipe_id=recipe.id,
+        revision_number=1,
+        content_sha256="c" * 64,
+        schema_version=1,
+        document={"schema_version": 1},
+        published_at=datetime.now(UTC),
+    )
+    sources = [
+        SourceBundle(
+            sha256=character * 64,
+            media_type="application/vnd.vonk.source-bundle.v1+tar",
+            archive_bytes=1024,
+            total_bytes=16,
+            file_count=1,
+            storage_key=f"{character}.tar",
+            manifest={"files": []},
+            verified_at=datetime.now(UTC),
+        )
+        for character in ("d", "e")
+    ]
+    session.add_all([revision, *sources])
+    session.flush()
+    association = RevisionSourceBundle(
+        revision_id=revision.id, source_bundle_sha256=sources[0].sha256
+    )
+    session.add(association)
+    session.commit()
+
+    association.source_bundle_sha256 = sources[1].sha256
+    with pytest.raises(ValueError, match="immutable"):
+        session.flush()
+    session.rollback()
+
+    association = session.get(RevisionSourceBundle, revision.id)
+    session.delete(association)
     with pytest.raises(ValueError, match="immutable"):
         session.flush()
     session.rollback()

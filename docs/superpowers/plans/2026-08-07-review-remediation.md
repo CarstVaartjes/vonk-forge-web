@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Runtime v1 is Linux/ARM64, digest-pinned, labeled `ai.vonkforge.runtime-interface=v1`, and configured as root inside the local rootless user namespace.
+- Runtime v1 is Linux/ARM64, digest-pinned, labeled `ai.vonkforge.runtime-interface=v1`, and configured with an explicit numeric non-root user inside the local rootless user namespace.
 - Outbound registry endpoints and redirects are credential-free public HTTPS and connect only to the validated IP.
 - Anonymous rate-limit identity is the trusted client IP; counters are shared in PostgreSQL.
 - Public revision responses always revalidate mutable moderation state.

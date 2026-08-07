@@ -2,11 +2,10 @@ import type { Draft } from "../api/client";
 
 
 const repair: Record<string, string> = {
-  "registry.arm64_available": "Publish a linux/arm64 manifest under the exact submitted digest.",
-  "registry.container_non_root": "Set a non-root USER in the image config, rebuild, and push a new digest.",
+  "source.dockerfile_present": "Upload the exact source bundle containing the declared Dockerfile.",
   "evidence.publisher_submitted_accepted": "Run the recipe locally through Vonk Forge and upload its complete test report.",
   "evidence.recipe_mismatch": "Retest the current canonical recipe hash.",
-  "evidence.image_mismatch": "Retest the exact immutable image digest in this draft.",
+  "evidence.source_bundle_mismatch": "Retest the exact source bundle digest in this draft.",
 };
 
 
@@ -31,8 +30,8 @@ export function ValidationReport({ draft }: { draft: Draft }) {
         <section className="validation-panel pending" aria-live="polite">
           <h3>Validation not complete</h3>
           <p>
-            The worker will inspect public registry metadata and publisher-submitted
-            evidence. It will not pull model weights or execute the workload. Retry
+            The worker will inspect the canonical source manifest, immutable artifact
+            metadata, capacity envelopes, and publisher-submitted evidence. It will not execute the workload. Retry
             validation after repairing a terminal failure.
           </p>
         </section>

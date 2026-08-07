@@ -36,12 +36,14 @@ export interface RecipeSummary {
   revision_id: string;
   content_sha256: string;
   published_at: string;
-  runtime: { family?: string; image?: string };
+  runtime: { adapter?: string; entrypoint?: string[] };
+  build?: { context?: { sha256?: string; expected_bytes?: number }; dockerfile?: string };
   artifacts?: Array<{
     kind?: string;
     repository?: string;
     revision?: string;
-    expected_bytes?: number;
+    download_bytes?: number;
+    installed_bytes?: number;
   }>;
   provenance?: {
     source_kind?: string;
@@ -49,23 +51,16 @@ export interface RecipeSummary {
     attribution?: string[];
   };
   workload: { family?: string; capabilities?: string[] };
-  resources: {
-    per_node?: {
-      installed_bytes?: number;
-      resident_memory_bytes?: number;
-    };
-    measurement?: string;
-  };
-  topology: {
-    kind?: string;
-    min_nodes?: number;
-    max_nodes?: number;
-    tested_node_counts?: number[];
+  deployment_profiles?: Array<{ name?: string; node_count?: number }>;
+  capacity?: {
+    profile_node_counts?: number[];
+    maximum_installed_bytes_per_node?: number;
+    maximum_runtime_memory_bytes_per_node?: number;
   };
   moderation_warning?: string | null;
   facts?: {
     declared: boolean;
-    registry_observed: Record<string, unknown> | null;
+    source_bundle_observed: boolean;
     publisher_tested: boolean;
     publisher_tested_label: string;
     vonk_verified: boolean;
@@ -122,6 +117,8 @@ export interface Draft {
   state: string;
   content_sha256: string;
   recipe: Record<string, unknown>;
+  source_bundle_sha256?: string;
+  source_bundle_available?: boolean;
   validation_problems: Array<{ path: string; rule: string; message: string }>;
   validation: null | {
     status: "passed" | "failed";
@@ -179,6 +176,21 @@ export async function uploadDraft(
       method: "POST",
       headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf, "Idempotency-Key": idempotencyKey },
       body: JSON.stringify(envelope),
+    })
+  ).data;
+}
+
+export async function uploadSourceBundle(
+  publisher: string,
+  sha256: string,
+  archive: File,
+  csrf: string,
+): Promise<{sha256: string; files: string[]}> {
+  return (
+    await browserRequest<{sha256: string; files: string[]}>(`/v1/publishers/${encodeURIComponent(publisher)}/source-bundles/${encodeURIComponent(sha256)}`, {
+      method: "PUT",
+      headers: {"Content-Type": "application/vnd.vonk.source-bundle.v1+tar", "X-CSRF-Token": csrf},
+      body: archive,
     })
   ).data;
 }

@@ -306,6 +306,25 @@ class RecipeRevision(Base):
     published_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class RevisionSourceBundle(Base):
+    __tablename__ = "revision_source_bundles"
+
+    revision_id: Mapped[str] = mapped_column(
+        ForeignKey("recipe_revisions.id", ondelete="CASCADE"), primary_key=True
+    )
+    source_bundle_sha256: Mapped[str] = mapped_column(
+        ForeignKey("source_bundles.sha256", ondelete="RESTRICT"),
+        nullable=False,
+        index=True,
+    )
+
+
+@event.listens_for(RevisionSourceBundle, "before_update")
+@event.listens_for(RevisionSourceBundle, "before_delete")
+def _keep_revision_source_immutable(*_: object) -> None:
+    raise ValueError("published revision source associations are immutable")
+
+
 @event.listens_for(RecipeRevision, "before_update")
 @event.listens_for(RecipeRevision, "before_delete")
 def _keep_revision_immutable(*_: object) -> None:

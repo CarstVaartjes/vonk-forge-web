@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from .auth import AuthServices, require_csrf, require_session
 from .drafts import MAX_BODY_BYTES, DraftService, decode_upload
-from .models import Recipe, RecipeDraft, ValidationResult
+from .models import Recipe, RecipeDraft, SourceBundle, ValidationResult
 from .problems import Problem
 from .publishers import PublisherService
 
@@ -91,6 +91,9 @@ def _serialize(
         )
         .order_by(ValidationResult.created_at.desc())
     )
+    build = draft.document.get("build")
+    context = build.get("context") if isinstance(build, dict) else None
+    source_sha256 = context.get("sha256") if isinstance(context, dict) else None
     return {
         "id": draft.id,
         "publisher": publisher,
@@ -99,6 +102,11 @@ def _serialize(
         "state": draft.state,
         "content_sha256": draft.content_sha256,
         "recipe": draft.document,
+        "source_bundle_sha256": source_sha256,
+        "source_bundle_available": (
+            isinstance(source_sha256, str)
+            and database.get(SourceBundle, source_sha256) is not None
+        ),
         "validation_problems": draft.validation_problems,
         "validation": (
             None

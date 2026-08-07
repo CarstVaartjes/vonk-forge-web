@@ -8,7 +8,8 @@ import { PublisherWorkspacePage } from "./publisher-workspace";
 const recipe = {
   identity: { publisher: "ada-labs", slug: "qwen-fast" },
   metadata: { title: "Qwen Fast" },
-  runtime: { image: `ghcr.io/ada/qwen@sha256:${"b".repeat(64)}` },
+  build: { context: { sha256: "b".repeat(64) }, dockerfile: "Dockerfile" },
+  runtime: { adapter: "vllm", entrypoint: ["vllm", "serve", "/models"] },
 };
 
 const passedDraft: Draft = {
@@ -19,11 +20,13 @@ const passedDraft: Draft = {
   state: "validated",
   content_sha256: "a".repeat(64),
   recipe,
+  source_bundle_sha256: "b".repeat(64),
+  source_bundle_available: true,
   validation_problems: [],
   validation: {
     status: "passed",
     created_at: "2026-08-07T10:00:00Z",
-    checks: [{ code: "registry.arm64_available", passed: true, detail: "linux/arm64 manifest found" }],
+    checks: [{ code: "source.bundle_verified", passed: true, detail: "Canonical source manifest verified" }],
   },
 };
 
@@ -95,7 +98,7 @@ test("shows exact evidence and requires explicit confirmation before publication
   render(<PublisherWorkspacePage />);
 
   expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
-  expect(screen.getByText("Pass · registry.arm64_available")).toBeVisible();
+  expect(screen.getByText("Pass · source.bundle_verified")).toBeVisible();
   const publish = screen.getByRole("button", { name: "Publish publicly" });
   expect(publish).toBeDisabled();
   fireEvent.click(screen.getByRole("checkbox", { name: /confirm these exact public identifiers/i }));
@@ -118,7 +121,7 @@ test("uploads only a local JSON envelope and queues validation", async () => {
 
   const file = new File([JSON.stringify({ recipe, test_report: { schema_version: 1 } })], "recipe.json", { type: "application/json" });
   fireEvent.change(screen.getByLabelText("Upload local JSON"), { target: { files: [file] } });
-  expect(await screen.findByText(/no container or model bytes were sent/i)).toBeVisible();
+  expect(await screen.findByText(/model bytes are never sent/i)).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Validate this version" }));
   expect(await screen.findByText(/validation queued as job-1/i)).toBeVisible();
 
@@ -173,12 +176,12 @@ test("shows schema paths, terminal worker codes, and actionable repair guidance"
     validation_problems: [{ path: "resources.per_node.installed_bytes", rule: "minimum", message: "must be positive" }],
     validation: {
       status: "failed", created_at: "2026-08-07T10:00:00Z",
-      checks: [{ code: "registry.arm64_available", passed: false, detail: "No ARM64 manifest was found." }],
+      checks: [{ code: "source.dockerfile_present", passed: false, detail: "The declared Dockerfile was not found." }],
     },
   };
   render(<DraftEditor draft={failed} csrf="csrf-1" onChange={vi.fn()} />);
 
   expect(screen.getByText("Repair · resources.per_node.installed_bytes")).toBeVisible();
-  expect(screen.getByText("Repair · registry.arm64_available")).toBeVisible();
-  expect(screen.getByText(/publish a linux\/arm64 manifest/i)).toBeVisible();
+  expect(screen.getByText("Repair · source.dockerfile_present")).toBeVisible();
+  expect(screen.getByText(/upload the exact source bundle/i)).toBeVisible();
 });

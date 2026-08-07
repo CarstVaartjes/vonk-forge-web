@@ -6,7 +6,7 @@ The global service publishes immutable recipe content but must keep mutable trus
 
 ## Runtime validation
 
-The exported container policy is a versioned public contract. Runtime v1 requires a digest-pinned Linux/ARM64 image, `ai.vonkforge.runtime-interface=v1`, and a root-configured image user. The root requirement is intentional: the local agent uses rootless Podman with a single-UID user namespace, so container root maps to the unprivileged `vonk` host account. The worker validates every policy field and verifies that observed image and artifact byte counts fit the recipe's declared resource envelope.
+The exported container policy is a versioned public contract. Runtime v1 requires a digest-pinned Linux/ARM64 image, `ai.vonkforge.runtime-interface=v1`, and an explicit numeric non-root image user. The local agent adds rootless Podman and a subordinate-UID mapping as a second isolation boundary. The worker validates every policy field and verifies that observed image and artifact byte counts fit the recipe's declared resource envelope.
 
 ## Network boundary
 

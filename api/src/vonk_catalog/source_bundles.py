@@ -66,7 +66,9 @@ class SourceBundleStore:
             or expected_sha256.lower() != expected_sha256
             or any(character not in "0123456789abcdef" for character in expected_sha256)
         ):
-            raise SourceBundleError("bundle.digest_invalid", "expected digest is invalid")
+            raise SourceBundleError(
+                "bundle.digest_invalid", "expected digest is invalid"
+            )
         archive = _read_archive(payload, self._limits)
         manifest = _inspect_archive(archive, self._limits)
         if manifest.sha256 != expected_sha256:
@@ -104,6 +106,29 @@ class SourceBundleStore:
                 temporary.unlink()
         return StoredBundle(destination, manifest, len(archive))
 
+    def get(self, sha256: str) -> StoredBundle:
+        if (
+            len(sha256) != 64
+            or sha256.lower() != sha256
+            or any(character not in "0123456789abcdef" for character in sha256)
+        ):
+            raise SourceBundleError(
+                "bundle.digest_invalid", "source bundle digest is invalid"
+            )
+        path = self._root / sha256[:2] / f"{sha256}.tar"
+        try:
+            archive = path.read_bytes()
+        except OSError as error:
+            raise SourceBundleError(
+                "bundle.not_found", "source bundle is unavailable"
+            ) from error
+        manifest = _inspect_archive(archive, self._limits)
+        if manifest.sha256 != sha256:
+            raise SourceBundleError(
+                "bundle.storage_collision", "stored source bundle is inconsistent"
+            )
+        return StoredBundle(path, manifest, len(archive))
+
 
 def _read_archive(payload: BinaryIO, limits: BundleLimits) -> bytes:
     archive = payload.read(limits.max_archive_bytes + 1)
@@ -112,7 +137,9 @@ def _read_archive(payload: BinaryIO, limits: BundleLimits) -> bytes:
     if not archive:
         raise SourceBundleError("bundle.empty", "source bundle is empty")
     if len(archive) > limits.max_archive_bytes:
-        raise SourceBundleError("bundle.archive_too_large", "source bundle is too large")
+        raise SourceBundleError(
+            "bundle.archive_too_large", "source bundle is too large"
+        )
     return archive
 
 
@@ -123,7 +150,9 @@ def _inspect_archive(archive: bytes, limits: BundleLimits) -> BundleManifest:
     try:
         bundle = tarfile.open(fileobj=io.BytesIO(archive), mode="r:*")
     except (tarfile.TarError, OSError) as error:
-        raise SourceBundleError("bundle.invalid_archive", "source bundle is invalid") from error
+        raise SourceBundleError(
+            "bundle.invalid_archive", "source bundle is invalid"
+        ) from error
     with bundle:
         for member in bundle:
             path = _safe_path(member.name)
@@ -191,12 +220,17 @@ def _inspect_archive(archive: bytes, limits: BundleLimits) -> BundleManifest:
 
 def _safe_path(value: str) -> str:
     if not value or "\x00" in value or value.startswith("/"):
-        raise SourceBundleError("bundle.path_forbidden", "source bundle path is forbidden")
+        raise SourceBundleError(
+            "bundle.path_forbidden", "source bundle path is forbidden"
+        )
     path = PurePosixPath(value)
     if any(part in {"", ".", ".."} for part in path.parts):
-        raise SourceBundleError("bundle.path_forbidden", "source bundle path is forbidden")
+        raise SourceBundleError(
+            "bundle.path_forbidden", "source bundle path is forbidden"
+        )
     normalized = path.as_posix()
     if len(normalized.encode("utf-8")) > 512:
-        raise SourceBundleError("bundle.path_too_long", "source bundle path is too long")
+        raise SourceBundleError(
+            "bundle.path_too_long", "source bundle path is too long"
+        )
     return normalized
-

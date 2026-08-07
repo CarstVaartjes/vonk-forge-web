@@ -20,6 +20,7 @@ EXPECTED_TABLES = {
     "recipe_drafts",
     "recipe_forks",
     "recipe_revisions",
+    "revision_source_bundles",
     "recipe_search_documents",
     "request_rate_limit_buckets",
     "source_bundles",

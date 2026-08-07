@@ -15,6 +15,7 @@ class Settings(BaseSettings):
         default="postgresql+psycopg://vonk:vonk@127.0.0.1:5432/vonk_catalog"
     )
     database_password_file: Path | None = None
+    source_bundle_path: Path = Path("/data/source-bundles")
     production: bool = False
     public_base_url: str = "http://127.0.0.1:8000"
     session_secret: SecretStr = SecretStr("development-only-session-secret-do-not-use")

@@ -1,8 +1,16 @@
+import copy
+import json
 from datetime import UTC, datetime
+from pathlib import Path
 
 from sqlalchemy.orm import Session
 from vonk_catalog.models import Publisher, Recipe, RecipeRevision
 from vonk_catalog.search import search_document
+
+
+FIXTURE = (
+    Path(__file__).resolve().parents[2] / "schemas/fixtures/recipe-v1-minimal.json"
+)
 
 
 def publish(engine, *, slug: str = "qwen3") -> RecipeRevision:
@@ -13,22 +21,15 @@ def publish(engine, *, slug: str = "qwen3") -> RecipeRevision:
         recipe = Recipe(publisher_id=publisher.id, slug=slug, title="Qwen3")
         session.add(recipe)
         session.flush()
+        document = copy.deepcopy(json.loads(FIXTURE.read_text()))
+        document["identity"] = {"publisher": "vonk", "slug": slug}
+        document["metadata"]["title"] = "Qwen3"
         revision = RecipeRevision(
             recipe_id=recipe.id,
             revision_number=1,
             content_sha256="c" * 64,
             schema_version=1,
-            document={
-                "schema_version": 1,
-                "identity": {"publisher": "vonk", "slug": slug},
-                "metadata": {"title": "Qwen3", "description": "Demo", "tags": []},
-                "workload": {"family": "qwen3", "capabilities": ["openai.chat"]},
-                "runtime": {"family": "vllm"},
-                "resources": {
-                    "per_node": {"installed_bytes": 66, "resident_memory_bytes": 72}
-                },
-                "topology": {"kind": "single", "min_nodes": 1, "max_nodes": 1},
-            },
+            document=document,
             published_at=datetime(2026, 8, 7, 12, 0, tzinfo=UTC),
         )
         session.add(revision)

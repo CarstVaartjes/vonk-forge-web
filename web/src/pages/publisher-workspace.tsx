@@ -8,6 +8,7 @@ import {
   getPublishers,
   publishDraft,
   uploadDraft,
+  uploadSourceBundle,
   validateDraft,
   type Draft,
   type Me,
@@ -75,7 +76,7 @@ export function PublisherWorkspacePage() {
       const created = await uploadDraft(publisher, envelope, me.csrf_token, crypto.randomUUID());
       setDrafts((current) => [created, ...current.filter((item) => item.id !== created.id)]);
       setSelected(created.id);
-      setMessage("Private draft uploaded. No container or model bytes were sent.");
+      setMessage("Private draft uploaded. Add its exact source tar; model bytes are never sent.");
     } catch (reason) {
       setMessage(reason instanceof CatalogProblem ? `${reason.problem.code}: ${reason.problem.detail}` : "Choose a valid Vonk Forge JSON export.");
     }
@@ -89,6 +90,17 @@ export function PublisherWorkspacePage() {
       setMessage(`Validation queued as ${job.job_id}. Refresh to inspect the completed report.`);
     } catch (reason) {
       setMessage(reason instanceof CatalogProblem ? `${reason.problem.code}: ${reason.problem.detail}` : "Validation could not be queued. Retry after checking service status.");
+    }
+  }
+
+  async function uploadSource(file: File | undefined) {
+    if (!file || !draft?.source_bundle_sha256 || !me) return;
+    try {
+      const receipt = await uploadSourceBundle(publisher, draft.source_bundle_sha256, file, me.csrf_token);
+      setDrafts((current) => current.map((item) => item.id === draft.id ? {...item, source_bundle_available: true} : item));
+      setMessage(`Verified source bundle sha256:${receipt.sha256} (${receipt.files.length} files).`);
+    } catch (reason) {
+      setMessage(reason instanceof CatalogProblem ? `${reason.problem.code}: ${reason.problem.detail}` : "The source bundle could not be verified.");
     }
   }
 
@@ -116,21 +128,23 @@ export function PublisherWorkspacePage() {
   }
 
   const identity = record(draft?.recipe.identity);
-  const runtime = record(draft?.recipe.runtime);
+  const build = record(draft?.recipe.build);
+  const context = record(build.context);
   return (
     <main className="workspace-page">
-      <header className="page-intro"><p className="eyebrow">Local-first publishing</p><h1>Publisher workspace</h1><p>Build and test in your local Vonk Forge, push the digest-pinned image to your public registry, then upload only recipe metadata and evidence here.</p></header>
-      <ol className="publish-flow"><li>Build locally</li><li>Test on your Sparks</li><li>Push image digest</li><li>Upload private draft</li><li>Validate metadata</li><li>Publish explicitly</li></ol>
+      <header className="page-intro"><p className="eyebrow">Local-first publishing</p><h1>Publisher workspace</h1><p>Build and test in your local Vonk Forge, then upload the content-addressed build source, recipe metadata, and publisher evidence. Vonk never needs a container registry.</p></header>
+      <ol className="publish-flow"><li>Build locally</li><li>Test on your Sparks</li><li>Upload source</li><li>Upload private draft</li><li>Validate metadata</li><li>Publish explicitly</li></ol>
       <section className="workspace-toolbar">
         <label>Publisher namespace<select value={publisher} onChange={(event) => choose(event.target.value)}>{publishers.filter((item) => item.role !== "viewer").map((item) => <option key={item.id} value={item.slug}>{item.name} ({item.slug})</option>)}</select></label>
         <label className="file-button">Upload local JSON<input type="file" accept="application/json,.json" onChange={(event) => upload(event.target.files?.[0])} /></label>
+        {draft ? <label className="file-button">Upload source tar<input type="file" accept="application/x-tar,.tar" onChange={(event) => uploadSource(event.target.files?.[0])} /></label> : null}
         <button className="button" type="button" onClick={() => refreshDrafts()}>Refresh reports</button>
       </section>
       {forkSource ? <section className="fork-panel"><h2>Fork immutable revision</h2><input aria-label="New recipe slug" value={forkSlug} onChange={(event) => setForkSlug(event.target.value)} placeholder="my-recipe" /><button className="button" onClick={fork}>Create private fork</button></section> : null}
       {message ? <div className="status-panel" role="status">{message}</div> : null}
       <div className="workspace-layout">
         <aside aria-label="Private drafts"><h2>Drafts</h2>{drafts.map((item) => <button type="button" className={item.id === selected ? "draft-link active" : "draft-link"} key={item.id} onClick={() => { setSelected(item.id); setConfirmed(false); }}>{String(record(item.recipe.metadata).title ?? item.id)}<span>v{item.version} · {item.state}</span></button>)}</aside>
-        <div>{draft ? <><DraftEditor draft={draft} csrf={me.csrf_token} onChange={(changed) => setDrafts((current) => current.map((item) => item.id === changed.id ? changed : item))} /><section className="publish-confirm"><h2>Publish immutable revision</h2><dl><div><dt>Publisher</dt><dd>{publisher}</dd></div><div><dt>Recipe</dt><dd>{String(identity.slug ?? "")}</dd></div><div><dt>Image</dt><dd>{String(runtime.image ?? "")}</dd></div><div><dt>Content hash</dt><dd>sha256:{draft.content_sha256}</dd></div><div><dt>Visibility</dt><dd>Public and immutable</dd></div></dl><label><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} /> I confirm these exact public identifiers.</label><div className="hero-actions"><button className="button" type="button" onClick={requestValidation}>Validate this version</button><button className="button primary" type="button" disabled={!confirmed || draft.validation?.status !== "passed"} onClick={publish}>Publish publicly</button></div></section></> : <div className="status-panel">Upload a local recipe export to begin.</div>}</div>
+        <div>{draft ? <><DraftEditor draft={draft} csrf={me.csrf_token} onChange={(changed) => setDrafts((current) => current.map((item) => item.id === changed.id ? changed : item))} /><section className="publish-confirm"><h2>Publish immutable revision</h2><dl><div><dt>Publisher</dt><dd>{publisher}</dd></div><div><dt>Recipe</dt><dd>{String(identity.slug ?? "")}</dd></div><div><dt>Source</dt><dd>sha256:{String(context.sha256 ?? "")}</dd></div><div><dt>Source stored</dt><dd>{draft.source_bundle_available ? "verified" : "upload required"}</dd></div><div><dt>Content hash</dt><dd>sha256:{draft.content_sha256}</dd></div><div><dt>Visibility</dt><dd>Public and immutable</dd></div></dl><label><input type="checkbox" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} /> I confirm these exact public identifiers.</label><div className="hero-actions"><button className="button" type="button" disabled={!draft.source_bundle_available} onClick={requestValidation}>Validate this version</button><button className="button primary" type="button" disabled={!confirmed || draft.validation?.status !== "passed" || !draft.source_bundle_available} onClick={publish}>Publish publicly</button></div></section></> : <div className="status-panel">Upload a local recipe export to begin.</div>}</div>
       </div>
     </main>
   );

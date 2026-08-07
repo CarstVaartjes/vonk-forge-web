@@ -55,7 +55,7 @@ def test_faceted_search_official_capability_topology_resources_and_cursor(
     ]
     assert [
         item.recipe.slug
-        for item in search.search(topology="gang", tested_node_count=2).items
+        for item in search.search(topology="gang", tested_node_count=3).items
     ] == ["deepseek"]
     capability = multi["workload"]["capabilities"][0]
     assert search.search(capability=capability).items

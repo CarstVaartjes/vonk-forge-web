@@ -21,8 +21,26 @@ def search_document(
     metadata = document["metadata"]
     runtime = document["runtime"]
     workload = document["workload"]
-    topology = document["topology"]
-    resources = document["resources"]["per_node"]
+    profiles = document["deployment_profiles"]
+    node_counts = [int(profile["node_count"]) for profile in profiles]
+    role_resources = [
+        role["resources"] for profile in profiles for role in profile["roles"]
+    ]
+    disk_fields = (
+        "image_bytes",
+        "artifact_bytes",
+        "staging_bytes",
+        "cache_bytes",
+        "rollback_bytes",
+        "safety_margin_bytes",
+    )
+    installed_bytes = max(
+        sum(int(resources["disk"][field]) for field in disk_fields)
+        for resources in role_resources
+    )
+    resident_memory_bytes = max(
+        int(resources["memory"]["startup_peak_bytes"]) for resources in role_resources
+    )
     values = [
         publisher.slug,
         publisher.name,
@@ -30,24 +48,22 @@ def search_document(
         str(metadata["title"]),
         str(metadata["description"]),
         *[str(value) for value in metadata["tags"]],
-        str(runtime["family"]),
+        str(runtime["adapter"]),
         str(workload["family"]),
         *[str(value) for value in workload["capabilities"]],
+        *[str(profile["name"]) for profile in profiles],
     ]
     return RecipeSearchDocument(
         revision_id=revision.id,
         search_text="\n".join(values),
-        runtime_family=str(runtime["family"]),
+        runtime_family=str(runtime["adapter"]),
         workload_family=str(workload["family"]),
-        topology_kind=str(topology["kind"]),
-        min_nodes=int(topology["min_nodes"]),
-        max_nodes=int(topology["max_nodes"]),
-        tested_node_counts=[
-            int(value)
-            for value in topology.get("tested_node_counts", [topology["min_nodes"]])
-        ],
-        installed_bytes=int(resources["installed_bytes"]),
-        resident_memory_bytes=int(resources["resident_memory_bytes"]),
+        topology_kind="single" if max(node_counts) == 1 else "gang",
+        min_nodes=min(node_counts),
+        max_nodes=max(node_counts),
+        tested_node_counts=sorted(set(node_counts)),
+        installed_bytes=installed_bytes,
+        resident_memory_bytes=resident_memory_bytes,
         capabilities=[str(value) for value in workload["capabilities"]],
     )
 
