@@ -112,7 +112,9 @@ test("publisher uploads local evidence, observes worker validation, and publishe
     name: "source.tar", mimeType: "application/x-tar", buffer: Buffer.from("test-tar"),
   });
   await expect(page.getByText(/verified source bundle/i)).toBeVisible();
-  await page.getByRole("button", { name: "Validate this version" }).click();
+  const validate = page.getByRole("button", { name: "Validate this version" });
+  await validate.focus();
+  await validate.press("Enter");
   await expect(page.getByText(/validation queued as job-1/i)).toBeVisible();
   await page.getByRole("button", { name: "Refresh reports" }).click();
   await expect(page.getByText("Pass · source.bundle_verified")).toBeVisible();
