@@ -36,6 +36,7 @@ class CreatedSession:
 class AuthenticatedSession:
     id: str
     user: User
+    created_at: datetime
     expires_at: datetime
 
 
@@ -121,7 +122,12 @@ class SessionService:
             row.user_agent_digest = self._audit_digest(b"ua\x00", user_agent)
             database.flush()
             database.expunge(user)
-            return AuthenticatedSession(row.id, user, _aware(row.expires_at))
+            return AuthenticatedSession(
+                row.id,
+                user,
+                _aware(row.created_at),
+                _aware(row.expires_at),
+            )
 
     def verify_csrf(self, token: str | None, candidate: str | None) -> bool:
         if token is None or candidate is None:

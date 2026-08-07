@@ -6,9 +6,9 @@ from fastapi import APIRouter, Depends, Header, Query, Response
 from sqlalchemy.orm import Session
 
 from .contracts import contract_path
+from .moderation import ModerationService
 from .problems import Problem
 from .repositories import CatalogRepository, PublishedRecipe
-
 
 SessionProvider = Callable[[], Session]
 
@@ -53,7 +53,11 @@ def build_public_router(session_provider: SessionProvider | None) -> APIRouter:
             max_installed_bytes=max_installed_bytes,
             limit=limit,
         )
-        return {"items": [_summary(item) for item in items], "next_cursor": None}
+        visible = [item for item in items if _visible(session, item)]
+        return {
+            "items": [_summary(item, _warning(session, item)) for item in visible],
+            "next_cursor": None,
+        }
 
     @router.get("/recipes/{publisher}/{slug}")
     def recipe_detail(
@@ -62,10 +66,10 @@ def build_public_router(session_provider: SessionProvider | None) -> APIRouter:
         session: Session = Depends(database_session),
     ) -> dict[str, object]:
         item = CatalogRepository(session).latest(publisher, slug)
-        if item is None:
+        if item is None or not _visible(session, item):
             raise _not_found()
         return {
-            **_summary(item),
+            **_summary(item, _warning(session, item)),
             "latest_revision": _revision(item),
         }
 
@@ -82,7 +86,7 @@ def build_public_router(session_provider: SessionProvider | None) -> APIRouter:
         session: Session = Depends(database_session),
     ) -> dict[str, object] | Response:
         item = CatalogRepository(session).revision(publisher, slug, revision_number)
-        if item is None:
+        if item is None or not _visible(session, item):
             raise _not_found()
         etag = f'"sha256:{item.revision.content_sha256}"'
         headers = {
@@ -113,7 +117,7 @@ def _not_found() -> Problem:
     )
 
 
-def _summary(item: PublishedRecipe) -> dict[str, object]:
+def _summary(item: PublishedRecipe, warning: str | None = None) -> dict[str, object]:
     document = item.revision.document
     return {
         "publisher": item.publisher.slug,
@@ -127,7 +131,20 @@ def _summary(item: PublishedRecipe) -> dict[str, object]:
         "workload": document.get("workload"),
         "resources": document.get("resources"),
         "topology": document.get("topology"),
+        "moderation_warning": warning,
     }
+
+
+def _visible(session: Session, item: PublishedRecipe) -> bool:
+    moderation = ModerationService(session)
+    return (
+        not moderation.publisher_suspended(item.publisher.id)
+        and not moderation.revision_state(item.revision.id).hidden
+    )
+
+
+def _warning(session: Session, item: PublishedRecipe) -> str | None:
+    return ModerationService(session).revision_state(item.revision.id).warning
 
 
 def _revision(item: PublishedRecipe) -> dict[str, object]:

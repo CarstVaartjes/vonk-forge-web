@@ -8,12 +8,14 @@ EXPECTED_TABLES = {
     "draft_upload_requests",
     "browser_sessions",
     "moderation_events",
+    "moderation_reports",
     "oauth_accounts",
     "oauth_flows",
     "publisher_memberships",
     "publisher_invitations",
     "publisher_audit_events",
     "publication_requests",
+    "publisher_moderation_events",
     "publishers",
     "recipe_drafts",
     "recipe_forks",
@@ -27,7 +29,7 @@ EXPECTED_TABLES = {
 
 def test_catalog_has_one_migration_head(alembic_config) -> None:
     assert ScriptDirectory.from_config(alembic_config).get_heads() == [
-        "0005_immutable_publication"
+        "0006_moderation_controls"
     ]
 
 

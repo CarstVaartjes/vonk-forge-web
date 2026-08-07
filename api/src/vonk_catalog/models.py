@@ -39,6 +39,7 @@ class User(Base):
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
     display_name: Mapped[str] = mapped_column(String(160))
+    system_role: Mapped[str | None] = mapped_column(String(32), index=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow
     )
@@ -363,6 +364,7 @@ class RecipeFork(Base):
 
 class ModerationEvent(Base):
     __tablename__ = "moderation_events"
+    __table_args__ = (UniqueConstraint("revision_id", "sequence"),)
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
     revision_id: Mapped[str] = mapped_column(
@@ -372,10 +374,58 @@ class ModerationEvent(Base):
         ForeignKey("users.id", ondelete="SET NULL"), index=True
     )
     action: Mapped[str] = mapped_column(String(32))
+    sequence: Mapped[int] = mapped_column(Integer)
     reason: Mapped[str] = mapped_column(Text)
+    details: Mapped[dict[str, Any]] = mapped_column(JSON_DOCUMENT, default=dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow
     )
+
+
+class PublisherModerationEvent(Base):
+    __tablename__ = "publisher_moderation_events"
+    __table_args__ = (UniqueConstraint("publisher_id", "sequence"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    publisher_id: Mapped[str] = mapped_column(
+        ForeignKey("publishers.id", ondelete="RESTRICT"), index=True
+    )
+    actor_user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id", ondelete="RESTRICT"), index=True
+    )
+    action: Mapped[str] = mapped_column(String(32))
+    sequence: Mapped[int] = mapped_column(Integer)
+    reason: Mapped[str] = mapped_column(Text)
+    details: Mapped[dict[str, Any]] = mapped_column(JSON_DOCUMENT, default=dict)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+
+
+class ModerationReport(Base):
+    __tablename__ = "moderation_reports"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    revision_id: Mapped[str] = mapped_column(
+        ForeignKey("recipe_revisions.id", ondelete="RESTRICT"), index=True
+    )
+    reporter_user_id: Mapped[str | None] = mapped_column(
+        ForeignKey("users.id", ondelete="SET NULL"), index=True
+    )
+    source_digest: Mapped[str] = mapped_column(String(64), index=True)
+    category: Mapped[str] = mapped_column(String(32))
+    detail: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
+    )
+
+
+@event.listens_for(ModerationEvent, "before_update")
+@event.listens_for(ModerationEvent, "before_delete")
+@event.listens_for(PublisherModerationEvent, "before_update")
+@event.listens_for(PublisherModerationEvent, "before_delete")
+def _keep_moderation_history_immutable(*_: object) -> None:
+    raise ValueError("moderation history is append-only")
 
 
 class CatalogJob(Base):

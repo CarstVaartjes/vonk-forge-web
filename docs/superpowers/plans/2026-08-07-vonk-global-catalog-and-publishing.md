@@ -117,13 +117,13 @@
 - Create: `docs/operations/moderation.md`
 - Modify: `api/src/vonk_catalog/public_api.py`
 
-- [ ] Write failing tests for report submission, rate limits, moderator role, hide/unhide, malware/compromise warning, publisher suspension, appeal note, audit details, and inability to mutate revision bytes.
-- [ ] Run the test; confirm missing service.
-- [ ] Implement append-only moderation events whose effective state is projected for search/detail responses. Hidden revisions remain addressable to authorized publisher/moderator users and in internal audit, but not anonymous listing/download.
-- [ ] Use separate system-administrator identities and step-up confirmation for publisher suspension or official-recipe changes.
-- [ ] Document evidence capture, notice text, reversibility, appeals, and emergency compromised-image response.
-- [ ] Run moderation plus revision-immutability tests.
-- [ ] Commit: `feat(moderation): add reversible catalog controls`
+- [x] Write failing tests for report submission, rate limits, moderator role, hide/unhide, malware/compromise warning, publisher suspension, appeal note, audit details, and inability to mutate revision bytes.
+- [x] Run the test; confirm missing service.
+- [x] Implement sequenced append-only moderation events whose effective state is projected for anonymous list/detail responses. Hidden content remains in immutable storage and internal audit but not anonymous catalog responses.
+- [x] Use separate system-administrator identities, recent reauthentication, and explicit step-up confirmation for publisher suspension or official-recipe changes.
+- [x] Document evidence capture, notice text, reversibility, appeals, and emergency compromised-image response.
+- [x] Run moderation plus revision-immutability tests.
+- [x] Commit: `feat(moderation): add reversible catalog controls`
 
 ## Task 7: Build faceted search and public recipe detail pages
 
