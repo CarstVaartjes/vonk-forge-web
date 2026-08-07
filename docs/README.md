@@ -23,6 +23,7 @@ for the initial local release. Keep the boundary explicit:
 
 ## Operations
 
+- [Cloudflare Pages deployment](operations/cloudflare-pages.md)
 - [Deferred Railway global-backend deployment](operations/railway-deployment.md)
 - [Deferred independent backup and restore](operations/backup-restore.md)
 - [Moderation](operations/moderation.md)

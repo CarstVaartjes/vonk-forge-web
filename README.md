@@ -19,9 +19,10 @@ hosted layout is:
 - Caddy belongs to the local NAS control host, not to the global catalog
   boundary.
 
-The current Railway workflow and service definitions are transitional
-implementation material for the future backend migration; they are not the
-initial production deployment path.
+The frontend deployment is defined in `.github/workflows/pages.yml`; see
+[`docs/operations/cloudflare-pages.md`](docs/operations/cloudflare-pages.md)
+for the one-time Cloudflare and GitHub setup. Railway is documented only as a
+future backend option.
 
 ## Local API
 

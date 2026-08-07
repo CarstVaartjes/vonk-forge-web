@@ -50,23 +50,17 @@ def test_service_separation_migration_and_egress_policy_are_declared() -> None:
     assert set(services["web"]["networks"]) == {"application", "public_ingress"}
     assert compose["networks"]["database"]["internal"] is True
 
-    railway = {
-        path.stem: path.read_text()
-        for path in (ROOT / "deploy" / "railway").glob("*.toml")
-    }
-    assert {"api", "worker", "web", "migration", "backup", "restore"} <= set(railway)
-    assert 'restartPolicyType = "NEVER"' in railway["migration"]
-    assert 'cronSchedule = "0 2 * * *"' in railway["backup"]
-    assert 'cronSchedule = "0 4 1 * *"' in railway["restore"]
-
-
-def test_web_assets_are_immutable_but_html_and_health_are_not_cached() -> None:
+def test_local_and_pages_assets_are_immutable_but_html_is_not_cached() -> None:
     caddy = (ROOT / "deploy" / "Caddyfile").read_text()
     assert "path /assets/*" in caddy
     assert "path /v1/* /health/ready" in caddy
     assert "max-age=31536000, immutable" in caddy
     assert 'Cache-Control "no-store"' in caddy
     assert "Content-Security-Policy" in caddy
+    pages_headers = (ROOT / "web" / "public" / "_headers").read_text()
+    assert "Content-Security-Policy:" in pages_headers
+    assert "max-age=31536000, immutable" in pages_headers
+    assert (ROOT / "web" / "public" / "_redirects").read_text().strip() == "/* /index.html 200"
 
 
 def test_backup_and_restore_are_encrypted_independent_and_verify_hashes() -> None:
@@ -82,97 +76,21 @@ def test_backup_and_restore_are_encrypted_independent_and_verify_hashes() -> Non
 
 def test_ci_scans_secrets_vulnerabilities_sboms_and_signs_images() -> None:
     ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text()
-    deploy = (ROOT / ".github" / "workflows" / "deploy.yml").read_text()
+    pages = (ROOT / ".github" / "workflows" / "pages.yml").read_text()
     assert "gitleaks/gitleaks-action@" in ci
     assert "aquasecurity/trivy-action@" in ci
-    assert "cosign sign --yes" in deploy
-    assert "anchore/sbom-action@" in deploy
-    assert "actions/attest-build-provenance@" in deploy
-    assert "environment: production" in deploy
-    assert "RAILWAY_PRODUCTION_TOKEN" in deploy
-    workflow = yaml.safe_load(deploy)
-    assert workflow["concurrency"]["group"] == "vonk-forge-railway-deploy"
+    assert "cloudflare/wrangler-action@" in pages
+    assert "CLOUDFLARE_API_TOKEN" in pages
+    assert "CLOUDFLARE_ACCOUNT_ID" in pages
+    assert "pages deploy web/dist" in pages
+    assert "RAILWAY_" not in pages
+    assert not (ROOT / ".github" / "workflows" / "deploy.yml").exists()
+    assert not (ROOT / "scripts" / "railway-deploy-images").exists()
+    workflow = yaml.safe_load(pages)
+    assert workflow["concurrency"]["group"] == "vonk-forge-pages-production"
     assert workflow["concurrency"]["cancel-in-progress"] is False
     triggers = workflow.get("on", workflow.get(True, {}))
     assert triggers["push"]["branches"] == ["main"]
-
-
-def test_railway_deploys_the_signed_registry_digest_without_source_rebuild() -> None:
-    deploy = yaml.safe_load((ROOT / ".github" / "workflows" / "deploy.yml").read_text())
-    serialized = json.dumps(deploy)
-
-    assert "deployment-${{ matrix.name }}.txt" in serialized
-    assert "cosign verify" in serialized
-    assert "up --ci" not in serialized
-    assert "RAILWAY_PRODUCTION_PROJECT_ID" in serialized
-    assert "RAILWAY_STAGING_PROJECT_ID" not in serialized
-    assert "github.ref == 'refs/heads/main'" in serialized
-    deploy_helper = (ROOT / "scripts" / "railway-deploy-images").read_text()
-    assert "service source connect" in deploy_helper
-    assert "--image" in deploy_helper
-    assert "deployment list --json --limit 1" in deploy_helper
-    assert '"$deployment_id" != "$before"' in deploy_helper
-    assert '"$status" != SUCCESS' in deploy_helper
-    assert ".meta | .. | strings" in deploy_helper
-    assert "requested_digest" in deploy_helper
-
-
-def test_railway_deploy_waits_for_the_matching_digest_metadata(tmp_path) -> None:
-    docker = tmp_path / "docker"
-    marker = tmp_path / "connected"
-    docker.write_text(
-        """#!/usr/bin/env bash
-set -euo pipefail
-if [[ "$*" == *"service source connect"* ]]; then
-  : > "$MOCK_MARKER"
-  printf '{}\\n'
-elif [[ ! -e "$MOCK_MARKER" ]]; then
-  printf '[{"id":"old","status":"SUCCESS","meta":{"image":"old@sha256:old"}}]\\n'
-else
-  printf '[{"id":"new","status":"SUCCESS","meta":{"image":"%s"}}]\\n' "$MOCK_IMAGE"
-fi
-"""
-    )
-    docker.chmod(0o755)
-    requested = "ghcr.io/vonk/app@sha256:" + "a" * 64
-    environment = {
-        **os.environ,
-        "PATH": f"{tmp_path}:{os.environ['PATH']}",
-        "RAILWAY_TOKEN": "test-token",
-        "CLI_IMAGE": "railway-cli@sha256:test",
-        "MOCK_MARKER": str(marker),
-        "MOCK_IMAGE": requested,
-    }
-    result = subprocess.run(
-        [
-            ROOT / "scripts" / "railway-deploy-images",
-            "production",
-            "project-id",
-            f"api={requested}",
-        ],
-        env=environment,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode == 0, result.stderr
-
-    marker.unlink()
-    environment["MOCK_IMAGE"] = "ghcr.io/vonk/app@sha256:" + "b" * 64
-    result = subprocess.run(
-        [
-            ROOT / "scripts" / "railway-deploy-images",
-            "production",
-            "project-id",
-            f"api={requested}",
-        ],
-        env=environment,
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    assert result.returncode != 0
-    assert "does not identify requested digest" in result.stderr
 
 
 @pytest.mark.skipif(

@@ -1,8 +1,0 @@
-[build]
-builder = "DOCKERFILE"
-dockerfilePath = "Dockerfile.api"
-watchPatterns = ["/api/migrations/**", "/api/src/vonk_catalog/models.py", "/api/alembic.ini", "/Dockerfile.api"]
-
-[deploy]
-startCommand = "alembic -c api/alembic.ini upgrade head"
-restartPolicyType = "NEVER"

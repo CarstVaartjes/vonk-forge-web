@@ -5,7 +5,11 @@ runbook yet. Local PostgreSQL remains authoritative for recipe authoring,
 imports, installation, placement, admission, and execution.
 
 When the global catalog is enabled, Cloudflare Pages will serve the static
-frontend at `vonkforge.ai`, while Railway will host only the global backend:
+frontend at `vonkforge.ai`, while Railway will host only the global backend.
+The current frontend deployment is documented in
+[Cloudflare Pages deployment](cloudflare-pages.md).
+
+Railway services would be:
 
 | Service | Runtime | Public |
 | --- | --- | --- |
