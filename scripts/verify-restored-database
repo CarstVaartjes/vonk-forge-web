@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import secrets
+from pathlib import Path
+
+from sqlalchemy import create_engine, text
+from vonk_catalog.canonical import content_sha256
+
+TABLES = (
+    "users",
+    "publishers",
+    "recipes",
+    "recipe_drafts",
+    "recipe_revisions",
+    "recipe_search_documents",
+    "validation_results",
+    "test_reports",
+    "moderation_reports",
+)
+
+
+def inspect_database(database_url: str, sample_size: int) -> dict[str, object]:
+    if database_url.startswith("postgresql://"):
+        database_url = "postgresql+psycopg://" + database_url.removeprefix(
+            "postgresql://"
+        )
+    engine = create_engine(database_url, pool_pre_ping=True)
+    try:
+        with engine.connect() as connection:
+            counts = {
+                table: connection.execute(
+                    text(f'SELECT count(*) FROM "{table}"')
+                ).scalar_one()
+                for table in TABLES
+            }
+            revisions = connection.execute(
+                text("SELECT id, content_sha256 FROM recipe_revisions ORDER BY id")
+            )
+            aggregate = hashlib.sha256()
+            for revision_id, stored_hash in revisions:
+                aggregate.update(f"{revision_id}:{stored_hash}\n".encode())
+            samples = []
+            rows = connection.execute(
+                text(
+                    "SELECT id, content_sha256, document FROM recipe_revisions "
+                    "ORDER BY id LIMIT :limit"
+                ),
+                {"limit": sample_size},
+            )
+            for revision_id, stored_hash, document in rows:
+                if isinstance(document, str):
+                    document = json.loads(document)
+                observed = content_sha256(document)
+                if not secrets.compare_digest(stored_hash, observed):
+                    raise RuntimeError(
+                        f"canonical revision hash mismatch for {revision_id}"
+                    )
+                samples.append({"id": revision_id, "content_sha256": stored_hash})
+        return {
+            "format_version": 1,
+            "counts": counts,
+            "revision_hash_aggregate": aggregate.hexdigest(),
+            "canonical_samples": samples,
+        }
+    finally:
+        engine.dispose()
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--database-url", default=os.getenv("VONK_VERIFY_DATABASE_URL"))
+    parser.add_argument("--sample-size", type=int, default=100)
+    parser.add_argument("--write-manifest", type=Path)
+    parser.add_argument("--expected-manifest", type=Path)
+    arguments = parser.parse_args()
+    if not arguments.database_url:
+        parser.error("--database-url or VONK_VERIFY_DATABASE_URL is required")
+    if not 1 <= arguments.sample_size <= 10_000:
+        parser.error("--sample-size must be between 1 and 10000")
+
+    observed = inspect_database(arguments.database_url, arguments.sample_size)
+    if arguments.expected_manifest:
+        expected = json.loads(arguments.expected_manifest.read_text(encoding="utf-8"))
+        for field in ("format_version", "counts", "revision_hash_aggregate"):
+            if observed[field] != expected.get(field):
+                raise SystemExit(f"restored database differs in {field}")
+        expected_samples = expected.get("canonical_samples", [])
+        if observed["canonical_samples"] != expected_samples:
+            raise SystemExit("restored database canonical samples differ")
+    if arguments.write_manifest:
+        arguments.write_manifest.write_text(
+            json.dumps(observed, sort_keys=True, separators=(",", ":")) + "\n",
+            encoding="utf-8",
+        )
+    print(json.dumps({"status": "verified", **observed}, sort_keys=True))
+
+
+if __name__ == "__main__":
+    main()

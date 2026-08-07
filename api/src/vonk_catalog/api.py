@@ -13,6 +13,7 @@ from .problems import install_problem_handling
 from .public_api import SessionProvider, build_public_router
 from .publication_api import build_publication_router
 from .publisher_api import build_publisher_router
+from .security import install_security
 from .session import SessionService
 from .settings import Settings
 
@@ -29,8 +30,10 @@ def create_app(
     settings: Settings | None = None,
     oauth_backend: OAuthBackend | None = None,
 ) -> FastAPI:
+    resolved_settings = settings or Settings()
     app = FastAPI(title="Vonk Forge Catalog API", version="1.0.0")
     install_problem_handling(app)
+    install_security(app, resolved_settings)
 
     @app.get("/health/live", include_in_schema=False)
     def live() -> dict[str, str]:
@@ -58,7 +61,6 @@ def create_app(
 
     app.include_router(build_public_router(database_sessions))
     if database_sessions is not None:
-        resolved_settings = settings or Settings()
         auth_services = AuthServices(
             database_sessions=database_sessions,
             sessions=SessionService(

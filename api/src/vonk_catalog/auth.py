@@ -18,7 +18,11 @@ class AuthServices:
 
 
 def request_client(request: Request) -> tuple[str, str]:
-    client_ip = "unknown" if request.client is None else request.client.host
+    client_ip = getattr(
+        request.state,
+        "client_ip",
+        "unknown" if request.client is None else request.client.host,
+    )
     user_agent = request.headers.get("User-Agent", "")[:1024]
     return client_ip[:128], user_agent
 

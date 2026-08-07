@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 077
+
+: "${DATABASE_URL:?set DATABASE_URL to the source PostgreSQL URL}"
+: "${BACKUP_REMOTE:?set BACKUP_REMOTE to an independent rclone object-store path}"
+: "${BACKUP_AGE_RECIPIENT:?set BACKUP_AGE_RECIPIENT to the offline restore public key}"
+if [[ "${DATABASE_URL}" != postgresql://* && "${DATABASE_URL}" != postgresql+psycopg://* ]]; then
+  echo "DATABASE_URL must use PostgreSQL" >&2
+  exit 2
+fi
+postgres_url=${DATABASE_URL/#postgresql+psycopg:/postgresql:}
+
+backup_tmp=$(mktemp -d)
+cleanup() {
+  rm -rf -- "${backup_tmp:?}"
+}
+trap cleanup EXIT INT TERM
+
+timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+object="vonk-catalog-${timestamp}.tar.age"
+dump_path="${backup_tmp}/catalog.dump"
+manifest_path="${backup_tmp}/manifest.json"
+archive_path="${backup_tmp}/catalog.tar"
+encrypted_path="${backup_tmp}/${object}"
+
+VONK_VERIFY_DATABASE_URL="${DATABASE_URL}" \
+  python /app/scripts/verify-restored-database --write-manifest "${manifest_path}"
+pg_dump --dbname="${postgres_url}" --format=custom --compress=zstd:9 \
+  --no-owner --no-acl --file="${dump_path}"
+pg_restore --list "${dump_path}" >/dev/null
+tar --create --file="${archive_path}" --directory="${backup_tmp}" catalog.dump manifest.json
+age --encrypt --recipient "${BACKUP_AGE_RECIPIENT}" \
+  --output "${encrypted_path}" "${archive_path}"
+
+rclone rcat "${BACKUP_REMOTE%/}/${object}" <"${encrypted_path}"
+printf '%s\n' "${object}" | rclone rcat "${BACKUP_REMOTE%/}/latest.txt"
+printf '{"event":"backup.completed","object":"%s"}\n' "${object}"

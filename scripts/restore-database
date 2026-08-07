@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+umask 077
+
+: "${RESTORE_DATABASE_URL:?set RESTORE_DATABASE_URL to an isolated empty PostgreSQL database}"
+: "${BACKUP_REMOTE:?set BACKUP_REMOTE to the independent rclone object-store path}"
+: "${VONK_CONFIRM_ISOLATED_RESTORE:?set VONK_CONFIRM_ISOLATED_RESTORE=YES after checking the target}"
+if [[ "${VONK_CONFIRM_ISOLATED_RESTORE}" != "YES" ]]; then
+  echo "refusing restore without exact isolated-target confirmation" >&2
+  exit 2
+fi
+if [[ "${RESTORE_DATABASE_URL}" != postgresql://* && "${RESTORE_DATABASE_URL}" != postgresql+psycopg://* ]]; then
+  echo "RESTORE_DATABASE_URL must use PostgreSQL" >&2
+  exit 2
+fi
+postgres_url=${RESTORE_DATABASE_URL/#postgresql+psycopg:/postgresql:}
+
+restore_tmp=$(mktemp -d)
+cleanup() {
+  rm -rf -- "${restore_tmp:?}"
+}
+trap cleanup EXIT INT TERM
+
+object=${BACKUP_OBJECT:-}
+if [[ -z "${object}" ]]; then
+  object=$(rclone cat "${BACKUP_REMOTE%/}/latest.txt")
+fi
+if [[ ! "${object}" =~ ^vonk-catalog-[0-9]{8}T[0-9]{6}Z\.tar\.age$ ]]; then
+  echo "backup object name is invalid" >&2
+  exit 2
+fi
+
+encrypted_path="${restore_tmp}/${object}"
+archive_path="${restore_tmp}/catalog.tar"
+identity_path=${BACKUP_AGE_IDENTITY_FILE:-}
+if [[ -z "${identity_path}" ]]; then
+  : "${BACKUP_AGE_IDENTITY:?set BACKUP_AGE_IDENTITY or BACKUP_AGE_IDENTITY_FILE}"
+  identity_path="${restore_tmp}/age-identity.txt"
+  printf '%s\n' "${BACKUP_AGE_IDENTITY}" >"${identity_path}"
+fi
+
+rclone cat "${BACKUP_REMOTE%/}/${object}" >"${encrypted_path}"
+age --decrypt --identity "${identity_path}" --output "${archive_path}" "${encrypted_path}"
+entries=$(tar --list --file="${archive_path}" | LC_ALL=C sort)
+if [[ "${entries}" != $'catalog.dump\nmanifest.json' ]]; then
+  echo "encrypted backup contains unexpected paths" >&2
+  exit 2
+fi
+tar --extract --file="${archive_path}" --directory="${restore_tmp}" catalog.dump manifest.json
+
+database_name=$(psql "${postgres_url}" --no-psqlrc --tuples-only --no-align \
+  --command="SELECT current_database()")
+if [[ ! "${database_name}" =~ (restore|drill) ]]; then
+  echo "restore database name must contain restore or drill" >&2
+  exit 2
+fi
+pg_restore --dbname="${postgres_url}" --clean --if-exists --exit-on-error \
+  --no-owner --no-acl "${restore_tmp}/catalog.dump"
+VONK_VERIFY_DATABASE_URL="${RESTORE_DATABASE_URL}" \
+  python /app/scripts/verify-restored-database \
+  --expected-manifest "${restore_tmp}/manifest.json"
+printf '{"event":"restore.verified","object":"%s","database":"%s"}\n' \
+  "${object}" "${database_name}"

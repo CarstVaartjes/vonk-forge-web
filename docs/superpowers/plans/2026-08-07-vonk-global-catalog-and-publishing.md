@@ -182,14 +182,20 @@
 - Create: `.github/workflows/ci.yml`
 - Create: `.github/workflows/deploy.yml`
 
-- [ ] Write container tests first for non-root users, read-only root filesystem compatibility, health endpoints, no baked secrets, migration job, API/worker separation, web immutable assets, and outbound worker restrictions.
-- [ ] Run the container test; confirm failure because images are absent.
-- [ ] Build pinned multi-stage images. The API never needs registry egress; worker egress is limited at the platform/network layer to DNS and public HTTPS. Web serves static assets only.
-- [ ] Configure separate Railway API, worker, web, migration, PostgreSQL, staging, and production resources. Use platform secrets for database/session/OAuth settings and environment protection for production deploys.
-- [ ] Add rate limits, request IDs, structured redacted logs, security headers, CORS allowlist, database statement timeouts, connection caps, dependency scanning, secret scanning, SBOMs, and image signatures.
-- [ ] Implement encrypted daily PostgreSQL backups to an independent object store, retention policy, and a monthly automated restore into an isolated database with row/hash counts and a sampled canonical revision verification.
+- [x] Write container tests first for non-root users, read-only root filesystem compatibility, health endpoints, no baked secrets, migration job, API/worker separation, web immutable assets, and outbound worker restrictions.
+- [x] Run the container test; confirm failure because images are absent.
+- [x] Build pinned multi-stage images. The API has no registry-fetch path; the worker enforces public-HTTPS SSRF/DNS controls and Compose network separation. Railway's lack of a declarative egress allowlist is documented with the external-firewall option instead of being overstated.
+- [x] Configure separate Railway API, worker, web, migration, PostgreSQL, staging, and production resources. Use platform secrets for database/session/OAuth settings and environment protection for production deploys.
+- [x] Add rate limits, request IDs, structured redacted logs, security headers, CORS allowlist, database statement timeouts, connection caps, dependency scanning, secret scanning, SBOMs, and image signatures.
+- [x] Implement encrypted daily PostgreSQL backups to an independent object store, retention policy, and a monthly automated restore into an isolated database with row/hash counts and a sampled canonical revision verification.
 - [ ] Run staging migration, smoke, OAuth, registry-validation, publish, search, backup, and restore tests before production promotion.
-- [ ] Commit: `build: deploy hardened catalog services to Railway`
+- [x] Commit: `build: deploy hardened catalog services to Railway`
+
+Hosted staging execution remains an activation gate until a Railway project,
+OAuth applications, and independent object-store credentials are attached. The
+same migration, Caddy/API proxy, anonymous smoke, image policy, encrypted backup,
+and isolated restore flow has been exercised successfully in the local
+container topology.
 
 ## Verification
 

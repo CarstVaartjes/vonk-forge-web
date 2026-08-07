@@ -3,7 +3,8 @@
 .env
 .env.*
 !.env.example
-deploy/secrets/
+deploy/secrets/*
+!deploy/secrets/*.example
 
 __pycache__/
 .pytest_cache/

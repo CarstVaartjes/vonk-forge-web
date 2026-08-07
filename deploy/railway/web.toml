@@ -1,7 +1,12 @@
 [build]
 builder = "DOCKERFILE"
-dockerfilePath = "web/Dockerfile"
+dockerfilePath = "Dockerfile.web"
+watchPatterns = ["/web/**", "/deploy/Caddyfile", "/Dockerfile.web"]
 
 [deploy]
 healthcheckPath = "/health/live"
+healthcheckTimeout = 20
 restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+overlapSeconds = 20
+drainingSeconds = 10

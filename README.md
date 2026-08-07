@@ -19,30 +19,29 @@ Liveness is available at `/health/live`; readiness is available at
 
 ## Local deployment
 
-The reference stack contains four services: PostgreSQL, the public API, the
-static web site, and a private validation worker. PostgreSQL and the worker do
-not publish host ports. API and web bind to loopback for local development.
+The reference stack contains PostgreSQL, a one-shot migration, the private API,
+the public static web gateway, and a private validation worker. Only the web
+gateway publishes a host port. It proxies `/v1/*` to the API over the internal
+application network; PostgreSQL is reachable only on the database network.
 
 Before first start, create `deploy/secrets/postgres-password.txt` containing a
-local database password. This directory is ignored by Git. Then use:
+long random local database password. This file is ignored by Git. Then use:
 
 ```bash
-docker compose -f deploy/compose.yaml build
-docker compose -f deploy/compose.yaml up -d --wait
-docker compose -f deploy/compose.yaml exec -T api \
-  alembic -c /app/api/alembic.ini upgrade head
+export VONK_POSTGRES_PASSWORD_FILE="$PWD/deploy/secrets/postgres-password.txt"
+docker compose -f deploy/compose.yaml up -d --build --wait
 ```
 
-The API is at `http://127.0.0.1:8000` and the web site at
-`http://127.0.0.1:8080`. Stop without deleting PostgreSQL data with:
+The website and same-origin API are at `http://127.0.0.1:8080`. Stop without
+deleting PostgreSQL data with:
 
 ```bash
 docker compose -f deploy/compose.yaml down
 ```
 
-Railway service definitions live under `deploy/railway`. Production database
-credentials and OAuth settings belong in Railway secrets, never in this
-repository.
+Railway service definitions live under `deploy/railway`. See
+`docs/operations/railway-deployment.md` for the exact service/variable map and
+`docs/operations/backup-restore.md` for encrypted off-platform backups.
 
 ## Contract verification
 
