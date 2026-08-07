@@ -1,6 +1,6 @@
-# Vonk Forge Web
+# vonk-forge-web
 
-Public catalog, API, and publishing website for Vonk Forge recipes. This
+Public catalog, API, and publishing website for `vonk-forge` recipes. This
 service stores recipe metadata and validation evidence; container images and
 model weights remain in their external registries.
 
@@ -55,5 +55,5 @@ scripts/export-contract
 ```
 
 The export is a deterministic `dist/vonk-contracts-v1.tar.gz` archive. Local
-Vonk Forge installations pin a released archive and its SHA-256; they never
+`vonk-forge` installations pin a released archive and its SHA-256; they never
 load schema definitions from this repository's moving `main` branch.
