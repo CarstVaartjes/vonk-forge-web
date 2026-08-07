@@ -70,6 +70,7 @@ def test_revision_is_permanently_addressable_by_content_hash(client, engine) -> 
 
     assert response.status_code == 200
     assert response.json()["revision_id"] == published.id
+    assert response.json()["recipe_id"] == published.recipe_id
     assert response.headers["etag"] == f'"sha256:{published.content_sha256}"'
 
     missing = client.get(f"/v1/recipes/vonk/qwen3/revisions/sha256/{'0' * 64}")
