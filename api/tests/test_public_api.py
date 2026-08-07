@@ -61,6 +61,21 @@ def test_revision_etag_supports_not_modified(client, engine) -> None:
     assert response.content == b""
 
 
+def test_revision_is_permanently_addressable_by_content_hash(client, engine) -> None:
+    published = publish(engine)
+
+    response = client.get(
+        f"/v1/recipes/vonk/qwen3/revisions/sha256/{published.content_sha256}"
+    )
+
+    assert response.status_code == 200
+    assert response.json()["revision_id"] == published.id
+    assert response.headers["etag"] == f'"sha256:{published.content_sha256}"'
+
+    missing = client.get(f"/v1/recipes/vonk/qwen3/revisions/sha256/{'0' * 64}")
+    assert missing.status_code == 404
+
+
 def test_catalog_lists_latest_published_recipe(client, engine) -> None:
     publish(engine)
 

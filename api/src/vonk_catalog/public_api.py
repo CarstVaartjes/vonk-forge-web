@@ -104,15 +104,30 @@ def build_public_router(session_provider: SessionProvider | None) -> APIRouter:
         item = CatalogRepository(session).revision(publisher, slug, revision_number)
         if item is None or not _visible(session, item):
             raise _not_found()
-        etag = f'"sha256:{item.revision.content_sha256}"'
-        headers = {
-            "Cache-Control": "public, max-age=31536000, immutable",
-            "ETag": etag,
-        }
-        if if_none_match == etag:
-            return Response(status_code=304, headers=headers)
-        response.headers.update(headers)
-        return _revision(item)
+        return _immutable_revision(item, response, if_none_match)
+
+    @router.get(
+        "/recipes/{publisher}/{slug}/revisions/sha256/{content_sha256}",
+        response_model=None,
+    )
+    def recipe_revision_by_hash(
+        publisher: str,
+        slug: str,
+        content_sha256: str,
+        response: Response,
+        if_none_match: str | None = Header(default=None),
+        session: Session = Depends(database_session),
+    ) -> dict[str, object] | Response:
+        if len(content_sha256) != 64 or any(
+            character not in "0123456789abcdef" for character in content_sha256
+        ):
+            raise _not_found()
+        item = CatalogRepository(session).revision_by_hash(
+            publisher, slug, content_sha256
+        )
+        if item is None or not _visible(session, item):
+            raise _not_found()
+        return _immutable_revision(item, response, if_none_match)
 
     @router.get("/schemas/recipe/v1")
     def recipe_schema(response: Response) -> dict[str, object]:
@@ -228,3 +243,17 @@ def _revision(item: PublishedRecipe) -> dict[str, object]:
         "published_at": item.revision.published_at.isoformat(),
         "document": item.revision.document,
     }
+
+
+def _immutable_revision(
+    item: PublishedRecipe, response: Response, if_none_match: str | None
+) -> dict[str, object] | Response:
+    etag = f'"sha256:{item.revision.content_sha256}"'
+    headers = {
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "ETag": etag,
+    }
+    if if_none_match == etag:
+        return Response(status_code=304, headers=headers)
+    response.headers.update(headers)
+    return _revision(item)

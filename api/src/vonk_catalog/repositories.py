@@ -52,6 +52,23 @@ class CatalogRepository:
         row = self._session.execute(statement).one_or_none()
         return PublishedRecipe(*row) if row is not None else None
 
+    def revision_by_hash(
+        self, publisher: str, slug: str, content_sha256: str
+    ) -> PublishedRecipe | None:
+        statement = (
+            select(Publisher, Recipe, RecipeRevision)
+            .join(Recipe, Recipe.publisher_id == Publisher.id)
+            .join(RecipeRevision, RecipeRevision.recipe_id == Recipe.id)
+            .where(
+                Publisher.slug == publisher,
+                Recipe.slug == slug,
+                Recipe.state == "active",
+                RecipeRevision.content_sha256 == content_sha256,
+            )
+        )
+        row = self._session.execute(statement).one_or_none()
+        return PublishedRecipe(*row) if row is not None else None
+
     def list_latest(
         self,
         *,

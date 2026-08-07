@@ -384,6 +384,77 @@
         "summary": "Recipe Detail"
       }
     },
+    "/v1/recipes/{publisher}/{slug}/revisions/sha256/{content_sha256}": {
+      "get": {
+        "operationId": "recipe_revision_by_hash_v1_recipes__publisher___slug__revisions_sha256__content_sha256__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "publisher",
+            "required": true,
+            "schema": {
+              "title": "Publisher",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "slug",
+            "required": true,
+            "schema": {
+              "title": "Slug",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "content_sha256",
+            "required": true,
+            "schema": {
+              "title": "Content Sha256",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "if-none-match",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "If-None-Match"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Recipe Revision By Hash"
+      }
+    },
     "/v1/recipes/{publisher}/{slug}/revisions/{revision_number}": {
       "get": {
         "operationId": "recipe_revision_v1_recipes__publisher___slug__revisions__revision_number__get",
