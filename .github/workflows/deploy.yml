@@ -101,7 +101,7 @@ jobs:
       - name: Verify signatures and deploy immutable images
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_STAGING_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_STAGING_PROJECT_ID }}
           CLI_IMAGE: ghcr.io/railwayapp/cli@sha256:f50dad4fcbb0653e5f8423e799f527d227012cccda46a122ac24d5bbdeeb3793
         run: |
           set -euo pipefail
@@ -115,17 +115,11 @@ jobs:
           worker_image="$(<deployment-worker.txt)"
           web_image="$(<deployment-web.txt)"
           backup_image="$(<deployment-backup.txt)"
-          deploy_image() {
-            docker run --rm -e RAILWAY_TOKEN "$CLI_IMAGE" railway service source connect \
-              --project "$RAILWAY_PROJECT_ID" --environment staging \
-              --service "$1" --image "$2"
-          }
-          deploy_image migration "$api_image"
-          deploy_image api "$api_image"
-          deploy_image worker "$worker_image"
-          deploy_image web "$web_image"
-          deploy_image backup "$backup_image"
-          deploy_image restore "$backup_image"
+          scripts/railway-deploy-images staging "$RAILWAY_PROJECT_ID" \
+            "migration=$api_image"
+          scripts/railway-deploy-images staging "$RAILWAY_PROJECT_ID" \
+            "api=$api_image" "worker=$worker_image" "web=$web_image" \
+            "backup=$backup_image" "restore=$backup_image"
       - name: Anonymous staging smoke
         env:
           VONK_STAGING_BASE_URL: ${{ vars.VONK_STAGING_BASE_URL }}
@@ -146,7 +140,7 @@ jobs:
       - name: Verify signatures and deploy immutable images after protected approval
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_PRODUCTION_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PROJECT_ID }}
+          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_PRODUCTION_PROJECT_ID }}
           CLI_IMAGE: ghcr.io/railwayapp/cli@sha256:f50dad4fcbb0653e5f8423e799f527d227012cccda46a122ac24d5bbdeeb3793
         run: |
           set -euo pipefail
@@ -160,17 +154,11 @@ jobs:
           worker_image="$(<deployment-worker.txt)"
           web_image="$(<deployment-web.txt)"
           backup_image="$(<deployment-backup.txt)"
-          deploy_image() {
-            docker run --rm -e RAILWAY_TOKEN "$CLI_IMAGE" railway service source connect \
-              --project "$RAILWAY_PROJECT_ID" --environment production \
-              --service "$1" --image "$2"
-          }
-          deploy_image migration "$api_image"
-          deploy_image api "$api_image"
-          deploy_image worker "$worker_image"
-          deploy_image web "$web_image"
-          deploy_image backup "$backup_image"
-          deploy_image restore "$backup_image"
+          scripts/railway-deploy-images production "$RAILWAY_PROJECT_ID" \
+            "migration=$api_image"
+          scripts/railway-deploy-images production "$RAILWAY_PROJECT_ID" \
+            "api=$api_image" "worker=$worker_image" "web=$web_image" \
+            "backup=$backup_image" "restore=$backup_image"
       - name: Production read-only smoke
         env:
           VONK_STAGING_BASE_URL: https://vonkforge.ai

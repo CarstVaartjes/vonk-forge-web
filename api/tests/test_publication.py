@@ -9,6 +9,7 @@ from vonk_catalog.drafts import DraftService
 from vonk_catalog.models import (
     Publisher,
     PublisherMembership,
+    Recipe,
     RecipeFork,
     User,
     ValidationResult,
@@ -191,3 +192,27 @@ def test_hidden_or_suspended_source_revision_cannot_be_forked(session) -> None:
             idempotency_key="suspended-copy",
         )
     assert suspended.value.code == "publication.source_not_found"
+
+
+def test_inactive_source_recipe_cannot_be_forked(session) -> None:
+    user, official, community = _setup(session)
+    source_draft = _draft(session, user, official, "inactive-source")
+    _pass(session, source_draft)
+    service = PublicationService(session)
+    source = service.publish(
+        user.id, official.slug, source_draft.id, idempotency_key="inactive-publish"
+    )
+    recipe = session.get(Recipe, source.revision.recipe_id)
+    assert recipe is not None
+    recipe.state = "inactive"
+    session.flush()
+
+    with pytest.raises(Problem) as inactive:
+        service.fork(
+            user.id,
+            community.slug,
+            source.revision.id,
+            new_slug="inactive-copy",
+            idempotency_key="inactive-copy",
+        )
+    assert inactive.value.code == "publication.source_not_found"

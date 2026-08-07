@@ -12,7 +12,7 @@ from urllib.parse import quote, urlencode, urljoin, urlsplit
 
 import httpcore
 import httpx
-from httpcore._backends.sync import SyncBackend
+from httpcore import SyncBackend
 
 MAX_METADATA_BYTES = 1_048_576
 MAX_REDIRECTS = 3
@@ -186,14 +186,18 @@ class RegistryClient:
                 return None
 
     def _fetch(
-        self, url: str, *, headers: dict[str, str] | None = None
+        self,
+        url: str,
+        *,
+        headers: dict[str, str] | None = None,
+        method: str = "GET",
     ) -> httpx.Response:
         current = url
         for redirects in range(MAX_REDIRECTS + 1):
             before = self._validate_url(current)
             client = self.client or self._pinned_client(current, before[0])
             try:
-                request = client.build_request("GET", current, headers=headers)
+                request = client.build_request(method, current, headers=headers)
                 streamed = client.send(request, stream=True)
             except (httpx.TimeoutException, httpx.NetworkError) as error:
                 if self.client is None:
@@ -205,7 +209,7 @@ class RegistryClient:
                 declared = streamed.headers.get("Content-Length")
                 if declared is not None:
                     try:
-                        if int(declared) > MAX_METADATA_BYTES:
+                        if method != "HEAD" and int(declared) > MAX_METADATA_BYTES:
                             raise RegistryProblem(
                                 "registry metadata response is oversized"
                             )
@@ -214,10 +218,13 @@ class RegistryClient:
                             "registry content length is invalid"
                         ) from error
                 body = bytearray()
-                for chunk in streamed.iter_bytes():
-                    body.extend(chunk)
-                    if len(body) > MAX_METADATA_BYTES:
-                        raise RegistryProblem("registry metadata response is oversized")
+                if method != "HEAD":
+                    for chunk in streamed.iter_bytes():
+                        body.extend(chunk)
+                        if len(body) > MAX_METADATA_BYTES:
+                            raise RegistryProblem(
+                                "registry metadata response is oversized"
+                            )
                 response = httpx.Response(
                     streamed.status_code,
                     headers=streamed.headers,
@@ -251,6 +258,93 @@ class RegistryClient:
                 raise RegistryTemporaryProblem("registry is temporarily unavailable")
             return response
         raise AssertionError("redirect loop escaped bound")
+
+    def observe_artifact(self, artifact: dict[str, object]) -> int:
+        kind = artifact.get("kind")
+        repository = artifact.get("repository")
+        revision = artifact.get("revision")
+        if (
+            not isinstance(kind, str)
+            or not isinstance(repository, str)
+            or not isinstance(revision, str)
+        ):
+            raise RegistryProblem("artifact metadata is invalid")
+        if kind == "http.file":
+            response = self._fetch(
+                repository,
+                method="HEAD",
+                headers={"Accept-Encoding": "identity"},
+            )
+            if response.status_code != 200:
+                raise RegistryProblem("artifact size request failed")
+            raw_size = response.headers.get("Content-Length")
+            try:
+                size = int(raw_size or "")
+            except ValueError as error:
+                raise RegistryProblem(
+                    "artifact content length is missing or invalid"
+                ) from error
+            if size <= 0 or size > 10**15:
+                raise RegistryProblem("artifact content length is unreasonable")
+            return size
+        if kind == "huggingface.snapshot":
+            if not re.fullmatch(
+                r"[A-Za-z0-9._-]+/[A-Za-z0-9._-]+", repository
+            ) or not re.fullmatch(r"[a-f0-9]{40}|[a-f0-9]{64}", revision):
+                raise RegistryProblem("Hugging Face artifact identity is invalid")
+            response = self._fetch(
+                f"https://huggingface.co/api/models/{quote(repository, safe='/')}/revision/{revision}"
+            )
+            if response.status_code != 200:
+                raise RegistryProblem("Hugging Face artifact metadata request failed")
+            payload = self._json(response)
+            siblings = payload.get("siblings")
+            if not isinstance(siblings, list) or not siblings or len(siblings) > 20_000:
+                raise RegistryProblem("Hugging Face artifact file list is invalid")
+            total = 0
+            for sibling in siblings:
+                if not isinstance(sibling, dict):
+                    raise RegistryProblem(
+                        "Hugging Face artifact file metadata is invalid"
+                    )
+                lfs = sibling.get("lfs")
+                raw_size = (
+                    lfs.get("size") if isinstance(lfs, dict) else sibling.get("size")
+                )
+                if not isinstance(raw_size, int) or raw_size < 0:
+                    raise RegistryProblem("Hugging Face artifact size is missing")
+                total += raw_size
+                if total > 10**15:
+                    raise RegistryProblem("Hugging Face artifact size is unreasonable")
+            if total <= 0:
+                raise RegistryProblem("Hugging Face artifact is empty")
+            return total
+        if kind == "oci.artifact":
+            matched = REFERENCE_RE.fullmatch(f"{repository}@{revision}")
+            if matched is None or matched["registry"] != "ghcr.io":
+                raise RegistryProblem("OCI artifacts must be digest-pinned on ghcr.io")
+            path = matched["repository"].strip("/")
+            manifest, _ = self._metadata(
+                f"https://ghcr.io/v2/{quote(path, safe='/')}/manifests/{revision}",
+                expected_digest=revision,
+                accept=MANIFEST_ACCEPT,
+            )
+            descriptors = manifest.get("layers", manifest.get("blobs"))
+            if not isinstance(descriptors, list) or not descriptors:
+                raise RegistryProblem(
+                    "OCI artifact manifest has no content descriptors"
+                )
+            total = 0
+            for descriptor in descriptors:
+                if not isinstance(descriptor, dict) or not isinstance(
+                    descriptor.get("size"), int
+                ):
+                    raise RegistryProblem("OCI artifact size metadata is invalid")
+                total += descriptor["size"]
+                if total <= 0 or total > 10**15:
+                    raise RegistryProblem("OCI artifact size is unreasonable")
+            return total
+        raise RegistryProblem("artifact kind is unsupported")
 
     @staticmethod
     def _bearer_challenge(response: httpx.Response) -> dict[str, str]:

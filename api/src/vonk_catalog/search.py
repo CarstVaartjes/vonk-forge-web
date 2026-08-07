@@ -5,7 +5,8 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import and_, exists, func, or_, select
+from sqlalchemy import and_, cast, exists, func, literal_column, or_, select
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Session
 
 from .models import Publisher, Recipe, RecipeRevision, RecipeSearchDocument
@@ -178,9 +179,9 @@ class SearchService:
                 and self.database.bind.dialect.name == "postgresql"
             ):
                 statement = statement.where(
-                    func.to_tsvector("simple", RecipeSearchDocument.search_text).op(
-                        "@@"
-                    )(func.websearch_to_tsquery("simple", query))
+                    literal_column("recipe_search_documents.search_vector").op("@@")(
+                        func.websearch_to_tsquery("simple", query)
+                    )
                 )
             else:
                 statement = statement.where(
@@ -237,7 +238,7 @@ class SearchService:
             self.database.bind is not None
             and self.database.bind.dialect.name == "postgresql"
         ):
-            return column.contains([value])
+            return cast(column, JSONB).contains([value])
         values = func.json_each(column).table_valued("key", "value").alias()
         return exists(select(1).select_from(values).where(values.c.value == value))
 

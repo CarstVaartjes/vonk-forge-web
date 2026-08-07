@@ -45,16 +45,25 @@ def test_catalog_migration_upgrades_and_downgrades(alembic_config) -> None:
     }
     assert isinstance(rate_limit_columns["bucket_start"]["type"], BigInteger)
     with engine.connect() as connection:
-        triggers = {
-            row[0]
-            for row in connection.execute(
-                text("SELECT name FROM sqlite_master WHERE type = 'trigger'")
-            )
-        }
-    assert {
-        "recipe_revisions_immutable_update",
-        "recipe_revisions_immutable_delete",
-    } <= triggers
+        if engine.dialect.name == "postgresql":
+            triggers = {
+                row[0]
+                for row in connection.execute(
+                    text("SELECT tgname FROM pg_trigger WHERE NOT tgisinternal")
+                )
+            }
+            assert "recipe_revisions_immutable" in triggers
+        else:
+            triggers = {
+                row[0]
+                for row in connection.execute(
+                    text("SELECT name FROM sqlite_master WHERE type = 'trigger'")
+                )
+            }
+            assert {
+                "recipe_revisions_immutable_update",
+                "recipe_revisions_immutable_delete",
+            } <= triggers
 
     command.downgrade(alembic_config, "base")
     assert inspect(engine).get_table_names() == ["alembic_version"]

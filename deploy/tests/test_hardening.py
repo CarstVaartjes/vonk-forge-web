@@ -83,11 +83,17 @@ def test_railway_deploys_the_signed_registry_digest_without_source_rebuild() -> 
     deploy = yaml.safe_load((ROOT / ".github" / "workflows" / "deploy.yml").read_text())
     serialized = json.dumps(deploy)
 
-    assert "service source connect" in serialized
-    assert "--image" in serialized
     assert "deployment-${{ matrix.name }}.txt" in serialized
     assert "cosign verify" in serialized
     assert "up --ci" not in serialized
+    assert "RAILWAY_STAGING_PROJECT_ID" in serialized
+    assert "RAILWAY_PRODUCTION_PROJECT_ID" in serialized
+    deploy_helper = (ROOT / "scripts" / "railway-deploy-images").read_text()
+    assert "service source connect" in deploy_helper
+    assert "--image" in deploy_helper
+    assert "deployment list --json --limit 1" in deploy_helper
+    assert '"$deployment_id" != "$before"' in deploy_helper
+    assert '"$status" != SUCCESS' in deploy_helper
 
 
 @pytest.mark.skipif(

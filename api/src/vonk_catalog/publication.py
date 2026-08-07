@@ -204,9 +204,9 @@ class PublicationService:
         assert recipe is not None
         source_publisher = self.database.get(Publisher, recipe.publisher_id)
         assert source_publisher is not None
-        if not ModerationService(self.database).revision_visible(
-            source.id, source_publisher.id
-        ):
+        if recipe.state != "active" or not ModerationService(
+            self.database
+        ).revision_visible(source.id, source_publisher.id):
             raise Problem(
                 404,
                 "publication.source_not_found",

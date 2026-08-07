@@ -56,20 +56,29 @@ def validate_image_contract(
 
 
 def validate_resource_envelope(
-    document: dict[str, object], *, image_layer_bytes: int
+    document: dict[str, object], *, image_layer_bytes: int, artifact_sizes: list[int]
 ) -> tuple[dict[str, object], ...]:
     try:
         artifacts = document["artifacts"]
         per_node = document["resources"]["per_node"]
-        artifact_sizes = [int(artifact["expected_bytes"]) for artifact in artifacts]
+        declared_artifact_sizes = [
+            int(artifact["expected_bytes"]) for artifact in artifacts
+        ]
         download_bytes = int(per_node["download_bytes"])
         installed_bytes = int(per_node["installed_bytes"])
         staging_bytes = int(per_node["staging_bytes"])
     except (KeyError, TypeError, ValueError) as error:
         raise ValidationJobProblem("draft resource envelope is invalid") from error
+    if len(artifact_sizes) != len(declared_artifact_sizes):
+        raise ValidationJobProblem("artifact size observations are incomplete")
     total_observed = image_layer_bytes + sum(artifact_sizes)
     largest_artifact = max(artifact_sizes, default=0)
     return (
+        _check(
+            "resources.artifact_sizes",
+            declared_artifact_sizes == artifact_sizes,
+            "declared immutable artifact sizes match independently observed metadata",
+        ),
         _check(
             "resources.download_bytes",
             download_bytes >= total_observed,
@@ -295,8 +304,26 @@ def process_validation_job(
             },
         },
     ]
+    raw_artifacts = document.get("artifacts")
+    if not isinstance(raw_artifacts, list) or not all(
+        isinstance(artifact, dict) for artifact in raw_artifacts
+    ):
+        raise ValidationJobProblem("draft artifacts are invalid")
+    artifact_sizes = [registry.observe_artifact(artifact) for artifact in raw_artifacts]
+    checks.append(
+        {
+            "code": "registry.artifact_metadata_observed",
+            "passed": True,
+            "detail": "immutable artifact sizes were independently observed",
+            "observed": {"artifact_sizes": artifact_sizes},
+        }
+    )
     checks.extend(
-        validate_resource_envelope(document, image_layer_bytes=image.layer_bytes)
+        validate_resource_envelope(
+            document,
+            image_layer_bytes=image.layer_bytes,
+            artifact_sizes=artifact_sizes,
+        )
     )
     evidence_results: list[EvidenceValidation] = []
     for raw in reports[:20]:

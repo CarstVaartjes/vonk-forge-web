@@ -195,8 +195,12 @@ def install_security(
         status = response.status_code
         response.headers["X-Request-ID"] = request_id
         _add_headers(response, settings.production)
-        if request.method != "GET" or request.url.path.startswith(
-            ("/v1/me", "/v1/auth", "/v1/publishers", "/v1/moderation")
+        if (
+            response.status_code >= 400
+            or request.method != "GET"
+            or request.url.path.startswith(
+                ("/v1/me", "/v1/auth", "/v1/publishers", "/v1/moderation")
+            )
         ):
             response.headers.setdefault("Cache-Control", "no-store")
         LOGGER.info(

@@ -104,6 +104,7 @@ def test_missing_recipe_uses_stable_problem_document(client) -> None:
 
     assert response.status_code == 404
     assert response.headers["content-type"].startswith("application/problem+json")
+    assert response.headers["cache-control"] == "no-store"
     body = response.json()
     assert body["code"] == "catalog.not_found"
     assert body["request_id"]

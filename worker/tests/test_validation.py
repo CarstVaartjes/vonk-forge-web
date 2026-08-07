@@ -58,15 +58,28 @@ def test_declared_resource_envelope_covers_observed_image_and_artifacts() -> Non
     }
     assert all(
         check["passed"]
-        for check in validate_resource_envelope(document, image_layer_bytes=456)
+        for check in validate_resource_envelope(
+            document, image_layer_bytes=456, artifact_sizes=[100, 200]
+        )
     )
 
     document["resources"]["per_node"]["download_bytes"] = 755
-    checks = validate_resource_envelope(document, image_layer_bytes=456)
+    checks = validate_resource_envelope(
+        document, image_layer_bytes=456, artifact_sizes=[100, 200]
+    )
     assert not next(
         check["passed"]
         for check in checks
         if check["code"] == "resources.download_bytes"
+    )
+
+    size_checks = validate_resource_envelope(
+        document, image_layer_bytes=456, artifact_sizes=[99, 200]
+    )
+    assert not next(
+        check["passed"]
+        for check in size_checks
+        if check["code"] == "resources.artifact_sizes"
     )
 
 

@@ -326,8 +326,8 @@ class RecipeSearchDocument(Base):
     min_nodes: Mapped[int] = mapped_column(Integer, index=True)
     max_nodes: Mapped[int] = mapped_column(Integer, index=True)
     tested_node_counts: Mapped[list[int]] = mapped_column(JSON_DOCUMENT)
-    installed_bytes: Mapped[int] = mapped_column(Integer, index=True)
-    resident_memory_bytes: Mapped[int] = mapped_column(Integer, index=True)
+    installed_bytes: Mapped[int] = mapped_column(BigInteger, index=True)
+    resident_memory_bytes: Mapped[int] = mapped_column(BigInteger, index=True)
     capabilities: Mapped[list[str]] = mapped_column(JSON_DOCUMENT)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow

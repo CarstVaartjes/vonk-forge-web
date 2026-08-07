@@ -8,7 +8,11 @@ worker, migration job, backup job, restore drill, primary PostgreSQL, and
 restore PostgreSQL have no public domain. Railway private networking is scoped
 per environment, so staging and production cannot reach each other.
 
-Create these services in both `staging` and `production`:
+Create two separate Railway projects, one for staging and one for production.
+This is a security boundary: Railway stores a Docker image source on the
+service itself rather than per environment, so staging and production must not
+share services. Create these services in the corresponding environment of each
+project:
 
 | Service | Config source | Public | Runtime |
 | --- | --- | --- | --- |
@@ -75,14 +79,19 @@ staging. Duplicate service topology, then replace every secret.
 
 ## First release and promotion
 
-1. Create production, duplicate it as staging, and replace staging secrets.
+1. Create the production project, create a separate staging project with the
+   same topology, and give each project independent databases and secrets.
 2. Bootstrap every code service from its config file, then disconnect its
    repository source. Make the four GHCR packages public, or configure Railway
    GHCR credentials with `read:packages` on a Pro workspace.
-3. Run the protected GitHub deploy workflow. It verifies each Cosign signature,
+3. Set `RAILWAY_STAGING_PROJECT_ID` and `RAILWAY_PRODUCTION_PROJECT_ID` in the
+   matching protected GitHub environments, with a project-scoped token for
+   each. Run the protected deploy workflow. It verifies each Cosign signature,
    connects `migration` and the application services to exact image digests,
    and never uploads source with `railway up`.
-4. Require the `migration` deployment to complete successfully.
+4. The workflow requires a new `migration` deployment to complete successfully
+   before it changes application services, then waits for every new deployment
+   before smoke testing or allowing production promotion.
 5. Verify `api`, `worker`, and `web` through `/health/live` and
    `/health/ready` through the public web domain.
 6. Sign in with a staging OAuth account, claim a staging namespace, upload the
@@ -93,10 +102,9 @@ staging. Duplicate service topology, then replace every secret.
    release evidence. Only then approve the protected GitHub `production`
    environment and repeat migration before the long-running services.
 
-The deploy workflow uses Railway project tokens scoped separately to staging
-and production. Configure required reviewers for the GitHub `production`
-environment. Railway environment duplication stages changes for review, as
-described in its [environment documentation](https://docs.railway.com/environments).
+The deploy workflow uses Railway project tokens and projects scoped separately
+to staging and production. Configure required reviewers for the GitHub
+`production` environment.
 
 ## Network boundary
 

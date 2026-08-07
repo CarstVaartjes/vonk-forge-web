@@ -60,6 +60,15 @@ INDEX_BODY = json.dumps(
     separators=(",", ":"),
 ).encode()
 DIGEST = "sha256:" + hashlib.sha256(INDEX_BODY).hexdigest()
+ARTIFACT_BODY = json.dumps(
+    {
+        "schemaVersion": 2,
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "layers": [{"digest": "sha256:" + "e" * 64, "size": 321}],
+    },
+    separators=(",", ":"),
+).encode()
+ARTIFACT_DIGEST = "sha256:" + hashlib.sha256(ARTIFACT_BODY).hexdigest()
 PUBLIC_IP = ("93.184.216.34",)
 
 
@@ -127,6 +136,60 @@ def test_resolves_digest_index_arm64_and_only_reads_config_metadata() -> None:
     assert (
         result.labels["org.opencontainers.image.source"]
         == "https://example.test/source"
+    )
+
+
+def test_artifact_sizes_are_observed_from_independent_remote_metadata() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.method == "HEAD":
+            return httpx.Response(
+                200, headers={"Content-Length": "123"}, request=request
+            )
+        if request.url.host == "huggingface.co":
+            return httpx.Response(
+                200,
+                json={"siblings": [{"rfilename": "weights", "lfs": {"size": 456}}]},
+                request=request,
+            )
+        if request.url.path.endswith(f"/manifests/{ARTIFACT_DIGEST}"):
+            return httpx.Response(
+                200,
+                content=ARTIFACT_BODY,
+                headers={"Docker-Content-Digest": ARTIFACT_DIGEST},
+                request=request,
+            )
+        raise AssertionError(request.url)
+
+    client = _client(handler)
+    assert (
+        client.observe_artifact(
+            {
+                "kind": "http.file",
+                "repository": "https://models.example/weights.bin",
+                "revision": "sha256:" + "a" * 64,
+            }
+        )
+        == 123
+    )
+    assert (
+        client.observe_artifact(
+            {
+                "kind": "huggingface.snapshot",
+                "repository": "owner/model",
+                "revision": "b" * 40,
+            }
+        )
+        == 456
+    )
+    assert (
+        client.observe_artifact(
+            {
+                "kind": "oci.artifact",
+                "repository": "ghcr.io/owner/model",
+                "revision": ARTIFACT_DIGEST,
+            }
+        )
+        == 321
     )
 
 
