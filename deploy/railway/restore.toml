@@ -1,0 +1,9 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.backup"
+watchPatterns = ["/scripts/restore-database", "/scripts/verify-restored-database", "/Dockerfile.backup"]
+
+[deploy]
+startCommand = "/app/scripts/restore-database"
+cronSchedule = "0 4 1 * *"
+restartPolicyType = "NEVER"

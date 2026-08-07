@@ -1,0 +1,37 @@
+:{$PORT:8080} {
+	root * /srv
+	encode zstd gzip
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		Referrer-Policy no-referrer
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Content-Security-Policy "default-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		-Server
+	}
+
+	@api path /v1/* /health/ready
+	handle @api {
+		reverse_proxy {$VONK_API_UPSTREAM:http://api:8000}
+	}
+
+	@health path /health/live
+	handle @health {
+		header Cache-Control "no-store"
+		header Content-Type application/json
+		respond `{"service":"vonk-catalog-web","status":"live"}` 200
+	}
+
+	@assets path /assets/*
+	handle @assets {
+		header Cache-Control "public, max-age=31536000, immutable"
+		file_server
+	}
+
+	handle {
+		header Cache-Control "no-store"
+		try_files {path} /index.html
+		file_server
+	}
+}

@@ -1,0 +1,105 @@
+name: vonk-forge-web
+
+services:
+  postgres:
+    image: postgres:18.0-bookworm@sha256:3f55f8895c4ed50603e2fbdfc72fffeeaba3173321fee5cb825bbbeb30d9d854
+    environment:
+      POSTGRES_DB: vonk_catalog
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_USER: vonk
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vonk -d vonk_catalog"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks: [database]
+    secrets: [postgres_password]
+    volumes: [postgres-data:/var/lib/postgresql]
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: Dockerfile.api
+    command: ["alembic", "-c", "api/alembic.ini", "upgrade", "head"]
+    read_only: true
+    tmpfs: [/tmp]
+    environment: &database-environment
+      VONK_DATABASE_URL: postgresql+psycopg://vonk@postgres:5432/vonk_catalog
+      VONK_DATABASE_PASSWORD_FILE: /run/secrets/postgres_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [database]
+    secrets: [postgres_password]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    restart: "no"
+
+  api:
+    build:
+      context: ..
+      dockerfile: Dockerfile.api
+    read_only: true
+    tmpfs: [/tmp]
+    environment: *database-environment
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks: [application, database, public_https]
+    secrets: [postgres_password]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 256
+
+  web:
+    build:
+      context: ..
+      dockerfile: Dockerfile.web
+    read_only: true
+    tmpfs: [/config, /data, /tmp]
+    environment:
+      VONK_API_UPSTREAM: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [application, public_ingress]
+    ports: ["127.0.0.1:8080:8080"]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 128
+
+  worker:
+    build:
+      context: ..
+      dockerfile: Dockerfile.worker
+    read_only: true
+    tmpfs: [/tmp]
+    environment: *database-environment
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    networks: [database, public_https]
+    secrets: [postgres_password]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    pids_limit: 256
+
+networks:
+  application:
+    internal: true
+  database:
+    internal: true
+  public_https:
+  public_ingress:
+
+secrets:
+  postgres_password:
+    file: ${VONK_POSTGRES_PASSWORD_FILE:?set this to a local password file}
+
+volumes:
+  postgres-data:

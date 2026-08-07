@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if (($# < 3)); then
+  echo "usage: railway-deploy-images ENVIRONMENT PROJECT_ID SERVICE=IMAGE [...]" >&2
+  exit 2
+fi
+: "${RAILWAY_TOKEN:?RAILWAY_TOKEN is required}"
+: "${CLI_IMAGE:?CLI_IMAGE is required}"
+
+environment=$1
+project_id=$2
+shift 2
+
+railway() {
+  docker run --rm -e RAILWAY_TOKEN "$CLI_IMAGE" railway "$@"
+}
+
+for assignment in "$@"; do
+  service=${assignment%%=*}
+  image=${assignment#*=}
+  if [[ -z "$service" || "$image" != *@sha256:* ]]; then
+    echo "invalid immutable service image assignment" >&2
+    exit 2
+  fi
+  requested_digest=${image##*@}
+  before=$(railway deployment list --json --limit 1 \
+    --project "$project_id" --environment "$environment" --service "$service" \
+    | jq -r '.[0].id // empty')
+  railway service source connect --json \
+    --project "$project_id" --environment "$environment" \
+    --service "$service" --image "$image" >/dev/null
+
+  for _ in $(seq 1 180); do
+    latest=$(railway deployment list --json --limit 1 \
+      --project "$project_id" --environment "$environment" --service "$service")
+    deployment_id=$(jq -r '.[0].id // empty' <<<"$latest")
+    status=$(jq -r '.[0].status // empty' <<<"$latest")
+    observed_digest=$(jq -r --arg image "$image" --arg digest "$requested_digest" \
+      '[.[0].meta | .. | strings | select(. == $image or . == $digest)] | first // empty' \
+      <<<"$latest")
+    if [[ -n "$deployment_id" && "$deployment_id" != "$before" ]]; then
+      if [[ -z "$observed_digest" ]]; then
+        echo "$service deployment $deployment_id does not identify requested digest $requested_digest" >&2
+        exit 1
+      fi
+      case "$status" in
+        SUCCESS) break ;;
+        FAILED|CRASHED|REMOVED)
+          echo "$service deployment $deployment_id failed with $status" >&2
+          exit 1
+          ;;
+      esac
+    fi
+    sleep 5
+  done
+  if [[ -z "${deployment_id:-}" || "$deployment_id" == "$before" || "$status" != SUCCESS || -z "${observed_digest:-}" ]]; then
+    echo "$service did not reach a new successful digest-verified deployment" >&2
+    exit 1
+  fi
+  printf '%s %s %s\n' "$service" "$deployment_id" "$image"
+done

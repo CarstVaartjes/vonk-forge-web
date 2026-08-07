@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:18.0-bookworm
+        env:
+          POSTGRES_DB: vonk_catalog_test
+          POSTGRES_PASSWORD: test-only
+          POSTGRES_USER: vonk
+        options: >-
+          --health-cmd "pg_isready -U vonk -d vonk_catalog_test"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+        ports:
+          - 5432:5432
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
+        with:
+          version: "0.8.14"
+      - run: uv sync --all-packages --locked
+      - run: uv run --project api pytest api/tests deploy/tests -q
+        env:
+          VONK_TEST_DATABASE_URL: postgresql+psycopg://vonk:test-only@127.0.0.1:5432/vonk_catalog_test
+      - run: uv run --project worker pytest worker/tests -q
+
+  web:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: "24.12.0"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm --prefix web ci
+      - run: npm --prefix web audit --audit-level=high
+      - run: npm --prefix web test -- --run
+      - run: npm --prefix web run build
+      - run: npx --prefix web playwright install --with-deps chromium
+      - run: npm --prefix web run test:e2e
+
+  contracts:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: "24.12.0"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
+        with:
+          version: "0.8.14"
+      - run: uv sync --project api --locked
+      - run: npm --prefix web ci
+      - run: scripts/verify-contracts
+      - run: scripts/export-contract
+
+  containers:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - run: VONK_POSTGRES_PASSWORD_FILE="$PWD/deploy/secrets/postgres-password.txt.example" docker compose -f deploy/compose.yaml config --quiet
+      - run: docker build -f Dockerfile.api -t vonk-catalog-api:test .
+      - run: docker build -f Dockerfile.worker -t vonk-catalog-worker:test .
+      - run: docker build -f Dockerfile.web -t vonk-catalog-web:test .
+      - run: docker build -f Dockerfile.backup -t vonk-catalog-backup:test .
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12"
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78
+        with:
+          version: "0.8.14"
+      - run: uv sync --project api --locked
+      - run: VONK_TEST_CONTAINER_IMAGES=1 uv run --project api pytest deploy/tests -q
+
+  security:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+      - uses: github/codeql-action/upload-sarif@c4dd10e44af883a891fe31ced449bcb4a6728b9b
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif

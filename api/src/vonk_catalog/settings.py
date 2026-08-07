@@ -1,0 +1,69 @@
+from pathlib import Path
+
+from pydantic import Field, SecretStr, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_prefix="VONK_",
+        env_file=None,
+        extra="forbid",
+    )
+
+    database_url: str = Field(
+        default="postgresql+psycopg://vonk:vonk@127.0.0.1:5432/vonk_catalog"
+    )
+    database_password_file: Path | None = None
+    source_bundle_path: Path = Path("/data/source-bundles")
+    production: bool = False
+    public_base_url: str = "http://127.0.0.1:8000"
+    session_secret: SecretStr = SecretStr("development-only-session-secret-do-not-use")
+    session_ttl_seconds: int = Field(default=2_592_000, ge=300, le=31_536_000)
+    oauth_flow_ttl_seconds: int = Field(default=600, ge=60, le=900)
+    github_client_id: str | None = None
+    github_client_secret: SecretStr | None = None
+    google_client_id: str | None = None
+    google_client_secret: SecretStr | None = None
+    founder_oauth_provider: str | None = None
+    founder_oauth_subject: str | None = None
+    cors_allowed_origins: list[str] = Field(default_factory=list)
+    rate_limit_requests: int = Field(default=300, ge=1, le=100_000)
+    rate_limit_window_seconds: int = Field(default=60, ge=1, le=3_600)
+    trusted_proxy_hops: int = Field(default=0, ge=0, le=8)
+    database_pool_size: int = Field(default=5, ge=1, le=50)
+    database_max_overflow: int = Field(default=5, ge=0, le=50)
+    database_statement_timeout_ms: int = Field(default=15_000, ge=1_000, le=300_000)
+    database_lock_timeout_ms: int = Field(default=5_000, ge=500, le=60_000)
+    database_idle_transaction_timeout_ms: int = Field(
+        default=30_000, ge=1_000, le=300_000
+    )
+
+    @model_validator(mode="after")
+    def secure_production(self) -> "Settings":
+        if self.production:
+            if not self.public_base_url.startswith("https://"):
+                raise ValueError("production public base URL must use HTTPS")
+            if (
+                len(self.session_secret.get_secret_value()) < 32
+                or self.session_secret.get_secret_value()
+                == "development-only-session-secret-do-not-use"
+            ):
+                raise ValueError("production session secret is too short")
+            if any(
+                origin == "*" or not origin.startswith("https://")
+                for origin in self.cors_allowed_origins
+            ):
+                raise ValueError("production CORS origins must be explicit HTTPS URLs")
+        for provider in ("github", "google"):
+            client_id = getattr(self, f"{provider}_client_id")
+            client_secret = getattr(self, f"{provider}_client_secret")
+            if (client_id is None) != (client_secret is None):
+                raise ValueError(f"{provider} OAuth configuration is incomplete")
+        if (self.founder_oauth_provider is None) != (
+            self.founder_oauth_subject is None
+        ):
+            raise ValueError("founder OAuth configuration is incomplete")
+        if self.founder_oauth_provider not in (None, "github", "google"):
+            raise ValueError("founder OAuth provider is unsupported")
+        return self
