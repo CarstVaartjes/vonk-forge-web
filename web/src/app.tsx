@@ -1,5 +1,6 @@
 import { HomePage } from "./pages/home";
 import { PublisherPage } from "./pages/publisher";
+import { PublisherWorkspacePage } from "./pages/publisher-workspace";
 import { RecipeDetailPage } from "./pages/recipe-detail";
 import { RecipesPage } from "./pages/recipes";
 
@@ -15,7 +16,7 @@ function CurrentPage() {
     return <PublisherPage publisher={parts[1] ?? ""} />;
   }
   if (parts[0] === "publish") {
-    return <main className="status-panel"><h1>Publisher workspace</h1><p>Sign in to upload a locally tested private draft.</p></main>;
+    return <PublisherWorkspacePage />;
   }
   return <main className="status-panel"><h1>Not found</h1><p>This spark has not been forged.</p></main>;
 }

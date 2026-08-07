@@ -9,6 +9,7 @@ const recipe = {
   title: "Qwen Fast",
   official: true,
   revision_number: 3,
+  revision_id: "revision-qwen-3",
   content_sha256: "a".repeat(64),
   published_at: "2026-08-07T10:00:00Z",
   runtime: { family: "vllm", image: `registry.example/vonk/qwen@sha256:${"b".repeat(64)}` },

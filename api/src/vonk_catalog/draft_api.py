@@ -2,10 +2,11 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Header, Request, Response
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 from .auth import AuthServices, require_csrf, require_session
 from .drafts import MAX_BODY_BYTES, DraftService, decode_upload
-from .models import Recipe, RecipeDraft
+from .models import Recipe, RecipeDraft, ValidationResult
 from .problems import Problem
 from .publishers import PublisherService
 
@@ -78,7 +79,18 @@ async def _bounded_body(request: Request) -> bytes:
     return b"".join(chunks)
 
 
-def _serialize(draft: RecipeDraft, publisher: str) -> dict[str, object]:
+def _serialize(
+    draft: RecipeDraft, publisher: str, database: Session
+) -> dict[str, object]:
+    validation = database.scalar(
+        select(ValidationResult)
+        .where(
+            ValidationResult.draft_id == draft.id,
+            ValidationResult.draft_version == draft.version,
+            ValidationResult.content_sha256 == draft.content_sha256,
+        )
+        .order_by(ValidationResult.created_at.desc())
+    )
     return {
         "id": draft.id,
         "publisher": publisher,
@@ -88,6 +100,15 @@ def _serialize(draft: RecipeDraft, publisher: str) -> dict[str, object]:
         "content_sha256": draft.content_sha256,
         "recipe": draft.document,
         "validation_problems": draft.validation_problems,
+        "validation": (
+            None
+            if validation is None
+            else {
+                "status": validation.status,
+                "checks": validation.checks,
+                "created_at": validation.created_at.isoformat(),
+            }
+        ),
     }
 
 
@@ -109,7 +130,9 @@ def build_draft_router(services: AuthServices) -> APIRouter:
                     .order_by(RecipeDraft.updated_at.desc(), RecipeDraft.id)
                 )
             )
-            return {"items": [_serialize(row, namespace.slug) for row in rows]}
+            return {
+                "items": [_serialize(row, namespace.slug, database) for row in rows]
+            }
 
     @router.post("/publishers/{publisher}/drafts", status_code=201)
     async def create_draft(
@@ -138,7 +161,7 @@ def build_draft_router(services: AuthServices) -> APIRouter:
                 idempotency_key=idempotency_key,
                 test_report=upload.get("test_report"),
             )
-            result = _serialize(draft, publisher)
+            result = _serialize(draft, publisher, database)
         response.headers["ETag"] = _etag(draft.version)
         response.headers["Location"] = f"/v1/publishers/{publisher}/drafts/{draft.id}"
         return result
@@ -152,7 +175,7 @@ def build_draft_router(services: AuthServices) -> APIRouter:
             draft = DraftService(database).get(
                 authenticated.user.id, publisher, draft_id
             )
-            result = _serialize(draft, publisher)
+            result = _serialize(draft, publisher, database)
         response.headers["ETag"] = _etag(draft.version)
         return result
 
@@ -182,7 +205,7 @@ def build_draft_router(services: AuthServices) -> APIRouter:
                 service.add_test_report(
                     authenticated.user.id, publisher, draft.id, upload["test_report"]
                 )
-            result = _serialize(draft, publisher)
+            result = _serialize(draft, publisher, database)
         response.headers["ETag"] = _etag(draft.version)
         return result
 

@@ -13,6 +13,7 @@ from vonk_catalog.models import (
     PublisherMembership,
     RecipeDraft,
     User,
+    ValidationResult,
 )
 from vonk_catalog.models import (
     TestReport as StoredTestReport,
@@ -154,3 +155,27 @@ def test_http_upload_returns_etag_and_requires_it_for_update(engine) -> None:
         )
         assert updated.status_code == 200
         assert updated.headers["etag"] == '"draft-version-2"'
+
+        with sessions.begin() as database:
+            stored = database.get(RecipeDraft, updated.json()["id"])
+            database.add(
+                ValidationResult(
+                    draft_id=stored.id,
+                    draft_version=stored.version,
+                    content_sha256=stored.content_sha256,
+                    status="passed",
+                    checks=[
+                        {
+                            "code": "registry.arm64_available",
+                            "passed": True,
+                            "detail": "linux/arm64 manifest found",
+                        }
+                    ],
+                )
+            )
+
+        loaded = client.get(location)
+        assert loaded.json()["validation"]["status"] == "passed"
+        assert loaded.json()["validation"]["checks"][0]["code"] == (
+            "registry.arm64_available"
+        )

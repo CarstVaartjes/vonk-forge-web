@@ -159,13 +159,13 @@
 - Modify: `web/src/api/client.ts`
 - Modify: `web/src/app.tsx`
 
-- [ ] Write tests first for OAuth provider choice, namespace context, uploaded draft, ETag conflict, schema problem paths, validation pending/retry/failure/success, evidence provenance, explicit publish confirmation, resulting immutable revision, and fork workflow.
-- [ ] Run Vitest; confirm missing pages/components.
-- [ ] Implement the workspace around the expected flow: build/test in local Vonk Forge, push the public digest-pinned image to the publisher's registry, upload recipe/evidence as a private draft, inspect validation, then explicitly publish.
-- [ ] Provide a JSON editor for corrections but do not imply that the global site can test the workload or build/push the image. Show registry and test failures with stable codes and repair guidance.
-- [ ] Require the user to confirm publisher, recipe slug, immutable image digest, content hash, and public visibility immediately before publish.
-- [ ] Run component and Playwright tests using mocked OAuth and worker completion.
-- [ ] Commit: `feat(web): add publisher draft and publication workspace`
+- [x] Write tests first for OAuth provider choice, namespace context, uploaded draft, ETag conflict, schema problem paths, validation pending/retry/failure/success, evidence provenance, explicit publish confirmation, resulting immutable revision, and fork workflow.
+- [x] Run Vitest; confirm missing pages/components.
+- [x] Implement the workspace around the expected flow: build/test in local Vonk Forge, push the public digest-pinned image to the publisher's registry, upload recipe/evidence as a private draft, inspect validation, then explicitly publish.
+- [x] Provide a JSON editor for corrections but do not imply that the global site can test the workload or build/push the image. Show registry and test failures with stable codes and repair guidance.
+- [x] Require the user to confirm publisher, recipe slug, immutable image digest, content hash, and public visibility immediately before publish.
+- [x] Run component and Playwright tests using mocked OAuth and worker completion.
+- [x] Commit: `feat(web): add publisher draft and publication workspace`
 
 ## Task 9: Production hardening, backups, and Railway deployment
 
