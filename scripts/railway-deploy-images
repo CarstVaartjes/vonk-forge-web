@@ -23,6 +23,7 @@ for assignment in "$@"; do
     echo "invalid immutable service image assignment" >&2
     exit 2
   fi
+  requested_digest=${image##*@}
   before=$(railway deployment list --json --limit 1 \
     --project "$project_id" --environment "$environment" --service "$service" \
     | jq -r '.[0].id // empty')
@@ -35,7 +36,14 @@ for assignment in "$@"; do
       --project "$project_id" --environment "$environment" --service "$service")
     deployment_id=$(jq -r '.[0].id // empty' <<<"$latest")
     status=$(jq -r '.[0].status // empty' <<<"$latest")
+    observed_digest=$(jq -r --arg image "$image" --arg digest "$requested_digest" \
+      '[.[0].meta | .. | strings | select(. == $image or . == $digest)] | first // empty' \
+      <<<"$latest")
     if [[ -n "$deployment_id" && "$deployment_id" != "$before" ]]; then
+      if [[ -z "$observed_digest" ]]; then
+        echo "$service deployment $deployment_id does not identify requested digest $requested_digest" >&2
+        exit 1
+      fi
       case "$status" in
         SUCCESS) break ;;
         FAILED|CRASHED|REMOVED)
@@ -46,8 +54,8 @@ for assignment in "$@"; do
     fi
     sleep 5
   done
-  if [[ -z "${deployment_id:-}" || "$deployment_id" == "$before" || "$status" != SUCCESS ]]; then
-    echo "$service did not reach a new successful deployment" >&2
+  if [[ -z "${deployment_id:-}" || "$deployment_id" == "$before" || "$status" != SUCCESS || -z "${observed_digest:-}" ]]; then
+    echo "$service did not reach a new successful digest-verified deployment" >&2
     exit 1
   fi
   printf '%s %s %s\n' "$service" "$deployment_id" "$image"

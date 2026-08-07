@@ -1,8 +1,13 @@
 import hashlib
 import json
+import socket
+import ssl
+import subprocess
+import threading
 
 import httpx
 import pytest
+import vonk_catalog_worker.registry as registry_module
 from vonk_catalog_worker.registry import (
     PinnedNetworkBackend,
     RegistryClient,
@@ -146,9 +151,20 @@ def test_artifact_sizes_are_observed_from_independent_remote_metadata() -> None:
                 200, headers={"Content-Length": "123"}, request=request
             )
         if request.url.host == "huggingface.co":
+            assert request.url.params["blobs"] == "true"
+            assert request.headers["Accept-Encoding"] == "identity"
             return httpx.Response(
                 200,
-                json={"siblings": [{"rfilename": "weights", "lfs": {"size": 456}}]},
+                json={
+                    "siblings": [
+                        {"rfilename": ".gitattributes", "size": 123},
+                        {
+                            "rfilename": "weights.safetensors",
+                            "size": 456,
+                            "lfs": {"size": 456},
+                        },
+                    ]
+                },
                 request=request,
             )
         if request.url.path.endswith(f"/manifests/{ARTIFACT_DIGEST}"):
@@ -179,7 +195,7 @@ def test_artifact_sizes_are_observed_from_independent_remote_metadata() -> None:
                 "revision": "b" * 40,
             }
         )
-        == 456
+        == 579
     )
     assert (
         client.observe_artifact(
@@ -265,6 +281,109 @@ def test_rejects_private_redirect_dns_rebinding_oversize_and_rate_limit() -> Non
 
     with pytest.raises(RegistryTemporaryProblem, match="timed out"):
         _client(timeout).inspect(f"registry.example/org/image@{DIGEST}")
+
+
+def test_request_transport_pins_tcp_while_preserving_tls_hostname(
+    tmp_path, monkeypatch
+) -> None:
+    key = tmp_path / "key.pem"
+    certificate = tmp_path / "certificate.pem"
+    subprocess.run(
+        [
+            "openssl",
+            "req",
+            "-x509",
+            "-newkey",
+            "rsa:2048",
+            "-nodes",
+            "-keyout",
+            str(key),
+            "-out",
+            str(certificate),
+            "-days",
+            "1",
+            "-subj",
+            "/CN=registry.example",
+            "-addext",
+            "subjectAltName=DNS:registry.example",
+        ],
+        check=True,
+        capture_output=True,
+    )
+    server_context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+    server_context.load_cert_chain(certificate, key)
+    observed_sni: list[str | None] = []
+    server_context.sni_callback = lambda _socket, name, _context: observed_sni.append(
+        name
+    )
+    listener = socket.create_server(("127.0.0.1", 0))
+    port = listener.getsockname()[1]
+
+    def serve() -> None:
+        connection, _ = listener.accept()
+        with (
+            connection,
+            server_context.wrap_socket(connection, server_side=True) as tls,
+        ):
+            request = bytearray()
+            while b"\r\n\r\n" not in request:
+                request.extend(tls.recv(4096))
+            tls.sendall(
+                b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\n{}"
+            )
+        listener.close()
+
+    server = threading.Thread(target=serve)
+    server.start()
+    client_context = ssl.create_default_context(cafile=str(certificate))
+    monkeypatch.setattr(httpx, "create_ssl_context", lambda **_kwargs: client_context)
+    monkeypatch.setattr(
+        registry_module, "_public_addresses", lambda values: tuple(values)
+    )
+
+    response = RegistryClient(resolver=lambda _host: ("127.0.0.1",))._fetch(
+        f"https://registry.example:{port}/v2/"
+    )
+
+    server.join(timeout=5)
+    assert not server.is_alive()
+    assert response.json() == {}
+    assert observed_sni == ["registry.example"]
+
+
+@pytest.mark.parametrize("invalid_size", [-1, True])
+def test_oci_artifact_rejects_negative_and_boolean_descriptor_sizes(
+    invalid_size,
+) -> None:
+    body = json.dumps(
+        {
+            "schemaVersion": 2,
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "layers": [
+                {"digest": "sha256:" + "e" * 64, "size": 321},
+                {"digest": "sha256:" + "f" * 64, "size": invalid_size},
+            ],
+        },
+        separators=(",", ":"),
+    ).encode()
+    digest = "sha256:" + hashlib.sha256(body).hexdigest()
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            content=body,
+            headers={"Docker-Content-Digest": digest},
+            request=request,
+        )
+
+    with pytest.raises(RegistryProblem, match="size metadata"):
+        _client(handler).observe_artifact(
+            {
+                "kind": "oci.artifact",
+                "repository": "ghcr.io/owner/model",
+                "revision": digest,
+            }
+        )
 
 
 def test_bearer_auth_is_public_bounded_and_does_not_accept_basic_credentials() -> None:

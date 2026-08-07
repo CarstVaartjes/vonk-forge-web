@@ -293,7 +293,8 @@ class RegistryClient:
             ) or not re.fullmatch(r"[a-f0-9]{40}|[a-f0-9]{64}", revision):
                 raise RegistryProblem("Hugging Face artifact identity is invalid")
             response = self._fetch(
-                f"https://huggingface.co/api/models/{quote(repository, safe='/')}/revision/{revision}"
+                f"https://huggingface.co/api/models/{quote(repository, safe='/')}/revision/{revision}?blobs=true",
+                headers={"Accept-Encoding": "identity"},
             )
             if response.status_code != 200:
                 raise RegistryProblem("Hugging Face artifact metadata request failed")
@@ -336,13 +337,20 @@ class RegistryClient:
                 )
             total = 0
             for descriptor in descriptors:
-                if not isinstance(descriptor, dict) or not isinstance(
-                    descriptor.get("size"), int
+                raw_size = (
+                    descriptor.get("size") if isinstance(descriptor, dict) else None
+                )
+                if (
+                    isinstance(raw_size, bool)
+                    or not isinstance(raw_size, int)
+                    or raw_size < 0
                 ):
                     raise RegistryProblem("OCI artifact size metadata is invalid")
-                total += descriptor["size"]
-                if total <= 0 or total > 10**15:
+                total += raw_size
+                if total > 10**15:
                     raise RegistryProblem("OCI artifact size is unreasonable")
+            if total <= 0:
+                raise RegistryProblem("OCI artifact size is unreasonable")
             return total
         raise RegistryProblem("artifact kind is unsupported")
 

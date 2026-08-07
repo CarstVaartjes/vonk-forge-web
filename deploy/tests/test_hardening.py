@@ -77,6 +77,9 @@ def test_ci_scans_secrets_vulnerabilities_sboms_and_signs_images() -> None:
     assert "actions/attest-build-provenance@" in deploy
     assert "environment: production" in deploy
     assert "RAILWAY_PRODUCTION_TOKEN" in deploy
+    workflow = yaml.safe_load(deploy)
+    assert workflow["concurrency"]["group"] == "vonk-forge-railway-deploy"
+    assert workflow["concurrency"]["cancel-in-progress"] is False
 
 
 def test_railway_deploys_the_signed_registry_digest_without_source_rebuild() -> None:
@@ -94,6 +97,66 @@ def test_railway_deploys_the_signed_registry_digest_without_source_rebuild() -> 
     assert "deployment list --json --limit 1" in deploy_helper
     assert '"$deployment_id" != "$before"' in deploy_helper
     assert '"$status" != SUCCESS' in deploy_helper
+    assert ".meta | .. | strings" in deploy_helper
+    assert "requested_digest" in deploy_helper
+
+
+def test_railway_deploy_waits_for_the_matching_digest_metadata(tmp_path) -> None:
+    docker = tmp_path / "docker"
+    marker = tmp_path / "connected"
+    docker.write_text(
+        """#!/usr/bin/env bash
+set -euo pipefail
+if [[ "$*" == *"service source connect"* ]]; then
+  : > "$MOCK_MARKER"
+  printf '{}\\n'
+elif [[ ! -e "$MOCK_MARKER" ]]; then
+  printf '[{"id":"old","status":"SUCCESS","meta":{"image":"old@sha256:old"}}]\\n'
+else
+  printf '[{"id":"new","status":"SUCCESS","meta":{"image":"%s"}}]\\n' "$MOCK_IMAGE"
+fi
+"""
+    )
+    docker.chmod(0o755)
+    requested = "ghcr.io/vonk/app@sha256:" + "a" * 64
+    environment = {
+        **os.environ,
+        "PATH": f"{tmp_path}:{os.environ['PATH']}",
+        "RAILWAY_TOKEN": "test-token",
+        "CLI_IMAGE": "railway-cli@sha256:test",
+        "MOCK_MARKER": str(marker),
+        "MOCK_IMAGE": requested,
+    }
+    result = subprocess.run(
+        [
+            ROOT / "scripts" / "railway-deploy-images",
+            "staging",
+            "project-id",
+            f"api={requested}",
+        ],
+        env=environment,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+
+    marker.unlink()
+    environment["MOCK_IMAGE"] = "ghcr.io/vonk/app@sha256:" + "b" * 64
+    result = subprocess.run(
+        [
+            ROOT / "scripts" / "railway-deploy-images",
+            "staging",
+            "project-id",
+            f"api={requested}",
+        ],
+        env=environment,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+    assert "does not identify requested digest" in result.stderr
 
 
 @pytest.mark.skipif(
