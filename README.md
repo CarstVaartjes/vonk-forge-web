@@ -1,8 +1,27 @@
 # Vonk Forge Web
 
-Public catalog, API, and publishing website for Vonk Forge recipes. This
-service stores recipe metadata and validation evidence; container images and
-model weights remain in their external registries.
+Future global catalog, API, and publishing website for Vonk Forge recipes. This
+repository stores recipe metadata and validation evidence; container images and
+model weights remain in their external registries. It is not the local Spark
+control plane: local PostgreSQL remains authoritative for authoring, imports,
+installation, placement, and execution.
+
+## Deployment boundary
+
+The initial Vonk Forge product does not require this global service. The target
+hosted layout is:
+
+- Cloudflare Pages serves the static frontend at `vonkforge.ai`.
+- Railway is reserved for the future global API, validation worker, and
+  PostgreSQL database; do not provision it for the initial local release.
+- GitHub Actions in `vonk-forge` builds and publishes the signed
+  `vonk-forge-agent` package to Cloudflare R2 at `packages.vonkforge.ai`.
+- Caddy belongs to the local NAS control host, not to the global catalog
+  boundary.
+
+The current Railway workflow and service definitions are transitional
+implementation material for the future backend migration; they are not the
+initial production deployment path.
 
 ## Local API
 
@@ -39,9 +58,9 @@ deleting PostgreSQL data with:
 docker compose -f deploy/compose.yaml down
 ```
 
-Railway service definitions live under `deploy/railway`. See
-`docs/operations/railway-deployment.md` for the exact service/variable map and
-`docs/operations/backup-restore.md` for encrypted off-platform backups.
+The local Compose gateway is useful for development and contract testing. The
+future hosted deployment notes live under `docs/operations`; they are deferred
+until the global catalog is explicitly enabled.
 
 ## Contract verification
 

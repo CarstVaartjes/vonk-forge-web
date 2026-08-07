@@ -1,7 +1,8 @@
 # Vonk Forge Web documentation
 
-The web repository is the global catalog and publishing service. It is not the
-control plane that installs workloads on Sparks. Keep the boundary explicit:
+The web repository is the future global catalog and publishing service. It is
+not the control plane that installs workloads on Sparks, and it is not required
+for the initial local release. Keep the boundary explicit:
 
 | Concern | Owner |
 | --- | --- |
@@ -10,10 +11,20 @@ control plane that installs workloads on Sparks. Keep the boundary explicit:
 | Local recipe authoring, SparkRun import, install/run admission, placement, and offline operation | `vonk-forge` local PostgreSQL catalog |
 | Container layers and model weights | Publisher-controlled artifact registries |
 
+## Deployment boundary
+
+- Cloudflare Pages is the target host for the static `vonkforge.ai` frontend.
+- Railway is deferred until the global catalog is needed; then it will host the
+  API, validation worker, and PostgreSQL database, not Spark workloads.
+- The local `vonk-forge` repository owns the signed agent package release to
+  Cloudflare R2 at `packages.vonkforge.ai`.
+- Caddy is the ingress boundary of the local NAS control host, not a required
+  global-catalog component.
+
 ## Operations
 
-- [Railway deployment](operations/railway-deployment.md)
-- [Backup and restore](operations/backup-restore.md)
+- [Deferred Railway global-backend deployment](operations/railway-deployment.md)
+- [Deferred independent backup and restore](operations/backup-restore.md)
 - [Moderation](operations/moderation.md)
 
 The API, schema files, and generated OpenAPI/TypeScript artifacts are the
