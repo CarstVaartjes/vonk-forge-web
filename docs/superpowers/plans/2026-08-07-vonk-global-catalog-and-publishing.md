@@ -58,14 +58,14 @@
 - Modify: `api/src/vonk_catalog/api.py`
 - Modify: `api/src/vonk_catalog/contracts.py`
 
-- [ ] Write failing tests for create/read/update/delete draft, optimistic version conflict, schema error paths, publisher identity mismatch, immutable source attribution, idempotency key replay, body/field limits, and cross-publisher access denial.
-- [ ] Run the tests; confirm missing endpoints.
-- [ ] Add authenticated JSON endpoints under `/v1/publishers/{publisher}/drafts`. Accept only recipe JSON plus bounded metadata and test-report JSON; reject archives, URLs intended for server fetching, multipart binaries, image layers, and weight bytes.
-- [ ] Canonicalize and validate on every write, store the original draft document and normalized validation problems, increment the version under `If-Match`, and return a new ETag.
-- [ ] Preserve local source identifiers and attribution but force the recipe identity publisher to the authorized destination namespace.
-- [ ] Enforce request, array, string, and nested-object limits before expensive validation.
-- [ ] Run tests including concurrent updates and duplicate upload retries.
-- [ ] Commit: `feat(drafts): accept versioned local recipe drafts`
+- [x] Write failing tests for create/read/update/delete draft, optimistic version conflict, schema error paths, destination publisher normalization, immutable source attribution, idempotency key replay, body/field limits, and cross-publisher access denial.
+- [x] Run the tests; confirm missing endpoints.
+- [x] Add authenticated JSON endpoints under `/v1/publishers/{publisher}/drafts`. Accept only recipe JSON plus bounded test-report JSON; reject archives, server-fetch envelopes, multipart binaries, image layers, and weight bytes.
+- [x] Canonicalize and validate on every write, store normalized validation state, increment the version under `If-Match`, and return a new ETag.
+- [x] Preserve local source identifiers and attribution but force the recipe identity publisher to the authorized destination namespace.
+- [x] Enforce streaming request, array, string, node-count, and nested-object limits before expensive validation.
+- [x] Run tests including stale ETags and duplicate upload retries.
+- [x] Commit: `feat(drafts): accept versioned local recipe drafts`
 
 ## Task 4: Validate OCI images and test evidence safely in the worker
 

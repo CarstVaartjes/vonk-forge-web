@@ -230,11 +230,35 @@ class RecipeDraft(Base):
     content_sha256: Mapped[str] = mapped_column(String(64))
     version: Mapped[int] = mapped_column(Integer, default=1)
     state: Mapped[str] = mapped_column(String(24), default="private")
+    validation_problems: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON_DOCUMENT, default=list
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
+class DraftUploadRequest(Base):
+    __tablename__ = "draft_upload_requests"
+    __table_args__ = (UniqueConstraint("publisher_id", "idempotency_key"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    publisher_id: Mapped[str] = mapped_column(
+        ForeignKey("publishers.id", ondelete="CASCADE"), index=True
+    )
+    user_id: Mapped[str] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    idempotency_key: Mapped[str] = mapped_column(String(128))
+    content_sha256: Mapped[str] = mapped_column(String(64))
+    draft_id: Mapped[str | None] = mapped_column(
+        ForeignKey("recipe_drafts.id", ondelete="SET NULL"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow
     )
 
 

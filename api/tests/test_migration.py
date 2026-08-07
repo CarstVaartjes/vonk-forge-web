@@ -5,6 +5,7 @@ from sqlalchemy import create_engine, inspect
 EXPECTED_TABLES = {
     "alembic_version",
     "catalog_jobs",
+    "draft_upload_requests",
     "browser_sessions",
     "moderation_events",
     "oauth_accounts",
@@ -25,7 +26,7 @@ EXPECTED_TABLES = {
 
 def test_catalog_has_one_migration_head(alembic_config) -> None:
     assert ScriptDirectory.from_config(alembic_config).get_heads() == [
-        "0003_publisher_security"
+        "0004_private_drafts"
     ]
 
 

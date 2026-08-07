@@ -48,6 +48,26 @@ def validate_recipe(document: Mapping[str, object]) -> None:
     raise RecipeContractError(f"{path}: {error.message}")
 
 
+def recipe_problems(document: Mapping[str, object]) -> list[dict[str, object]]:
+    """Return bounded, stable problem paths without echoing submitted values."""
+    errors = sorted(
+        recipe_validator().iter_errors(document),
+        key=lambda error: tuple(str(part) for part in error.absolute_path),
+    )
+    problems: list[dict[str, object]] = []
+    for raw in errors[:50]:
+        error = _most_specific(raw)
+        path = ".".join(str(part) for part in error.absolute_path) or "$"
+        problems.append(
+            {
+                "path": path,
+                "rule": str(error.validator),
+                "message": error.message[:512],
+            }
+        )
+    return problems
+
+
 def _most_specific(error: ValidationError) -> ValidationError:
     candidates = [error]
     pending = list(error.context)

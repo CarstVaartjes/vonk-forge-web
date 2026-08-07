@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from .auth import AuthServices
 from .auth_api import build_auth_router
+from .draft_api import build_draft_router
 from .oauth import HttpOAuthBackend, OAuthBackend
 from .problems import install_problem_handling
 from .public_api import SessionProvider, build_public_router
@@ -78,4 +79,5 @@ def create_app(
             )
         )
         app.include_router(build_publisher_router(auth_services))
+        app.include_router(build_draft_router(auth_services))
     return app
