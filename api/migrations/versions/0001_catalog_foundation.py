@@ -62,6 +62,22 @@ def upgrade() -> None:
         sa.CheckConstraint("role IN ('owner', 'editor', 'viewer')", name="ck_membership_role"),
     )
     op.create_table(
+        "source_bundles",
+        sa.Column("sha256", sa.String(64), primary_key=True),
+        sa.Column("media_type", sa.String(96), nullable=False),
+        sa.Column("archive_bytes", sa.BigInteger, nullable=False),
+        sa.Column("total_bytes", sa.BigInteger, nullable=False),
+        sa.Column("file_count", sa.Integer, nullable=False),
+        sa.Column("storage_key", sa.String(255), nullable=False, unique=True),
+        sa.Column("manifest", json_document, nullable=False),
+        sa.Column("verified_at", sa.DateTime(timezone=True), nullable=False),
+        sa.CheckConstraint("length(sha256) = 64", name="ck_source_bundle_digest"),
+        sa.CheckConstraint(
+            "archive_bytes > 0 AND total_bytes >= 0 AND file_count >= 1",
+            name="ck_source_bundle_sizes",
+        ),
+    )
+    op.create_table(
         "recipes",
         sa.Column("id", sa.String(36), primary_key=True),
         sa.Column("publisher_id", sa.String(36), sa.ForeignKey("publishers.id", ondelete="RESTRICT"), nullable=False),
@@ -173,6 +189,7 @@ def downgrade() -> None:
         "recipe_revisions",
         "recipe_drafts",
         "recipes",
+        "source_bundles",
         "publisher_memberships",
         "oauth_accounts",
         "publishers",

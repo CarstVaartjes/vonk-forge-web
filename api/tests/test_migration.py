@@ -22,6 +22,7 @@ EXPECTED_TABLES = {
     "recipe_revisions",
     "recipe_search_documents",
     "request_rate_limit_buckets",
+    "source_bundles",
     "recipes",
     "test_reports",
     "users",

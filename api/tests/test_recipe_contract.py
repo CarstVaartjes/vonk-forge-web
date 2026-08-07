@@ -4,7 +4,11 @@ from pathlib import Path
 
 import pytest
 
-from vonk_catalog.contracts import RecipeContractError, validate_recipe
+from vonk_catalog.contracts import (
+    RecipeContractError,
+    deployment_profile,
+    validate_recipe,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -34,8 +38,7 @@ def test_recipe_contract_rejects_unknown_top_level_fields() -> None:
     [
         (("runtime", "image", "ghcr.io/vonk/vllm:latest"), "image"),
         (("runtime", "command", ["sh", "-c", "id"]), "command"),
-        (("security", "privileged", True), "privileged"),
-        (("resources", "per_node", {}), "download_bytes"),
+        (("build", "dockerfile", "../Dockerfile"), "dockerfile"),
     ],
 )
 def test_recipe_contract_rejects_unsafe_or_incomplete_documents(
@@ -51,20 +54,18 @@ def test_recipe_contract_rejects_unsafe_or_incomplete_documents(
         validate_recipe(recipe)
 
 
-def test_multinode_recipe_requires_explicit_rank_records() -> None:
+def test_multinode_recipe_supports_three_nodes_without_rank_records() -> None:
     recipe = copy.deepcopy(fixture("recipe-v1-multinode.json"))
-    topology = recipe["topology"]
-    assert isinstance(topology, dict)
-    topology.pop("ranks")
+    profile = deployment_profile(recipe, "triple-tp3")
 
-    with pytest.raises(RecipeContractError, match="ranks"):
-        validate_recipe(recipe)
+    assert profile["node_count"] == 3
+    assert sum(role["count"] for role in profile["roles"]) == 3
 
 
-def test_recipe_requires_standard_runtime_interface_and_mounts() -> None:
+def test_recipe_requires_standard_runtime_interface_and_confinement() -> None:
     recipe = fixture("recipe-v1-minimal.json")
     runtime = recipe["runtime"]
-    security = recipe["security"]
+    security = runtime["security"]
     assert isinstance(runtime, dict) and isinstance(security, dict)
 
     runtime["interface"] = "publisher-specific.v1"
@@ -72,8 +73,16 @@ def test_recipe_requires_standard_runtime_interface_and_mounts() -> None:
         validate_recipe(recipe)
 
     runtime["interface"] = "vonk.runtime.v1"
-    security["mounts"] = [
-        {"source": "model", "target": "/models", "read_only": True}
-    ]
-    with pytest.raises(RecipeContractError, match="mounts"):
+    security["privileged"] = True
+    with pytest.raises(RecipeContractError, match="privileged"):
+        validate_recipe(recipe)
+
+
+def test_profile_role_counts_and_endpoint_owner_are_semantic() -> None:
+    recipe = fixture("recipe-v1-multinode.json")
+    profile = recipe["deployment_profiles"][0]
+    profile["roles"][1]["count"] = 1
+    profile["roles"][1]["endpoint_owner"] = True
+
+    with pytest.raises(RecipeContractError, match="node_count|endpoint"):
         validate_recipe(recipe)

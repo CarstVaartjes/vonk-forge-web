@@ -198,6 +198,26 @@ def _keep_publisher_audit_immutable(*_: object) -> None:
     raise ValueError("publisher audit events are append-only")
 
 
+class SourceBundle(Base):
+    __tablename__ = "source_bundles"
+    __table_args__ = (
+        CheckConstraint("length(sha256) = 64", name="ck_source_bundle_digest"),
+        CheckConstraint(
+            "archive_bytes > 0 AND total_bytes >= 0 AND file_count >= 1",
+            name="ck_source_bundle_sizes",
+        ),
+    )
+
+    sha256: Mapped[str] = mapped_column(String(64), primary_key=True)
+    media_type: Mapped[str] = mapped_column(String(96))
+    archive_bytes: Mapped[int] = mapped_column(BigInteger)
+    total_bytes: Mapped[int] = mapped_column(BigInteger)
+    file_count: Mapped[int] = mapped_column(Integer)
+    storage_key: Mapped[str] = mapped_column(String(255), unique=True)
+    manifest: Mapped[dict[str, Any]] = mapped_column(JSON_DOCUMENT)
+    verified_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class Recipe(Base):
     __tablename__ = "recipes"
     __table_args__ = (
