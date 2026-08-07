@@ -10,6 +10,19 @@ import yaml
 ROOT = Path(__file__).resolve().parents[2]
 
 
+def _wait_for_container_health(command: list[str]) -> str:
+    last = None
+    for _ in range(50):
+        last = subprocess.run(command, text=True, capture_output=True)
+        if last.returncode == 0:
+            return last.stdout
+        time.sleep(0.2)
+    assert last is not None
+    raise subprocess.CalledProcessError(
+        last.returncode, command, output=last.stdout, stderr=last.stderr
+    )
+
+
 def test_canonical_images_are_digest_pinned_and_run_as_non_root() -> None:
     for name in ("api", "worker", "web"):
         source = (ROOT / f"Dockerfile.{name}").read_text()
@@ -216,8 +229,7 @@ def test_built_images_are_non_root_secret_free_read_only_and_healthy() -> None:
         text=True,
     ).strip()
     try:
-        time.sleep(1)
-        api_health = subprocess.check_output(
+        api_health = _wait_for_container_health(
             [
                 "docker",
                 "exec",
@@ -226,9 +238,8 @@ def test_built_images_are_non_root_secret_free_read_only_and_healthy() -> None:
                 "-c",
                 "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/health/live').status)",
             ],
-            text=True,
         )
-        web_health = subprocess.check_output(
+        web_health = _wait_for_container_health(
             [
                 "docker",
                 "exec",
@@ -237,7 +248,6 @@ def test_built_images_are_non_root_secret_free_read_only_and_healthy() -> None:
                 "-qO-",
                 "http://127.0.0.1:8080/health/live",
             ],
-            text=True,
         )
         assert api_health.strip() == "200"
         assert "live" in web_health
