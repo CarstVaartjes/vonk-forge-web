@@ -2,13 +2,8 @@ name: Package and deploy
 
 on:
   workflow_dispatch:
-    inputs:
-      promote_production:
-        description: Deploy the verified commit to the protected production environment
-        required: true
-        default: false
-        type: boolean
   push:
+    branches: [main]
     tags: ["v*"]
 
 permissions:
@@ -90,48 +85,9 @@ jobs:
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
 
-  staging:
-    if: github.event_name == 'workflow_dispatch'
-    needs: package
-    runs-on: ubuntu-24.04
-    environment: staging
-    steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c
-        with:
-          pattern: deployment-*
-          merge-multiple: true
-      - uses: sigstore/cosign-installer@d58896d6a1865668819e1d91763c7751a165e159
-      - name: Verify signatures and deploy immutable images
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_STAGING_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ vars.RAILWAY_STAGING_PROJECT_ID }}
-          CLI_IMAGE: ghcr.io/railwayapp/cli@sha256:f50dad4fcbb0653e5f8423e799f527d227012cccda46a122ac24d5bbdeeb3793
-        run: |
-          set -euo pipefail
-          for reference in deployment-*.txt; do
-            cosign verify \
-              --certificate-identity-regexp "^https://github.com/${GITHUB_REPOSITORY}/.github/workflows/deploy.yml@" \
-              --certificate-oidc-issuer "https://token.actions.githubusercontent.com" \
-              "$(<"$reference")"
-          done
-          api_image="$(<deployment-api.txt)"
-          worker_image="$(<deployment-worker.txt)"
-          web_image="$(<deployment-web.txt)"
-          backup_image="$(<deployment-backup.txt)"
-          scripts/railway-deploy-images staging "$RAILWAY_PROJECT_ID" \
-            "migration=$api_image"
-          scripts/railway-deploy-images staging "$RAILWAY_PROJECT_ID" \
-            "api=$api_image" "worker=$worker_image" "web=$web_image" \
-            "backup=$backup_image" "restore=$backup_image"
-      - name: Anonymous staging smoke
-        env:
-          VONK_STAGING_BASE_URL: ${{ vars.VONK_STAGING_BASE_URL }}
-        run: scripts/staging-smoke
-
   production:
-    if: github.event_name == 'workflow_dispatch' && inputs.promote_production
-    needs: staging
+    if: github.ref == 'refs/heads/main'
+    needs: package
     runs-on: ubuntu-24.04
     environment: production
     steps:
@@ -165,5 +121,5 @@ jobs:
             "backup=$backup_image" "restore=$backup_image"
       - name: Production read-only smoke
         env:
-          VONK_STAGING_BASE_URL: https://vonkforge.ai
-        run: scripts/staging-smoke
+          VONK_SMOKE_BASE_URL: https://vonkforge.ai
+        run: scripts/catalog-smoke

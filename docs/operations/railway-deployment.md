@@ -5,18 +5,18 @@
 Only `web` has a public domain. Caddy serves immutable frontend assets and
 reverse-proxies `/v1/*` to `api.railway.internal:8000`. The API, validation
 worker, migration job, backup job, restore drill, primary PostgreSQL, and
-restore PostgreSQL have no public domain. Railway private networking is scoped
-per environment, so staging and production cannot reach each other.
+restore PostgreSQL have no public domain.
 
-Create two separate Railway projects, one for staging and one for production.
-This is a security boundary: Railway stores a Docker image source on the
-service itself rather than per environment, so staging and production must not
-share services. Create these services in the corresponding environment of each
-project:
+The initial deployment uses one production Railway project and one production
+environment. This keeps the first release small and inexpensive while retaining
+the same private-network boundary. A separate staging project can be added
+later; it is deliberately not part of the current release path.
+
+Create these services in the production project:
 
 | Service | Config source | Public | Runtime |
 | --- | --- | --- | --- |
-| `web` | `deploy/railway/web.toml` | `vonkforge.ai` only in production | always on |
+| `web` | `deploy/railway/web.toml` | `vonkforge.ai` | always on |
 | `api` | `deploy/railway/api.toml` | no | always on, port 8000 |
 | `worker` | `deploy/railway/worker.toml` | no | always on |
 | `migration` | `deploy/railway/migration.toml` | no | one-shot per release |
@@ -73,38 +73,41 @@ Configure OAuth callback URLs as
 `https://vonkforge.ai/v1/auth/github/callback` and the equivalent Google path.
 The browser stays same-origin; Caddy is the only public ingress.
 
-Backup variables and the separate restore URL are in the backup runbook. Never
-copy the production session secret, OAuth secrets, or database credentials into
-staging. Duplicate service topology, then replace every secret.
+Backup variables and the separate restore URL are in the backup runbook. Keep
+production session, OAuth, and database secrets in Railway's production secret
+store; do not put them in GitHub variables or image layers.
 
-## First release and promotion
+## First production release
 
-1. Create the production project, create a separate staging project with the
-   same topology, and give each project independent databases and secrets.
+1. Create one Railway project with a production environment, add the primary
+   PostgreSQL service and an isolated `restore-postgres` service, and configure
+   independent production secrets.
 2. Bootstrap every code service from its config file, then disconnect its
    repository source. Make the four GHCR packages public, or configure Railway
    GHCR credentials with `read:packages` on a Pro workspace.
-3. Set `RAILWAY_STAGING_PROJECT_ID` and `RAILWAY_PRODUCTION_PROJECT_ID` in the
-   matching protected GitHub environments, with a project-scoped token for
-   each. Run the protected deploy workflow. It verifies each Cosign signature,
+3. Set `RAILWAY_PRODUCTION_PROJECT_ID` and `RAILWAY_PRODUCTION_TOKEN` in the
+   protected GitHub `production` environment. A push to `main` deploys directly
+   to production; the same path can be started manually with workflow dispatch.
+   It verifies each Cosign signature,
    connects `migration` and the application services to exact image digests,
    and never uploads source with `railway up`.
 4. The workflow requires a new `migration` deployment to complete successfully
    before it changes application services, then waits for every new deployment
-   before smoke testing or allowing production promotion.
+   before running the public smoke check.
 5. Verify `api`, `worker`, and `web` through `/health/live` and
    `/health/ready` through the public web domain.
-6. Sign in with a staging OAuth account, claim a staging namespace, upload the
+6. Sign in with the founder OAuth account, claim the founder namespace, upload a
    public test recipe/evidence, wait for registry validation, publish it, find
-   it anonymously, then hide and unhide it as a staging moderator.
+   it anonymously, then hide and unhide it as the founder moderator.
 7. Run a backup and restore drill and retain the object name plus verifier JSON.
 8. Record the commit, revision hash, request IDs, and restore object in the
-   release evidence. Only then approve the protected GitHub `production`
-   environment and repeat migration before the long-running services.
+   release evidence. Add a separate staging project later only when a pre-
+   production validation environment is worth the additional cost and
+   operational surface.
 
-The deploy workflow uses Railway project tokens and projects scoped separately
-to staging and production. Configure required reviewers for the GitHub
-`production` environment.
+The deploy workflow uses one project-scoped Railway token for the production
+project. Configure required reviewers for the GitHub `production` environment
+if a human approval gate is desired; no staging approval is required today.
 
 ## Network boundary
 

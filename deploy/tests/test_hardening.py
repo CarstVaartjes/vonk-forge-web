@@ -93,6 +93,8 @@ def test_ci_scans_secrets_vulnerabilities_sboms_and_signs_images() -> None:
     workflow = yaml.safe_load(deploy)
     assert workflow["concurrency"]["group"] == "vonk-forge-railway-deploy"
     assert workflow["concurrency"]["cancel-in-progress"] is False
+    triggers = workflow.get("on", workflow.get(True, {}))
+    assert triggers["push"]["branches"] == ["main"]
 
 
 def test_railway_deploys_the_signed_registry_digest_without_source_rebuild() -> None:
@@ -102,8 +104,9 @@ def test_railway_deploys_the_signed_registry_digest_without_source_rebuild() -> 
     assert "deployment-${{ matrix.name }}.txt" in serialized
     assert "cosign verify" in serialized
     assert "up --ci" not in serialized
-    assert "RAILWAY_STAGING_PROJECT_ID" in serialized
     assert "RAILWAY_PRODUCTION_PROJECT_ID" in serialized
+    assert "RAILWAY_STAGING_PROJECT_ID" not in serialized
+    assert "github.ref == 'refs/heads/main'" in serialized
     deploy_helper = (ROOT / "scripts" / "railway-deploy-images").read_text()
     assert "service source connect" in deploy_helper
     assert "--image" in deploy_helper
@@ -143,7 +146,7 @@ fi
     result = subprocess.run(
         [
             ROOT / "scripts" / "railway-deploy-images",
-            "staging",
+            "production",
             "project-id",
             f"api={requested}",
         ],
@@ -159,7 +162,7 @@ fi
     result = subprocess.run(
         [
             ROOT / "scripts" / "railway-deploy-images",
-            "staging",
+            "production",
             "project-id",
             f"api={requested}",
         ],

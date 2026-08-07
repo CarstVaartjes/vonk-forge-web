@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
 
-: "${VONK_STAGING_BASE_URL:?set VONK_STAGING_BASE_URL to the public web origin}"
-base=${VONK_STAGING_BASE_URL%/}
+: "${VONK_SMOKE_BASE_URL:?set VONK_SMOKE_BASE_URL to the public web origin}"
+base=${VONK_SMOKE_BASE_URL%/}
 case "${base}" in
   https://*) ;;
   http://127.0.0.1:*|http://localhost:*) ;;
@@ -37,5 +37,5 @@ if os.environ["VONK_SMOKE_REQUIRE_OAUTH"] == "1":
     assert providers["providers"], "at least one OAuth provider must be enabled"
 assert isinstance(recipes["items"], list)
 assert "next_cursor" in recipes
-print(json.dumps({"event": "staging.smoke_passed", "providers": providers["providers"]}))
+print(json.dumps({"event": "catalog.smoke_passed", "providers": providers["providers"]}))
 PY
