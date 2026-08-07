@@ -10,12 +10,15 @@ control plane that installs workloads on Sparks. Keep the boundary explicit:
 | Local recipe authoring, SparkRun import, install/run admission, placement, and offline operation | `vonk-forge` local PostgreSQL catalog |
 | Container layers and model weights | Publisher-controlled artifact registries |
 
-## Documents
+## Operations
 
-The API and schema are the source of truth for implementation. Keep this page
-and the endpoint behavior self-contained; historical planning material is not
-part of the operator documentation and may be removed without changing the
-public contract.
+- [Railway deployment](operations/railway-deployment.md)
+- [Backup and restore](operations/backup-restore.md)
+- [Moderation](operations/moderation.md)
+
+The API, schema files, and generated OpenAPI/TypeScript artifacts are the
+implementation contract. Historical planning material is not part of the
+operator documentation and may be removed without changing that contract.
 
 ## Publishing flow
 
