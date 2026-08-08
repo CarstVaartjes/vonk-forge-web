@@ -113,7 +113,7 @@ def test_published_revision_source_association_is_immutable(session) -> None:
     sources = [
         SourceBundle(
             sha256=character * 64,
-            media_type="application/vnd.vonk.source-bundle.v1+tar",
+            media_type="application/vnd.vonk-forge.source-bundle.v1+tar",
             archive_bytes=1024,
             total_bytes=16,
             file_count=1,

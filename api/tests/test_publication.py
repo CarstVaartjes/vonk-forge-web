@@ -44,7 +44,7 @@ def _setup(session):
     session.add(
         SourceBundle(
             sha256="a" * 64,
-            media_type="application/vnd.vonk.source-bundle.v1+tar",
+            media_type="application/vnd.vonk-forge.source-bundle.v1+tar",
             archive_bytes=1,
             total_bytes=1,
             file_count=1,

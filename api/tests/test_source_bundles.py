@@ -136,7 +136,7 @@ def test_authenticated_upload_stays_private_until_an_immutable_revision_publishe
             f"/v1/publishers/ada-lab/source-bundles/{digest}",
             headers={
                 "X-CSRF-Token": browser.csrf_token,
-                "Content-Type": "application/vnd.vonk.source-bundle.v1+tar",
+                "Content-Type": "application/vnd.vonk-forge.source-bundle.v1+tar",
             },
             content=payload,
         )

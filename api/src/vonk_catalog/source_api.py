@@ -25,7 +25,7 @@ def build_source_router(services: AuthServices, store: SourceBundleStore) -> API
         media_type = request.headers.get("content-type", "").split(";", 1)[0].lower()
         if media_type not in {
             "application/x-tar",
-            "application/vnd.vonk.source-bundle.v1+tar",
+            "application/vnd.vonk-forge.source-bundle.v1+tar",
         }:
             raise Problem(
                 415,
@@ -65,7 +65,7 @@ def build_source_router(services: AuthServices, store: SourceBundleStore) -> API
                 if row is None:
                     row = SourceBundle(
                         sha256=manifest.sha256,
-                        media_type="application/vnd.vonk.source-bundle.v1+tar",
+                        media_type="application/vnd.vonk-forge.source-bundle.v1+tar",
                         archive_bytes=stored.archive_bytes,
                         total_bytes=manifest.total_bytes,
                         file_count=len(manifest.files),

@@ -11,7 +11,7 @@
     "context": {
       "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "expected_bytes": 2048,
-      "media_type": "application/vnd.vonk.source-bundle.v1+tar"
+      "media_type": "application/vnd.vonk-forge.source-bundle.v1+tar"
     },
     "dockerfile": "Dockerfile",
     "platform": "linux/arm64",
@@ -76,7 +76,7 @@
   "deployment_profiles": [
     {
       "name": "solo",
-      "description": "One Spark.",
+      "description": "One GPU node.",
       "node_count": 1,
       "strategy": "single",
       "parallelism": {"tensor": 1, "pipeline": 1, "data": 1, "backend": "local"},

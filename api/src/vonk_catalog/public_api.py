@@ -179,7 +179,7 @@ def build_public_router(
             raise _not_found() from None
         return FileResponse(
             stored.path,
-            media_type="application/vnd.vonk.source-bundle.v1+tar",
+            media_type="application/vnd.vonk-forge.source-bundle.v1+tar",
             headers={
                 "Cache-Control": "public, max-age=31536000, immutable",
                 "ETag": f'"sha256:{sha256}"',

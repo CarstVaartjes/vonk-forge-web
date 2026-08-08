@@ -189,7 +189,7 @@ export async function uploadSourceBundle(
   return (
     await browserRequest<{sha256: string; files: string[]}>(`/v1/publishers/${encodeURIComponent(publisher)}/source-bundles/${encodeURIComponent(sha256)}`, {
       method: "PUT",
-      headers: {"Content-Type": "application/vnd.vonk.source-bundle.v1+tar", "X-CSRF-Token": csrf},
+      headers: {"Content-Type": "application/vnd.vonk-forge.source-bundle.v1+tar", "X-CSRF-Token": csrf},
       body: archive,
     })
   ).data;
