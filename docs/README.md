@@ -1,5 +1,12 @@
 # Vonk Forge Web documentation
 
+The exported runtime policy describes the accepted workload boundary used by
+Vonk Forge agents. `host_isolation: spark-docker-nvidia-compiled-helper` means
+that source builds may remain rootless and isolated, while an accepted
+Linux/ARM64 image is imported and started through a narrowly compiled helper
+on DGX Spark's Docker/NVIDIA runtime. It does not grant the catalog, worker, or
+recipe author access to a Docker socket, host devices, or runtime secrets.
+
 The web repository is the future global catalog and publishing service. It is
 not the control plane that installs workloads on Sparks, and it is not required
 for the initial local release. Keep the boundary explicit:
