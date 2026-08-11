@@ -48,7 +48,7 @@ def verify(*, update: bool = False) -> None:
             "kind": "numeric-non-root",
             "pattern": "^[1-9][0-9]*(?::[1-9][0-9]*)?$",
         },
-        "host_isolation": "rootless-podman-subuid",
+        "host_isolation": "spark-docker-nvidia-compiled-helper",
     }:
         raise SystemExit("container runtime policy v1 is invalid")
 
