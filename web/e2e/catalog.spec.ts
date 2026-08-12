@@ -45,6 +45,42 @@ test.beforeEach(async ({ page }) => {
 });
 
 
+test("platform story stays navigable and bounded", async ({ page }) => {
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: "Build where the models live." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Catalog" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "NAS control" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Spark runtime" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Development", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Production", exact: true })).toBeVisible();
+
+  await page.keyboard.press("Tab");
+  const skipLink = page.getByRole("link", { name: "Skip to content" });
+  await expect(skipLink).toBeFocused();
+  await skipLink.press("Enter");
+  await expect(page).toHaveURL(/#main-content$/);
+
+  await expect(page.locator(".site-header")).toHaveCSS("position", "sticky");
+  const horizontalOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(horizontalOverflow).toBeLessThanOrEqual(0);
+});
+
+
+test("minimum supported viewport does not overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto("/");
+
+  await expect(page.getByRole("heading", { name: "Build where the models live." })).toBeVisible();
+  const horizontalOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(horizontalOverflow).toBeLessThanOrEqual(0);
+});
+
+
 test("facets remain in the URL and exact trust facts survive navigation", async ({ page }) => {
   await page.goto("/recipes?topology=gang");
   await expect(page.getByLabel("Topology")).toHaveValue("gang");

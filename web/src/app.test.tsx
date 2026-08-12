@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 
 import { App } from "./app";
 
@@ -18,11 +18,15 @@ test("explains the public catalog boundary", () => {
 test("provides the catalog and publishing navigation", () => {
   render(<App />);
 
-  expect(screen.getByRole("link", { name: "Recipes" })).toHaveAttribute(
+  const primaryNavigation = screen.getByRole("navigation", {
+    name: "Primary navigation",
+  });
+
+  expect(within(primaryNavigation).getByRole("link", { name: "Recipes" })).toHaveAttribute(
     "href",
     "/recipes",
   );
-  expect(screen.getByRole("link", { name: "Publish" })).toHaveAttribute(
+  expect(within(primaryNavigation).getByRole("link", { name: "Publish" })).toHaveAttribute(
     "href",
     "/publish",
   );

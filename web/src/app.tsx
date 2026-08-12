@@ -23,18 +23,31 @@ function CurrentPage() {
 
 export function App() {
   return (
-    <div className="site-shell">
-      <header className="site-header">
-        <a className="brand" href="/" aria-label="Vonk Forge home">
-          <span aria-hidden="true" className="brand-mark">V</span>
-          <span>Vonk Forge</span>
-        </a>
-        <nav aria-label="Primary navigation">
-          <a href="/recipes">Recipes</a>
-          <a href="/publish">Publish</a>
-        </nav>
-      </header>
-      <CurrentPage />
-    </div>
+    <>
+      <a className="skip-link" href="#main-content">Skip to content</a>
+      <div className="site-shell">
+        <header className="site-header">
+          <a className="brand" href="/" aria-label="Vonk Forge home">
+            <span aria-hidden="true" className="brand-mark"><i /><i /><i /></span>
+            <span className="brand-name"><strong>Vonk</strong> Forge</span>
+          </a>
+          <nav aria-label="Primary navigation">
+            <a href="/recipes">Recipes</a>
+            <a href="/publish">Publish</a>
+          </nav>
+        </header>
+        <div id="main-content" tabIndex={-1}>
+          <CurrentPage />
+        </div>
+        <footer className="site-footer">
+          <p><strong>Vonk Forge</strong> · Open recipe infrastructure for compute you control.</p>
+          <nav aria-label="Footer navigation">
+            <a href="/recipes">Catalog</a>
+            <a href="/publish">Publish</a>
+            <a href="https://github.com/CarstVaartjes/vonk-forge">GitHub</a>
+          </nav>
+        </footer>
+      </div>
+    </>
   );
 }

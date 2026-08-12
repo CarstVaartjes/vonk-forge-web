@@ -27,25 +27,25 @@
 - Consumes: the existing `HomePage(): JSX.Element`, `/recipes`, and `/publish` routes.
 - Produces: semantic `hero`, `system-map`, `trust-boundary`, `release-lanes`, and final call-to-action sections.
 
-- [ ] **Step 1: Add failing home-page contract tests**
+- [x] **Step 1: Add failing home-page contract tests**
 
 Assert visible text for `Catalog`, `NAS control`, `Spark runtime`, `NVIDIA + Docker`, `Secrets stay local`, `:dev`, and `Trusted updater`, while retaining the recipes and publish links.
 
-- [ ] **Step 2: Run the focused test and verify RED**
+- [x] **Step 2: Run the focused test and verify RED**
 
-Run `npm --prefix web test -- --run web/src/app.test.tsx`.
+Run `npm --prefix web test -- --run src/app.test.tsx`.
 Expected: failure because the new architecture and channel text is absent.
 
-- [ ] **Step 3: Implement semantic home-page sections**
+- [x] **Step 3: Implement semantic home-page sections**
 
 Replace the two-section home page with an accessible hero, a numbered three-card flow, a trust-boundary panel, two release-lane cards, and a final CTA. Keep claims literal: content-addressed source/evidence in the catalog; Compose and file secrets on the operator NAS; rootless build plus Spark-provided Docker/NVIDIA runtime and node-local model cache.
 
-- [ ] **Step 4: Run focused and full unit tests**
+- [x] **Step 4: Run focused and full unit tests**
 
-Run `npm --prefix web test -- --run web/src/app.test.tsx` and `npm --prefix web test -- --run`.
+Run `npm --prefix web test -- --run src/app.test.tsx` and `npm --prefix web test -- --run`.
 Expected: 3 test files and all tests pass.
 
-- [ ] **Step 5: Commit the semantic change**
+- [x] **Step 5: Commit the semantic change**
 
 ```bash
 git add web/src/app.test.tsx web/src/pages/home.tsx
@@ -65,24 +65,24 @@ git commit -m "feat(web): explain the local-first platform"
 - Consumes: Task 1's section class names and existing catalog/publisher selectors.
 - Produces: polished responsive layout, focus states, reduced-motion behavior, home smoke coverage, and current deployment-boundary documentation.
 
-- [ ] **Step 1: Add a failing responsive home E2E test**
+- [x] **Step 1: Add a failing responsive home E2E test**
 
 Visit `/`, require the `Build where the models live` hero, the three-stage map, both release lanes, and working recipe/publish links in Chromium and Pixel 7 projects.
 
-- [ ] **Step 2: Run the home E2E test and verify RED**
+- [x] **Step 2: Run the home E2E test and verify RED**
 
 Run `npm --prefix web run test:e2e -- --grep "platform story"`.
 Expected: failure until the styled semantic contract is complete.
 
-- [ ] **Step 3: Implement the visual system**
+- [x] **Step 3: Implement the visual system**
 
 Refine global tokens, body grid/glow, sticky translucent header, brand mark, display type, buttons, flow cards, boundary panel, release cards, focus-visible states, hover states, mobile breakpoints, and `prefers-reduced-motion`. Reuse those tokens across existing catalog and publisher screens without changing their structure.
 
-- [ ] **Step 4: Update repository boundary documentation**
+- [x] **Step 4: Update repository boundary documentation**
 
 Describe the static site as the public recipe/publishing surface and link its story to local NAS/Spark execution, while retaining the explicit deferred-global-backend boundary.
 
-- [ ] **Step 5: Verify all frontend and contract gates**
+- [x] **Step 5: Verify all frontend and contract gates**
 
 Run:
 
@@ -96,11 +96,11 @@ git diff --check
 
 Expected: all unit/E2E tests pass, Vite build exits zero, contract artifacts remain synchronized, and no whitespace errors exist.
 
-- [ ] **Step 6: Inspect desktop and mobile screenshots**
+- [x] **Step 6: Inspect desktop and mobile screenshots**
 
 Capture `/` at 1440×1000 and 393×852, then verify no clipping, horizontal overflow, illegible contrast, or accidental above-the-fold overlap.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add web/src/app.tsx web/src/styles.css web/e2e/catalog.spec.ts README.md docs/README.md
