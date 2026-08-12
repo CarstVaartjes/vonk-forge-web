@@ -1,20 +1,38 @@
 # Vonk Forge Web
 
-Future global catalog, API, and publishing website for Vonk Forge recipes. This
-repository stores recipe metadata and validation evidence; container images and
-model weights remain in their external registries. It is not the local Spark
-control plane: local PostgreSQL remains authoritative for authoring, imports,
-installation, placement, and execution.
+The public recipe catalog and publishing surface for Vonk Forge. The static site
+at [`vonkforge.ai`](https://vonkforge.ai) explains the verified path from public
+recipe metadata to private, operator-owned compute and exposes the recipe and
+publisher interfaces implemented in this repository.
+
+This repository stores recipe metadata and bounded validation evidence. It does
+not control Sparks, execute workloads, accept model uploads, or hold runtime
+secrets. Container images remain in their registries, model weights remain at
+their immutable origins and in node-local caches, and the operator's NAS remains
+authoritative for local installation, placement, policy, and execution.
+
+## Platform boundary
+
+| Stage | Responsibility |
+| --- | --- |
+| Public catalog | Typed recipes, content-addressed source, immutable revisions, capacity facts, and bounded evidence |
+| Operator NAS | Compose, PostgreSQL, policy, runtime secret files, and the local control plane |
+| Spark runtime | Rootless source build followed by accepted workload execution through the native NVIDIA and Docker stack |
+
+Accepted `main` builds advance public development images tagged `:dev` and the
+signed APT `dev` channel. Production activation uses immutable signed releases,
+compatibility gates, and the trusted host updater; it does not follow a mutable
+container tag.
 
 ## Deployment boundary
 
-The initial Vonk Forge product does not require this global service. The target
-hosted layout is:
+The public static site is useful without a global control service. The hosted
+layout is:
 
 - Cloudflare Pages serves the static frontend at [`vonkforge.ai`](https://vonkforge.ai).
   The default Pages hostname is `vonk-forge-web.pages.dev`.
-- Railway is reserved for the future global API, validation worker, and
-  PostgreSQL database; do not provision it for the initial local release.
+- Railway is reserved for a future global API, validation worker, and PostgreSQL
+  database. It is not required for the current static catalog.
 - GitHub Actions in `vonk-forge` builds and publishes the signed
   `vonk-forge-agent` package to Cloudflare R2 at `packages.vonkforge.ai`.
 - Caddy belongs to the local NAS control host, not to the global catalog
@@ -61,8 +79,8 @@ docker compose -f deploy/compose.yaml down
 ```
 
 The local Compose gateway is useful for development and contract testing. The
-future hosted deployment notes live under `docs/operations`; they are deferred
-until the global catalog is explicitly enabled.
+hosted backend notes under `docs/operations` remain deferred until that global
+service is explicitly enabled.
 
 ## Contract verification
 
