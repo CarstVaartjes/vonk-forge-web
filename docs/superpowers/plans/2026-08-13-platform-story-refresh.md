@@ -116,7 +116,13 @@ git commit -m "style(web): forge a clearer catalog experience"
 - Consumes: Tasks 1 and 2's tested branch.
 - Produces: reviewed PR, green CI, merged main, and successful Cloudflare Pages deployment.
 
-- [ ] **Step 1: Request independent review and resolve every Critical or Important finding.**
-- [ ] **Step 2: Re-run the complete Task 2 verification commands on the final diff.**
-- [ ] **Step 3: Push, open a PR, and merge only after required CI is green.**
-- [ ] **Step 4: Verify the main-branch Pages workflow succeeds and `https://vonkforge.ai` serves the new hero.**
+- [x] **Step 1: Request independent review and resolve every Critical or Important finding.**
+- [x] **Step 2: Re-run the complete Task 2 verification commands on the final diff.**
+- [x] **Step 3: Push, open a PR, and merge only after required CI is green.**
+- [x] **Step 4: Verify the main-branch Pages workflow succeeds and `https://vonkforge.ai` serves the new hero.**
+
+Publication completed through [PR #24](https://github.com/CarstVaartjes/vonk-forge-web/pull/24),
+merged as `a97b1fac4a6f5cea1a9bfbd4d640ebce366b441e` after Python, web,
+contracts, containers, security, and Trivy checks passed. The exact merge was
+deployed by [Pages run 31650693658](https://github.com/CarstVaartjes/vonk-forge-web/actions/runs/31650693658),
+and the live domain served the reviewed asset identities and hero over HTTPS.
