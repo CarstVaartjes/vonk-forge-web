@@ -62,22 +62,54 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   await expect(page).toHaveURL(/#main-content$/);
 
   await expect(page.locator(".site-header")).toHaveCSS("position", "sticky");
+  await expect(page.locator(".boundary")).toHaveCSS("display", "grid");
   const horizontalOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
   );
   expect(horizontalOverflow).toBeLessThanOrEqual(0);
+
+  await page.keyboard.press("Tab");
+  await expect(page.getByRole("link", { name: "Explore recipes" })).toBeFocused();
+
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await expect(page.locator("html")).toHaveCSS("scroll-behavior", "auto");
+
+  const minimumFaintContrast = await page.evaluate(() => {
+    const styles = getComputedStyle(document.documentElement);
+    const parseHex = (value: string) => {
+      const hex = value.trim().replace("#", "");
+      return [0, 2, 4].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255);
+    };
+    const luminance = (value: string) => parseHex(value)
+      .map((channel) => channel <= 0.04045
+        ? channel / 12.92
+        : ((channel + 0.055) / 1.055) ** 2.4)
+      .reduce((total, channel, index) => total + channel * [0.2126, 0.7152, 0.0722][index], 0);
+    const contrast = (foreground: string, background: string) => {
+      const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+      return (values[0] + 0.05) / (values[1] + 0.05);
+    };
+    const foreground = styles.getPropertyValue("--faint");
+    return Math.min(
+      ...["--night", "--panel", "--panel-raised"].map((token) =>
+        contrast(foreground, styles.getPropertyValue(token))),
+    );
+  });
+  expect(minimumFaintContrast).toBeGreaterThanOrEqual(4.5);
 });
 
 
 test("minimum supported viewport does not overflow", async ({ page }) => {
-  await page.setViewportSize({ width: 320, height: 800 });
-  await page.goto("/");
+  for (const width of [320, 393]) {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "Build where the models live." })).toBeVisible();
-  const horizontalOverflow = await page.evaluate(
-    () => document.documentElement.scrollWidth - window.innerWidth,
-  );
-  expect(horizontalOverflow).toBeLessThanOrEqual(0);
+    await expect(page.getByRole("heading", { name: "Build where the models live." })).toBeVisible();
+    const horizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
+    );
+    expect(horizontalOverflow).toBeLessThanOrEqual(0);
+  }
 });
 
 

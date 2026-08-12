@@ -85,7 +85,7 @@ export function HomePage() {
         </ol>
       </section>
 
-      <section className="boundary" aria-labelledby="boundary-title">
+      <section className="boundary home-boundary" aria-labelledby="boundary-title">
         <div className="boundary-copy">
           <p className="eyebrow">The useful separation</p>
           <h2 id="boundary-title">Verified build source here. Weights at their origin.</h2>
