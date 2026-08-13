@@ -78,6 +78,18 @@ def test_recipe_requires_standard_runtime_interface_and_confinement() -> None:
         validate_recipe(recipe)
 
 
+def test_host_network_is_reserved_for_connected_multinode_profiles() -> None:
+    multinode = fixture("recipe-v1-multinode.json")
+    multinode["runtime"]["security"]["host_network"] = True
+
+    validate_recipe(multinode)
+
+    single = fixture("recipe-v1-minimal.json")
+    single["runtime"]["security"]["host_network"] = True
+    with pytest.raises(RecipeContractError, match="connected multi-node"):
+        validate_recipe(single)
+
+
 def test_profile_role_counts_and_endpoint_owner_are_semantic() -> None:
     recipe = fixture("recipe-v1-multinode.json")
     profile = recipe["deployment_profiles"][0]
