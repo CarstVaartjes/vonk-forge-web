@@ -144,6 +144,10 @@ def _validate_recipe_semantics(document: Mapping[str, object]) -> None:
         document.get("deployment_profiles"), "deployment_profiles"
     )
     _unique_field(profiles, "name", "deployment_profiles")
+    security = runtime.get("security")
+    host_network = (
+        isinstance(security, Mapping) and security.get("host_network") is True
+    )
     all_role_names: set[object] = set()
     for profile_index, profile in enumerate(profiles):
         path = f"deployment_profiles.{profile_index}"
@@ -179,6 +183,15 @@ def _validate_recipe_semantics(document: Mapping[str, object]) -> None:
         if (node_count == 1) != (connectivity == "none"):
             raise RecipeContractError(
                 f"{path}.fabric: only a one-node profile may use no fabric"
+            )
+        if host_network and (
+            not isinstance(node_count, int)
+            or isinstance(node_count, bool)
+            or node_count < 2
+            or connectivity == "none"
+        ):
+            raise RecipeContractError(
+                f"{path}: host network requires a connected multi-node profile"
             )
         overrides = profile.get("parameter_overrides")
         if not isinstance(overrides, Mapping) or not set(overrides).issubset(
