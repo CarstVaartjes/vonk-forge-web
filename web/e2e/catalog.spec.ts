@@ -121,6 +121,9 @@ test("architecture and installation guides stay navigable at 1…N scale", async
   await expect(page.getByRole("heading", { name: "Single Spark" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Two Sparks" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Fleet", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "One contract. Any reviewed runtime." })).toBeVisible();
+  await expect(page.getByText("VONK_RANK", { exact: true })).toBeVisible();
+  await expect(page.getByText("/run/vonk/runtime.json", { exact: true })).toBeVisible();
 
   await page.getByRole("link", { name: "Open the install guide" }).click();
   await expect(page).toHaveURL(/\/install$/);
