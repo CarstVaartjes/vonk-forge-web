@@ -1,6 +1,10 @@
 import { render, screen, within } from "@testing-library/react";
+import { afterEach } from "vitest";
 
 import { App } from "./app";
+
+
+afterEach(() => window.history.replaceState({}, "", "/"));
 
 
 test("explains the public catalog boundary", () => {
@@ -30,6 +34,50 @@ test("provides the catalog and publishing navigation", () => {
     "href",
     "/publish",
   );
+  expect(within(primaryNavigation).getByRole("link", { name: "Architecture" })).toHaveAttribute(
+    "href",
+    "/architecture",
+  );
+  expect(within(primaryNavigation).getByRole("link", { name: "Install" })).toHaveAttribute(
+    "href",
+    "/install",
+  );
+});
+
+
+test("explains the operator-owned architecture for one to many Sparks", () => {
+  window.history.replaceState({}, "", "/architecture");
+  render(<App />);
+
+  expect(
+    screen.getByRole("heading", { name: /one control plane.*one to many sparks/i }),
+  ).toBeVisible();
+  for (const name of ["Public catalog", "Operator workstation", "NAS control", "Spark fleet"]) {
+    expect(screen.getByRole("heading", { name })).toBeVisible();
+  }
+  expect(screen.getByText(/tailscale https/i)).toBeVisible();
+  expect(screen.getByText(/management-lan mtls/i)).toBeVisible();
+  expect(screen.getByText("NVIDIA fabric", { selector: "strong" })).toBeVisible();
+
+});
+
+
+test("provides bounded development and production installation paths", () => {
+  window.history.replaceState({}, "", "/install");
+  render(<App />);
+
+  expect(screen.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Development" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Production" })).toBeVisible();
+  expect(screen.getByText("docker-compose.yml + secrets/", { selector: "strong" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "One Spark" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Many Sparks" })).toBeVisible();
+  expect(screen.getByText(/funnel stays disabled/i)).toBeVisible();
+  expect(screen.getByRole("link", { name: /complete development runbook/i })).toHaveAttribute(
+    "href",
+    expect.stringContaining("development-nas-installation.md"),
+  );
+
 });
 
 
