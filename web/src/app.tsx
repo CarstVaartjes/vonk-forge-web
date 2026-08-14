@@ -1,4 +1,6 @@
+import { ArchitecturePage } from "./pages/architecture";
 import { HomePage } from "./pages/home";
+import { InstallPage } from "./pages/install";
 import { PublisherPage } from "./pages/publisher";
 import { PublisherWorkspacePage } from "./pages/publisher-workspace";
 import { RecipeDetailPage } from "./pages/recipe-detail";
@@ -8,6 +10,8 @@ import { RecipesPage } from "./pages/recipes";
 function CurrentPage() {
   const parts = window.location.pathname.split("/").filter(Boolean);
   if (parts.length === 0) return <main><HomePage /></main>;
+  if (parts[0] === "architecture" && parts.length === 1) return <ArchitecturePage />;
+  if (parts[0] === "install" && parts.length === 1) return <InstallPage />;
   if (parts[0] === "recipes" && parts.length === 1) return <RecipesPage />;
   if (parts[0] === "recipes" && parts.length === 3) {
     return <RecipeDetailPage publisher={parts[1] ?? ""} slug={parts[2] ?? ""} />;
@@ -32,6 +36,8 @@ export function App() {
             <span className="brand-name"><strong>Vonk</strong> Forge</span>
           </a>
           <nav aria-label="Primary navigation">
+            <a href="/architecture">Architecture</a>
+            <a href="/install">Install</a>
             <a href="/recipes">Recipes</a>
             <a href="/publish">Publish</a>
           </nav>
@@ -42,6 +48,8 @@ export function App() {
         <footer className="site-footer">
           <p><strong>Vonk Forge</strong> · Open recipe infrastructure for compute you control.</p>
           <nav aria-label="Footer navigation">
+            <a href="/architecture">Architecture</a>
+            <a href="/install">Install</a>
             <a href="/recipes">Catalog</a>
             <a href="/publish">Publish</a>
             <a href="https://github.com/CarstVaartjes/vonk-forge">GitHub</a>

@@ -43,6 +43,22 @@ The frontend deployment is defined in `.github/workflows/pages.yml`; see
 for the one-time Cloudflare and GitHub setup. Railway is documented only as a
 future backend option.
 
+## Architecture and installation guides
+
+The public frontend includes two operator-facing guides:
+
+- `/architecture` maps the public catalog, operator workstation, NAS control
+  plane, and a fleet of one to many Sparks. It distinguishes private Tailscale
+  HTTPS, management-LAN mTLS, verified downloads, and recipe-selected NVIDIA
+  fabric traffic.
+- `/install` explains the development and production lanes, the exact
+  `docker-compose.yml` plus `secrets/` development project boundary, and the
+  difference between a single Spark and a multi-node fleet.
+
+These pages explain the system and link to the canonical runbooks in
+`CarstVaartjes/vonk-forge`; they do not duplicate secret values or copy
+shell procedures that would drift from the implementation repository.
+
 ## Local API
 
 Use Python 3.12 and [uv](https://docs.astral.sh/uv/):
