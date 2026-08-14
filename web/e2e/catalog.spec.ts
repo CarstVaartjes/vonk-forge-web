@@ -125,8 +125,8 @@ test("architecture and installation guides stay navigable at 1…N scale", async
   await page.getByRole("link", { name: "Open the install guide" }).click();
   await expect(page).toHaveURL(/\/install$/);
   await expect(page.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "One Spark" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Many Sparks" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "One Spark", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Many Sparks", exact: true })).toBeVisible();
   await expect(page.getByText(/funnel stays disabled/i)).toBeVisible();
 
   for (const width of [320, 1280]) {

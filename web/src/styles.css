@@ -593,7 +593,7 @@ a {
 
 .site-footer p { margin: 0; }
 .site-footer strong { color: var(--muted); }
-.site-footer nav { gap: 1.25rem; }
+.site-footer nav { flex-wrap: wrap; gap: 1.25rem; }
 
 /* Architecture and installation guides */
 .guide-page {
@@ -1232,6 +1232,7 @@ a {
   .release-grid { grid-template-columns: 1fr; }
   .release-card { min-height: 16rem; }
   .site-footer { align-items: flex-start; flex-direction: column; }
+  .site-footer nav { width: 100%; gap: 0.75rem 1.25rem; }
   .filters { grid-template-columns: 1fr; }
   .filters label:first-child { grid-column: auto; }
   .workspace-layout { grid-template-columns: 1fr; }
@@ -1240,6 +1241,8 @@ a {
   .guide-hero { min-height: 25rem; }
   .guide-hero h1 { max-width: 100%; font-size: clamp(2.9rem, 13.5vw, 4.2rem); }
   .guide-jump { grid-template-columns: 1fr; }
+  .install-lane > header { flex-direction: column; gap: 1.25rem; }
+  .install-lane header h2 { font-size: clamp(2.35rem, 13.5vw, 3.5rem); }
   .section-kicker { grid-template-columns: 2rem minmax(0, 1fr); }
   .connection-legend,
   .trust-boundary-grid,
