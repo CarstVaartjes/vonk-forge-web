@@ -62,6 +62,21 @@ test("explains the operator-owned architecture for one to many Sparks", () => {
 });
 
 
+test("explains the control to runtime contract without MIA-specific control logic", () => {
+  window.history.replaceState({}, "", "/architecture");
+  render(<App />);
+
+  expect(screen.getByRole("heading", { name: "One contract. Any reviewed runtime." })).toBeVisible();
+  for (const name of ["Recipe", "NAS control", "Spark enforcement", "Runtime adapter"]) {
+    expect(screen.getByRole("heading", { name })).toBeVisible();
+  }
+  expect(screen.getByText("VONK_RANK", { selector: "code" })).toBeVisible();
+  expect(screen.getByText("/run/vonk/runtime.json", { selector: "code" })).toBeVisible();
+  expect(screen.getByText(/MIA changes how reasoning tokens are handled/i)).toBeVisible();
+  expect(screen.getByText(/No control-plane change/i)).toBeVisible();
+});
+
+
 test("provides bounded development and production installation paths", () => {
   window.history.replaceState({}, "", "/install");
   render(<App />);

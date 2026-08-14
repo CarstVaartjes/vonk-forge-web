@@ -81,9 +81,96 @@ export function ArchitecturePage() {
         </div>
       </section>
 
-      <section className="architecture-section trust-boundaries" aria-labelledby="trust-title">
+      <section className="architecture-section runtime-contract" aria-labelledby="contract-title">
         <div className="section-kicker">
           <span>03</span>
+          <div><p className="eyebrow">Control ↔ runtime</p><h2 id="contract-title">One contract. Any reviewed runtime.</h2></div>
+        </div>
+        <p className="contract-intro">
+          The controller describes the exact outcome. The runtime decides how to
+          produce it. Between them is a small, versioned interface—not a shell
+          script, a Docker socket, or MIA-specific control code.
+        </p>
+
+        <ol className="contract-pipeline" aria-label="Control to runtime handoff">
+          <li>
+            <span>01 · declares</span>
+            <h3>Recipe</h3>
+            <p>Names immutable source, image and model identities, profiles, resources, endpoint, mounts, and security.</p>
+            <code>desired outcome</code>
+          </li>
+          <li>
+            <span>02 · compiles</span>
+            <h3>Control plan</h3>
+            <p>Chooses exact nodes and roles, then resolves one role-specific typed workload for every rank.</p>
+            <code>signed intent</code>
+          </li>
+          <li>
+            <span>03 · enforces</span>
+            <h3>Spark enforcement</h3>
+            <p>The Rust agent verifies content and placement. A bounded root helper emits only the approved Docker shape.</p>
+            <code>native NVIDIA stack</code>
+          </li>
+          <li>
+            <span>04 · adapts</span>
+            <h3>Runtime adapter</h3>
+            <p>MIA, vLLM, llama.cpp, or another reviewed wrapper translates standard inputs into its own launch details.</p>
+            <code>working endpoint</code>
+          </li>
+        </ol>
+
+        <div className="contract-handoff">
+          <article className="contract-socket" aria-labelledby="socket-title">
+            <header>
+              <div><p className="eyebrow">The stable socket</p><h3 id="socket-title">vonk.runtime.v1</h3></div>
+              <span>Linux · ARM64</span>
+            </header>
+            <div className="contract-fields">
+              <section aria-labelledby="placement-fields">
+                <h4 id="placement-fields">Placement</h4>
+                <div><code>VONK_RANK</code><code>VONK_WORLD_SIZE</code><code>VONK_MASTER_ADDR</code><code>VONK_LOCAL_ADDR</code></div>
+              </section>
+              <section aria-labelledby="filesystem-fields">
+                <h4 id="filesystem-fields">Filesystem</h4>
+                <div><code>/models · read-only</code><code>/state · private</code><code>/run/vonk/runtime.json</code></div>
+              </section>
+              <section aria-labelledby="endpoint-fields">
+                <h4 id="endpoint-fields">Endpoint</h4>
+                <div><code>OpenAI protocol</code><code>declared port</code><code>health path</code><code>model alias</code></div>
+              </section>
+              <section aria-labelledby="security-fields">
+                <h4 id="security-fields">Enforcement</h4>
+                <div><code>digest pinned</code><code>numeric non-root</code><code>read-only root</code><code>no capabilities</code></div>
+              </section>
+            </div>
+          </article>
+
+          <aside className="contract-example" aria-labelledby="mia-change-title">
+            <p className="eyebrow">A real change</p>
+            <h3 id="mia-change-title">MIA adds a thinking budget</h3>
+            <p>
+              MIA changes how reasoning tokens are handled inside its reviewed
+              wrapper. It still consumes the same rank, model, fabric, mounts,
+              and endpoint contract.
+            </p>
+            <div className="change-result">
+              <span>Recipe source + digest change</span>
+              <i aria-hidden="true">→</i>
+              <strong>No control-plane change</strong>
+            </div>
+            <p className="change-note">Rebuild and verify the immutable runtime; keep placement and authority untouched.</p>
+          </aside>
+        </div>
+
+        <div className="contract-ownership" aria-label="Contract ownership">
+          <article><span>Control owns</span><p>Identity · placement · policy · lifecycle · health evidence · route publication</p></article>
+          <article><span>Runtime owns</span><p>Framework launch · model flags · fabric translation · implementation patches · inference</p></article>
+        </div>
+      </section>
+
+      <section className="architecture-section trust-boundaries" aria-labelledby="trust-title">
+        <div className="section-kicker">
+          <span>04</span>
           <div><p className="eyebrow">Trust boundaries</p><h2 id="trust-title">Authority stays narrow.</h2></div>
         </div>
         <div className="trust-boundary-grid">

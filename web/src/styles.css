@@ -858,6 +858,120 @@ a {
 .trust-boundary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .trust-boundary-grid article { min-height: 13rem; background: linear-gradient(135deg, rgb(255 122 26 / 6%), var(--panel) 58%); }
 
+.contract-intro {
+  max-width: 51rem;
+  margin: -1.2rem 0 3rem 6.25rem;
+  color: var(--muted);
+  font-size: 1.02rem;
+  line-height: 1.75;
+}
+
+.contract-pipeline {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 2.1rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.contract-pipeline li {
+  position: relative;
+  min-height: 18rem;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  background: linear-gradient(150deg, rgb(255 122 26 / 5%), transparent 44%), var(--panel);
+}
+
+.contract-pipeline li:not(:last-child)::after {
+  position: absolute;
+  top: 50%;
+  right: -1.62rem;
+  color: var(--ember);
+  content: "→";
+  font: 500 1.1rem ui-monospace, monospace;
+  transform: translateY(-50%);
+}
+
+.contract-pipeline li > span {
+  color: var(--ember);
+  font: 750 0.65rem/1.3 ui-monospace, monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.contract-pipeline h3 { margin: 2rem 0 0.75rem; font-size: 1.35rem; letter-spacing: -0.035em; }
+.contract-pipeline p { margin: 0; color: var(--muted); font-size: 0.84rem; line-height: 1.65; }
+.contract-pipeline code { position: absolute; right: 1.5rem; bottom: 1.4rem; left: 1.5rem; color: var(--faint); font-size: 0.68rem; }
+
+.contract-handoff {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(18rem, 0.85fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.contract-socket,
+.contract-example {
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  border: 1px solid var(--line-bright);
+  border-radius: 0.65rem;
+  background: var(--panel);
+}
+
+.contract-socket > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.contract-socket .eyebrow,
+.contract-example .eyebrow { margin-bottom: 0.55rem; }
+.contract-socket h3,
+.contract-example h3 { margin: 0; font-size: clamp(1.55rem, 3vw, 2.2rem); letter-spacing: -0.045em; }
+.contract-socket > header > span { padding: 0.4rem 0.6rem; border: 1px solid var(--line); border-radius: 999px; color: var(--faint); font: 700 0.62rem ui-monospace, monospace; white-space: nowrap; }
+
+.contract-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.6rem 2rem;
+  padding-top: 1.6rem;
+}
+
+.contract-fields h4 { margin: 0 0 0.75rem; color: var(--muted); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.contract-fields section > div { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.contract-fields code { padding: 0.35rem 0.48rem; border: 1px solid var(--line); border-radius: 0.35rem; color: var(--ink); background: var(--night); font-size: 0.66rem; overflow-wrap: anywhere; }
+
+.contract-example {
+  background:
+    radial-gradient(circle at 100% 0, rgb(127 216 160 / 12%), transparent 16rem),
+    linear-gradient(145deg, rgb(255 122 26 / 8%), transparent 55%),
+    var(--panel);
+}
+
+.contract-example > p:not(.eyebrow):not(.change-note) { margin: 1.25rem 0 1.5rem; color: var(--muted); font-size: 0.86rem; line-height: 1.7; }
+.change-result { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0.75rem; padding: 1rem 0; border-block: 1px solid var(--line); }
+.change-result span,
+.change-result strong { font-size: 0.76rem; line-height: 1.45; }
+.change-result i { color: var(--ember); font-style: normal; }
+.change-result strong { color: var(--green); }
+.change-note { margin: 1rem 0 0; color: var(--faint); font-size: 0.72rem; line-height: 1.55; }
+
+.contract-ownership {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.contract-ownership article { display: grid; grid-template-columns: 7rem minmax(0, 1fr); gap: 1rem; padding: 1rem 1.25rem; border: 1px solid var(--line); border-radius: 0.5rem; }
+.contract-ownership span { color: var(--ember); font: 750 0.68rem ui-monospace, monospace; }
+.contract-ownership p { margin: 0; color: var(--muted); font-size: 0.76rem; line-height: 1.55; }
+
 .guide-cta {
   display: flex;
   align-items: end;
@@ -1205,6 +1319,10 @@ a {
   .filters label:first-child { grid-column: 1 / -1; }
   .scale-grid { grid-template-columns: 1fr; }
   .scale-grid article { min-height: 13rem; }
+  .contract-intro { margin-left: 0; }
+  .contract-pipeline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .contract-pipeline li:nth-child(2)::after { display: none; }
+  .contract-handoff { grid-template-columns: 1fr; }
   .guide-cta { align-items: flex-start; flex-direction: column; }
   .install-prerequisites > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .production-path { grid-template-columns: 1fr; gap: 0.75rem; }
@@ -1218,6 +1336,14 @@ a {
   .brand-name { display: none; }
   .site-header nav { display: grid; grid-template-columns: repeat(2, auto); gap: 0.3rem 0.9rem; justify-items: end; }
   .site-header nav a { font-size: 0.7rem; }
+  .contract-pipeline,
+  .contract-fields,
+  .contract-ownership { grid-template-columns: 1fr; }
+  .contract-pipeline li { min-height: 15rem; }
+  .contract-pipeline li:not(:last-child)::after,
+  .contract-pipeline li:nth-child(2)::after { top: auto; right: 50%; bottom: -1.62rem; display: block; transform: translateX(50%) rotate(90deg); }
+  .contract-socket > header { align-items: flex-start; flex-direction: column; }
+  .contract-ownership article { grid-template-columns: 1fr; gap: 0.45rem; }
   .hero { padding: 4.5rem 0 5.5rem; }
   .hero h1 { font-size: clamp(3.65rem, 18vw, 5.2rem); }
   .hero-signature { font-size: 1.15rem; }
