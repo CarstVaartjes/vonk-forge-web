@@ -85,7 +85,7 @@ test("provides bounded development and production installation paths", () => {
   expect(screen.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Development" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Production" })).toBeVisible();
-  expect(screen.getByText("docker-compose.yml + secrets/", { selector: "strong" })).toBeVisible();
+  expect(screen.getByText("docker-compose.yaml + secrets/", { selector: "strong" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "One Spark" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Many Sparks" })).toBeVisible();
   expect(screen.getByText(/funnel stays disabled/i)).toBeVisible();

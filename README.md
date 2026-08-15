@@ -52,7 +52,7 @@ The public frontend includes two operator-facing guides:
   HTTPS, management-LAN enrollment TLS and agent mTLS, verified downloads, and
   recipe-selected NVIDIA fabric traffic.
 - `/install` explains the development and production lanes, the exact
-  `docker-compose.yml` plus `secrets/` development project boundary, remote SSH
+  `docker-compose.yaml` plus `secrets/` development project boundary, remote SSH
   publication onto the NAS filesystem, and the difference between a single
   Spark and a multi-node fleet.
 
