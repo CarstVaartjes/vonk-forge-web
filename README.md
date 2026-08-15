@@ -49,11 +49,12 @@ The public frontend includes two operator-facing guides:
 
 - `/architecture` maps the public catalog, operator workstation, NAS control
   plane, and a fleet of one to many Sparks. It distinguishes private Tailscale
-  HTTPS, management-LAN mTLS, verified downloads, and recipe-selected NVIDIA
-  fabric traffic.
+  HTTPS, management-LAN enrollment TLS and agent mTLS, verified downloads, and
+  recipe-selected NVIDIA fabric traffic.
 - `/install` explains the development and production lanes, the exact
-  `docker-compose.yml` plus `secrets/` development project boundary, and the
-  difference between a single Spark and a multi-node fleet.
+  `docker-compose.yml` plus `secrets/` development project boundary, remote SSH
+  publication onto the NAS filesystem, and the difference between a single
+  Spark and a multi-node fleet.
 
 These pages explain the system and link to the canonical runbooks in
 `CarstVaartjes/vonk-forge`; they do not duplicate secret values or copy

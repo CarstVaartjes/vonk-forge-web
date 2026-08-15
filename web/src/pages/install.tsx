@@ -2,8 +2,8 @@ const repository = "https://github.com/CarstVaartjes/vonk-forge/blob/main";
 
 const developmentSteps = [
   ["Get the accepted artifact", "Download docker-compose.dev.yml from the successful Development images run for accepted main. The NAS follows public :dev images."],
-  ["Generate secrets locally", "Create the complete 21-file source generation on a private Linux filesystem. Back it up encrypted; publish only the validated 17-file projection."],
-  ["Publish the NAS project", "The shared project directory contains exactly docker-compose.yml and secrets/. Choose Pull, then Redeploy; preserve every named volume."],
+  ["Generate secrets locally", "Create the complete 22-file source generation on a private Linux filesystem. Back it up encrypted; publish only the validated 18-file projection."],
+  ["Publish the NAS project", "Publish through batch-mode SSH onto the NAS's real Linux filesystem. SMB is only an operator view. The project contains exactly docker-compose.yml and secrets/. Then choose Pull and Redeploy while preserving every named volume."],
   ["Prepare node networking", "Put the three management-LAN names in /etc/hosts on the NAS and every Spark. Declare none for one Spark or explicit NVIDIA fabric CIDRs for multi-node recipes."],
   ["Install each signed agent", "Add the Vonk APT dev channel on Ubuntu 24.04 aarch64, install the Rust agent package, enroll it, and approve the node."],
   ["Verify private access", "Define svc:vonk-forge, apply the exact grant and auto-approver, and confirm at least one connected host. Funnel stays disabled."],
@@ -32,8 +32,8 @@ export function InstallPage() {
         <p className="eyebrow">Before you begin</p>
         <h2 id="prerequisites-title">Four clean boundaries</h2>
         <div>
-          <article><span>01</span><h3>NAS</h3><p>Linux/amd64, Docker Engine, Compose plugin, durable storage, and one private project directory.</p></article>
-          <article><span>02</span><h3>Workstation</h3><p>Git, Python 3.12, 1Password, SMB access, and Tailscale for the private browser path.</p></article>
+          <article><span>01</span><h3>NAS</h3><p>Linux/amd64, Docker Engine, Compose plugin, durable storage, an SSH operator with Docker authority, and one private project directory.</p></article>
+          <article><span>02</span><h3>Workstation</h3><p>Git, Python 3.12, OpenSSH with a trusted NAS host key, 1Password, and Tailscale for the private browser path.</p></article>
           <article><span>03</span><h3>Spark nodes</h3><p>Ubuntu 24.04 aarch64 with NVIDIA&apos;s native driver, Docker, and fabric stack intact.</p></article>
           <article><span>04</span><h3>Tailnet</h3><p>MagicDNS, HTTPS certificates, one tagged OAuth client, exact Service grants, and no Funnel.</p></article>
         </div>
