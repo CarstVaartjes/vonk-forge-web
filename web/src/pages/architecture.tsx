@@ -1,6 +1,6 @@
 const connections = [
   { className: "tailnet", label: "Tailscale HTTPS", detail: "Human browser access" },
-  { className: "management", label: "Management-LAN mTLS", detail: "Agent enrollment and claims" },
+  { className: "management", label: "Management-LAN TLS / mTLS", detail: "Enrollment, claims, and evidence" },
   { className: "artifact", label: "Verified downloads", detail: "Recipes, packages, images, and models" },
   { className: "fabric", label: "NVIDIA fabric", detail: "Recipe-selected multi-node ranks" },
 ];
@@ -37,7 +37,7 @@ export function ArchitecturePage() {
           <article className="architecture-zone zone-operator">
             <div className="zone-heading"><span>Your device</span><h3>Operator workstation</h3></div>
             <p>Stages secrets locally, publishes the NAS project, and opens the private control UI.</p>
-            <ul><li>Browser + Tailscale</li><li>1Password</li><li>SMB project copy</li></ul>
+            <ul><li>Browser + Tailscale</li><li>1Password</li><li>SSH project publisher</li></ul>
           </article>
 
           <div className="architecture-flow flow-tailnet" aria-hidden="true"><span>private HTTPS</span></div>

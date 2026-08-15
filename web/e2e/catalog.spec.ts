@@ -131,6 +131,8 @@ test("architecture and installation guides stay navigable at 1…N scale", async
   await expect(page.getByRole("heading", { name: "One Spark", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Many Sparks", exact: true })).toBeVisible();
   await expect(page.getByText(/funnel stays disabled/i)).toBeVisible();
+  await expect(page.getByText(/complete 22-file source generation/i)).toBeVisible();
+  await expect(page.getByText(/publish through batch-mode ssh/i)).toBeVisible();
 
   for (const width of [320, 1280]) {
     await page.setViewportSize({ width, height: 900 });

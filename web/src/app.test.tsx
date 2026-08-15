@@ -56,8 +56,9 @@ test("explains the operator-owned architecture for one to many Sparks", () => {
     expect(screen.getByRole("heading", { name })).toBeVisible();
   }
   expect(screen.getByText(/tailscale https/i)).toBeVisible();
-  expect(screen.getByText(/management-lan mtls/i)).toBeVisible();
+  expect(screen.getByText(/management-lan tls \/ mtls/i)).toBeVisible();
   expect(screen.getByText("NVIDIA fabric", { selector: "strong" })).toBeVisible();
+  expect(screen.getByText("SSH project publisher")).toBeVisible();
 
 });
 
@@ -88,6 +89,10 @@ test("provides bounded development and production installation paths", () => {
   expect(screen.getByRole("heading", { name: "One Spark" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Many Sparks" })).toBeVisible();
   expect(screen.getByText(/funnel stays disabled/i)).toBeVisible();
+  expect(screen.getByText(/complete 22-file source generation/i)).toBeVisible();
+  expect(screen.getByText(/validated 18-file projection/i)).toBeVisible();
+  expect(screen.getByText(/publish through batch-mode ssh/i)).toBeVisible();
+  expect(screen.getByText(/smb is only an operator view/i)).toBeVisible();
   expect(screen.getByRole("link", { name: /complete development runbook/i })).toHaveAttribute(
     "href",
     expect.stringContaining("development-nas-installation.md"),
