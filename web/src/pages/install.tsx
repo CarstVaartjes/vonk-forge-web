@@ -3,7 +3,7 @@ const repository = "https://github.com/CarstVaartjes/vonk-forge/blob/main";
 const developmentSteps = [
   ["Get the accepted artifact", "Download docker-compose.dev.yml from the successful Development images run for accepted main. The NAS follows public :dev images."],
   ["Generate secrets locally", "Create the complete 22-file source generation on a private Linux filesystem. Back it up encrypted; publish only the validated 18-file projection."],
-  ["Publish the NAS project", "Publish through batch-mode SSH onto the NAS's real Linux filesystem. SMB is only an operator view. The project contains exactly docker-compose.yml and secrets/. Then choose Pull and Redeploy while preserving every named volume."],
+  ["Publish the NAS project", "Publish through batch-mode SSH onto the NAS's real Linux filesystem. SMB is only an operator view. The project contains exactly docker-compose.yaml and secrets/. Then choose Pull and Redeploy while preserving every named volume."],
   ["Prepare node networking", "Put the three management-LAN names in /etc/hosts on the NAS and every Spark. Declare none for one Spark or explicit NVIDIA fabric CIDRs for multi-node recipes."],
   ["Install each signed agent", "Add the Vonk APT dev channel on Ubuntu 24.04 aarch64, install the Rust agent package, enroll it, and approve the node."],
   ["Verify private access", "Define svc:vonk-forge, apply the exact grant and auto-approver, and confirm at least one connected host. Funnel stays disabled."],
@@ -41,7 +41,7 @@ export function InstallPage() {
 
       <section id="development" className="install-lane development-lane" aria-labelledby="development-title">
         <header><div><p className="eyebrow">Recommended before launch</p><h2 id="development-title">Development</h2></div><code>:dev</code></header>
-        <p className="lane-intro">The NAS project is deliberately small: <strong>docker-compose.yml + secrets/</strong>. Images are built and tested by GitHub Actions; the NAS pulls them and keeps state in named volumes.</p>
+        <p className="lane-intro">The NAS project is deliberately small: <strong>docker-compose.yaml + secrets/</strong>. Images are built and tested by GitHub Actions; the NAS pulls them and keeps state in named volumes.</p>
         <ol className="install-steps">
           {developmentSteps.map(([title, body], index) => (
             <li key={title}><span>{String(index + 1).padStart(2, "0")}</span><div><h3>{title}</h3><p>{body}</p></div></li>
