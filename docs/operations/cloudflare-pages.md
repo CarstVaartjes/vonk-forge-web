@@ -29,6 +29,36 @@ default Pages hostname is `vonk-forge-web.pages.dev`.
 4. In the Pages project, add the custom domain `vonkforge.ai`. Because this is
    an apex domain, the zone must use Cloudflare nameservers; Cloudflare then
    provisions the Pages DNS and certificate.
+5. In the Pages project, open **Metrics** and select **Enable** under **Web
+   Analytics**. Cloudflare injects its beacon into the next deployment. Keep
+   automatic installation enabled for the complete `vonkforge.ai` hostname.
+
+## Visitor analytics
+
+Vonk Forge Web uses Cloudflare Web Analytics instead of Google Analytics. It
+reports aggregate visits, page views, paths, referrers, country, browser,
+operating system, device type, page-load performance, and Core Web Vitals. It
+does not use cookies or local storage for analytics, does not fingerprint
+individuals, and does not expose names, email addresses, or an individual
+visitor list. The public disclosure is at `/privacy`.
+
+View results in **Cloudflare dashboard → Web Analytics → vonkforge.ai**. The
+repository's Content Security Policy permits only the official
+`static.cloudflareinsights.com` beacon and its reporting endpoint. Do not add a
+second analytics script without updating the privacy disclosure and reviewing
+whether consent is required.
+
+After enabling Web Analytics, publish a new deployment and verify from a region
+included by the selected Cloudflare analytics policy:
+
+```bash
+curl -fsSL https://vonkforge.ai | grep -F 'static.cloudflareinsights.com/beacon.min.js'
+```
+
+Cloudflare can automatically omit the beacon for regions excluded by an
+account's analytics policy, so a missing snippet from such a region is not by
+itself proof that the project-level setting is disabled. Confirm the setting
+and incoming data in the dashboard.
 
 ## Releases
 

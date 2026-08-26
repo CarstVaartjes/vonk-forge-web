@@ -52,6 +52,8 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Catalog" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "NAS control" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Spark runtime" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Web Controller" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /vonkctl CLI/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Development", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Production", exact: true })).toBeVisible();
 
@@ -113,7 +115,7 @@ test("minimum supported viewport does not overflow", async ({ page }) => {
 });
 
 
-test("architecture and installation guides stay navigable at 1…N scale", async ({ page }) => {
+test("architecture, installation, and control guides stay navigable at 1…N scale", async ({ page }) => {
   await page.goto("/architecture");
   await expect(page.getByRole("heading", { name: /one control plane.*one to many sparks/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Spark fleet" })).toBeVisible();
@@ -128,15 +130,22 @@ test("architecture and installation guides stay navigable at 1…N scale", async
   await page.getByRole("link", { name: "Open the install guide" }).click();
   await expect(page).toHaveURL(/\/install$/);
   await expect(page.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Prepare the NAS" })).toBeVisible();
+  await expect(page.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose a control path" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "One Spark", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Many Sparks", exact: true })).toBeVisible();
-  await expect(page.getByText(/funnel stays disabled/i)).toBeVisible();
-  await expect(page.getByText(/complete 22-file source generation/i)).toBeVisible();
-  await expect(page.getByText(/publish through batch-mode ssh/i)).toBeVisible();
+  await expect(page.getByText(/VONK_CONTROLLER_ADDRESS=192\.168\.1\.231/)).toBeVisible();
+
+  await page.goto("/control");
+  await expect(page.getByRole("heading", { name: "Choose browser or terminal." })).toBeVisible();
+  await expect(page.getByText(/uv tool install 'git\+https:\/\/github\.com\/CarstVaartjes\/vonk-forge\.git@main'/)).toBeVisible();
+  await expect(page.getByText(/browser password is not a CLI credential/i)).toBeVisible();
+  await expect(page.getByText(/vonkctl library public facets/)).toBeVisible();
 
   for (const width of [320, 1280]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const path of ["/architecture", "/install"]) {
+    for (const path of ["/architecture", "/install", "/control", "/privacy"]) {
       await page.goto(path);
       const horizontalOverflow = await page.evaluate(
         () => document.documentElement.scrollWidth - window.innerWidth,

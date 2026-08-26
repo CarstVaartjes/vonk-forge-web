@@ -1,6 +1,8 @@
 import { ArchitecturePage } from "./pages/architecture";
+import { ControlPage } from "./pages/control";
 import { HomePage } from "./pages/home";
 import { InstallPage } from "./pages/install";
+import { PrivacyPage } from "./pages/privacy";
 import { PublisherPage } from "./pages/publisher";
 import { PublisherWorkspacePage } from "./pages/publisher-workspace";
 import { RecipeDetailPage } from "./pages/recipe-detail";
@@ -11,7 +13,9 @@ function CurrentPage() {
   const parts = window.location.pathname.split("/").filter(Boolean);
   if (parts.length === 0) return <main><HomePage /></main>;
   if (parts[0] === "architecture" && parts.length === 1) return <ArchitecturePage />;
+  if (parts[0] === "control" && parts.length === 1) return <ControlPage />;
   if (parts[0] === "install" && parts.length === 1) return <InstallPage />;
+  if (parts[0] === "privacy" && parts.length === 1) return <PrivacyPage />;
   if (parts[0] === "recipes" && parts.length === 1) return <RecipesPage />;
   if (parts[0] === "recipes" && parts.length === 3) {
     return <RecipeDetailPage publisher={parts[1] ?? ""} slug={parts[2] ?? ""} />;
@@ -38,6 +42,7 @@ export function App() {
           <nav aria-label="Primary navigation">
             <a href="/architecture">Architecture</a>
             <a href="/install">Install</a>
+            <a href="/control">Control</a>
             <a href="/recipes">Recipes</a>
             <a href="/publish">Publish</a>
           </nav>
@@ -50,8 +55,10 @@ export function App() {
           <nav aria-label="Footer navigation">
             <a href="/architecture">Architecture</a>
             <a href="/install">Install</a>
+            <a href="/control">Control</a>
             <a href="/recipes">Catalog</a>
             <a href="/publish">Publish</a>
+            <a href="/privacy">Privacy</a>
             <a href="https://github.com/CarstVaartjes/vonk-forge">GitHub</a>
           </nav>
         </footer>
