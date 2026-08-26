@@ -39,8 +39,8 @@ export function HomePage() {
             <a className="button primary" href="/recipes">
               Explore recipes <span aria-hidden="true">↗</span>
             </a>
-            <a className="button secondary" href="/publish">
-              Publish yours
+            <a className="button secondary" href="/install">
+              Install your Forge
             </a>
           </div>
         </div>
@@ -83,6 +83,36 @@ export function HomePage() {
             </li>
           ))}
         </ol>
+      </section>
+
+      <section className="control-section" aria-labelledby="control-paths-title">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">One control plane · two control paths</p>
+            <h2 id="control-paths-title">Operate in the browser or terminal.</h2>
+          </div>
+          <p>
+            The Web Controller and local <code>vonkctl</code> CLI expose the same
+            Fleet, Library, and Activity state. Choose the interface that fits the
+            job without splitting authority or history.
+          </p>
+        </div>
+        <div className="control-path-grid home-control-paths">
+          <article>
+            <span className="path-number">01</span>
+            <p className="eyebrow">Visual and guided</p>
+            <h3>Web Controller</h3>
+            <p>Search, preview, confirm, and monitor operations through the private HTTPS controller on your NAS.</p>
+            <a className="text-link" href="/control#web-controller">Web Controller guide <span aria-hidden="true">→</span></a>
+          </article>
+          <article>
+            <span className="path-number">02</span>
+            <p className="eyebrow">Local and scriptable</p>
+            <h3><code>vonkctl</code> CLI</h3>
+            <p>Install locally for the same lists, filters, comparisons, previews, apply boundaries, progress, and JSON output.</p>
+            <a className="text-link" href="/control#local-cli">CLI install + usage <span aria-hidden="true">→</span></a>
+          </article>
+        </div>
       </section>
 
       <section className="boundary home-boundary" aria-labelledby="boundary-title">

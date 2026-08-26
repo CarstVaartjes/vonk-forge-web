@@ -42,6 +42,10 @@ test("provides the catalog and publishing navigation", () => {
     "href",
     "/install",
   );
+  expect(within(primaryNavigation).getByRole("link", { name: "Control" })).toHaveAttribute(
+    "href",
+    "/control",
+  );
 });
 
 
@@ -78,26 +82,52 @@ test("explains the control to runtime contract without MIA-specific control logi
 });
 
 
-test("provides bounded development and production installation paths", () => {
+test("provides the current signed NAS and Spark installation path", () => {
   window.history.replaceState({}, "", "/install");
   render(<App />);
 
   expect(screen.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
-  expect(screen.getByRole("heading", { name: "Development" })).toBeVisible();
-  expect(screen.getByRole("heading", { name: "Production" })).toBeVisible();
-  expect(screen.getByText("docker-compose.yaml + secrets/", { selector: "strong" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Prepare the NAS" })).toBeVisible();
+  expect(screen.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Choose a control path" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Web Controller" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: /vonkctl CLI/i })).toBeVisible();
   expect(screen.getByRole("heading", { name: "One Spark" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Many Sparks" })).toBeVisible();
-  expect(screen.getByText(/funnel stays disabled/i)).toBeVisible();
-  expect(screen.getByText(/complete 22-file source generation/i)).toBeVisible();
-  expect(screen.getByText(/validated 18-file projection/i)).toBeVisible();
-  expect(screen.getByText(/publish through batch-mode ssh/i)).toBeVisible();
-  expect(screen.getByText(/smb is only an operator view/i)).toBeVisible();
-  expect(screen.getByRole("link", { name: /complete development runbook/i })).toHaveAttribute(
-    "href",
-    expect.stringContaining("development-nas-installation.md"),
+  expect(screen.getByText(/VONK_CONTROLLER_ADDRESS=192\.168\.1\.231/)).toBeVisible();
+  expect(document.querySelector(".control-install .fleet-note")).toHaveTextContent(
+    /public vonkforge\.ai site is documentation and catalog/i,
   );
+  expect(screen.getByRole("link", { name: /complete CLI reference/i })).toHaveAttribute(
+    "href",
+    expect.stringContaining("vonkctl.md"),
+  );
+});
 
+
+test("documents two equivalent control paths and complete CLI setup", () => {
+  window.history.replaceState({}, "", "/control");
+  render(<App />);
+
+  expect(screen.getByRole("heading", { name: "Choose browser or terminal." })).toBeVisible();
+  expect(screen.getAllByRole("heading", { name: "Web Controller" })).toHaveLength(2);
+  expect(screen.getAllByRole("heading", { name: "Local CLI" })).toHaveLength(2);
+  expect(screen.getByText(/uv tool install 'git\+https:\/\/github\.com\/CarstVaartjes\/vonk-forge\.git@main'/)).toBeVisible();
+  expect(screen.getByText(/VONK_CONTROL_TOKEN_FILE/)).toBeVisible();
+  expect(screen.getByText(/browser password is not a CLI credential/i)).toBeVisible();
+  expect(screen.getByText(/vonkctl library public facets/)).toBeVisible();
+  expect(screen.getByText(/uv tool upgrade vonk-cluster-profiles/)).toBeVisible();
+});
+
+
+test("discloses aggregate cookie-free visitor analytics", () => {
+  window.history.replaceState({}, "", "/privacy");
+  render(<App />);
+
+  expect(screen.getByRole("heading", { name: "Useful numbers. No visitor profiles." })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Available statistics" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "No analytics cookies" })).toBeVisible();
+  expect(screen.getByText(/Cloudflare Web Analytics does not use cookies or local storage/i)).toBeVisible();
 });
 
 
@@ -112,6 +142,8 @@ test("maps the catalog to operator-owned Spark execution", () => {
   expect(screen.getByRole("heading", { name: "Spark runtime" })).toBeVisible();
   expect(screen.getByText(/nvidia \+ docker/i)).toBeVisible();
   expect(screen.getByText(/secrets stay local/i)).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Web Controller" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: /vonkctl CLI/i })).toBeVisible();
 });
 
 
