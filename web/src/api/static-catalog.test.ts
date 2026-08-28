@@ -6,6 +6,10 @@ import { getStaticRecipe, listStaticRecipes, resetStaticCatalogCacheForTests } f
 const index = {
   schema_version: 2,
   repository: "CarstVaartjes/vonk-forge-recipes",
+  catalog_entities: [
+    { document: { kind: "model-version", identity: { publisher: "qwen", slug: "qwen-fast-v1" }, model: { publisher: "qwen", slug: "qwen-fast" } } },
+    { document: { kind: "model", identity: { publisher: "qwen", slug: "qwen-fast" }, metadata: { title: "Qwen Fast Model" } } },
+  ],
   recipes: [
     {
       content_sha256: "a".repeat(64),
@@ -13,7 +17,9 @@ const index = {
       release: { version: "2.1.0", released_at: "2026-08-28", history: [{}, {}] },
       document: {
         identity: { publisher: "vonk-forge", slug: "qwen-fast" },
-        metadata: { title: "Qwen Fast", tags: ["chat", "reasoning"] },
+        metadata: { title: "Qwen Fast NVFP4", description: "Fast language model", tags: ["candidate", "executable", "reasoning", "nvfp4"] },
+        model: { publisher: "qwen", slug: "qwen-fast-v1" },
+        interfaces: [{ adapter: "openai" }],
         runtime: { distribution: { slug: "vllm" }, entrypoint: ["vllm", "serve"] },
         execution: { harness: { slug: "openai-chat" } },
         topology: {
@@ -23,7 +29,7 @@ const index = {
         },
         build: { context: { path: "adapters/qwen", sha256: "b".repeat(64), expected_bytes: 10 }, dockerfile: "Dockerfile" },
         artifacts: [{ kind: "huggingface.snapshot", repository: "Qwen/Qwen", revision: "c".repeat(40), download_bytes: 20 }],
-        provenance: { source_kind: "global", attribution: ["Qwen"] },
+        provenance: { source_kind: "global", source_reference: "https://huggingface.co/Qwen/Qwen-Fast/tree/abc", attribution: ["Qwen"] },
       },
     },
     {
@@ -56,10 +62,25 @@ describe("static recipe library adapter", () => {
     expect(page.items[0]).toMatchObject({
       publisher: "vonk-forge",
       slug: "qwen-fast",
-      title: "Qwen Fast",
+      title: "Qwen Fast NVFP4",
       version: "2.1.0",
       runtime: { adapter: "vllm" },
       capacity: { profile_node_counts: [1], maximum_installed_bytes_per_node: 20, maximum_runtime_memory_bytes_per_node: 48 },
+      catalog: {
+        model_publisher: "qwen",
+        model_slug: "qwen-fast",
+        model_title: "Qwen Fast Model",
+        model_version_publisher: "qwen",
+        model_version_slug: "qwen-fast-v1",
+        model_version_title: "qwen-fast-v1",
+        source_owner: "Qwen",
+        source_repository: "https://huggingface.co/Qwen/Qwen-Fast",
+        capabilities: ["chat", "reasoning"],
+        qualification: "candidate",
+        execution_readiness: "executable",
+        precision: "NVFP4",
+        quantizations: ["NVFP4"],
+      },
     });
   });
 

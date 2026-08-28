@@ -1,7 +1,7 @@
 import createClient from "openapi-fetch";
 
 import type { paths } from "./schema";
-import { getStaticRecipe, listStaticRecipes } from "./static-catalog";
+import { getStaticRecipe, listStaticRecipeCatalog, listStaticRecipes } from "./static-catalog";
 
 
 export interface Problem {
@@ -70,6 +70,28 @@ export interface RecipeSummary {
   };
   import?: { uri: string; instruction: string };
   source?: { recipe_url?: string; bundle_url?: string };
+  catalog?: {
+    description: string;
+    tags: string[];
+    model_publisher: string;
+    model_slug: string;
+    model_title: string;
+    model_version_publisher: string;
+    model_version_slug: string;
+    model_version_title: string;
+    source_owner: string | null;
+    source_repository: string | null;
+    capabilities: string[];
+    qualification: "candidate" | "cataloged";
+    execution_readiness: "executable" | "integration-required" | "not-executable" | "not-declared";
+    runtime_distribution: string;
+    precision: string | null;
+    quantizations: string[];
+    topology_name: string;
+    topology_mode: string;
+    node_count: number;
+    expected_download_bytes: number;
+  };
 }
 
 export interface RecipeDetail extends RecipeSummary {
@@ -89,6 +111,21 @@ const catalogApiUrl = import.meta.env.VITE_CATALOG_API_URL ?? "";
 const recipeLibraryIndexUrl = import.meta.env.VITE_RECIPE_LIBRARY_INDEX_URL ?? "";
 
 export const usesStaticCatalog = Boolean(recipeLibraryIndexUrl) && !catalogApiUrl;
+
+export async function loadRecipeCatalog(signal?: AbortSignal): Promise<RecipeSummary[]> {
+  if (usesStaticCatalog) return listStaticRecipeCatalog(recipeLibraryIndexUrl, signal);
+
+  const items: RecipeSummary[] = [];
+  let cursor: string | null = null;
+  do {
+    const parameters = new URLSearchParams({ limit: "100" });
+    if (cursor) parameters.set("cursor", cursor);
+    const page = await requestJson<RecipePage>(`/v1/recipes?${parameters}`, signal);
+    items.push(...page.items);
+    cursor = page.next_cursor;
+  } while (cursor && items.length < 1_000);
+  return items;
+}
 
 async function requestJson<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(
