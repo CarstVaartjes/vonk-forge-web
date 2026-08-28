@@ -65,7 +65,10 @@ npm --prefix web run dev
 
 The Vite development server prints its local URL. The homepage and documentation
 routes run without a global control service. Catalog routes expect the same-origin
-`/v1` API unless `VITE_CATALOG_API_URL` is configured.
+`/v1` API unless `VITE_CATALOG_API_URL` is configured. A frontend-only deployment
+can instead set `VITE_RECIPE_LIBRARY_INDEX_URL` to the public recipe library's
+generated `catalog-index.json`; this enables read-only catalog browsing while
+the Publish route explains the GitHub review workflow.
 
 Run the frontend checks with:
 
