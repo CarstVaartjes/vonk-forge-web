@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-28T06:47:56Z",
+  "generatedAt": "2026-08-28T08:01:41Z",
   "title": "Design System: Vonk Forge",
   "extensions": {
     "colorMeta": {
@@ -127,7 +127,7 @@
       "kind": "nav",
       "description": "Compact site navigation with one persistent green installation action.",
       "html": "<nav class=\"ds-nav\" aria-label=\"Primary navigation\"><a class=\"ds-nav-install\" href=\"#\">Install</a><a href=\"#\">How it works</a><a href=\"#\">Control</a><a href=\"#\">Recipes</a></nav>",
-      "css": ".ds-nav { display: flex; align-items: center; gap: 2rem; padding: 0.75rem; background: #0c0b09; font-family: 'Onest Variable', 'Helvetica Neue', ui-sans-serif, system-ui, sans-serif; } .ds-nav a { color: #aaa396; font-size: 0.86rem; font-weight: 650; text-decoration: none; transition: color 160ms ease, background 160ms ease, border-color 160ms ease; } .ds-nav a:hover { color: #f3efe6; } .ds-nav a:focus-visible { outline: 3px solid #b8e978; outline-offset: 4px; } .ds-nav .ds-nav-install { padding: 0.55rem 0.8rem; border: 1px solid rgb(138 213 42 / 52%); color: #b8e978; } .ds-nav .ds-nav-install:hover { border-color: #8ad52a; color: #101407; background: #8ad52a; }"
+      "css": ".ds-nav { display: flex; align-items: center; gap: 2rem; padding: 0.75rem; background: #0c0b09; font-family: 'Onest Variable', 'Helvetica Neue', ui-sans-serif, system-ui, sans-serif; } .ds-nav a { color: #aaa396; font-size: 0.86rem; font-weight: 650; text-decoration: none; transition: color 160ms ease, background 160ms ease, border-color 160ms ease; } .ds-nav a:hover { color: #f3efe6; } .ds-nav a:focus-visible { outline: 3px solid #b8e978; outline-offset: 4px; } .ds-nav .ds-nav-install { padding: 0.55rem 0.8rem; border: 1px solid rgb(138 213 42 / 52%); color: #b8e978; } .ds-nav .ds-nav-install:hover { border-color: #8ad52a; color: #101407; background: #8ad52a; } @media (max-width: 600px) { .ds-nav { display: grid; grid-template-columns: repeat(3, auto); } .ds-nav a { min-height: 2.75rem; display: inline-flex; align-items: center; padding: 0.45rem 0.35rem; } }"
     },
     {
       "name": "Ready Status",
@@ -148,8 +148,8 @@
       "name": "Command Strip",
       "kind": "custom",
       "description": "A copy-safe terminal command paired with its execution context.",
-      "html": "<div class=\"ds-command-strip\"><span>Workstation terminal</span><code>curl -fsSL https://install.vonkforge.ai/nas | sh</code></div>",
-      "css": ".ds-command-strip { display: grid; grid-template-columns: 9rem minmax(0, 1fr); align-items: center; gap: 1rem; padding: 1rem 1.2rem; border: 1px solid #506831; color: #f3efe6; background: #10130d; } .ds-command-strip span { color: #958e80; font-family: 'Onest Variable', 'Helvetica Neue', ui-sans-serif, system-ui, sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; } .ds-command-strip code { overflow-x: auto; color: #b8e978; font: 650 0.9rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; } .ds-command-strip:focus-within { outline: 3px solid #b8e978; outline-offset: 4px; }"
+      "html": "<div class=\"ds-command-strip\"><span>Terminal</span><code>curl -fsSL https://install.vonkforge.ai/nas | sh</code></div>",
+      "css": ".ds-command-strip { display: grid; grid-template-columns: 6rem minmax(0, 1fr); align-items: center; gap: 1rem; padding: 1rem 1.2rem; border: 1px solid #506831; color: #f3efe6; background: #10130d; } .ds-command-strip span { color: #958e80; font-family: 'Onest Variable', 'Helvetica Neue', ui-sans-serif, system-ui, sans-serif; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; } .ds-command-strip code { overflow-x: auto; color: #b8e978; font: 650 0.9rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; white-space: nowrap; } .ds-command-strip:focus-within { outline: 3px solid #b8e978; outline-offset: 4px; }"
     },
     {
       "name": "Controller Preview",
