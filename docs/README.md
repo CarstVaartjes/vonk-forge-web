@@ -1,56 +1,41 @@
 # Vonk Forge Web documentation
 
-The exported runtime policy describes the accepted workload boundary used by
-Vonk Forge agents. `host_isolation: spark-docker-nvidia-compiled-helper` means
-that source builds may remain rootless and isolated, while an accepted
-Linux/ARM64 image is imported and started through a narrowly compiled helper
-on DGX Spark's Docker/NVIDIA runtime. It does not grant the catalog, worker, or
-recipe author access to a Docker socket, host devices, or runtime secrets.
+This repository owns the public product site, installation and architecture
+guides, recipe discovery surface, publishing contract, and catalog API artifacts
+served around [`vonkforge.ai`](https://vonkforge.ai).
 
-The web repository owns the public recipe catalog, publishing surface, and the
-static platform story served at `vonkforge.ai`. It is not the control plane that
-installs or runs workloads on Sparks. Keep the boundary explicit:
+It does **not** install or operate workloads. Every operator runs a private local
+controller from the [`vonk-forge`](https://github.com/CarstVaartjes/vonk-forge)
+repository on a laptop, NAS, or server with Docker Compose.
 
-| Concern | Owner |
-| --- | --- |
-| Public immutable recipe revisions and publisher identity | This repository |
-| Registry metadata and submitted test-evidence validation | This repository's future global worker |
-| Compose, runtime secret files, policy, local recipe imports, install/run admission, placement, and offline operation | Operator NAS and the `vonk-forge` local PostgreSQL catalog |
-| Rootless source builds and accepted workload execution | Spark agent through the Spark-provided NVIDIA and Docker stack |
-| Container layers and model weights | Publisher-controlled registries and node-local model caches |
+## System boundary
 
-## Deployment boundary
+| Public web repository | Local controller | DGX Sparks |
+| --- | --- | --- |
+| Product docs, signed installer links, immutable recipe metadata, publisher identity, bounded evidence | Compose, PostgreSQL, policy, identity, runtime secrets, recipe imports, placement, previews, and audit | Native agent, rootless source build, model caches, NVIDIA/Docker runtime execution, telemetry |
 
-- Cloudflare Pages is the target host for the static `vonkforge.ai` frontend.
-- Railway is deferred until the global catalog is needed; then it will host the
-  API, validation worker, and PostgreSQL database, not Spark workloads.
-- The local `vonk-forge` repository owns the signed agent package release to
-  Cloudflare R2 at `packages.vonkforge.ai`.
-- Caddy is the ingress boundary of the local NAS control host, not a required
-  global-catalog component.
-- Accepted `main` commits publish development images as `:dev` and agent
-  packages through the signed APT `dev` channel.
-- Production stays behind immutable signed releases and the trusted host
-  updater. The public site never selects or activates a production workload.
+The public service never builds or executes a submitted container, accepts model
+weights, or receives controller authority. Container layers remain in registries;
+weights remain at immutable origins and in node-local caches.
 
 ## Operations
 
 - [Cloudflare Pages deployment](operations/cloudflare-pages.md)
-- [Deferred Railway global-backend deployment](operations/railway-deployment.md)
-- [Deferred independent backup and restore](operations/backup-restore.md)
-- [Moderation](operations/moderation.md)
+- [Deferred global API deployment](operations/railway-deployment.md)
+- [Deferred backup and restore](operations/backup-restore.md)
+- [Catalog moderation](operations/moderation.md)
 
-The API, schema files, and generated OpenAPI/TypeScript artifacts are the
-implementation contract. Historical planning material is not part of the
-operator documentation and may be removed without changing that contract.
+Cloudflare Pages serves the static site. Railway remains deferred unless a global
+catalog API and validation worker are explicitly enabled. Caddy belongs to each
+operator's local controller and is not part of the public website.
 
 ## Publishing flow
 
-1. Build and test the container locally in Vonk Forge.
-2. Push the image to a public registry and record its immutable digest.
-3. Upload recipe JSON and bounded test evidence as a private draft.
-4. Review validation results and explicitly publish an immutable revision.
-5. Import that revision into a local Vonk Forge PostgreSQL catalog.
+1. Build and test the container locally with Vonk Forge.
+2. Publish it to a public registry and record the immutable digest.
+3. Submit recipe JSON and bounded evidence as a private draft.
+4. Review validation and publish an immutable revision explicitly.
+5. Import that revision into an operator-owned local controller.
 
-The global service never builds or executes a submitted container and never
-accepts model-weight uploads.
+The API, schemas, generated OpenAPI document, and TypeScript declarations are
+the implementation contract. Historical planning material is not authority.

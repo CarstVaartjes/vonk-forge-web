@@ -48,15 +48,15 @@ test.beforeEach(async ({ page }) => {
 test("platform story stays navigable and bounded", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "Your Sparks. One local control plane." })).toBeVisible();
-  await expect(page.getByText(/open-source control plane for NVIDIA DGX Spark/i)).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Public recipes", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Your controller", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Your Sparks", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Find" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Preview" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Apply" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Observe" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Local AI\.\s*One private control plane\./i })).toBeVisible();
+  await expect(page.getByText(/turns a laptop, NAS, or local server into the command center/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Catalog + signed releases", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Vonk Forge controller", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "DGX Spark fleet", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Install the controller" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Connect your Sparks" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose a recipe" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Preview, then run" })).toBeVisible();
 
   await page.keyboard.press("Tab");
   const skipLink = page.getByRole("link", { name: "Skip to content" });
@@ -69,14 +69,14 @@ test("platform story stays navigable and bounded", async ({ page }) => {
     "position",
     viewport && viewport.width <= 720 ? "relative" : "sticky",
   );
-  await expect(page.locator(".home-boundary-panel")).toHaveCSS("display", "grid");
+  await expect(page.locator(".security-map")).toHaveCSS("display", "grid");
   const horizontalOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
   );
   expect(horizontalOverflow).toBeLessThanOrEqual(0);
 
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("link", { name: "Install Vonk Forge" })).toBeFocused();
+  await expect(page.getByRole("link", { name: "Install your controller" })).toBeFocused();
 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(page.locator("html")).toHaveCSS("scroll-behavior", "auto");
@@ -111,7 +111,7 @@ test("minimum supported viewport does not overflow", async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { name: "Your Sparks. One local control plane." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Local AI\.\s*One private control plane\./i })).toBeVisible();
     const horizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );
