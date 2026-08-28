@@ -44,7 +44,7 @@ export function RecipeCard({ recipe }: { recipe: RecipeSummary }) {
         </p>
       ) : null}
       <p className="evidence-note">Publisher-submitted evidence is not a Vonk endorsement.</p>
-      <p className="hash">rev {recipe.revision_number} · sha256:{recipe.content_sha256}</p>
+      <p className="hash">{recipe.version ? `v${recipe.version}` : `rev ${recipe.revision_number}`} · sha256:{recipe.content_sha256}</p>
     </article>
   );
 }
@@ -55,6 +55,7 @@ export function RecipesPage({ fixedPublisher }: { fixedPublisher?: string } = {}
   );
   const [page, setPage] = useState<RecipePage | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [retry, setRetry] = useState(0);
   const effective = new URLSearchParams(parameters);
   if (fixedPublisher) effective.set("publisher", fixedPublisher);
 
@@ -65,11 +66,11 @@ export function RecipesPage({ fixedPublisher }: { fixedPublisher?: string } = {}
       .then(setPage)
       .catch((reason: unknown) => {
         if (!controller.signal.aborted) {
-          setError(reason instanceof CatalogProblem ? reason.problem.detail : "The catalog could not be loaded.");
+          setError(reason instanceof CatalogProblem ? reason.problem.detail : "The public recipe index could not be loaded.");
         }
       });
     return () => controller.abort();
-  }, [effective.toString()]);
+  }, [effective.toString(), retry]);
 
   function update(name: string, value: string) {
     const next = new URLSearchParams(parameters);
@@ -93,8 +94,17 @@ export function RecipesPage({ fixedPublisher }: { fixedPublisher?: string } = {}
         <label>Publisher<select aria-label="Publisher kind" value={parameters.get("official") ?? ""} onChange={(event) => update("official", event.target.value)}><option value="">Official + community</option><option value="true">Official</option><option value="false">Community</option></select></label>
         <label>Sort<select aria-label="Sort" value={parameters.get("sort") ?? "newest"} onChange={(event) => update("sort", event.target.value)}><option value="newest">Newest</option><option value="title">Title</option><option value="disk">Lowest disk</option><option value="memory">Lowest RAM</option></select></label>
       </form>
-      {error ? <div className="status-panel error" role="alert">{error}</div> : null}
-      {!page && !error ? <div className="status-panel" role="status">Heating the forge…</div> : null}
+      {error ? (
+        <div className="status-panel error catalog-error" role="alert">
+          <h2>Recipes are temporarily out of reach.</h2>
+          <p>{error} Retry the public index, or inspect the version-controlled library directly.</p>
+          <div className="hero-actions">
+            <button className="button primary" type="button" onClick={() => setRetry((value) => value + 1)}>Try again</button>
+            <a className="button" href="https://github.com/CarstVaartjes/vonk-forge-recipes">Open recipe library</a>
+          </div>
+        </div>
+      ) : null}
+      {!page && !error ? <div className="status-panel" role="status">Loading the public recipe index…</div> : null}
       {page?.items.length === 0 ? <div className="status-panel">No recipes match these filters.</div> : null}
       <div className="recipe-grid">{page?.items.map((recipe) => <RecipeCard key={`${recipe.publisher}/${recipe.slug}`} recipe={recipe} />)}</div>
       {page?.next_cursor ? <button className="button" type="button" onClick={() => update("cursor", page.next_cursor ?? "")}>Next page</button> : null}

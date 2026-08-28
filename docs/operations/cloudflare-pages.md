@@ -24,8 +24,11 @@ default Pages hostname is `vonk-forge-web.pages.dev`.
    Variable: CLOUDFLARE_PAGES_PROJECT=vonk-forge-web
    ```
 
-   `VITE_CATALOG_API_URL` is optional while the global API is deferred. Set it
-   later to `https://api.vonkforge.ai` when the Railway backend exists.
+   `VITE_CATALOG_API_URL` is optional while the global API is deferred. The
+   deployment workflow supplies the public recipe library index as a read-only
+   catalog source in that mode. Set the API variable later to
+   `https://api.vonkforge.ai` when the hosted backend exists; the authenticated
+   publisher workspace then replaces the GitHub publishing guide.
 4. In the Pages project, add the custom domain `vonkforge.ai`. Because this is
    an apex domain, the zone must use Cloudflare nameservers; Cloudflare then
    provisions the Pages DNS and certificate.
@@ -67,10 +70,10 @@ the locked frontend dependencies, builds `web/dist`, and uploads that directory
 as the production Pages deployment with Wrangler. Pull requests run CI only;
 they do not publish production.
 
-The frontend uses `/v1/*` when `VITE_CATALOG_API_URL` is empty and uses the
-configured absolute API origin when it is set. Until the global backend exists,
-the Pages site is only a static frontend shell; local recipe authoring and
-execution remain in `vonk-forge`.
+The frontend uses the configured absolute API origin when it is set. Until the
+global backend exists, the Pages workflow uses the generated public recipe index
+for read-only browsing and sends publishers through the version-controlled
+GitHub review path. Local recipe authoring and execution remain in `vonk-forge`.
 
 The `_headers` and `_redirects` files under `web/public` provide the static
 security headers, immutable asset caching, and SPA fallback previously supplied

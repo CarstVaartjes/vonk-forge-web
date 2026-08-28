@@ -5,8 +5,10 @@ import { InstallPage } from "./pages/install";
 import { PrivacyPage } from "./pages/privacy";
 import { PublisherPage } from "./pages/publisher";
 import { PublisherWorkspacePage } from "./pages/publisher-workspace";
+import { PublishingGuidePage } from "./pages/publishing-guide";
 import { RecipeDetailPage } from "./pages/recipe-detail";
 import { RecipesPage } from "./pages/recipes";
+import { usesStaticCatalog } from "./api/client";
 
 
 function CurrentPage() {
@@ -24,9 +26,23 @@ function CurrentPage() {
     return <PublisherPage publisher={parts[1] ?? ""} />;
   }
   if (parts[0] === "publish") {
-    return <PublisherWorkspacePage />;
+    return usesStaticCatalog ? <PublishingGuidePage /> : <PublisherWorkspacePage />;
   }
   return <main className="status-panel"><h1>Not found</h1><p>This spark has not been forged.</p></main>;
+}
+
+function NavigationLink({ href, children, primary = false }: { href: string; children: string; primary?: boolean }) {
+  const path = window.location.pathname;
+  const current = path === href || path.startsWith(`${href}/`);
+  return (
+    <a
+      aria-current={current ? "page" : undefined}
+      className={[primary ? "nav-primary" : "", current ? "is-active" : ""].filter(Boolean).join(" ") || undefined}
+      href={href}
+    >
+      {children}
+    </a>
+  );
 }
 
 export function App() {
@@ -40,11 +56,11 @@ export function App() {
             <span className="brand-name"><strong>Vonk</strong> Forge</span>
           </a>
           <nav aria-label="Primary navigation">
-            <a className="nav-primary" href="/install">Install</a>
-            <a href="/architecture">How it works</a>
-            <a href="/control">Control</a>
-            <a href="/recipes">Recipes</a>
-            <a href="/publish">Publish</a>
+            <NavigationLink primary href="/install">Install</NavigationLink>
+            <NavigationLink href="/architecture">How it works</NavigationLink>
+            <NavigationLink href="/control">Control</NavigationLink>
+            <NavigationLink href="/recipes">Recipes</NavigationLink>
+            <NavigationLink href="/publish">Publish</NavigationLink>
           </nav>
         </header>
         <div id="main-content" tabIndex={-1}>

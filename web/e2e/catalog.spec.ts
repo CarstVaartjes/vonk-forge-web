@@ -122,6 +122,7 @@ test("minimum supported viewport does not overflow", async ({ page }) => {
 
 test("architecture, installation, and control guides stay navigable at 1…N scale", async ({ page }) => {
   await page.goto("/architecture");
+  await expect(page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "How it works" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("heading", { name: /one control plane.*one to many sparks/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Spark fleet" })).toBeVisible();
   await expect(page.getByText("NVIDIA fabric", { exact: true })).toBeVisible();

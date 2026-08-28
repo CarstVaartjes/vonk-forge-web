@@ -53,6 +53,21 @@ test("provides the catalog and publishing navigation", () => {
 });
 
 
+test("marks the current top-level destination in the primary navigation", () => {
+  window.history.replaceState({}, "", "/recipes/vonk/qwen-fast");
+  const view = render(<App />);
+  const primaryNavigation = screen.getByRole("navigation", { name: "Primary navigation" });
+
+  expect(within(primaryNavigation).getByRole("link", { name: "Recipes" })).toHaveAttribute("aria-current", "page");
+  expect(within(primaryNavigation).getByRole("link", { name: "Install" })).not.toHaveAttribute("aria-current");
+
+  view.unmount();
+  window.history.replaceState({}, "", "/publish");
+  render(<App />);
+  expect(within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("link", { name: "Publish" })).toHaveAttribute("aria-current", "page");
+});
+
+
 test("explains the operator-owned architecture for one to many Sparks", () => {
   window.history.replaceState({}, "", "/architecture");
   render(<App />);

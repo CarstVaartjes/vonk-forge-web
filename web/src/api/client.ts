@@ -1,6 +1,7 @@
 import createClient from "openapi-fetch";
 
 import type { paths } from "./schema";
+import { getStaticRecipe, listStaticRecipes } from "./static-catalog";
 
 
 export interface Problem {
@@ -36,6 +37,7 @@ export interface RecipeSummary {
   revision_id: string;
   content_sha256: string;
   published_at: string;
+  version?: string;
   runtime: { adapter?: string; entrypoint?: string[] };
   build?: { context?: { sha256?: string; expected_bytes?: number }; dockerfile?: string };
   artifacts?: Array<{
@@ -67,6 +69,7 @@ export interface RecipeSummary {
     last_validation: string | null;
   };
   import?: { uri: string; instruction: string };
+  source?: { recipe_url?: string; bundle_url?: string };
 }
 
 export interface RecipeDetail extends RecipeSummary {
@@ -81,6 +84,11 @@ export interface RecipePage {
   items: RecipeSummary[];
   next_cursor: string | null;
 }
+
+const catalogApiUrl = import.meta.env.VITE_CATALOG_API_URL ?? "";
+const recipeLibraryIndexUrl = import.meta.env.VITE_RECIPE_LIBRARY_INDEX_URL ?? "";
+
+export const usesStaticCatalog = Boolean(recipeLibraryIndexUrl) && !catalogApiUrl;
 
 async function requestJson<T>(path: string, signal?: AbortSignal): Promise<T> {
   const response = await fetch(
@@ -246,6 +254,7 @@ export function listRecipes(
   parameters: URLSearchParams,
   signal?: AbortSignal,
 ): Promise<RecipePage> {
+  if (usesStaticCatalog) return listStaticRecipes(recipeLibraryIndexUrl, parameters, signal);
   const query = parameters.toString();
   return requestJson<RecipePage>(`/v1/recipes${query ? `?${query}` : ""}`, signal);
 }
@@ -255,6 +264,7 @@ export function getRecipe(
   slug: string,
   signal?: AbortSignal,
 ): Promise<RecipeDetail> {
+  if (usesStaticCatalog) return getStaticRecipe(recipeLibraryIndexUrl, publisher, slug, signal);
   return requestJson<RecipeDetail>(
     `/v1/recipes/${encodeURIComponent(publisher)}/${encodeURIComponent(slug)}`,
     signal,
