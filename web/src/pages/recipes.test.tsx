@@ -49,13 +49,20 @@ test("shows sizing, immutable identity, and evidence provenance", async () => {
 });
 
 
-test("keeps filters in the URL and sends them to the API", async () => {
+test("keeps Controller-parity filters in the URL and applies them locally", async () => {
   render(<RecipesPage />);
   await screen.findByRole("heading", { name: "Qwen Fast" });
-  fireEvent.change(screen.getByLabelText("Topology"), { target: { value: "gang" } });
-  await waitFor(() => expect(window.location.search).toContain("topology=gang"));
-  await waitFor(() => {
-    const calls = vi.mocked(fetch).mock.calls.map(([input]) => String(input));
-    expect(calls.some((url) => url.includes("runtime=vllm") && url.includes("topology=gang"))).toBe(true);
-  });
+  fireEvent.click(screen.getByRole("button", { name: "More filters" }));
+  fireEvent.change(screen.getByLabelText("Filter by topology"), { target: { value: "single" } });
+  await waitFor(() => expect(window.location.search).toContain("topology=single"));
+  expect(screen.getByLabelText("Filter by model type")).toBeVisible();
+  expect(screen.getByLabelText("Filter by model")).toBeVisible();
+  expect(screen.getByLabelText("Filter by model version")).toBeVisible();
+  expect(screen.getByLabelText("Filter by quantization")).toBeVisible();
+  expect(screen.getByLabelText("Filter by required Sparks")).toBeVisible();
+  expect(screen.getByLabelText("Filter by recipe creator")).toBeVisible();
+  expect(screen.getByLabelText("Filter by updated date")).toBeVisible();
+  expect(screen.getByLabelText("Filter by execution readiness")).toBeVisible();
+  expect(screen.getByRole("group", { name: /capabilities/i })).toBeVisible();
+  expect(screen.getByText(/status appear only inside/i)).toBeVisible();
 });

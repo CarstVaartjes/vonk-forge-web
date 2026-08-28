@@ -23,6 +23,28 @@ const recipe = {
   moderation_warning: null,
   facts: { declared: true, source_bundle_observed: true, publisher_tested: true, publisher_tested_label: "Publisher-submitted; not Vonk-certified", vonk_verified: false, last_validation: "2026-08-07T10:00:00Z" },
   import: { uri: `vonk://catalog/vonk/qwen-fast@sha256:${"a".repeat(64)}`, instruction: "Open this recipe locally." },
+  catalog: {
+    description: "Fast language model",
+    tags: ["chat", "reasoning", "candidate", "executable", "nvfp4"],
+    model_publisher: "qwen",
+    model_slug: "qwen-fast",
+    model_title: "Qwen Fast",
+    model_version_publisher: "qwen",
+    model_version_slug: "qwen-fast-v1",
+    model_version_title: "Qwen Fast v1",
+    source_owner: "Qwen",
+    source_repository: "https://huggingface.co/Qwen/Qwen-Fast",
+    capabilities: ["chat", "reasoning"],
+    qualification: "candidate",
+    execution_readiness: "executable",
+    runtime_distribution: "vllm-0-27-1",
+    precision: "NVFP4",
+    quantizations: ["NVFP4"],
+    topology_name: "pair",
+    topology_mode: "distributed",
+    node_count: 2,
+    expected_download_bytes: 20_000_000_000,
+  },
 };
 
 
@@ -164,8 +186,19 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
 
 
 test("facets remain in the URL and exact trust facts survive navigation", async ({ page }) => {
-  await page.goto("/recipes?topology=gang");
-  await expect(page.getByLabel("Topology")).toHaveValue("gang");
+  await page.goto("/recipes?topology=distributed&capability=chat");
+  const filterToggle = page.getByRole("button", { name: /Show filters/ });
+  if (await filterToggle.isVisible()) await filterToggle.click();
+  await expect(page.getByLabel("Filter by topology")).toHaveValue("distributed");
+  await expect(page.getByRole("checkbox", { name: "Chat" })).toBeChecked();
+  await expect(page.getByLabel("Filter by model type")).toBeVisible();
+  await expect(page.getByLabel("Filter by model", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("Filter by model version")).toBeVisible();
+  await expect(page.getByLabel("Filter by quantization")).toBeVisible();
+  await expect(page.getByLabel("Filter by required Sparks")).toBeVisible();
+  await expect(page.getByLabel("Filter by recipe creator")).toBeVisible();
+  await expect(page.getByLabel("Filter by updated date")).toBeVisible();
+  await expect(page.getByLabel("Filter by execution readiness")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Qwen Fast" })).toBeVisible();
   await expect(page.getByText("Source verified")).toBeVisible();
   await page.getByRole("link", { name: "Qwen Fast" }).click();
