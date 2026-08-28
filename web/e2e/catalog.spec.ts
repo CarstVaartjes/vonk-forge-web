@@ -51,7 +51,7 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Your Sparks. One local control plane." })).toBeVisible();
   await expect(page.getByText(/open-source control plane for NVIDIA DGX Spark/i)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Public recipes", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Your NAS", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your controller", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Your Sparks", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Find" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Preview" })).toBeVisible();
@@ -135,7 +135,8 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
   await page.getByRole("link", { name: "Open the install guide" }).click();
   await expect(page).toHaveURL(/\/install$/);
   await expect(page.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Prepare the NAS" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Prepare the controller" })).toBeVisible();
+  await expect(page.getByText(/this laptop for a lab/i)).toBeVisible();
   await expect(page.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Choose a control path" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "One Spark", exact: true })).toBeVisible();

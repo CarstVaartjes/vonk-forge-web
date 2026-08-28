@@ -8,7 +8,7 @@ Web. This repository is the public Vonk Forge website, recipe catalog, publishin
 ## Users
 
 - Primary: NVIDIA DGX Spark owners and operators evaluating a private, self-hosted way to discover, install, and operate AI workloads.
-- Secondary: teams operating several Sparks from one NAS, automation-oriented operators using `vonkctl`, and recipe publishers sharing reproducible runtime definitions.
+- Secondary: teams operating several Sparks from one local controller, automation-oriented operators using `vonkctl`, and recipe publishers sharing reproducible runtime definitions.
 
 ## Product Purpose
 
@@ -16,19 +16,19 @@ Make Vonk Forge immediately understandable and give a new operator a safe, credi
 
 ## Positioning
 
-Vonk Forge is an open-source local control plane for DGX Spark. It combines a public catalog of reproducible recipes with an operator-owned NAS controller and Spark-native execution. Catalog metadata may be public; runtime authority, secrets, model caches, and fleet state remain on infrastructure the operator controls.
+Vonk Forge is an open-source local control plane for DGX Spark. It combines a public catalog of reproducible recipes with an operator-owned local controller and Spark-native execution. The controller can run on any local computer that supports Docker Compose, including the operator's laptop, a NAS, or an always-on server. Catalog metadata may be public; runtime authority, secrets, model caches, and fleet state remain on infrastructure the operator controls.
 
 ## Operating Context
 
-A workstation retrieves the signed installer, a Docker-capable NAS hosts the controller and database, and one or more Ubuntu 24.04 aarch64 DGX Sparks run workloads. Operators use the private Web Controller for guided work or the local `vonkctl` CLI for the same API-backed operations.
+A macOS or Linux workstation retrieves the signed installer. That same laptop—or another local computer with Docker Compose and durable storage—can host the controller and database, while one or more Ubuntu 24.04 aarch64 DGX Sparks run workloads. Operators use the private Web Controller for guided work or the local `vonkctl` CLI for the same API-backed operations.
 
 ## Capabilities and Constraints
 
 - Browse typed, immutable recipe revisions with source, capacity, compatibility, and evidence facts.
-- Install the NAS control plane and enroll Sparks through signed, auditable installers.
+- Install the local control plane on a laptop, NAS, or other Docker Compose host and enroll Sparks through signed, auditable installers.
 - Inspect Fleet state, find and compare recipes in Library, preview changes, apply operations, and review Activity.
 - Keep model weights at immutable upstream revisions or in node-local caches rather than uploading them to this public site.
-- This static public website does not control customer Sparks, execute workloads, accept model uploads, store runtime secrets, or replace the operator-owned NAS authority.
+- This static public website does not control customer Sparks, execute workloads, accept model uploads, store runtime secrets, or replace the operator-owned local controller.
 - Do not invent adoption numbers, testimonials, performance claims, hardware support, or certification status.
 
 ## Brand Commitments
@@ -41,7 +41,7 @@ A workstation retrieves the signed installer, a Docker-capable NAS hosts the con
 
 - Repository README and architecture, install, control, recipe, publishing, and privacy pages.
 - Public source and MIT license on GitHub.
-- Exact NAS and Spark installer commands documented in this repository.
+- Exact controller and Spark installer commands documented in this repository.
 - No approved customer logos, testimonials, usage metrics, benchmark comparisons, or broad hardware compatibility claims.
 
 ## Product Principles

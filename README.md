@@ -8,15 +8,17 @@ publisher interfaces implemented in this repository.
 This repository stores recipe metadata and bounded validation evidence. It does
 not control Sparks, execute workloads, accept model uploads, or hold runtime
 secrets. Container images remain in their registries, model weights remain at
-their immutable origins and in node-local caches, and the operator's NAS remains
-authoritative for local installation, placement, policy, and execution.
+their immutable origins and in node-local caches, and the operator's local
+controller remains authoritative for installation, placement, policy, and execution.
+That controller can be any local computer that runs Docker Compose—including
+the same laptop used for setup, a NAS, or an always-on server.
 
 ## Platform boundary
 
 | Stage | Responsibility |
 | --- | --- |
 | Public catalog | Typed recipes, content-addressed source, immutable revisions, capacity facts, and bounded evidence |
-| Operator NAS | Compose, PostgreSQL, policy, runtime secret files, and the local control plane |
+| Local controller | Compose, PostgreSQL, policy, runtime secret files, and the operator-owned control plane |
 | Spark runtime | Rootless source build followed by accepted workload execution through the native NVIDIA and Docker stack |
 
 Accepted `main` builds advance public development images tagged `:dev` and the
@@ -35,7 +37,7 @@ layout is:
   database. It is not required for the current static catalog.
 - GitHub Actions in `vonk-forge` builds and publishes the signed
   `vonk-forge-agent` package to Cloudflare R2 at `packages.vonkforge.ai`.
-- Caddy belongs to the local NAS control host, not to the global catalog
+- Caddy belongs to the local controller host, not to the global catalog
   boundary.
 
 The frontend deployment is defined in `.github/workflows/pages.yml`; see
@@ -47,13 +49,13 @@ future backend option.
 
 The public frontend includes two operator-facing guides:
 
-- `/architecture` maps the public catalog, operator workstation, NAS control
+- `/architecture` maps the public catalog, operator workstation, local control
   plane, and a fleet of one to many Sparks. It distinguishes private Tailscale
   HTTPS, management-LAN enrollment TLS and agent mTLS, verified downloads, and
   recipe-selected NVIDIA fabric traffic.
 - `/install` explains the development and production lanes, the exact
   `docker-compose.yaml` plus `secrets/` development project boundary, remote SSH
-  publication onto the NAS filesystem, and the difference between a single
+  placement on the chosen Docker Compose host, and the difference between a single
   Spark and a multi-node fleet.
 
 These pages explain the system and link to the canonical runbooks in

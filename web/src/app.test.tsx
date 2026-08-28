@@ -59,13 +59,13 @@ test("explains the operator-owned architecture for one to many Sparks", () => {
   expect(
     screen.getByRole("heading", { name: /one control plane.*one to many sparks/i }),
   ).toBeVisible();
-  for (const name of ["Public catalog", "Operator workstation", "NAS control", "Spark fleet"]) {
+  for (const name of ["Public catalog", "Operator workstation", "Local controller", "Spark fleet"]) {
     expect(screen.getByRole("heading", { name })).toBeVisible();
   }
   expect(screen.getByText(/tailscale https/i)).toBeVisible();
   expect(screen.getByText(/management-lan tls \/ mtls/i)).toBeVisible();
   expect(screen.getByText("NVIDIA fabric", { selector: "strong" })).toBeVisible();
-  expect(screen.getByText("SSH project publisher")).toBeVisible();
+  expect(screen.getByText("Local project files")).toBeVisible();
 
 });
 
@@ -75,7 +75,7 @@ test("explains the control to runtime contract without MIA-specific control logi
   render(<App />);
 
   expect(screen.getByRole("heading", { name: "One contract. Any reviewed runtime." })).toBeVisible();
-  for (const name of ["Recipe", "NAS control", "Spark enforcement", "Runtime adapter"]) {
+  for (const name of ["Recipe", "Local controller", "Spark enforcement", "Runtime adapter"]) {
     expect(screen.getByRole("heading", { name })).toBeVisible();
   }
   expect(screen.getByText("VONK_RANK", { selector: "code" })).toBeVisible();
@@ -85,12 +85,13 @@ test("explains the control to runtime contract without MIA-specific control logi
 });
 
 
-test("provides the current signed NAS and Spark installation path", () => {
+test("provides the current signed controller and Spark installation path", () => {
   window.history.replaceState({}, "", "/install");
   render(<App />);
 
   expect(screen.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
-  expect(screen.getByRole("heading", { name: "Prepare the NAS" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Prepare the controller" })).toBeVisible();
+  expect(screen.getByText(/this laptop for a lab/i)).toBeVisible();
   expect(screen.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
   expect(screen.getByRole("heading", { name: "Choose a control path" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Web Controller" })).toBeVisible();
@@ -141,7 +142,7 @@ test("maps the public catalog to operator-owned control and execution", () => {
     screen.getByRole("heading", { name: /the catalog is public.*the control plane is yours/i }),
   ).toBeVisible();
   expect(screen.getByRole("heading", { name: "Public recipes" })).toBeVisible();
-  expect(screen.getByRole("heading", { name: "Your NAS" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Your controller" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Your Sparks" })).toBeVisible();
   expect(screen.getByText(/secrets stay local/i)).toBeVisible();
   expect(screen.getByRole("link", { name: "Tour the Web Controller" })).toBeVisible();

@@ -8,9 +8,9 @@ const ownershipPath = [
     body: "Inspect immutable build source, hardware fit, deployment profiles, and bounded evidence before anything reaches your network.",
   },
   {
-    title: "Your NAS",
+    title: "Your controller",
     owner: "Local authority",
-    body: "The controller, database, policy, identity, and runtime secrets live on the Docker-capable NAS you operate.",
+    body: "Run the controller, database, policy, identity, and runtime secrets on any local computer with Docker Compose—even this laptop.",
   },
   {
     title: "Your Sparks",
@@ -88,7 +88,7 @@ export function HomePage() {
             <a className="button secondary" href="#how-it-works">See how it works</a>
           </div>
           <ul className="home-facts" aria-label="Product facts">
-            <li><StateDot /> Operator-owned NAS</li>
+            <li><StateDot /> Operator-owned controller</li>
             <li>1–N Sparks</li>
             <li>Browser + CLI</li>
             <li>Open source · MIT</li>
@@ -99,7 +99,7 @@ export function HomePage() {
 
       <section className="quickstart" aria-labelledby="quickstart-title">
         <div className="quickstart-heading">
-          <h2 id="quickstart-title">Start with your NAS. Add Sparks when ready.</h2>
+          <h2 id="quickstart-title">Start with a local controller. Add Sparks when ready.</h2>
           <a href="/install">Open the complete install guide</a>
         </div>
         <div className="quickstart-command">
@@ -107,8 +107,8 @@ export function HomePage() {
           <code>{installCommand}</code>
         </div>
         <ol className="quickstart-steps">
-          <li><span>1</span><div><strong>Prepare</strong><p>The signed installer creates a self-contained NAS project directory on your workstation.</p></div></li>
-          <li><span>2</span><div><strong>Start</strong><p>Move that directory to your Docker-capable NAS and start the Compose project.</p></div></li>
+          <li><span>1</span><div><strong>Prepare</strong><p>The signed installer creates a self-contained controller project on your workstation.</p></div></li>
+          <li><span>2</span><div><strong>Start</strong><p>Run it on this laptop or move it to any local computer with Docker Compose.</p></div></li>
           <li><span>3</span><div><strong>Enroll</strong><p>Create a one-use grant, run the Spark installer, and verify the node in Fleet.</p></div></li>
         </ol>
       </section>
@@ -153,7 +153,7 @@ export function HomePage() {
         <div className="control-choice">
           <article>
             <h3>Operate visually in your browser.</h3>
-            <p>Recommended for first use: search, compare, preview, confirm, and follow progress through the private HTTPS controller on your NAS.</p>
+            <p>Recommended for first use: search, compare, preview, confirm, and follow progress through your private HTTPS controller.</p>
             <a href="/control#web-controller">Tour the Web Controller</a>
           </article>
           <article>
@@ -170,11 +170,11 @@ export function HomePage() {
           <p>
             <code>vonkforge.ai</code> provides documentation, signed installers, and
             the recipe catalog. Your controller lives at the private HTTPS address
-            of your own NAS deployment.
+            of your own local controller.
           </p>
         </div>
         <ul>
-          <li><StateDot /><span><strong>Secrets stay local</strong> on NAS-owned files.</span></li>
+          <li><StateDot /><span><strong>Secrets stay local</strong> in controller-owned files.</span></li>
           <li><StateDot /><span><strong>Weights stay separate</strong> at immutable origins and node caches.</span></li>
           <li><StateDot /><span><strong>Agents connect outbound</strong> with independently enrolled identity.</span></li>
         </ul>
@@ -183,7 +183,7 @@ export function HomePage() {
       <section className="home-closing" aria-labelledby="home-closing-title">
         <div>
           <h2 id="home-closing-title">Build your Forge.</h2>
-          <p>Prepare the NAS, open the controller, then add one Spark or many.</p>
+          <p>Prepare the local controller, open it in your browser, then add one Spark or many.</p>
         </div>
         <div className="hero-actions">
           <a className="button primary" href="/install">Start the installation</a>
