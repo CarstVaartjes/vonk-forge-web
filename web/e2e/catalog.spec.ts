@@ -48,14 +48,15 @@ test.beforeEach(async ({ page }) => {
 test("platform story stays navigable and bounded", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "Build where the models live." })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Catalog" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "NAS control" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Spark runtime" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Web Controller" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: /vonkctl CLI/i })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Development", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Production", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your Sparks. One local control plane." })).toBeVisible();
+  await expect(page.getByText(/open-source control plane for NVIDIA DGX Spark/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Public recipes", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your NAS", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your Sparks", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Find" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Preview" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Apply" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Observe" })).toBeVisible();
 
   await page.keyboard.press("Tab");
   const skipLink = page.getByRole("link", { name: "Skip to content" });
@@ -63,15 +64,19 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   await skipLink.press("Enter");
   await expect(page).toHaveURL(/#main-content$/);
 
-  await expect(page.locator(".site-header")).toHaveCSS("position", "sticky");
-  await expect(page.locator(".boundary")).toHaveCSS("display", "grid");
+  const viewport = page.viewportSize();
+  await expect(page.locator(".site-header")).toHaveCSS(
+    "position",
+    viewport && viewport.width <= 720 ? "relative" : "sticky",
+  );
+  await expect(page.locator(".home-boundary-panel")).toHaveCSS("display", "grid");
   const horizontalOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
   );
   expect(horizontalOverflow).toBeLessThanOrEqual(0);
 
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("link", { name: "Explore recipes" })).toBeFocused();
+  await expect(page.getByRole("link", { name: "Install Vonk Forge" })).toBeFocused();
 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(page.locator("html")).toHaveCSS("scroll-behavior", "auto");
@@ -106,7 +111,7 @@ test("minimum supported viewport does not overflow", async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { name: "Build where the models live." })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Your Sparks. One local control plane." })).toBeVisible();
     const horizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );
