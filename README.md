@@ -1,68 +1,81 @@
 # Vonk Forge Web
 
-The public recipe catalog and publishing surface for Vonk Forge. The static site
-at [`vonkforge.ai`](https://vonkforge.ai) explains the verified path from public
-recipe metadata to private, operator-owned compute and exposes the recipe and
-publisher interfaces implemented in this repository.
+**The public front door for local AI you operate yourself.**
 
-This repository stores recipe metadata and bounded validation evidence. It does
-not control Sparks, execute workloads, accept model uploads, or hold runtime
-secrets. Container images remain in their registries, model weights remain at
-their immutable origins and in node-local caches, and the operator's local
-controller remains authoritative for installation, placement, policy, and execution.
-That controller can be any local computer that runs Docker Compose—including
-the same laptop used for setup, a NAS, or an always-on server.
+This repository powers [`vonkforge.ai`](https://vonkforge.ai): the Vonk Forge
+product site, installation guide, architecture explainer, and public recipe
+catalog. It helps an NVIDIA DGX Spark owner understand the system and get to a
+local controller without pretending the public website is the controller.
 
-## Platform boundary
+[Open the website](https://vonkforge.ai) ·
+[Install Vonk Forge](https://vonkforge.ai/install) ·
+[Browse recipes](https://vonkforge.ai/recipes) ·
+[Controller repository](https://github.com/CarstVaartjes/vonk-forge)
 
-| Stage | Responsibility |
+| Library: choose with exact model and lifecycle facts | Fleet: see capacity, placement, and blockers |
 | --- | --- |
-| Public catalog | Typed recipes, content-addressed source, immutable revisions, capacity facts, and bounded evidence |
-| Local controller | Compose, PostgreSQL, policy, runtime secret files, and the operator-owned control plane |
-| Spark runtime | Rootless source build followed by accepted workload execution through the native NVIDIA and Docker stack |
+| ![Vonk Forge Library](docs/assets/controller-library.webp) | ![Vonk Forge Fleet](docs/assets/controller-fleet.webp) |
 
-Accepted `main` builds advance public development images tagged `:dev` and the
-signed APT `dev` channel. Production activation uses immutable signed releases,
-compatibility gates, and the trusted host updater; it does not follow a mutable
-container tag.
+These are fixture-backed screenshots of the private Web Controller implemented
+in `vonk-forge`; they contain no live fleet data.
 
-## Deployment boundary
+## What visitors should understand
 
-The public static site is useful without a global control service. The hosted
-layout is:
+1. **What it is:** one local control plane for one or many NVIDIA DGX Sparks.
+2. **Where it runs:** any local computer with Docker Compose, including a
+   laptop, NAS, or server.
+3. **How it works:** install the controller, enroll Sparks, choose a reproducible
+   recipe, preview the plan, then confirm it.
+4. **What stays private:** controller authority, identity, secrets, model
+   caches, fleet state, and execution.
 
-- Cloudflare Pages serves the static frontend at [`vonkforge.ai`](https://vonkforge.ai).
-  The default Pages hostname is `vonk-forge-web.pages.dev`.
-- Railway is reserved for a future global API, validation worker, and PostgreSQL
-  database. It is not required for the current static catalog.
-- GitHub Actions in `vonk-forge` builds and publishes the signed
-  `vonk-forge-agent` package to Cloudflare R2 at `packages.vonkforge.ai`.
-- Caddy belongs to the local controller host, not to the global catalog
-  boundary.
+```mermaid
+flowchart LR
+    Website[vonkforge.ai<br/>explain, install, discover]
+    Controller[Your local controller<br/>private Web UI and API]
+    Sparks[Your DGX Sparks<br/>model cache and execution]
 
-The frontend deployment is defined in `.github/workflows/pages.yml`; see
-[`docs/operations/cloudflare-pages.md`](docs/operations/cloudflare-pages.md)
-for the one-time Cloudflare and GitHub setup. Railway is documented only as a
-future backend option.
+    Website -->|signed installer + recipe metadata| Controller
+    Controller -->|previewed operations| Sparks
+```
 
-## Architecture and installation guides
+The public site stores bounded recipe metadata and validation evidence. It does
+not control Sparks, execute workloads, accept model uploads, or hold runtime
+secrets. Container images remain in registries; model weights remain at immutable
+origins and in node-local caches.
 
-The public frontend includes two operator-facing guides:
+## Site map
 
-- `/architecture` maps the public catalog, operator workstation, local control
-  plane, and a fleet of one to many Sparks. It distinguishes private Tailscale
-  HTTPS, management-LAN enrollment TLS and agent mTLS, verified downloads, and
-  recipe-selected NVIDIA fabric traffic.
-- `/install` explains the development and production lanes, the exact
-  `docker-compose.yaml` plus `secrets/` development project boundary, remote SSH
-  placement on the chosen Docker Compose host, and the difference between a single
-  Spark and a multi-node fleet.
+| Route | Job |
+| --- | --- |
+| `/` | Define the product, show the real interface, and lead to installation |
+| `/install` | Explain the signed controller and Spark installation path |
+| `/architecture` | Show public, controller, network, identity, and runtime boundaries |
+| `/control` | Tour the private Web Controller and equivalent `vonkctl` path |
+| `/recipes` | Filter public immutable recipes by runtime, topology, and publisher |
+| `/publish` | Explain and validate the recipe publishing contract |
+| `/privacy` | Disclose aggregate, cookie-free website analytics |
 
-These pages explain the system and link to the canonical runbooks in
-`CarstVaartjes/vonk-forge`; they do not duplicate secret values or copy
-shell procedures that would drift from the implementation repository.
+## Run the frontend
 
-## Local API
+```bash
+npm --prefix web ci
+npm --prefix web run dev
+```
+
+The Vite development server prints its local URL. The homepage and documentation
+routes run without a global control service. Catalog routes expect the same-origin
+`/v1` API unless `VITE_CATALOG_API_URL` is configured.
+
+Run the frontend checks with:
+
+```bash
+npm --prefix web test -- --run
+npm --prefix web run build
+npm --prefix web run test:e2e
+```
+
+## Run the catalog API
 
 Use Python 3.12 and [uv](https://docs.astral.sh/uv/):
 
@@ -75,36 +88,47 @@ VONK_DATABASE_URL=postgresql+psycopg://vonk:vonk@127.0.0.1:5432/vonk_catalog \
 Liveness is available at `/health/live`; readiness is available at
 `/health/ready`.
 
-## Local deployment
+## Run the reference stack
 
-The reference stack contains PostgreSQL, a one-shot migration, the private API,
-the public static web gateway, and a private validation worker. Only the web
-gateway publishes a host port. It proxies `/v1/*` to the API over the internal
-application network; PostgreSQL is reachable only on the database network.
+The local reference stack contains PostgreSQL, a one-shot migration, the private
+API, the public static gateway, and a private validation worker. Only the gateway
+publishes a host port.
 
-Before first start, create `deploy/secrets/postgres-password.txt` containing a
-long random local database password. This file is ignored by Git. Then use:
+Create `deploy/secrets/postgres-password.txt` with a long random local password,
+then run:
 
 ```bash
 export VONK_POSTGRES_PASSWORD_FILE="$PWD/deploy/secrets/postgres-password.txt"
 docker compose -f deploy/compose.yaml up -d --build --wait
 ```
 
-The website and same-origin API are at `http://127.0.0.1:8080`. Stop without
-deleting PostgreSQL data with:
+The site and same-origin API are available at `http://127.0.0.1:8080`.
 
 ```bash
 docker compose -f deploy/compose.yaml down
 ```
 
-The local Compose gateway is useful for development and contract testing. The
-hosted backend notes under `docs/operations` remain deferred until that global
-service is explicitly enabled.
+This stack is for development and contract testing. It is separate from the
+operator-owned controller installed from `install.vonkforge.ai`.
+
+## Deployment boundary
+
+- Cloudflare Pages serves the static frontend at
+  [`vonkforge.ai`](https://vonkforge.ai). The default Pages hostname is
+  `vonk-forge-web.pages.dev`.
+- GitHub Actions in `vonk-forge` publishes the signed agent package and installer
+  artifacts at `packages.vonkforge.ai`.
+- Caddy belongs to each operator's local controller, not to the public catalog.
+- Railway is reserved for a possible future global catalog API and worker. It is
+  not required for the current static product and documentation routes.
+
+See [`docs/operations/cloudflare-pages.md`](docs/operations/cloudflare-pages.md)
+for deployment setup.
 
 ## Contract verification
 
-The public JSON Schemas, canonical fixture hashes, OpenAPI document, and
-generated TypeScript declarations are checked together:
+The JSON Schemas, canonical fixture hashes, OpenAPI document, and generated
+TypeScript declarations are checked together:
 
 ```bash
 npm --prefix web ci
@@ -113,5 +137,12 @@ scripts/export-contract
 ```
 
 The export is a deterministic `dist/vonk-contracts-v1.tar.gz` archive. Local
-Vonk Forge installations pin a released archive and its SHA-256; they never
-load schema definitions from this repository's moving `main` branch.
+Vonk Forge installations pin a released archive and its SHA-256; they never load
+schema authority from this repository's moving `main` branch.
+
+## Related repositories
+
+- [`vonk-forge`](https://github.com/CarstVaartjes/vonk-forge) — local controller,
+  Web UI, native Spark agent, installers, CLI, and operator documentation.
+- [`vonk-forge-recipes`](https://github.com/CarstVaartjes/vonk-forge-recipes) —
+  public standard library of immutable model/runtime recipes.
