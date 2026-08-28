@@ -13,8 +13,9 @@ export function ArchitecturePage() {
         <p className="eyebrow">System architecture · 1…N nodes</p>
         <h1 id="architecture-title"><span>One control plane.</span><span>One to many Sparks.</span></h1>
         <p>
-          The public catalog describes reproducible work. Your NAS owns policy,
-          state, and runtime authority. Each Spark contributes native NVIDIA
+          The public catalog describes reproducible work. Your local controller
+          owns policy, state, and runtime authority. It can run on this laptop,
+          a NAS, or another Docker Compose host. Each Spark contributes native NVIDIA
           compute without receiving control-plane or registry secrets.
         </p>
       </section>
@@ -36,14 +37,14 @@ export function ArchitecturePage() {
 
           <article className="architecture-zone zone-operator">
             <div className="zone-heading"><span>Your device</span><h3>Operator workstation</h3></div>
-            <p>Stages secrets locally, publishes the NAS project, and opens the private control UI.</p>
-            <ul><li>Browser + Tailscale</li><li>1Password</li><li>SSH project publisher</li></ul>
+            <p>Runs the installer, stages secrets, and either hosts Compose here or transfers the project to another local computer.</p>
+            <ul><li>Browser + Tailscale</li><li>1Password</li><li>Local project files</li></ul>
           </article>
 
           <div className="architecture-flow flow-tailnet" aria-hidden="true"><span>private HTTPS</span></div>
 
           <article className="architecture-zone zone-control">
-            <div className="zone-heading"><span>Operator owned</span><h3>NAS control</h3></div>
+            <div className="zone-heading"><span>Operator owned</span><h3>Local controller</h3></div>
             <p>Docker Compose runs the API, worker, PostgreSQL, Caddy, LiteLLM, and a userspace Tailscale gateway.</p>
             <ul><li>Runtime secret files</li><li>Policy + durable state</li><li>Placement + route authority</li></ul>
           </article>
@@ -176,7 +177,7 @@ export function ArchitecturePage() {
         <div className="trust-boundary-grid">
           <article><h3>Catalog ≠ controller</h3><p>The public website cannot deploy, stop, or inspect your private workloads.</p></article>
           <article><h3>Agent ≠ Docker socket</h3><p>The signed host agent uses bounded root helpers; no container starts arbitrary sibling containers.</p></article>
-          <article><h3>Images ≠ secrets</h3><p>Public development images contain code only. Runtime authority arrives from NAS files into per-service projections.</p></article>
+          <article><h3>Images ≠ secrets</h3><p>Public development images contain code only. Runtime authority arrives from controller-owned files into per-service projections.</p></article>
           <article><h3>Serve ≠ Funnel</h3><p>Tailscale Services provide private HTTPS. Funnel remains disabled, so the operator UI is not public internet ingress.</p></article>
         </div>
       </section>

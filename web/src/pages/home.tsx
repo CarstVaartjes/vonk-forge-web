@@ -1,164 +1,195 @@
-const stages = [
+const installCommand = "curl -fsSL https://install.vonkforge.ai/nas | sh";
+
+
+const ownershipPath = [
   {
-    number: "01",
-    label: "Public surface",
-    title: "Catalog",
-    body: "Typed recipes pair content-addressed build source with capacity facts, deployment profiles, and bounded test evidence.",
-    tags: ["Immutable revisions", "No model uploads"],
+    title: "Public recipes",
+    owner: "Shared metadata",
+    body: "Inspect immutable build source, hardware fit, deployment profiles, and bounded evidence before anything reaches your network.",
   },
   {
-    number: "02",
-    label: "Operator boundary",
-    title: "NAS control",
-    body: "Compose, PostgreSQL, policy, and runtime secret files stay on infrastructure you operate. The catalog is never your control plane.",
-    tags: ["File-based secrets", "Local authority"],
+    title: "Your controller",
+    owner: "Local authority",
+    body: "Run the controller, database, policy, identity, and runtime secrets on any local computer with Docker Compose—even this laptop.",
   },
   {
-    number: "03",
-    label: "Execution boundary",
-    title: "Spark runtime",
-    body: "Sparks build untrusted source rootlessly, then run accepted workloads through the native NVIDIA container stack and local NVMe cache.",
-    tags: ["NVIDIA + Docker", "Outbound Rust agent"],
+    title: "Your Sparks",
+    owner: "Private execution",
+    body: "One or more Sparks build and run accepted workloads with NVIDIA's native container stack and node-local model caches.",
   },
 ];
 
 
-export function HomePage() {
+const operatingLoop = [
+  ["Find", "Search the public catalog or your local library and compare recipes against the fleet you actually have."],
+  ["Preview", "See placement, compatibility, downloads, memory requirements, and the exact change before it runs."],
+  ["Apply", "Confirm a digest-bound plan in the browser or with an explicit apply flag in vonkctl."],
+  ["Observe", "Follow progress and history in Activity, then operate the installed workload without routine Spark SSH."],
+];
+
+
+function StateDot({ tone = "ready" }: { tone?: "ready" | "warm" }) {
+  return <span className={`state-dot ${tone}`} aria-hidden="true" />;
+}
+
+
+function ControllerPreview() {
   return (
-    <>
-      <section className="hero" aria-labelledby="hero-title">
-        <div className="hero-copy">
-          <p className="eyebrow"><span className="status-dot" /> Open recipe infrastructure</p>
-          <h1 id="hero-title">Build where the models live.</h1>
-          <h2 className="hero-signature">Many sparks. One forge.</h2>
-          <p className="lede">
-            Discover reproducible AI recipes, inspect their exact trust and
-            capacity facts, then import them into a Vonk Forge you control.
-          </p>
-          <div className="hero-actions">
-            <a className="button primary" href="/recipes">
-              Explore recipes <span aria-hidden="true">↗</span>
-            </a>
-            <a className="button secondary" href="/install">
-              Install your Forge
-            </a>
+    <figure className="controller-preview">
+      <figcaption>
+        <span>Illustrative controller view</span>
+        <span><StateDot /> Local authority</span>
+      </figcaption>
+      <div className="controller-window">
+        <div className="controller-sidebar" aria-hidden="true">
+          <strong>VF</strong>
+          <span className="active">Fleet</span>
+          <span>Library</span>
+          <span>Activity</span>
+        </div>
+        <div className="controller-content">
+          <header>
+            <div><span>Fleet</span><strong>Ready to operate</strong></div>
+            <span className="controller-user">admin</span>
+          </header>
+          <div className="profile-strip">
+            <div><span>Active profile</span><strong>Dual-Spark workbench</strong></div>
+            <span className="profile-state"><StateDot /> Applied</span>
+          </div>
+          <div className="node-table" role="presentation">
+            <div className="node-table-head"><span>Node</span><span>Connection</span><span>Workload</span></div>
+            <div><strong>spark-01</strong><span><StateDot /> Connected</span><span>Ready</span></div>
+            <div><strong>spark-02</strong><span><StateDot /> Connected</span><span>Ready</span></div>
+          </div>
+          <div className="controller-action">
+            <div><span>Next safe action</span><strong>Preview a recipe placement</strong></div>
+            <span>Preview</span>
           </div>
         </div>
+      </div>
+    </figure>
+  );
+}
 
-        <div className="hero-signal" aria-label="Platform trust summary">
-          <p className="signal-label">Accepted path</p>
-          <ol>
-            <li><span>Source</span><strong>Digest bound</strong></li>
-            <li><span>Control</span><strong>Operator owned</strong></li>
-            <li><span>Runtime</span><strong>Spark native</strong></li>
-          </ol>
-          <p className="signal-foot">Catalog metadata moves. Authority does not.</p>
+
+export function HomePage() {
+  return (
+    <main className="home-page">
+      <section className="home-hero" aria-labelledby="home-title">
+        <div className="home-hero-copy">
+          <h1 id="home-title">Your Sparks.<br />{" "}One local control plane.</h1>
+          <p className="home-definition">
+            <strong>Vonk Forge is an open-source control plane for NVIDIA DGX Spark.</strong>{" "}
+            Discover reproducible model recipes, install them safely, and operate
+            one Spark or a fleet from infrastructure you own.
+          </p>
+          <div className="hero-actions">
+            <a className="button primary" href="/install">Install Vonk Forge</a>
+            <a className="button secondary" href="#how-it-works">See how it works</a>
+          </div>
+          <ul className="home-facts" aria-label="Product facts">
+            <li><StateDot /> Operator-owned controller</li>
+            <li>1–N Sparks</li>
+            <li>Browser + CLI</li>
+            <li>Open source · MIT</li>
+          </ul>
         </div>
+        <ControllerPreview />
       </section>
 
-      <section className="system-section" aria-labelledby="system-title">
-        <div className="section-heading">
-          <p className="eyebrow">One verified path</p>
-          <h2 id="system-title">From public recipe to private compute.</h2>
+      <section className="quickstart" aria-labelledby="quickstart-title">
+        <div className="quickstart-heading">
+          <h2 id="quickstart-title">Start with a local controller. Add Sparks when ready.</h2>
+          <a href="/install">Open the complete install guide</a>
+        </div>
+        <div className="quickstart-command">
+          <span>Workstation terminal</span>
+          <code>{installCommand}</code>
+        </div>
+        <ol className="quickstart-steps">
+          <li><span>1</span><div><strong>Prepare</strong><p>The signed installer creates a self-contained controller project on your workstation.</p></div></li>
+          <li><span>2</span><div><strong>Start</strong><p>Run it on this laptop or move it to any local computer with Docker Compose.</p></div></li>
+          <li><span>3</span><div><strong>Enroll</strong><p>Create a one-use grant, run the Spark installer, and verify the node in Fleet.</p></div></li>
+        </ol>
+      </section>
+
+      <section id="how-it-works" className="ownership-section" aria-labelledby="ownership-title">
+        <div className="home-section-heading">
+          <h2 id="ownership-title">The catalog is public.<br />{" "}The control plane is yours.</h2>
           <p>
-            Each boundary does one job. Nothing global needs root on your NAS,
-            and nothing on a Spark needs your registry or control-plane secrets.
+            Vonk Forge shares only what should travel: recipe metadata and verified
+            build source. Fleet authority, secrets, state, weights, and execution stay local.
           </p>
         </div>
-
-        <ol className="system-map">
-          {stages.map((stage) => (
-            <li key={stage.number}>
-              <article className="system-card">
-                <div className="stage-meta">
-                  <span>{stage.number}</span>
-                  <span>{stage.label}</span>
-                </div>
-                <h3>{stage.title}</h3>
-                <p>{stage.body}</p>
-                <div className="stage-tags">
-                  {stage.tags.map((tag) => <span key={tag}>{tag}</span>)}
-                </div>
-              </article>
+        <ol className="ownership-path">
+          {ownershipPath.map((stage, index) => (
+            <li key={stage.title} className={index === 0 ? "public-stage" : "private-stage"}>
+              <div className="ownership-index">{String(index + 1).padStart(2, "0")}</div>
+              <div><h3>{stage.title}</h3><span>{stage.owner}</span></div>
+              <p>{stage.body}</p>
             </li>
           ))}
         </ol>
       </section>
 
-      <section className="control-section" aria-labelledby="control-paths-title">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">One control plane · two control paths</p>
-            <h2 id="control-paths-title">Operate in the browser or terminal.</h2>
-          </div>
+      <section className="operation-section" aria-labelledby="operation-title">
+        <div className="home-section-heading">
+          <h2 id="operation-title">Most jobs follow one safe loop.</h2>
           <p>
-            The Web Controller and local <code>vonkctl</code> CLI expose the same
-            Fleet, Library, and Activity state. Choose the interface that fits the
-            job without splitting authority or history.
+            The Web Controller is the guided path for first use. The local
+            <code> vonkctl</code> CLI exposes the same state and preview/apply boundary
+            when you want repeatable operations or JSON output.
           </p>
         </div>
-        <div className="control-path-grid home-control-paths">
+        <ol className="operation-loop">
+          {operatingLoop.map(([title, body], index) => (
+            <li key={title}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </li>
+          ))}
+        </ol>
+        <div className="control-choice">
           <article>
-            <span className="path-number">01</span>
-            <p className="eyebrow">Visual and guided</p>
-            <h3>Web Controller</h3>
-            <p>Search, preview, confirm, and monitor operations through the private HTTPS controller on your NAS.</p>
-            <a className="text-link" href="/control#web-controller">Web Controller guide <span aria-hidden="true">→</span></a>
+            <h3>Operate visually in your browser.</h3>
+            <p>Recommended for first use: search, compare, preview, confirm, and follow progress through your private HTTPS controller.</p>
+            <a href="/control#web-controller">Tour the Web Controller</a>
           </article>
           <article>
-            <span className="path-number">02</span>
-            <p className="eyebrow">Local and scriptable</p>
-            <h3><code>vonkctl</code> CLI</h3>
-            <p>Install locally for the same lists, filters, comparisons, previews, apply boundaries, progress, and JSON output.</p>
-            <a className="text-link" href="/control#local-cli">CLI install + usage <span aria-hidden="true">→</span></a>
+            <h3>Use the same control plane with <code>vonkctl</code>.</h3>
+            <p>The complete terminal path lists and filters the same Fleet, Library, and Activity state, with explicit mutations and machine-readable output.</p>
+            <a href="/control#local-cli">See CLI install and usage</a>
           </article>
         </div>
       </section>
 
-      <section className="boundary home-boundary" aria-labelledby="boundary-title">
-        <div className="boundary-copy">
-          <p className="eyebrow">The useful separation</p>
-          <h2 id="boundary-title">Verified build source here. Weights at their origin.</h2>
+      <section className="home-boundary-panel" aria-labelledby="boundary-title">
+        <div>
+          <h2 id="boundary-title">A public site that never becomes your admin surface.</h2>
           <p>
-            Vonk Forge stores the small source bundle, typed recipe, sizing,
-            profiles, and evidence. Model files remain at immutable upstream
-            revisions and in node-local caches—not in wrapper images or this catalog.
+            <code>vonkforge.ai</code> provides documentation, signed installers, and
+            the recipe catalog. Your controller lives at the private HTTPS address
+            of your own local controller.
           </p>
         </div>
-        <div className="boundary-facts">
-          <div><span>01</span><strong>Secrets stay local</strong><p>Runtime authority is projected from NAS files, never baked into an image.</p></div>
-          <div><span>02</span><strong>Models stay separate</strong><p>Rebuild a small wrapper without repackaging or redownloading verified weights.</p></div>
-          <div><span>03</span><strong>Execution stays native</strong><p>Accepted workloads use Spark&apos;s NVIDIA and Docker stack.</p></div>
-        </div>
+        <ul>
+          <li><StateDot /><span><strong>Secrets stay local</strong> in controller-owned files.</span></li>
+          <li><StateDot /><span><strong>Weights stay separate</strong> at immutable origins and node caches.</span></li>
+          <li><StateDot /><span><strong>Agents connect outbound</strong> with independently enrolled identity.</span></li>
+        </ul>
       </section>
 
-      <section className="release-section" aria-labelledby="release-title">
-        <div className="section-heading compact">
-          <p className="eyebrow">Two lanes, two promises</p>
-          <h2 id="release-title">Fast development. Deliberate production.</h2>
+      <section className="home-closing" aria-labelledby="home-closing-title">
+        <div>
+          <h2 id="home-closing-title">Build your Forge.</h2>
+          <p>Prepare the local controller, open it in your browser, then add one Spark or many.</p>
         </div>
-        <div className="release-grid">
-          <article className="release-card development">
-            <div className="release-card-heading"><h3>Development</h3><code>:dev</code></div>
-            <p>Accepted <code>main</code> builds advance public development images and the signed APT <code>dev</code> channel.</p>
-            <span className="release-rule">Pull, redeploy, iterate</span>
-          </article>
-          <article className="release-card production">
-            <div className="release-card-heading"><h3>Production</h3><span>Signed release</span></div>
-            <p>Immutable release identity, compatibility gates, migration planning, and rollback stay behind the trusted updater.</p>
-            <span className="release-rule">Select, verify, activate</span>
-          </article>
-        </div>
-      </section>
-
-      <section className="closing-cta" aria-labelledby="closing-title">
-        <p className="eyebrow">Ready when you are</p>
-        <h2 id="closing-title">Find the recipe. Keep the keys.</h2>
         <div className="hero-actions">
-          <a className="button primary" href="/recipes">Browse the catalog <span aria-hidden="true">↗</span></a>
-          <a className="text-link" href="/publish">Share a verified recipe <span aria-hidden="true">→</span></a>
+          <a className="button primary" href="/install">Start the installation</a>
+          <a className="button secondary" href="/recipes">Browse compatible recipes</a>
         </div>
       </section>
-    </>
+    </main>
   );
 }

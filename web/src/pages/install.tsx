@@ -18,12 +18,12 @@ export function InstallPage() {
         <p className="eyebrow">Fresh installation</p>
         <h1 id="install-title">Install Vonk Forge</h1>
         <p>
-          Prepare the NAS control plane on a workstation, operate it through
-          either the Web Controller or local CLI, then enroll one or more Sparks.
-          Routine operation needs neither SSH nor a Git checkout.
+          Prepare the controller project on a macOS or Linux workstation, run it
+          on any local computer with Docker Compose—even that same laptop—then
+          enroll one or more Sparks. Routine operation needs neither SSH nor a Git checkout.
         </p>
         <div className="guide-jump" aria-label="Installation steps">
-          <a href="#nas">1 · NAS <span>Prepare control plane</span></a>
+          <a href="#controller">1 · Controller <span>Prepare control plane</span></a>
           <a href="#control">2 · Control <span>Browser or CLI</span></a>
           <a href="#fleet">3 · Sparks <span>Enroll 1…N nodes</span></a>
         </div>
@@ -33,36 +33,36 @@ export function InstallPage() {
         <p className="eyebrow">Before you begin</p>
         <h2 id="prerequisites-title">Three systems. Clean boundaries.</h2>
         <div className="three-up">
-          <article><span>01</span><h3>Workstation</h3><p>A macOS or Linux shell with <code>curl</code> and enough access to move one generated directory onto the NAS. Docker, root, Git, SSH, and a mounted NAS are not required.</p></article>
-          <article><span>02</span><h3>NAS</h3><p>A Docker-capable NAS with durable storage and a Compose-compatible project runner. The NAS holds control state, identity, and runtime secrets.</p></article>
-          <article><span>03</span><h3>DGX Sparks</h3><p>Ubuntu 24.04 aarch64 nodes with NVIDIA&apos;s native driver, Docker, and fabric stack intact, plus management-LAN reachability to the NAS.</p></article>
+          <article><span>01</span><h3>Installer workstation</h3><p>A macOS or Linux shell with <code>curl</code>. It can also be the controller host; Docker is only required there when it will run the Compose project.</p></article>
+          <article><span>02</span><h3>Controller host</h3><p>Any local computer with Docker Compose and durable storage: this laptop for a lab, or a NAS or server for an always-on controller.</p></article>
+          <article><span>03</span><h3>DGX Sparks</h3><p>Ubuntu 24.04 aarch64 nodes with NVIDIA&apos;s native driver, Docker, and fabric stack intact, plus management-network reachability to the controller host.</p></article>
         </div>
       </section>
 
-      <section id="nas" className="install-lane development-lane" aria-labelledby="nas-title">
-        <header><div><p className="eyebrow">Step 1 · Workstation</p><h2 id="nas-title">Prepare the NAS</h2></div><span>Signed installer</span></header>
+      <section id="controller" className="install-lane development-lane" aria-labelledby="controller-title">
+        <header><div><p className="eyebrow">Step 1 · Workstation</p><h2 id="controller-title">Prepare the controller</h2></div><span>Signed installer</span></header>
         <p className="lane-intro">
           Run the interactive installer on your workstation. It downloads and
           verifies the current immutable release before producing a small,
-          self-contained NAS project directory.
+          self-contained controller project directory.
         </p>
         <CommandBlock label="Workstation terminal">curl -fsSL https://install.vonkforge.ai/nas | sh</CommandBlock>
         <ol className="install-steps">
-          <li><span>01</span><div><h3>Answer the guided prompts</h3><p>The installer prepares local identity, configuration, and secrets without changing the NAS or requiring Docker on the workstation.</p></div></li>
+          <li><span>01</span><div><h3>Answer the guided prompts</h3><p>The installer prepares local identity, configuration, and secrets without changing the eventual controller host or requiring Docker on the workstation.</p></div></li>
           <li><span>02</span><div><h3>Check the generated directory</h3><p>The output is exactly <code>vonk-forge/docker-compose.yaml</code>, <code>vonk-forge/.env</code>, and <code>vonk-forge/secrets/</code>. Keep the directory private and back it up securely.</p></div></li>
-          <li><span>03</span><div><h3>Move it to the NAS</h3><p>Drag or copy the complete <code>vonk-forge/</code> directory onto the NAS. Do not copy individual secret values into a Docker image or command line.</p></div></li>
-          <li><span>04</span><div><h3>Start the Compose project</h3><p>Open <code>docker-compose.yaml</code> with the NAS Docker runner and start the project. Named volumes retain PostgreSQL and service state.</p></div></li>
+          <li><span>03</span><div><h3>Place it on the controller host</h3><p>Keep the complete <code>vonk-forge/</code> directory on this laptop, or move it to another local computer. Do not copy individual secret values into an image or command line.</p></div></li>
+          <li><span>04</span><div><h3>Start the Compose project</h3><p>Run <code>docker-compose.yaml</code> with Docker Compose on that host. Named volumes retain PostgreSQL and service state.</p></div></li>
         </ol>
         <div className="control-note install-update-note">
           <strong>Upgrades use the same command</strong>
-          <p>Run the NAS installer again on the workstation. It prepares the new immutable release while preserving locally owned identity and secrets.</p>
+          <p>Run the controller installer again on the workstation. It prepares the new immutable release while preserving locally owned identity and secrets. The public URL retains <code>/nas</code>, but the generated Compose project is not NAS-specific.</p>
         </div>
       </section>
 
       <section id="control" className="install-lane control-install" aria-labelledby="install-control-title">
         <header><div><p className="eyebrow">Step 2 · Operator access</p><h2 id="install-control-title">Choose a control path</h2></div><span>Use either or both</span></header>
         <p className="lane-intro">
-          There is one NAS-hosted controller and two complete ways to operate it.
+          There is one local controller and two complete ways to operate it.
           Both use the same Fleet, Library, Activity, authentication, and persisted state.
         </p>
         <div className="control-path-grid compact-paths">
@@ -81,7 +81,7 @@ export function InstallPage() {
             <a className="button secondary" href="/control#local-cli">CLI install + usage <span aria-hidden="true">→</span></a>
           </article>
         </div>
-        <p className="fleet-note">The public <code>vonkforge.ai</code> site is documentation and catalog. Your Web Controller lives at the private HTTPS address of your own NAS deployment.</p>
+        <p className="fleet-note">The public <code>vonkforge.ai</code> site is documentation and catalog. Your Web Controller lives at the private HTTPS address of your own local controller.</p>
       </section>
 
       <section id="fleet" className="fleet-install" aria-labelledby="fleet-title">
@@ -95,7 +95,7 @@ export function InstallPage() {
 vonkctl fleet enroll --apply`}</CommandBlock>
         <CommandBlock label="Spark terminal">curl -fsSL https://install.vonkforge.ai/spark | VONK_CONTROLLER_ADDRESS=192.168.1.231 sh</CommandBlock>
         <ol className="install-steps fleet-steps">
-          <li><span>01</span><div><h3>Use the NAS reserved LAN address</h3><p>Replace <code>192.168.1.231</code> with the address reserved for your NAS. The controller hostnames remain in place for TLS while the installer creates the local NAS mapping.</p></div></li>
+          <li><span>01</span><div><h3>Use the controller&apos;s stable LAN address</h3><p>Replace <code>192.168.1.231</code> with the address reserved for your laptop, NAS, or other controller host. The controller hostnames remain in place for TLS while the installer creates the local mapping.</p></div></li>
           <li><span>02</span><div><h3>Complete the pairing prompts</h3><p>Enter the one-use grant values and the requested Spark management and fabric addresses. The installer writes the agent and firewall configuration.</p></div></li>
           <li><span>03</span><div><h3>Verify the node in Fleet</h3><p>The signed Rust agent connects outbound. Confirm that the node is connected and healthy in either control path before installing workloads.</p></div></li>
           <li><span>04</span><div><h3>Repeat for each additional Spark</h3><p>Create a separate one-use grant per node. Adding a Spark adds one identity and local model cache—not another controller, database, or secret set.</p></div></li>
@@ -111,7 +111,7 @@ vonkctl fleet enroll --apply`}</CommandBlock>
         <div><p className="eyebrow">Authority boundary</p><h2 id="secrets-title">Private controller. Outbound agents.</h2></div>
         <ul>
           <li><strong>Public website</strong><span>Documentation, installers, and catalog only; it is not an administrative surface.</span></li>
-          <li><strong>NAS controller</strong><span>Owns PostgreSQL state, service identity, policy, and private runtime secrets.</span></li>
+          <li><strong>Local controller</strong><span>Runs on your chosen Docker Compose host and owns PostgreSQL state, service identity, policy, and private runtime secrets.</span></li>
           <li><strong>Control paths</strong><span>Browser login or a protected CLI bearer-token file reaches the same HTTPS API.</span></li>
           <li><strong>Spark agents</strong><span>Connect outbound with independently enrolled identity; routine operation does not need SSH.</span></li>
         </ul>

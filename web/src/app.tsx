@@ -11,7 +11,7 @@ import { RecipesPage } from "./pages/recipes";
 
 function CurrentPage() {
   const parts = window.location.pathname.split("/").filter(Boolean);
-  if (parts.length === 0) return <main><HomePage /></main>;
+  if (parts.length === 0) return <HomePage />;
   if (parts[0] === "architecture" && parts.length === 1) return <ArchitecturePage />;
   if (parts[0] === "control" && parts.length === 1) return <ControlPage />;
   if (parts[0] === "install" && parts.length === 1) return <InstallPage />;
@@ -40,8 +40,8 @@ export function App() {
             <span className="brand-name"><strong>Vonk</strong> Forge</span>
           </a>
           <nav aria-label="Primary navigation">
-            <a href="/architecture">Architecture</a>
-            <a href="/install">Install</a>
+            <a className="nav-primary" href="/install">Install</a>
+            <a href="/architecture">How it works</a>
             <a href="/control">Control</a>
             <a href="/recipes">Recipes</a>
             <a href="/publish">Publish</a>
@@ -51,10 +51,10 @@ export function App() {
           <CurrentPage />
         </div>
         <footer className="site-footer">
-          <p><strong>Vonk Forge</strong> · Open recipe infrastructure for compute you control.</p>
+          <p><strong>Vonk Forge</strong> · Open-source local control for NVIDIA DGX Spark.</p>
           <nav aria-label="Footer navigation">
-            <a href="/architecture">Architecture</a>
             <a href="/install">Install</a>
+            <a href="/architecture">How it works</a>
             <a href="/control">Control</a>
             <a href="/recipes">Catalog</a>
             <a href="/publish">Publish</a>

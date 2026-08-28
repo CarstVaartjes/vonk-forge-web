@@ -35,7 +35,7 @@ export function ControlPage() {
             <h2 id="choose-control-title">Use the path that fits the job.</h2>
           </div>
           <p>
-            Both paths manage the same NAS-hosted control plane. Browser and CLI
+            Both paths manage the same operator-owned local control plane. Browser and CLI
             actions appear in the same Activity history, and neither requires SSH
             access to a Spark for routine operation.
           </p>
@@ -74,7 +74,7 @@ export function ControlPage() {
           <span>Browser</span>
         </header>
         <p className="lane-intro">
-          Open the private HTTPS address configured for your NAS controller and
+          Open the private HTTPS address configured for your local controller and
           sign in with its administrator account. The public <code>vonkforge.ai</code>
           website is documentation and catalog—not your controller.
         </p>
@@ -122,7 +122,7 @@ vonkctl fleet list`}</CommandBlock>
               from a private, regular, non-symlink file. It never accepts tokens in a
               command argument and will reject an unsafe file. If your controller has
               not provisioned a bearer token, use the Web Controller; do not copy the
-              NAS token-signing key to a workstation.
+              controller token-signing key to another machine.
             </p>
           </div>
         </div>

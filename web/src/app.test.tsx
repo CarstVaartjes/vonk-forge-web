@@ -7,15 +7,18 @@ import { App } from "./app";
 afterEach(() => window.history.replaceState({}, "", "/"));
 
 
-test("explains the public catalog boundary", () => {
+test("defines the product and puts installation first", () => {
   render(<App />);
 
   expect(
-    screen.getByRole("heading", { name: /many sparks\. one forge/i }),
+    screen.getByRole("heading", { name: /your sparks\. one local control plane/i }),
   ).toBeVisible();
   expect(
-    screen.getByText(/verified build source here.*weights at their origin/i),
+    screen.getByText(/open-source control plane for NVIDIA DGX Spark/i),
   ).toBeVisible();
+  expect(screen.getByRole("link", { name: "Install Vonk Forge" })).toHaveAttribute("href", "/install");
+  expect(screen.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
+  expect(screen.getByText("Illustrative controller view")).toBeVisible();
 });
 
 
@@ -34,7 +37,7 @@ test("provides the catalog and publishing navigation", () => {
     "href",
     "/publish",
   );
-  expect(within(primaryNavigation).getByRole("link", { name: "Architecture" })).toHaveAttribute(
+  expect(within(primaryNavigation).getByRole("link", { name: "How it works" })).toHaveAttribute(
     "href",
     "/architecture",
   );
@@ -56,13 +59,13 @@ test("explains the operator-owned architecture for one to many Sparks", () => {
   expect(
     screen.getByRole("heading", { name: /one control plane.*one to many sparks/i }),
   ).toBeVisible();
-  for (const name of ["Public catalog", "Operator workstation", "NAS control", "Spark fleet"]) {
+  for (const name of ["Public catalog", "Operator workstation", "Local controller", "Spark fleet"]) {
     expect(screen.getByRole("heading", { name })).toBeVisible();
   }
   expect(screen.getByText(/tailscale https/i)).toBeVisible();
   expect(screen.getByText(/management-lan tls \/ mtls/i)).toBeVisible();
   expect(screen.getByText("NVIDIA fabric", { selector: "strong" })).toBeVisible();
-  expect(screen.getByText("SSH project publisher")).toBeVisible();
+  expect(screen.getByText("Local project files")).toBeVisible();
 
 });
 
@@ -72,7 +75,7 @@ test("explains the control to runtime contract without MIA-specific control logi
   render(<App />);
 
   expect(screen.getByRole("heading", { name: "One contract. Any reviewed runtime." })).toBeVisible();
-  for (const name of ["Recipe", "NAS control", "Spark enforcement", "Runtime adapter"]) {
+  for (const name of ["Recipe", "Local controller", "Spark enforcement", "Runtime adapter"]) {
     expect(screen.getByRole("heading", { name })).toBeVisible();
   }
   expect(screen.getByText("VONK_RANK", { selector: "code" })).toBeVisible();
@@ -82,12 +85,13 @@ test("explains the control to runtime contract without MIA-specific control logi
 });
 
 
-test("provides the current signed NAS and Spark installation path", () => {
+test("provides the current signed controller and Spark installation path", () => {
   window.history.replaceState({}, "", "/install");
   render(<App />);
 
   expect(screen.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
-  expect(screen.getByRole("heading", { name: "Prepare the NAS" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Prepare the controller" })).toBeVisible();
+  expect(screen.getByText(/this laptop for a lab/i)).toBeVisible();
   expect(screen.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
   expect(screen.getByRole("heading", { name: "Choose a control path" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Web Controller" })).toBeVisible();
@@ -131,27 +135,27 @@ test("discloses aggregate cookie-free visitor analytics", () => {
 });
 
 
-test("maps the catalog to operator-owned Spark execution", () => {
+test("maps the public catalog to operator-owned control and execution", () => {
   render(<App />);
 
   expect(
-    screen.getByRole("heading", { name: /build where the models live/i }),
+    screen.getByRole("heading", { name: /the catalog is public.*the control plane is yours/i }),
   ).toBeVisible();
-  expect(screen.getByRole("heading", { name: "Catalog" })).toBeVisible();
-  expect(screen.getByRole("heading", { name: "NAS control" })).toBeVisible();
-  expect(screen.getByRole("heading", { name: "Spark runtime" })).toBeVisible();
-  expect(screen.getByText(/nvidia \+ docker/i)).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Public recipes" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Your controller" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Your Sparks" })).toBeVisible();
   expect(screen.getByText(/secrets stay local/i)).toBeVisible();
-  expect(screen.getByRole("heading", { name: "Web Controller" })).toBeVisible();
-  expect(screen.getByRole("heading", { name: /vonkctl CLI/i })).toBeVisible();
+  expect(screen.getByRole("link", { name: "Tour the Web Controller" })).toBeVisible();
+  expect(screen.getByRole("link", { name: "See CLI install and usage" })).toBeVisible();
 });
 
 
-test("distinguishes development convenience from production authority", () => {
+test("shows the safe operating loop without hiding the private boundary", () => {
   render(<App />);
 
-  expect(screen.getByRole("heading", { name: "Development" })).toBeVisible();
-  expect(screen.getByText(":dev")).toBeVisible();
-  expect(screen.getByRole("heading", { name: "Production" })).toBeVisible();
-  expect(screen.getByText(/trusted updater/i)).toBeVisible();
+  for (const name of ["Find", "Preview", "Apply", "Observe"]) {
+    expect(screen.getByRole("heading", { name })).toBeVisible();
+  }
+  expect(screen.getByRole("heading", { name: /never becomes your admin surface/i })).toBeVisible();
+  expect(screen.getByText(/controller lives at the private HTTPS address/i)).toBeVisible();
 });
