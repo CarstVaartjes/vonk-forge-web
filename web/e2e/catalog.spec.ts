@@ -160,11 +160,40 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
   await expect(page.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Prepare the controller" })).toBeVisible();
   await expect(page.getByText(/this laptop for a lab/i)).toBeVisible();
-  await expect(page.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
+  const preflightHeading = page.getByRole("heading", { name: "Complete private HTTPS setup first." });
+  const controllerCommand = page.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh");
+  await expect(preflightHeading).toBeVisible();
+  await expect(controllerCommand).toBeVisible();
+  expect(await preflightHeading.evaluate((preflight) => {
+    const command = [...document.querySelectorAll(".command-block code")]
+      .find((candidate) => candidate.textContent === "curl -fsSL https://install.vonkforge.ai/nas | sh");
+    return Boolean(command && (preflight.compareDocumentPosition(command) & Node.DOCUMENT_POSITION_FOLLOWING));
+  })).toBe(true);
+  await expect(page.getByText(/MagicDNS and HTTPS certificates/i)).toBeVisible();
+  await expect(page.getByText(/OAuth client with only/)).toContainText("auth_keys");
+  await expect(page.getByText(/OAuth client with only/)).toContainText("tag:vonk-gateway");
+  await expect(page.getByText(/Production and development use these same unsuffixed names/i)).toBeVisible();
+  await expect(page.getByText(/isolated, disposable test tailnet/i)).toBeVisible();
+  await expect(page.getByLabel("Tailscale Services by feature set")).toContainText("Hermes disabled · 1 Service");
+  await expect(page.getByLabel("Tailscale Services by feature set")).toContainText("Hermes enabled · 3 Services");
+  await expect(page.getByLabel("Tailscale Services by feature set")).toContainText("svc:vonk-forge");
+  await expect(page.getByLabel("Tailscale Services by feature set")).toContainText("svc:hermes-api");
+  await expect(page.getByLabel("Tailscale Services by feature set")).toContainText("svc:hermes-dashboard");
   await expect(page.getByRole("heading", { name: "Choose a control path" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "One Spark", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Many Sparks", exact: true })).toBeVisible();
   await expect(page.getByText(/VONK_CONTROLLER_ADDRESS=192\.168\.1\.231/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Prove the private route before enrolling Sparks." })).toBeVisible();
+  await expect(page.locator(".verification-grid").getByText("Self.PrimaryRoutes")).toBeVisible();
+  await expect(page.locator('[aria-label="Exact Tailscale Serve map"]')).toContainText("svc:vonk-forgeHTTPS 443 → http://caddy:8080");
+  await expect(page.locator('[aria-label="Exact Tailscale Serve map"]')).toContainText("svc:hermes-apiHTTPS 443 → http://hermes-agent:8642");
+  await expect(page.locator('[aria-label="Exact Tailscale Serve map"]')).toContainText("svc:hermes-dashboardHTTPS 443 → http://hermes-agent:9119");
+  await expect(page.getByText(/tailscale ping vonk-forge\.<TAILNET_DNS_SUFFIX>\.ts\.net/)).toBeVisible();
+  await expect(page.getByText("No matching peer")).toBeVisible();
+  await expect(page.getByRole("link", { name: "Canonical Tailscale runbook" })).toHaveAttribute(
+    "href",
+    "https://github.com/CarstVaartjes/vonk-forge/blob/main/docs/runbooks/tailscale.md",
+  );
 
   await page.goto("/control");
   await expect(page.getByRole("heading", { name: "Choose browser or terminal." })).toBeVisible();

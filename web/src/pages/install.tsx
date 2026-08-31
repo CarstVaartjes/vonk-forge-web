@@ -1,4 +1,5 @@
 const repository = "https://github.com/CarstVaartjes/vonk-forge/blob/main";
+const tailscaleRunbook = `${repository}/docs/runbooks/tailscale.md`;
 
 
 function CommandBlock({ children, label }: { children: string; label: string }) {
@@ -39,6 +40,51 @@ export function InstallPage() {
         </div>
       </section>
 
+      <section id="tailscale-preflight" className="tailscale-preflight" aria-labelledby="tailscale-preflight-title">
+        <header>
+          <div>
+            <h2 id="tailscale-preflight-title">Complete private HTTPS setup first.</h2>
+            <p>
+              Do not run the controller installer until these four Tailscale
+              checks are complete. The installer repeats the checklist before it
+              asks for OAuth credentials, but it cannot inspect your admin console.
+            </p>
+          </div>
+          <a className="button secondary" href={`${tailscaleRunbook}#fresh-install-preflight`}>
+            Open the exact preflight <span aria-hidden="true">↗</span>
+          </a>
+        </header>
+        <ol className="preflight-checks">
+          <li>
+            <span>01</span>
+            <div><h3>Enable private DNS + certificates</h3><p>Turn on MagicDNS and HTTPS certificates, then copy the tailnet DNS suffix exactly as displayed. Use <code>vonk-forge.&lt;TAILNET_DNS_SUFFIX&gt;.ts.net</code> as the control hostname.</p></div>
+          </li>
+          <li>
+            <span>02</span>
+            <div>
+              <h3>Define only the Services you use</h3>
+              <p>Every install needs <code>svc:vonk-forge</code> on <code>tcp:443</code>. Add <code>svc:hermes-api</code> and <code>svc:hermes-dashboard</code>, also on <code>tcp:443</code>, only when Hermes is enabled.</p>
+            </div>
+          </li>
+          <li>
+            <span>03</span>
+            <div><h3>Install the reviewed policy</h3><p>Merge the repository grant example with your exact <code>USERNAME@github</code> identity. Give <code>tag:vonk-gateway</code> only the named Service auto-approvals and TCP 443 self-access it needs.</p></div>
+          </li>
+          <li>
+            <span>04</span>
+            <div><h3>Create one machine credential</h3><p>Create a Tailscale OAuth client with only <code>auth_keys</code> write scope and only <code>tag:vonk-gateway</code>. Keep its raw ID and secret ready for the hidden prompts.</p></div>
+          </li>
+        </ol>
+        <div className="service-mode-grid" aria-label="Tailscale Services by feature set">
+          <article><strong>Hermes disabled · 1 Service</strong><code>svc:vonk-forge</code></article>
+          <article><strong>Hermes enabled · 3 Services</strong><code>svc:vonk-forge</code><code>svc:hermes-api</code><code>svc:hermes-dashboard</code></article>
+        </div>
+        <div className="preflight-boundary">
+          <strong>Production and development use these same unsuffixed names.</strong>
+          <p>Never add development, acceptance, or test suffixes to an operator tailnet. Full-tailnet acceptance belongs only in an isolated, disposable test tailnet with separate credentials and policy, removed after the run.</p>
+        </div>
+      </section>
+
       <section id="controller" className="install-lane development-lane" aria-labelledby="controller-title">
         <header><div><p className="eyebrow">Step 1 · Workstation</p><h2 id="controller-title">Prepare the controller</h2></div><span>Signed installer</span></header>
         <p className="lane-intro">
@@ -46,6 +92,7 @@ export function InstallPage() {
           verifies the current immutable release before producing a small,
           self-contained controller project directory.
         </p>
+        <p className="installer-gate"><strong>Preflight complete?</strong> Confirm the four checks above before copying this command.</p>
         <CommandBlock label="Workstation terminal">curl -fsSL https://install.vonkforge.ai/nas | sh</CommandBlock>
         <ol className="install-steps">
           <li><span>01</span><div><h3>Answer the guided prompts</h3><p>The installer prepares local identity, configuration, and secrets without changing the eventual controller host or requiring Docker on the workstation.</p></div></li>
@@ -57,6 +104,44 @@ export function InstallPage() {
           <strong>Upgrades use the same command</strong>
           <p>Run the controller installer again on the workstation. It prepares the new immutable release while preserving locally owned identity and secrets. The public URL retains <code>/nas</code>, but the generated Compose project is not NAS-specific.</p>
         </div>
+      </section>
+
+      <section className="tailscale-verification" aria-labelledby="tailscale-verification-title">
+        <div className="verification-heading">
+          <h2 id="tailscale-verification-title">Prove the private route before enrolling Sparks.</h2>
+          <p>Check the gateway from the controller host, then make one independent request from an authorized Tailscale-connected computer. A same-host probe alone is not proof.</p>
+        </div>
+        <div className="verification-grid">
+          <article>
+            <h3>Controller host</h3>
+            <p>Both gateway containers must be healthy. The exact Serve map must use HTTPS 443, and <code>Self.PrimaryRoutes</code> must contain each Service TailVIP route.</p>
+            <ul className="serve-map" aria-label="Exact Tailscale Serve map">
+              <li><code>svc:vonk-forge</code><span>HTTPS 443 → <code>http://caddy:8080</code></span></li>
+              <li><code>svc:hermes-api</code><span>HTTPS 443 → <code>http://hermes-agent:8642</code></span></li>
+              <li><code>svc:hermes-dashboard</code><span>HTTPS 443 → <code>http://hermes-agent:9119</code></span></li>
+            </ul>
+            <CommandBlock label="Controller host terminal">{`docker compose ps --all
+docker compose logs --no-color --tail 100 tailscale-gateway tailscale-configurator
+docker compose exec tailscale-gateway tailscale status --json
+docker compose exec tailscale-gateway tailscale serve status --json`}</CommandBlock>
+          </article>
+          <article>
+            <h3>Independent Tailscale client</h3>
+            <p>Replace the placeholder with the DNS suffix copied during preflight. MagicDNS, the Service route, TLS, and <code>/healthz</code> must all work from this client.</p>
+            <CommandBlock label="Authorized client terminal">{`tailscale dns status
+tailscale ping vonk-forge.<TAILNET_DNS_SUFFIX>.ts.net
+curl --fail --show-error --silent \\
+  https://vonk-forge.<TAILNET_DNS_SUFFIX>.ts.net/healthz \\
+  --output /dev/null`}</CommandBlock>
+          </article>
+        </div>
+        <div className="diagnostic-strip" aria-label="Tailscale failure diagnostics">
+          <div><strong>Service shows 0 hosts</strong><span>Check the exact unsuffixed name, gateway state, and configurator health.</span></div>
+          <div><strong>No matching peer</strong><span>Inspect <code>Self.PrimaryRoutes</code> and the gateway&apos;s exact TCP 443 self-access grant.</span></div>
+          <div><strong>HTTPS returns 421</strong><span>Use <code>vonk-forge.&lt;TAILNET_DNS_SUFFIX&gt;.ts.net</code> as the control hostname.</span></div>
+          <div><strong>Name does not resolve</strong><span>Check MagicDNS, the copied suffix, Service definition, and client connection—never add a hosts-file workaround.</span></div>
+        </div>
+        <a className="text-link verification-runbook" href={tailscaleRunbook}>Open the complete Tailscale setup, recovery, and diagnostics runbook <span aria-hidden="true">↗</span></a>
       </section>
 
       <section id="control" className="install-lane control-install" aria-labelledby="install-control-title">
@@ -119,6 +204,7 @@ vonkctl fleet enroll --apply`}</CommandBlock>
 
       <div className="runbook-links install-runbooks">
         <a href={`${repository}/README.md`}>Canonical installation README <span aria-hidden="true">↗</span></a>
+        <a href={tailscaleRunbook}>Canonical Tailscale runbook <span aria-hidden="true">↗</span></a>
         <a href={`${repository}/docs/runbooks/vonkctl.md`}>Complete CLI reference <span aria-hidden="true">↗</span></a>
       </div>
     </main>
