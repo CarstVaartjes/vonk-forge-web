@@ -1,6 +1,3 @@
-const installCommand = "curl -fsSL https://install.vonkforge.ai/nas | sh";
-
-
 const setupFlow = [
   {
     title: "Install the controller",
@@ -121,10 +118,10 @@ export function HomePage() {
             a lab, or move the same project to an always-on host.
           </p>
         </div>
-        <div className="quickstart-command">
-          <span>Terminal</span>
-          <code>{installCommand}</code>
-          <a href="/install">Read the install guide</a>
+        <div className="quickstart-command quickstart-preflight">
+          <span>Mandatory preflight</span>
+          <strong>Set up private Tailscale HTTPS before the installer asks for OAuth credentials.</strong>
+          <a href="/install#tailscale-preflight">Review the four checks, then copy the command</a>
         </div>
       </section>
 

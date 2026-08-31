@@ -45,7 +45,7 @@ export function ArchitecturePage() {
 
           <article className="architecture-zone zone-control">
             <div className="zone-heading"><span>Operator owned</span><h3>Local controller</h3></div>
-            <p>Docker Compose runs the API, worker, PostgreSQL, Caddy, LiteLLM, and a userspace Tailscale gateway.</p>
+            <p>Docker Compose runs the API, worker, PostgreSQL, Caddy, LiteLLM, and one userspace Tailscale gateway. The base install publishes only <code>svc:vonk-forge</code>; enabling Hermes adds <code>svc:hermes-api</code> and <code>svc:hermes-dashboard</code>.</p>
             <ul><li>Runtime secret files</li><li>Policy + durable state</li><li>Placement + route authority</li></ul>
           </article>
 

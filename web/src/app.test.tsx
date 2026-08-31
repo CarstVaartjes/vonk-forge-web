@@ -17,7 +17,11 @@ test("defines the product and puts installation first", () => {
     screen.getByText(/turns a laptop, NAS, or local server into the command center/i),
   ).toBeVisible();
   expect(screen.getByRole("link", { name: "Install your controller" })).toHaveAttribute("href", "/install");
-  expect(screen.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
+  expect(screen.queryByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).not.toBeInTheDocument();
+  expect(screen.getByRole("link", { name: /review the four checks, then copy the command/i })).toHaveAttribute(
+    "href",
+    "/install#tailscale-preflight",
+  );
   expect(screen.getByText("The real Web Controller")).toBeVisible();
   expect(screen.getByAltText(/Vonk Forge Library showing model recipes/i)).toBeVisible();
 });
@@ -82,6 +86,9 @@ test("explains the operator-owned architecture for one to many Sparks", () => {
   expect(screen.getByText(/management-lan tls \/ mtls/i)).toBeVisible();
   expect(screen.getByText("NVIDIA fabric", { selector: "strong" })).toBeVisible();
   expect(screen.getByText("Local project files")).toBeVisible();
+  expect(screen.getByText(/base install publishes only/)).toHaveTextContent(
+    /svc:vonk-forge.*enabling Hermes adds svc:hermes-api and svc:hermes-dashboard/i,
+  );
 
 });
 
@@ -108,19 +115,40 @@ test("provides the current signed controller and Spark installation path", () =>
   expect(screen.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Prepare the controller" })).toBeVisible();
   expect(screen.getByText(/this laptop for a lab/i)).toBeVisible();
-  expect(screen.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
+  const preflightHeading = screen.getByRole("heading", { name: "Complete private HTTPS setup first." });
+  const controllerCommand = screen.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh");
+  expect(preflightHeading.compareDocumentPosition(controllerCommand) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(screen.getByText(/MagicDNS and HTTPS certificates/i)).toBeVisible();
+  const serviceModes = within(screen.getByLabelText("Tailscale Services by feature set"));
+  expect(serviceModes.getAllByText("svc:vonk-forge")).toHaveLength(2);
+  expect(serviceModes.getByText("svc:hermes-api")).toBeVisible();
+  expect(serviceModes.getByText("svc:hermes-dashboard")).toBeVisible();
+  expect(screen.getByText(/OAuth client with only/)).toHaveTextContent(/auth_keys.*tag:vonk-gateway/i);
+  expect(screen.getByText(/Production and development use these same unsuffixed names/i)).toBeVisible();
+  expect(screen.getByText(/isolated, disposable test tailnet/i)).toBeVisible();
   expect(screen.getByRole("heading", { name: "Choose a control path" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Web Controller" })).toBeVisible();
   expect(screen.getByRole("heading", { name: /vonkctl CLI/i })).toBeVisible();
   expect(screen.getByRole("heading", { name: "One Spark" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Many Sparks" })).toBeVisible();
   expect(screen.getByText(/VONK_CONTROLLER_ADDRESS=192\.168\.1\.231/)).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Prove the private route before enrolling Sparks." })).toBeVisible();
+  expect(screen.getByText(/docker compose exec tailscale-gateway tailscale status --json/)).toBeVisible();
+  expect(screen.getByText(/tailscale ping vonk-forge\.<TAILNET_DNS_SUFFIX>\.ts\.net/)).toBeVisible();
+  expect(screen.getByLabelText("Exact Tailscale Serve map")).toHaveTextContent(
+    /svc:vonk-forge.*http:\/\/caddy:8080.*svc:hermes-api.*http:\/\/hermes-agent:8642.*svc:hermes-dashboard.*http:\/\/hermes-agent:9119/i,
+  );
+  expect(screen.getByText("No matching peer")).toBeVisible();
   expect(document.querySelector(".control-install .fleet-note")).toHaveTextContent(
     /public vonkforge\.ai site is documentation and catalog/i,
   );
   expect(screen.getByRole("link", { name: /complete CLI reference/i })).toHaveAttribute(
     "href",
     expect.stringContaining("vonkctl.md"),
+  );
+  expect(screen.getByRole("link", { name: /canonical Tailscale runbook/i })).toHaveAttribute(
+    "href",
+    "https://github.com/CarstVaartjes/vonk-forge/blob/main/docs/runbooks/tailscale.md",
   );
 });
 
