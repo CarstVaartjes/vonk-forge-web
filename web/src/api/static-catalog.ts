@@ -175,6 +175,8 @@ function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: Re
   const provenance = record(document.provenance);
   const model = modelMetadata(document, index);
   const source = canonicalSource(text(provenance.source_reference));
+  const alignmentValue = text(metadata.alignment, "unspecified");
+  const alignment = ["standard", "abliterated", "derisked", "other-modified", "unspecified"].includes(alignmentValue) ? alignmentValue as NonNullable<RecipeSummary["catalog"]>["alignment"] : "unspecified";
   const precisionTokens = new Set([...recipeTags, ...(text(metadata.title).toLowerCase().match(/[a-z0-9]+/g) ?? []), ...(model.versionTitle.toLowerCase().match(/[a-z0-9]+/g) ?? [])]);
   const quantizations = ["nvfp4", "bf16", "fp8", "fp4", "fp16", "int8", "int4", "exl3", "aqlm", "awq", "gptq", "gguf", "torchao"]
     .filter((value) => precisionTokens.has(value))
@@ -191,6 +193,7 @@ function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: Re
     model_version_title: model.versionTitle,
     source_owner: source?.owner ?? null,
     source_repository: source?.repository ?? null,
+    alignment,
     capabilities: publicCapabilities(document, recipeTags),
     qualification: qualification(recipeTags),
     execution_readiness: executionReadiness(recipeTags),

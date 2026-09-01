@@ -27,6 +27,7 @@ function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["cata
       model_version_title: `${slug} v1`,
       source_owner: "owner",
       source_repository: "https://github.com/owner/repo",
+      alignment: "standard",
       capabilities: ["chat"],
       qualification: "candidate",
       execution_readiness: "executable",
@@ -44,8 +45,8 @@ function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["cata
 
 describe("public catalog Controller-parity filters", () => {
   test("parses the shared filter vocabulary and validates enumerated values", () => {
-    const filters = filtersFromParameters(new URLSearchParams("model_type=language&model=models%2Fboth&model_version=models%2Fboth-v1&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&topology=distributed&capability=chat&capability=reasoning&capability=chat&sort=download"));
-    expect(filters).toMatchObject({ modelType: "language", model: "models/both", modelVersion: "models/both-v1", sourceOwner: "owner", quantization: "NVFP4", updated: "30", sparks: "4+", topology: "distributed", capabilities: ["chat", "reasoning"], sort: "download" });
+    const filters = filtersFromParameters(new URLSearchParams("model_type=language&model=models%2Fboth&model_version=models%2Fboth-v1&alignment=abliterated&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&topology=distributed&capability=chat&capability=reasoning&capability=chat&sort=download"));
+    expect(filters).toMatchObject({ modelType: "language", model: "models/both", modelVersion: "models/both-v1", alignment: "abliterated", sourceOwner: "owner", quantization: "NVFP4", updated: "30", sparks: "4+", topology: "distributed", capabilities: ["chat", "reasoning"], sort: "download" });
     expect(filtersFromParameters(new URLSearchParams("model_type=bogus&sort=bogus")).modelType).toBe("");
   });
 
@@ -55,6 +56,13 @@ describe("public catalog Controller-parity filters", () => {
     const filters = { ...EMPTY_FILTERS, modelType: "language" as const, modelVersion: "models/both-v1", quantization: "NVFP4", updated: "7" as const, sparks: "4+" as const, readiness: "executable" as const, capabilities: ["chat", "reasoning"] };
     expect(recipeMatches(both, filters)).toBe(true);
     expect(recipeMatches(chat, filters)).toBe(false);
+  });
+
+  test("keeps standard and abliterated variants independently selectable", () => {
+    const standard = recipe("standard", { alignment: "standard" });
+    const abliterated = recipe("abliterated", { alignment: "abliterated" });
+    expect(recipeMatches(standard, { ...EMPTY_FILTERS, alignment: "standard" })).toBe(true);
+    expect(recipeMatches(abliterated, { ...EMPTY_FILTERS, alignment: "standard" })).toBe(false);
   });
 
   test("uses the Controller sort modes", () => {
