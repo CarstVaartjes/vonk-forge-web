@@ -217,8 +217,11 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
 
 test("facets remain in the URL and exact trust facts survive navigation", async ({ page }) => {
   await page.goto("/recipes?topology=distributed&capability=chat");
-  const filterToggle = page.getByRole("button", { name: /Show filters/ });
-  if (await filterToggle.isVisible()) await filterToggle.click();
+  const filterToggle = page.locator("button[aria-controls='catalog-filter-rail']");
+  if (await filterToggle.isVisible()) {
+    await filterToggle.click();
+    await expect(filterToggle).toHaveAttribute("aria-expanded", "true");
+  }
   await expect(page.getByLabel("Filter by topology")).toHaveValue("distributed");
   await expect(page.getByRole("checkbox", { name: "Chat" })).toBeChecked();
   await expect(page.getByLabel("Filter by model type")).toBeVisible();
@@ -231,6 +234,10 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   await expect(page.getByLabel("Filter by execution readiness")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Qwen Fast" })).toBeVisible();
   await expect(page.getByText("Source verified")).toBeVisible();
+  if (await filterToggle.isVisible()) {
+    await filterToggle.click({ force: true });
+    await expect(filterToggle).toHaveAttribute("aria-expanded", "false");
+  }
   await page.getByRole("link", { name: "Qwen Fast" }).click();
   await expect(page.getByRole("heading", { name: "Trust, precisely stated" })).toBeVisible();
   await expect(page.getByText(/publisher-submitted test accepted/i)).toBeVisible();
