@@ -27,18 +27,26 @@ export const READINESS_OPTIONS = [
   { value: "not-executable", label: "Not executable" },
   { value: "not-declared", label: "Readiness not declared" },
 ] as const;
+export const ALIGNMENT_OPTIONS = [
+  { value: "standard", label: "Standard" },
+  { value: "abliterated", label: "Abliterated" },
+  { value: "derisked", label: "Derisked" },
+  { value: "other-modified", label: "Other modified" },
+  { value: "unspecified", label: "Unspecified" },
+] as const;
 
 export type ModelType = "" | typeof MODEL_TYPE_OPTIONS[number]["value"];
 export type SparkFilter = "" | "1" | "2" | "3" | "4+";
 export type UpdatedFilter = "" | "7" | "30" | "90" | "365";
 export type RecipeSort = "catalog" | "model" | "sparks" | "download";
-export type FilterFacet = "modelType" | "model" | "modelVersion" | "sourceOwner" | "repository" | "sparks" | "runtime" | "quantization" | "updated" | "topology" | "qualification" | "readiness" | "capability";
+export type FilterFacet = "modelType" | "model" | "modelVersion" | "alignment" | "sourceOwner" | "repository" | "sparks" | "runtime" | "quantization" | "updated" | "topology" | "qualification" | "readiness" | "capability";
 
 export interface CatalogFilters {
   query: string;
   modelType: ModelType;
   model: string;
   modelVersion: string;
+  alignment: "" | typeof ALIGNMENT_OPTIONS[number]["value"];
   sourceOwner: string;
   repository: string;
   sparks: SparkFilter;
@@ -57,6 +65,7 @@ export const EMPTY_FILTERS: CatalogFilters = {
   modelType: "",
   model: "",
   modelVersion: "",
+  alignment: "",
   sourceOwner: "",
   repository: "",
   sparks: "",
@@ -83,12 +92,14 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
   const sparks = parameters.get("sparks") ?? "";
   const qualification = parameters.get("qualification") ?? "";
   const readiness = parameters.get("readiness") ?? "";
+  const alignment = parameters.get("alignment") ?? "";
   const sort = parameters.get("sort") ?? "catalog";
   return {
     query: parameters.get("q") ?? "",
     modelType: VALID_MODEL_TYPES.has(modelType) ? modelType as ModelType : "",
     model: parameters.get("model") ?? "",
     modelVersion: parameters.get("model_version") ?? "",
+    alignment: ALIGNMENT_OPTIONS.some((option) => option.value === alignment) ? alignment as CatalogFilters["alignment"] : "",
     sourceOwner: parameters.get("creator") ?? "",
     repository: parameters.get("repository") ?? "",
     sparks: VALID_SPARKS.has(sparks) ? sparks as SparkFilter : "",
@@ -119,6 +130,7 @@ export function metadata(recipe: RecipeSummary): NonNullable<RecipeSummary["cata
     model_version_title: recipe.workload.family ?? recipe.title,
     source_owner: null,
     source_repository: null,
+    alignment: "unspecified",
     capabilities,
     qualification: "candidate",
     execution_readiness: "not-declared",
@@ -182,6 +194,7 @@ export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, om
     && (omitted === "modelType" || modelTypeMatches(recipe, filters.modelType))
     && (omitted === "model" || !filters.model || `${facts.model_publisher}/${facts.model_slug}` === filters.model)
     && (omitted === "modelVersion" || !filters.modelVersion || modelVersionKey(recipe) === filters.modelVersion)
+    && (omitted === "alignment" || !filters.alignment || facts.alignment === filters.alignment)
     && (omitted === "sourceOwner" || !filters.sourceOwner || facts.source_owner === filters.sourceOwner)
     && (omitted === "repository" || !filters.repository || facts.source_repository === filters.repository)
     && (omitted === "sparks" || sparksMatch(recipe, filters.sparks))

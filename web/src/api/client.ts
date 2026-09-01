@@ -81,6 +81,7 @@ export interface RecipeSummary {
     model_version_title: string;
     source_owner: string | null;
     source_repository: string | null;
+    alignment: "standard" | "abliterated" | "derisked" | "other-modified" | "unspecified";
     capabilities: string[];
     qualification: "candidate" | "cataloged";
     execution_readiness: "executable" | "integration-required" | "not-executable" | "not-declared";

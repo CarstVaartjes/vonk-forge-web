@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CatalogProblem, loadRecipeCatalog, type RecipeSummary } from "../api/client";
 import {
   CAPABILITY_OPTIONS,
+  ALIGNMENT_OPTIONS,
   MODEL_TYPE_OPTIONS,
   READINESS_OPTIONS,
   filtersFromParameters,
@@ -189,6 +190,7 @@ export function RecipesPage({ fixedPublisher }: { fixedPublisher?: string } = {}
   const repositories = useMemo(() => Array.from(new Set(available.flatMap((recipe) => metadata(recipe).source_repository ? [metadata(recipe).source_repository as string] : []))).sort(), [available]);
   const runtimes = useMemo(() => Array.from(new Set(available.map((recipe) => metadata(recipe).runtime_distribution))).sort(), [available]);
   const quantizations = useMemo(() => Array.from(new Set(available.flatMap((recipe) => metadata(recipe).quantizations))).sort(), [available]);
+  const alignments = useMemo(() => ALIGNMENT_OPTIONS.filter((option) => available.some((recipe) => metadata(recipe).alignment === option.value)), [available]);
   const topologies = useMemo(() => Array.from(new Set(available.map((recipe) => metadata(recipe).topology_mode))).sort(), [available]);
 
   const applied: ActiveFilter[] = [];
@@ -204,6 +206,7 @@ export function RecipesPage({ fixedPublisher }: { fixedPublisher?: string } = {}
   if (filters.repository) addApplied("repository", `Repository: ${sourceLabel(filters.repository)}`, "repository");
   if (filters.runtime) addApplied("runtime", `Runtime: ${humanize(filters.runtime)}`, "runtime");
   if (filters.quantization) addApplied("quantization", `Quantization: ${filters.quantization}`, "quantization");
+  if (filters.alignment) addApplied("alignment", `Alignment: ${ALIGNMENT_OPTIONS.find((option) => option.value === filters.alignment)?.label ?? filters.alignment}`, "alignment");
   if (filters.updated) addApplied("updated", `Updated: last ${filters.updated} days`, "updated");
   if (filters.topology) addApplied("topology", `Topology: ${humanize(filters.topology)}`, "topology");
   for (const capability of filters.capabilities) applied.push({ key: `capability:${capability}`, label: `Capability: ${capabilityLabel(capability)}`, remove: () => toggleCapability(capability) });
@@ -228,6 +231,7 @@ export function RecipesPage({ fixedPublisher }: { fixedPublisher?: string } = {}
           <label><span>Model</span><select aria-label="Filter by model" value={filters.model} onChange={(event) => updateModel(event.target.value)}><option value="">All models ({count("model", () => true)})</option>{models.map(([value, label]) => { const availableCount = count("model", (recipe) => `${metadata(recipe).model_publisher}/${metadata(recipe).model_slug}` === value); return <option key={value} value={value} disabled={availableCount === 0}>{label} ({availableCount})</option>; })}</select></label>
           <label><span>Model version</span><select aria-label="Filter by model version" value={filters.modelVersion} onChange={(event) => update("model_version", event.target.value)}><option value="">All versions ({count("modelVersion", () => true)})</option>{modelVersions.map(([value, label]) => { const availableCount = count("modelVersion", (recipe) => modelVersionKey(recipe) === value); return <option key={value} value={value} disabled={availableCount === 0}>{label} ({availableCount})</option>; })}</select></label>
           <label><span>Quantization / format</span><select aria-label="Filter by quantization" value={filters.quantization} onChange={(event) => update("quantization", event.target.value)}><option value="">Any format</option>{quantizations.map((value) => { const availableCount = count("quantization", (recipe) => metadata(recipe).quantizations.includes(value)); return <option key={value} value={value} disabled={availableCount === 0}>{value} ({availableCount})</option>; })}</select></label>
+          <label><span>Alignment</span><select aria-label="Filter by alignment" value={filters.alignment} onChange={(event) => update("alignment", event.target.value)}><option value="">Any alignment ({count("alignment", () => true)})</option>{alignments.map((option) => { const availableCount = count("alignment", (recipe) => metadata(recipe).alignment === option.value); return <option key={option.value} value={option.value} disabled={availableCount === 0}>{option.label} ({availableCount})</option>; })}</select></label>
           <label><span>Required Sparks</span><select aria-label="Filter by required Sparks" value={filters.sparks} onChange={(event) => update("sparks", event.target.value)}><option value="">Any count ({count("sparks", () => true)})</option>{(["1", "2", "3", "4+"] as SparkFilter[]).map((value) => { const availableCount = count("sparks", (recipe) => value === "4+" ? metadata(recipe).node_count >= 4 : metadata(recipe).node_count === Number(value)); return <option key={value} value={value} disabled={availableCount === 0}>{value}{value === "1" ? " Spark" : " Sparks"} ({availableCount})</option>; })}</select></label>
           <label><span>Recipe creator</span><select aria-label="Filter by recipe creator" value={filters.sourceOwner} onChange={(event) => update("creator", event.target.value)}><option value="">All creators</option>{sourceOwners.map((value) => { const availableCount = count("sourceOwner", (recipe) => metadata(recipe).source_owner === value); return <option key={value} value={value} disabled={availableCount === 0}>{value} ({availableCount})</option>; })}</select></label>
           <label><span>Updated</span><select aria-label="Filter by updated date" value={filters.updated} onChange={(event) => update("updated", event.target.value)}><option value="">Any time ({count("updated", () => true)})</option>{(["7", "30", "90", "365"] as UpdatedFilter[]).map((value) => { const availableCount = count("updated", (recipe) => updatedMatches(recipe, value)); return <option key={value} value={value} disabled={availableCount === 0}>Last {value} days ({availableCount})</option>; })}</select></label>

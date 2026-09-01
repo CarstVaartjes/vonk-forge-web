@@ -34,6 +34,7 @@ const recipe = {
     model_version_title: "Qwen Fast v1",
     source_owner: "Qwen",
     source_repository: "https://huggingface.co/Qwen/Qwen-Fast",
+    alignment: "standard",
     capabilities: ["chat", "reasoning"],
     qualification: "candidate",
     execution_readiness: "executable",

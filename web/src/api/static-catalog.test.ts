@@ -17,7 +17,7 @@ const index = {
       release: { version: "2.1.0", released_at: "2026-08-28", history: [{}, {}] },
       document: {
         identity: { publisher: "vonk-forge", slug: "qwen-fast" },
-        metadata: { title: "Qwen Fast NVFP4", description: "Fast language model", tags: ["candidate", "executable", "reasoning", "nvfp4"] },
+        metadata: { title: "Qwen Fast NVFP4", description: "Fast language model", tags: ["candidate", "executable", "reasoning", "nvfp4"], alignment: "standard" },
         model: { publisher: "qwen", slug: "qwen-fast-v1" },
         interfaces: [{ adapter: "openai" }],
         runtime: { distribution: { slug: "vllm" }, entrypoint: ["vllm", "serve"] },
@@ -75,6 +75,7 @@ describe("static recipe library adapter", () => {
         model_version_title: "qwen-fast-v1",
         source_owner: "Qwen",
         source_repository: "https://huggingface.co/Qwen/Qwen-Fast",
+        alignment: "standard",
         capabilities: ["chat", "reasoning"],
         qualification: "candidate",
         execution_readiness: "executable",
