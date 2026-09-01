@@ -66,3 +66,15 @@ test("keeps Controller-parity filters in the URL and applies them locally", asyn
   expect(screen.getByRole("group", { name: /capabilities/i })).toBeVisible();
   expect(screen.getByText(/status appear only inside/i)).toBeVisible();
 });
+
+test("sorts the list from any column and preserves the selected direction", async () => {
+  render(<RecipesPage />);
+  await screen.findByRole("heading", { name: "Qwen Fast" });
+  fireEvent.click(screen.getByRole("button", { name: "Sort by Model" }));
+  await waitFor(() => expect(window.location.search).toContain("sort=model"));
+  expect(window.location.search).toContain("direction=asc");
+  fireEvent.click(screen.getByRole("button", { name: /Sort by Model, currently ascending/ }));
+  await waitFor(() => expect(window.location.search).toContain("direction=desc"));
+  fireEvent.click(screen.getByRole("button", { name: "Cards" }));
+  await waitFor(() => expect(window.location.search).toContain("view=cards"));
+});
