@@ -217,13 +217,8 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
 
 test("facets remain in the URL and exact trust facts survive navigation", async ({ page }) => {
   await page.goto("/recipes?topology=distributed&capability=chat");
-  const filterToggle = page.locator("button[aria-controls='catalog-filter-rail']");
-  if (await filterToggle.isVisible()) {
-    await filterToggle.click();
-    await expect(filterToggle).toHaveAttribute("aria-expanded", "true");
-  }
   await expect(page.getByLabel("Filter by topology")).toHaveValue("distributed");
-  await expect(page.getByRole("checkbox", { name: "Chat" })).toBeChecked();
+  await expect(page.getByLabel("Filter by capability")).toContainText("1 selected");
   await expect(page.getByLabel("Filter by model type")).toBeVisible();
   await expect(page.getByLabel("Filter by model", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Filter by model version")).toBeVisible();
@@ -232,12 +227,14 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   await expect(page.getByLabel("Filter by recipe creator")).toBeVisible();
   await expect(page.getByLabel("Filter by updated date")).toBeVisible();
   await expect(page.getByLabel("Filter by execution readiness")).toBeVisible();
+  await expect(page.getByLabel("Filter by original repository")).toBeVisible();
+  await expect(page.getByLabel("Filter by download size")).toBeVisible();
+  await expect(page.getByLabel("Filter by disk per Spark")).toBeVisible();
+  await expect(page.getByLabel("Filter by memory per Spark")).toBeVisible();
+  await expect(page.getByRole("columnheader")).toHaveCount(18);
+  await expect(page.getByRole("row").nth(1).getByRole("cell")).toHaveCount(18);
   await expect(page.getByRole("heading", { name: "Qwen Fast" })).toBeVisible();
-  await expect(page.getByText("Source verified")).toBeVisible();
-  if (await filterToggle.isVisible()) {
-    await filterToggle.click({ force: true });
-    await expect(filterToggle).toHaveAttribute("aria-expanded", "false");
-  }
+  await expect(page.getByText(/Source verified/)).toBeVisible();
   await page.getByRole("link", { name: "Qwen Fast" }).click();
   await expect(page.getByRole("heading", { name: "Trust, precisely stated" })).toBeVisible();
   await expect(page.getByText(/publisher-submitted test accepted/i)).toBeVisible();
