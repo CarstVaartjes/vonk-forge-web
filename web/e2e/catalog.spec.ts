@@ -216,12 +216,12 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
 
 
 test("facets remain in the URL and exact trust facts survive navigation", async ({ page }) => {
-  await page.goto("/recipes?topology=distributed&capability=chat");
-  await expect(page.getByLabel("Filter by topology")).toHaveValue("distributed");
+  await page.goto("/recipes?sparks=2&abliterated=false&capability=chat");
+  await expect(page.getByLabel("Filter by required Sparks")).toHaveValue("2");
+  await expect(page.getByLabel("Filter by abliterated")).toHaveValue("false");
   await expect(page.getByLabel("Filter by capability")).toContainText("1 selected");
-  await expect(page.getByLabel("Filter by model type")).toBeVisible();
+  await expect(page.getByLabel("Filter by model family")).toBeVisible();
   await expect(page.getByLabel("Filter by model", { exact: true })).toBeVisible();
-  await expect(page.getByLabel("Filter by model version")).toBeVisible();
   await expect(page.getByLabel("Filter by quantization")).toBeVisible();
   await expect(page.getByLabel("Filter by required Sparks")).toBeVisible();
   await expect(page.getByLabel("Filter by recipe creator")).toBeVisible();
@@ -231,8 +231,8 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   await expect(page.getByLabel("Filter by download size")).toBeVisible();
   await expect(page.getByLabel("Filter by disk per Spark")).toBeVisible();
   await expect(page.getByLabel("Filter by memory per Spark")).toBeVisible();
-  await expect(page.getByRole("columnheader")).toHaveCount(18);
-  await expect(page.getByRole("row").nth(1).getByRole("cell")).toHaveCount(18);
+  await expect(page.getByRole("columnheader")).toHaveCount(16);
+  await expect(page.getByRole("row").nth(1).getByRole("cell")).toHaveCount(16);
   await expect(page.getByRole("heading", { name: "Qwen Fast" })).toBeVisible();
   await expect(page.getByText(/Source verified/)).toBeVisible();
   await page.getByRole("link", { name: "Qwen Fast" }).click();

@@ -46,20 +46,20 @@ test("shows sizing, immutable identity, and evidence provenance", async () => {
   expect(screen.getByText(/Publisher-tested/)).toBeVisible();
   expect(screen.getByText(/not a Vonk endorsement/i)).toBeVisible();
   expect(screen.getByText(/aaaaaaaaaa…/)).toBeVisible();
-  expect(screen.getAllByRole("columnheader")).toHaveLength(18);
-  expect(screen.getAllByRole("cell")).toHaveLength(18);
+  expect(screen.getAllByRole("columnheader")).toHaveLength(16);
+  expect(screen.getAllByRole("cell")).toHaveLength(16);
 });
 
 
 test("keeps Controller-parity filters in the URL and applies them locally", async () => {
   render(<RecipesPage />);
   await screen.findByRole("heading", { name: "Qwen Fast" });
-  fireEvent.change(screen.getByLabelText("Filter by topology"), { target: { value: "single" } });
-  await waitFor(() => expect(window.location.search).toContain("topology=single"));
-  expect(screen.getByLabelText("Filter by model type")).toBeVisible();
+  fireEvent.change(screen.getByLabelText("Filter by abliterated"), { target: { value: "false" } });
+  await waitFor(() => expect(window.location.search).toContain("abliterated=false"));
+  expect(screen.getByLabelText("Filter by model family")).toBeVisible();
   expect(screen.getByLabelText("Filter by model")).toBeVisible();
-  expect(screen.getByLabelText("Filter by model version")).toBeVisible();
   expect(screen.getByLabelText("Filter by quantization")).toBeVisible();
+  expect(screen.getByLabelText("Filter by runtime")).toBeVisible();
   expect(screen.getByLabelText("Filter by required Sparks")).toBeVisible();
   expect(screen.getByLabelText("Filter by recipe creator")).toBeVisible();
   expect(screen.getByLabelText("Filter by updated date")).toBeVisible();
