@@ -45,8 +45,8 @@ function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["cata
 
 describe("public catalog Controller-parity filters", () => {
   test("parses the shared filter vocabulary and validates enumerated values", () => {
-    const filters = filtersFromParameters(new URLSearchParams("model_type=language&model=models%2Fboth&model_version=models%2Fboth-v1&alignment=abliterated&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&topology=distributed&capability=chat&capability=reasoning&capability=chat&sort=download&direction=desc"));
-    expect(filters).toMatchObject({ modelType: "language", model: "models/both", modelVersion: "models/both-v1", alignment: "abliterated", sourceOwner: "owner", quantization: "NVFP4", updated: "30", sparks: "4+", topology: "distributed", capabilities: ["chat", "reasoning"], sort: "download", direction: "desc" });
+    const filters = filtersFromParameters(new URLSearchParams("model_type=language&model=models%2Fboth&model_version=models%2Fboth-v1&alignment=abliterated&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&topology=distributed&capability=chat&capability=reasoning&capability=chat&download=100&disk=unknown&memory=200&sort=download&direction=desc"));
+    expect(filters).toMatchObject({ modelType: "language", model: "models/both", modelVersion: "models/both-v1", alignment: "abliterated", sourceOwner: "owner", quantization: "NVFP4", updated: "30", sparks: "4+", topology: "distributed", capabilities: ["chat", "reasoning"], download: "100", disk: "unknown", memory: "200", sort: "download", direction: "desc" });
     expect(filtersFromParameters(new URLSearchParams("model_type=bogus&sort=bogus")).modelType).toBe("");
   });
 

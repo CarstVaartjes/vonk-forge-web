@@ -38,9 +38,9 @@ export const ALIGNMENT_OPTIONS = [
 export type ModelType = "" | typeof MODEL_TYPE_OPTIONS[number]["value"];
 export type SparkFilter = "" | "1" | "2" | "3" | "4+";
 export type UpdatedFilter = "" | "7" | "30" | "90" | "365";
-export type RecipeSort = "catalog" | "model" | "recipe" | "creator" | "version" | "quantization" | "alignment" | "sparks" | "runtime" | "readiness" | "qualification" | "updated" | "download" | "memory";
+export type RecipeSort = "catalog" | "recipe" | "modelType" | "model" | "version" | "quantization" | "alignment" | "sparks" | "creator" | "updated" | "readiness" | "capability" | "qualification" | "repository" | "runtime" | "topology" | "download" | "disk" | "memory";
 export type SortDirection = "asc" | "desc";
-export type FilterFacet = "modelType" | "model" | "modelVersion" | "alignment" | "sourceOwner" | "repository" | "sparks" | "runtime" | "quantization" | "updated" | "topology" | "qualification" | "readiness" | "capability";
+export type FilterFacet = "modelType" | "model" | "modelVersion" | "alignment" | "sourceOwner" | "repository" | "sparks" | "runtime" | "quantization" | "updated" | "topology" | "qualification" | "readiness" | "capability" | "download" | "disk" | "memory";
 
 export interface CatalogFilters {
   query: string;
@@ -57,6 +57,9 @@ export interface CatalogFilters {
   topology: string;
   qualification: "" | "candidate" | "cataloged";
   readiness: "" | "executable" | "integration-required" | "not-executable" | "not-declared";
+  download: string;
+  disk: string;
+  memory: string;
   sort: RecipeSort;
   direction: SortDirection;
   capabilities: string[];
@@ -77,6 +80,9 @@ export const EMPTY_FILTERS: CatalogFilters = {
   topology: "",
   qualification: "",
   readiness: "",
+  download: "",
+  disk: "",
+  memory: "",
   sort: "catalog",
   direction: "desc",
   capabilities: [],
@@ -84,7 +90,7 @@ export const EMPTY_FILTERS: CatalogFilters = {
 
 const VALID_MODEL_TYPES = new Set<string>(MODEL_TYPE_OPTIONS.map((option) => option.value));
 const VALID_SPARKS = new Set<string>(["1", "2", "3", "4+"]);
-const VALID_SORTS = new Set<string>(["catalog", "model", "recipe", "creator", "version", "quantization", "alignment", "sparks", "runtime", "readiness", "qualification", "updated", "download", "memory"]);
+const VALID_SORTS = new Set<string>(["catalog", "recipe", "modelType", "model", "version", "quantization", "alignment", "sparks", "creator", "updated", "readiness", "capability", "qualification", "repository", "runtime", "topology", "download", "disk", "memory"]);
 const VALID_DIRECTIONS = new Set<string>(["asc", "desc"]);
 const VALID_QUALIFICATION = new Set<string>(["candidate", "cataloged"]);
 const VALID_READINESS = new Set<string>(READINESS_OPTIONS.map((option) => option.value));
@@ -115,6 +121,9 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
     topology: parameters.get("topology") ?? "",
     qualification: VALID_QUALIFICATION.has(qualification) ? qualification as CatalogFilters["qualification"] : "",
     readiness: VALID_READINESS.has(readiness) ? readiness as CatalogFilters["readiness"] : "",
+    download: parameters.get("download") ?? "",
+    disk: parameters.get("disk") ?? "",
+    memory: parameters.get("memory") ?? "",
     sort,
     direction: VALID_DIRECTIONS.has(direction) ? direction as SortDirection : sort === "catalog" ? "desc" : "asc",
     capabilities: Array.from(new Set(parameters.getAll("capability").filter((value) => VALID_CAPABILITIES.has(value as typeof CAPABILITY_OPTIONS[number]["value"])))),
@@ -166,6 +175,11 @@ function sparksMatch(recipe: RecipeSummary, sparks: SparkFilter): boolean {
   return sparks === "4+" ? nodes >= 4 : nodes === Number(sparks);
 }
 
+function exactSizeMatches(value: number | undefined, filter: string): boolean {
+  if (!filter) return true;
+  return filter === "unknown" ? value === undefined : String(value) === filter;
+}
+
 export function modelVersionKey(recipe: RecipeSummary): string {
   const facts = metadata(recipe);
   return `${facts.model_version_publisher}/${facts.model_version_slug}`;
@@ -211,14 +225,18 @@ export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, om
     && (omitted === "topology" || !filters.topology || facts.topology_mode === filters.topology)
     && (omitted === "qualification" || !filters.qualification || facts.qualification === filters.qualification)
     && (omitted === "readiness" || !filters.readiness || facts.execution_readiness === filters.readiness)
-    && (omitted === "capability" || filters.capabilities.every((capability) => facts.capabilities.includes(capability)));
+    && (omitted === "capability" || filters.capabilities.every((capability) => facts.capabilities.includes(capability)))
+    && (omitted === "download" || exactSizeMatches(facts.expected_download_bytes, filters.download))
+    && (omitted === "disk" || exactSizeMatches(recipe.capacity?.maximum_installed_bytes_per_node, filters.disk))
+    && (omitted === "memory" || exactSizeMatches(recipe.capacity?.maximum_runtime_memory_bytes_per_node, filters.memory));
 }
 
 export function sortRecipes(recipes: RecipeSummary[], sort: RecipeSort, direction: SortDirection = sort === "catalog" ? "desc" : "asc"): RecipeSummary[] {
   const value = (recipe: RecipeSummary): string | number => {
     const facts = metadata(recipe);
-    if (sort === "model") return facts.model_title;
     if (sort === "recipe") return recipe.title;
+    if (sort === "modelType") return MODEL_TYPE_OPTIONS.filter((option) => modelTypeMatches(recipe, option.value)).map((option) => option.label).join(", ");
+    if (sort === "model") return facts.model_title;
     if (sort === "creator") return facts.source_owner ?? "";
     if (sort === "version") return facts.model_version_title;
     if (sort === "quantization") return facts.quantizations.join(", ");
@@ -227,7 +245,11 @@ export function sortRecipes(recipes: RecipeSummary[], sort: RecipeSort, directio
     if (sort === "runtime") return facts.runtime_distribution;
     if (sort === "readiness") return facts.execution_readiness;
     if (sort === "qualification") return facts.qualification;
+    if (sort === "capability") return facts.capabilities.join(", ");
+    if (sort === "repository") return facts.source_repository ?? "";
+    if (sort === "topology") return facts.topology_mode;
     if (sort === "download") return facts.expected_download_bytes;
+    if (sort === "disk") return recipe.capacity?.maximum_installed_bytes_per_node ?? 0;
     if (sort === "memory") return recipe.capacity?.maximum_runtime_memory_bytes_per_node ?? 0;
     return recipe.published_at;
   };

@@ -40,19 +40,20 @@ afterEach(() => vi.unstubAllGlobals());
 test("shows sizing, immutable identity, and evidence provenance", async () => {
   render(<RecipesPage />);
   expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
-  expect(screen.getByText("20 GiB")).toBeVisible();
-  expect(screen.getByText("48 GiB")).toBeVisible();
-  expect(screen.getByText("Source verified")).toBeVisible();
-  expect(screen.getByText("Publisher-tested")).toBeVisible();
+  expect(screen.getByRole("cell", { name: "20 GiB" })).toBeVisible();
+  expect(screen.getByRole("cell", { name: "48 GiB" })).toBeVisible();
+  expect(screen.getByText(/Source verified/)).toBeVisible();
+  expect(screen.getByText(/Publisher-tested/)).toBeVisible();
   expect(screen.getByText(/not a Vonk endorsement/i)).toBeVisible();
-  expect(screen.getByText(/sha256:aaaa/)).toBeVisible();
+  expect(screen.getByText(/aaaaaaaaaa…/)).toBeVisible();
+  expect(screen.getAllByRole("columnheader")).toHaveLength(18);
+  expect(screen.getAllByRole("cell")).toHaveLength(18);
 });
 
 
 test("keeps Controller-parity filters in the URL and applies them locally", async () => {
   render(<RecipesPage />);
   await screen.findByRole("heading", { name: "Qwen Fast" });
-  fireEvent.click(screen.getByRole("button", { name: "More filters" }));
   fireEvent.change(screen.getByLabelText("Filter by topology"), { target: { value: "single" } });
   await waitFor(() => expect(window.location.search).toContain("topology=single"));
   expect(screen.getByLabelText("Filter by model type")).toBeVisible();
@@ -63,18 +64,20 @@ test("keeps Controller-parity filters in the URL and applies them locally", asyn
   expect(screen.getByLabelText("Filter by recipe creator")).toBeVisible();
   expect(screen.getByLabelText("Filter by updated date")).toBeVisible();
   expect(screen.getByLabelText("Filter by execution readiness")).toBeVisible();
-  expect(screen.getByRole("group", { name: /capabilities/i })).toBeVisible();
-  expect(screen.getByText(/status appear only inside/i)).toBeVisible();
+  expect(screen.getByLabelText("Filter by capability")).toBeVisible();
+  expect(screen.getByText(/status appear only in/i)).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Cards" })).not.toBeInTheDocument();
+  expect(screen.queryByLabelText("Sort recipes")).not.toBeInTheDocument();
 });
 
 test("sorts the list from any column and preserves the selected direction", async () => {
   render(<RecipesPage />);
   await screen.findByRole("heading", { name: "Qwen Fast" });
-  fireEvent.click(screen.getByRole("button", { name: "Sort by Model" }));
+  fireEvent.click(screen.getByRole("button", { name: "Sort Model ascending" }));
   await waitFor(() => expect(window.location.search).toContain("sort=model"));
   expect(window.location.search).toContain("direction=asc");
-  fireEvent.click(screen.getByRole("button", { name: /Sort by Model, currently ascending/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Sort Model descending" }));
   await waitFor(() => expect(window.location.search).toContain("direction=desc"));
-  fireEvent.click(screen.getByRole("button", { name: "Cards" }));
-  await waitFor(() => expect(window.location.search).toContain("view=cards"));
+  fireEvent.change(screen.getByLabelText("Filter by disk per Spark"), { target: { value: String(20 * 1024 ** 3) } });
+  await waitFor(() => expect(window.location.search).toContain("disk=21474836480"));
 });
