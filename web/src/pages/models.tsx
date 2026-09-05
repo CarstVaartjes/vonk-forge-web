@@ -48,8 +48,8 @@ export function PublicCatalogExplainer() {
       </header>
       <div className="model-recipe-relationship" aria-label="One model can have several recipes">
       <article className="explainer-entity explainer-model">
-        <p className="explainer-label">Example · Illustrative text model</p>
         <h3>Model</h3>
+        <p className="explainer-label">Example · Illustrative text model</p>
         <p>One exact release: the weights and files it points to, plus what it can do.</p>
         <ul className="explainer-fields" aria-label="Model details">
           <li><strong>Family</strong><span>related models</span></li>
@@ -60,14 +60,14 @@ export function PublicCatalogExplainer() {
       <div className="relationship-join" aria-hidden="true"><span>same<br />model</span></div>
       <div className="recipe-options">
         <article className="explainer-entity explainer-recipe">
-          <p className="explainer-label">Recipe A · one Spark</p>
           <h3>One way to run it</h3>
+          <p className="explainer-label">Recipe A · one Spark</p>
           <p>The same model, with one engine, Spark choice, and set of settings.</p>
           <p className="explainer-fields-inline"><span>engine</span><span>Sparks</span><span>settings</span></p>
         </article>
         <article className="explainer-entity explainer-recipe">
-          <p className="explainer-label">Recipe B · two Sparks</p>
           <h3>Another way to run it</h3>
+          <p className="explainer-label">Recipe B · two Sparks</p>
           <p>Same model again, with a different engine or number of Sparks.</p>
           <p className="explainer-fields-inline"><span>engine</span><span>Sparks</span><span>settings</span></p>
         </article>
@@ -87,7 +87,7 @@ export function PublicCatalogExplainer() {
           <div className="handoff-arrow" aria-hidden="true"><span>choose a run</span></div>
           <div className="handoff-local">
             <strong>Your Controller</strong>
-            <p>Run downloads or builds missing assets with visible progress. It caches model files and the runtime container separately on your NAS or local storage, reuses cached assets when you switch, copies verified assets to selected Sparks, then starts the application.</p>
+            <p>Run downloads or builds missing assets with visible progress. It caches model files and the runtime container separately on your NAS or Controller storage, reuses cached assets when you switch, copies verified assets to selected Sparks, then starts the application.</p>
             <div className="handoff-inputs" aria-label="Local Controller inputs">
               <span><strong>Model files</strong><small>download sources</small></span>
               <span><strong>Runtime container</strong><small>the software that runs the model</small></span>

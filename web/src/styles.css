@@ -1669,7 +1669,7 @@ a {
 .explainer-entity { min-width: 0; padding: 1.25rem; border: 1px solid var(--line-bright); border-radius: 0.45rem; background: rgb(9 8 6 / 66%); }
 .explainer-model { border-color: rgb(255 122 26 / 52%); background: linear-gradient(155deg, rgb(255 122 26 / 9%), rgb(9 8 6 / 72%) 64%); }
 .explainer-recipe { border-color: rgb(138 213 42 / 42%); background: linear-gradient(155deg, rgb(138 213 42 / 6%), rgb(9 8 6 / 72%) 64%); }
-.explainer-label { margin: 0; color: var(--faint); font: 650 0.64rem/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.04em; text-transform: uppercase; }
+.explainer-label { margin: 0.35rem 0 0; color: var(--faint); font: 650 0.64rem/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing: 0.04em; text-transform: uppercase; }
 .explainer-entity h3 { margin: 1.3rem 0 0.6rem; font-size: clamp(1.35rem, 2.5vw, 2rem); letter-spacing: -0.045em; }
 .explainer-entity > p:not(.explainer-label) { margin: 0; color: var(--muted); font-size: 0.82rem; line-height: 1.6; }
 .explainer-fields { display: grid; gap: 0.55rem; margin: 1.3rem 0 0; padding: 1rem 0 0; border-top: 1px solid var(--line); list-style: none; }
@@ -1689,7 +1689,7 @@ a {
 .controller-handoff > header { display: grid; grid-template-columns: minmax(10rem, 0.75fr) minmax(0, 1.25fr); gap: 1rem; align-items: baseline; }
 .controller-handoff h3 { max-width: 24ch; margin: 0; font-size: clamp(1.35rem, 2.6vw, 2.1rem); letter-spacing: -0.045em; }
 .handoff-map { display: grid; grid-template-columns: minmax(11rem, 0.75fr) 5rem minmax(0, 1.25fr); gap: 1rem; align-items: center; margin-top: 1.25rem; }
-.handoff-public, .handoff-local { min-width: 0; padding: 1rem; border-left: 2px solid var(--ember); background: rgb(9 8 6 / 55%); }
+.handoff-public, .handoff-local { min-width: 0; padding: 1rem; border-left: 1px solid var(--ember); background: rgb(9 8 6 / 55%); }
 .handoff-local { border-color: var(--green); }
 .handoff-public strong, .handoff-local strong { color: var(--ink); font-size: 0.8rem; }
 .handoff-public p, .handoff-local p { margin: 0.55rem 0 0; color: var(--muted); font-size: 0.76rem; line-height: 1.55; }
