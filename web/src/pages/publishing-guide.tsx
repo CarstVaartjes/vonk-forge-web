@@ -1,4 +1,5 @@
 const recipeLibrary = "https://github.com/CarstVaartjes/vonk-forge-recipes";
+const authoringGuide = `${recipeLibrary}/blob/main/docs/recipe-authoring.md`;
 
 
 export function PublishingGuidePage() {
@@ -7,41 +8,41 @@ export function PublishingGuidePage() {
       <section className="guide-hero" aria-labelledby="publishing-title">
         <h1 id="publishing-title">Publish a recipe others can trust.</h1>
         <p>
-          Public recipes are reviewed in the version-controlled Vonk Forge
-          recipe library. The hosted publisher workspace is not active yet, so
-          this site will never ask you to sign in and then fail halfway through.
+          Public recipes are authored and reviewed in the version-controlled
+          Vonk Forge recipe library. Use its guide to add or update a recipe;
+          the repository checks and catalog sync carry approved changes here.
         </p>
         <div className="hero-actions">
           <a className="button primary" href={recipeLibrary}>Open the recipe library</a>
-          <a className="button" href={`${recipeLibrary}#add-or-update-a-recipe`}>Read the publishing contract</a>
+          <a className="button" href={authoringGuide}>Read the recipe authoring guide</a>
         </div>
       </section>
 
       <section className="publishing-path" aria-labelledby="publishing-path-title">
         <header>
-          <h2 id="publishing-path-title">One reviewable path from source to catalog.</h2>
+          <h2 id="publishing-path-title">One clear path from source to catalog.</h2>
           <p>
-            Model weights and private credentials never belong in a recipe
-            submission. GitHub Actions is the publication authority.
+            Model weights and private credentials stay out of recipe files.
+            Automatic checks run with each pull request and sync approved
+            changes to the catalog.
           </p>
         </header>
         <ol>
-          <li><span>1</span><div><h3>Describe the exact workload</h3><p>Bind immutable model, runtime, topology, capacity, source, and qualification identities.</p></div></li>
-          <li><span>2</span><div><h3>Validate the complete closure</h3><p>Rebuild the catalog index and run repository validation before requesting review.</p></div></li>
-          <li><span>3</span><div><h3>Publish through review</h3><p>Open a focused pull request. CI verifies schema, semantics, source boundaries, and catalog freshness.</p></div></li>
+          <li><span>1</span><div><h3>Describe the model and run</h3><p>List the model files, software, settings, and Spark requirements.</p></div></li>
+          <li><span>2</span><div><h3>Check the recipe</h3><p>Rebuild the catalog index and run the repository checks before opening a pull request.</p></div></li>
+          <li><span>3</span><div><h3>Open a pull request</h3><p>Automatic checks review the documents, source links, and catalog update before sync.</p></div></li>
         </ol>
       </section>
 
       <section className="publishing-boundary" aria-labelledby="publishing-boundary-title">
         <div>
-          <h2 id="publishing-boundary-title">The browser workspace comes later.</h2>
+          <h2 id="publishing-boundary-title">Keep authoring in the repository.</h2>
           <p>
-            When the hosted catalog API and identity service are available,
-            this route can activate draft upload, validation, and publishing.
-            Until then, the public Git workflow is the complete supported path.
+            The public site is for browsing the catalog. Recipe files, build
+            inputs, review, and publication stay in the recipe repository.
           </p>
         </div>
-        <a className="text-link" href={`${recipeLibrary}/pulls`}>Review current recipe work →</a>
+        <a className="text-link" href={`${recipeLibrary}/pulls`}>Review recipe changes →</a>
       </section>
     </main>
   );

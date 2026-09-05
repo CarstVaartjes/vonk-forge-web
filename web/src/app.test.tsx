@@ -75,6 +75,18 @@ test("marks the current top-level destination in the primary navigation", () => 
   expect(within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("link", { name: "Publish" })).toHaveAttribute("aria-current", "page");
 });
 
+test("routes publishing to the repository guide without a browser authoring workspace", () => {
+  window.history.replaceState({}, "", "/publish");
+  render(<App />);
+
+  expect(screen.getByRole("heading", { name: "Publish a recipe others can trust." })).toBeVisible();
+  expect(screen.getByRole("link", { name: "Read the recipe authoring guide" })).toHaveAttribute(
+    "href",
+    "https://github.com/CarstVaartjes/vonk-forge-recipes/blob/main/docs/recipe-authoring.md",
+  );
+  expect(screen.queryByLabelText("Upload local JSON")).not.toBeInTheDocument();
+});
+
 
 test("explains the operator-owned architecture for one to many Sparks", () => {
   window.history.replaceState({}, "", "/architecture");
@@ -167,7 +179,9 @@ test("documents two equivalent control paths and complete CLI setup", () => {
   expect(screen.getByText(/uv tool install 'git\+https:\/\/github\.com\/CarstVaartjes\/vonk-forge\.git@main'/)).toBeVisible();
   expect(screen.getByText(/VONK_CONTROL_TOKEN_FILE/)).toBeVisible();
   expect(screen.getByText(/browser password is not a CLI credential/i)).toBeVisible();
-  expect(screen.getByText(/vonkctl library public facets/)).toBeVisible();
+  expect(screen.getByText(/vonkctl models discover/)).toBeVisible();
+  expect(screen.getByText(/recipe repository syncs automatically/i)).toBeVisible();
+  expect(screen.queryByText(/vonkctl library public preview/)).not.toBeInTheDocument();
   expect(screen.getByText(/uv tool upgrade vonk-cluster-profiles/)).toBeVisible();
 });
 

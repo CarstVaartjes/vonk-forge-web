@@ -45,7 +45,7 @@ export function ControlPage() {
             <span className="path-number">01</span>
             <p className="eyebrow">Recommended for first use</p>
             <h3>Web Controller</h3>
-            <p>A guided interface with visual status, previews, confirmations, progress, search, and filters.</p>
+            <p>A guided interface with visual progress, search, filters, and clear next steps.</p>
             <ul>
               <li>Sign in with the controller&apos;s admin login</li>
               <li>Best for setup, exploration, and visual monitoring</li>
@@ -57,7 +57,7 @@ export function ControlPage() {
             <span className="path-number">02</span>
             <p className="eyebrow">For operators and automation</p>
             <h3>Local CLI</h3>
-            <p>The same lists and choices in a terminal, with JSON output and explicit preview/apply safety.</p>
+            <p>The same lists and choices in a terminal, with JSON output and clear operation results.</p>
             <ul>
               <li>Install locally on Python 3.12+</li>
               <li>Best for repeatable work, scripts, and remote shells</li>
@@ -80,7 +80,7 @@ export function ControlPage() {
         </p>
         <div className="usage-grid">
           <article><span>Fleet</span><h3>Enroll and watch Sparks</h3><p>Create one-use enrollment grants, inspect health and warnings, search nodes, choose telemetry ranges, edit profiles, re-enroll, and revoke.</p></article>
-          <article id="library-import"><span>Library</span><h3>Download, run, and switch</h3><p>Search models and public recipes, download exact model assets and recipe packages, then run or switch a saved profile. The Controller reports durable progress and actual per-Spark results.</p></article>
+          <article id="library-import"><span>Library</span><h3>Download, run, and switch</h3><p>Search published models; the recipe repository syncs automatically. Download exact model assets and recipe packages, then run or switch a saved profile. The Controller reports durable progress and actual per-Spark results.</p></article>
           <article><span>Activity</span><h3>Follow every operation</h3><p>Filter audit and job history by search, area, operator, status, or attention; inspect progress and resume recoverable work.</p></article>
         </div>
         <div className="control-note">
@@ -135,12 +135,10 @@ vonkctl fleet telemetry SPARK_ID --range 24h --json
 vonkctl fleet enroll
 vonkctl fleet enroll --apply`}</CommandBlock>
           <CommandBlock label="Library">{`vonkctl models list --search qwen --json
+vonkctl models discover --json
 vonkctl models show MODEL_ID --json
 vonkctl models compare MODEL_ID MODEL_ID --json
-vonkctl library public facets --source-owner Qwen --json
-vonkctl library public list --model-type language --capability chat \
-  --qualification cataloged --readiness executable --sort download --json
-vonkctl library public preview 'vonk://catalog/PUBLISHER/SLUG@sha256:DIGEST'`}</CommandBlock>
+vonkctl profiles list --json`}</CommandBlock>
           <CommandBlock label="Activity">{`vonkctl activity list --search qwen --area Library \
   --status unsuccessful --sort attention --all --json
 vonkctl activity jobs --status running --all --json

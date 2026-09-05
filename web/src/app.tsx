@@ -4,12 +4,10 @@ import { HomePage } from "./pages/home";
 import { InstallPage } from "./pages/install";
 import { PrivacyPage } from "./pages/privacy";
 import { PublisherPage } from "./pages/publisher";
-import { PublisherWorkspacePage } from "./pages/publisher-workspace";
 import { PublishingGuidePage } from "./pages/publishing-guide";
 import { RecipeDetailPage } from "./pages/recipe-detail";
 import { RecipesPage } from "./pages/recipes";
 import { ModelDetailPage, ModelsPage } from "./pages/models";
-import { usesStaticCatalog } from "./api/client";
 
 
 function CurrentPage() {
@@ -29,7 +27,7 @@ function CurrentPage() {
     return <PublisherPage publisher={parts[1] ?? ""} />;
   }
   if (parts[0] === "publish") {
-    return usesStaticCatalog ? <PublishingGuidePage /> : <PublisherWorkspacePage />;
+    return <PublishingGuidePage />;
   }
   return <main className="status-panel"><h1>Not found</h1><p>This spark has not been forged.</p></main>;
 }
