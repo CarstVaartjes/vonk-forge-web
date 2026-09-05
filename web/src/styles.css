@@ -1647,6 +1647,10 @@ a {
 .model-card h2 a:hover { color: var(--green-soft); text-decoration: underline; text-underline-offset: 0.2rem; }
 .model-card code, .model-version code { color: var(--faint); font-size: 0.67rem; overflow-wrap: anywhere; }
 .model-card > p { min-height: 3.3em; margin: 1rem 0; color: var(--muted); line-height: 1.5; overflow-wrap: anywhere; }
+.model-card-facts { display: flex; flex-wrap: wrap; gap: 0.7rem 1.2rem; padding: 0.9rem 0; margin: 1rem 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.model-card-facts div { display: grid; gap: 0.2rem; min-width: 6.5rem; }
+.model-card-facts dt { color: var(--faint); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.model-card-facts dd { margin: 0; color: var(--ink); font-size: 0.76rem; overflow-wrap: anywhere; }
 .model-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0; margin: 0; list-style: none; }
 .model-tags li { padding: 0.25rem 0.45rem; border: 1px solid var(--line-bright); border-radius: 0.25rem; color: var(--muted); font-size: 0.66rem; }
 .model-recipe-count, .model-availability { flex: 0 0 auto; padding: 0.3rem 0.5rem; border: 1px solid var(--line-bright); border-radius: 0.25rem; color: var(--muted); font-size: 0.66rem; font-weight: 750; }

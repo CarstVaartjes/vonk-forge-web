@@ -272,6 +272,12 @@ function mapModelVersion(
     model_publisher: text(logicalModel.publisher),
     model_slug: text(logicalModel.slug),
     model_title: text(logicalModel.title, text(logicalModel.slug)),
+    variant: text(record(document.identity).variant) || undefined,
+    access: {
+      visibility: text(record(document.access).visibility) || undefined,
+      gated: typeof record(document.access).gated === "boolean" ? record(document.access).gated as boolean : undefined,
+      authentication: text(record(document.access).authentication) || undefined,
+    },
     source_repository: text(source.repository) || undefined,
     source_revision: text(source.revision) || undefined,
     format: { container: text(format.container) || undefined, precision: text(format.precision) || undefined, quantization: text(format.quantization) || undefined },

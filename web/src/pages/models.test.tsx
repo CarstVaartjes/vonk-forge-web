@@ -30,6 +30,8 @@ function model(number: number, publisher = "publisher"): ModelSummary {
       model_publisher: publisher,
       model_slug: `model-${number}`,
       model_title: `Model ${number}`,
+      variant: "bf16",
+      access: { visibility: "public", gated: false, authentication: "none" },
       tags: [],
       capabilities: [{ name: number % 2 ? "ocr" : "chat", support: "supported", evidence_status: "declared" }],
       capability_evidence: "declared",
@@ -44,20 +46,24 @@ describe("public model browse", () => {
     listModels.mockResolvedValue({ items: Array.from({ length: 13 }, (_, index) => model(index + 1)) });
   });
 
-  test("paginates the family index and persists filters in the URL", async () => {
+  test("paginates the model index and persists filters in the URL", async () => {
     render(<ModelsPage />);
-    await waitFor(() => expect(screen.getByText("13 of 13 model families")).toBeVisible());
+    await waitFor(() => expect(screen.getByText("13 of 13 models")).toBeVisible());
     expect(document.querySelectorAll(".model-list > article")).toHaveLength(12);
+    expect(screen.getAllByText("Version").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Public access").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Published model")).not.toBeInTheDocument();
+    expect(screen.queryByText(/000000000000/)).not.toBeInTheDocument();
     fireEvent.click(screen.getByText("How a model becomes a local run"));
     expect(screen.getByRole("heading", { name: "A model is the AI. A recipe is how you run it." })).toBeVisible();
     expect(screen.getByText(/One exact model can have several recipes/)).toBeVisible();
     expect(screen.getByText(/view downloads, running models, and Spark status/i)).toBeVisible();
     fireEvent.change(screen.getByLabelText("Capability"), { target: { value: "ocr" } });
     expect(window.location.search).toBe("?capability=ocr");
-    expect(screen.getByText("7 of 13 model families")).toBeVisible();
+    expect(screen.getByText("7 of 13 models")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(window.location.search).toBe("");
-    await waitFor(() => expect(screen.getByText("13 of 13 model families")).toBeVisible());
+    await waitFor(() => expect(screen.getByText("13 of 13 models")).toBeVisible());
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(window.location.search).toBe("?page=2");
     await waitFor(() => expect(screen.getByRole("heading", { name: "Model 13" })).toBeVisible());

@@ -119,6 +119,8 @@ export interface ModelVersionSummary {
   model_publisher: string;
   model_slug: string;
   model_title: string;
+  variant?: string;
+  access?: { visibility?: string; gated?: boolean; authentication?: string };
   source_repository?: string;
   source_revision?: string;
   format?: { container?: string; precision?: string; quantization?: string };
