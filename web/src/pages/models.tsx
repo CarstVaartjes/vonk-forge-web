@@ -34,6 +34,10 @@ function accessLabel(version?: ModelVersionSummary): string {
   return version.access.visibility ? `${filterLabel(version.access.visibility)} access` : "Access not declared";
 }
 
+function compactRevision(value: string): string {
+  return /^[0-9a-f]{40,64}$/i.test(value) ? `${value.slice(0, 8)}…` : value;
+}
+
 function CapabilityFacts({ version }: { version: ModelVersionSummary }) {
   if (version.capability_evidence === "unknown") {
     return <p className="model-unknown"><span aria-hidden="true">?</span> Capability evidence not declared for this model version.</p>;
@@ -121,14 +125,14 @@ function VersionRow({ version }: { version: ModelVersionSummary }) {
       <span className={`model-availability availability-${version.availability ?? "unknown"}`}>{version.availability ?? "availability not declared"}</span>
     </div>
     <dl className="model-fact-grid">
-      <div><dt>Identity</dt><dd><code>{version.revision_id}</code></dd></div>
+      <div><dt>Identity</dt><dd><code title={version.revision_id} aria-label={`Model identity ${version.revision_id}`}>{compactRevision(version.revision_id)}</code></dd></div>
       <div><dt>Version</dt><dd>{version.version}</dd></div>
       <div><dt>Variant</dt><dd>{version.variant || "Not declared"}</dd></div>
       <div><dt>Access</dt><dd>{accessLabel(version)}</dd></div>
       <div><dt>Format</dt><dd>{[version.format?.container, version.format?.quantization].filter(Boolean).join(" · ") || "Not declared"}</dd></div>
       <div><dt>Weights</dt><dd>{bytes(version.sizes?.download_bytes)} download · {bytes(version.sizes?.installed_bytes)} installed</dd></div>
       <div><dt>Parameters</dt><dd>{count(version.parameters?.total)} total{version.parameters?.active ? ` · ${count(version.parameters.active)} active` : ""}</dd></div>
-      <div><dt>Source</dt><dd>{version.source_repository ? <a href={version.source_repository}>Pinned source ↗</a> : "Not declared"}{version.source_revision ? <code>{version.source_revision}</code> : null}</dd></div>
+      <div><dt>Source</dt><dd>{version.source_repository ? <a href={version.source_repository}>Pinned source ↗</a> : "Not declared"}{version.source_revision ? <code title={version.source_revision} aria-label={`Source revision ${version.source_revision}`}>{compactRevision(version.source_revision)}</code> : null}</dd></div>
       <div><dt>Recipes</dt><dd>{version.recipe_slugs.length ? <span className="model-recipe-links">{version.recipe_slugs.map((path) => <a key={path} href={`/recipes?q=${encodeURIComponent(path)}`}>{path}</a>)}</span> : "No public recipe"}</dd></div>
     </dl>
     <div className="model-version-capabilities"><strong>Capabilities</strong><CapabilityFacts version={version} /></div>

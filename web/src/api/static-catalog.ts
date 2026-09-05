@@ -34,7 +34,8 @@ interface CatalogReference {
   content_sha256: string;
 }
 
-let cachedIndex: LibraryIndex | null = null;
+const cachedIndexes = new Map<string, Promise<LibraryIndex>>();
+const publicationUrls = new WeakMap<LibraryIndex, string>();
 
 function record(value: unknown): JsonRecord {
   return typeof value === "object" && value !== null ? value as JsonRecord : {};
@@ -404,7 +405,7 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex, baseUrl: string): R
   const provenance = record(document.provenance);
   const version = text(release.version);
   const sourceUrl = `https://github.com/${index.repository}/blob/${index.source_commit}/${item.source_path}`;
-  const packageUrl = new URL(item.package.path, baseUrl).toString();
+  const packageUrl = new URL(item.package.path, publicationUrls.get(index) ?? baseUrl).toString();
   const contextPath = text(context.path);
 
   return {
@@ -476,9 +477,26 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex, baseUrl: string): R
   };
 }
 
-async function loadIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
-  if (cachedIndex) return cachedIndex;
-  const response = await fetch(url, { headers: { Accept: "application/json" }, signal });
+async function resolvePublicationUrl(url: string, signal?: AbortSignal): Promise<string> {
+  const target = new URL(url);
+  const match = target.pathname.match(/^\/([^/]+)\/([^/]+)\/main\/catalog-index\.json$/);
+  if (target.origin !== "https://raw.githubusercontent.com" || !match) return url;
+  const [, owner, repository] = match;
+  const response = await fetch(`https://api.github.com/repos/${owner}/${repository}/commits/main`, {
+    headers: { Accept: "application/vnd.github+json" }, signal,
+  });
+  if (!response.ok) throw new Error(`Recipe library publication returned ${response.status}`);
+  const commit = record(await response.json()).sha;
+  if (typeof commit !== "string" || !/^[0-9a-f]{40}$/.test(commit)) {
+    throw new Error("Recipe library returned an invalid publication identity");
+  }
+  target.pathname = `/${owner}/${repository}/${commit}/catalog-index.json`;
+  return target.toString();
+}
+
+async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
+  const publicationUrl = await resolvePublicationUrl(url, signal);
+  const response = await fetch(publicationUrl, { headers: { Accept: "application/json" }, signal });
   if (!response.ok) throw new Error(`Recipe library returned ${response.status}`);
   const body = await response.json() as Partial<LibraryIndex>;
   const entities = body.catalog_entities;
@@ -494,8 +512,20 @@ async function loadIndex(url: string, signal?: AbortSignal): Promise<LibraryInde
   if (body.schema_version !== 2 || body.kind !== "recipe-library-index" || typeof body.repository !== "string" || typeof body.source_commit !== "string" || !validEntities || !Array.isArray(body.recipes) || !body.package_contract || body.package_contract.schema_version !== 2 || typeof body.package_contract.media_type !== "string" || typeof body.package_contract.path_prefix !== "string") {
     throw new Error("Recipe library returned an unsupported catalog index");
   }
-  cachedIndex = body as LibraryIndex;
-  return cachedIndex;
+  const index = body as LibraryIndex;
+  publicationUrls.set(index, publicationUrl);
+  return index;
+}
+
+function loadIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
+  const cached = cachedIndexes.get(url);
+  if (cached) return cached;
+  const pending = readIndex(url, signal).catch((error: unknown) => {
+    if (cachedIndexes.get(url) === pending) cachedIndexes.delete(url);
+    throw error;
+  });
+  cachedIndexes.set(url, pending);
+  return pending;
 }
 
 function matches(recipe: RecipeSummary, parameters: URLSearchParams): boolean {
@@ -575,5 +605,5 @@ export async function getStaticRecipe(
 }
 
 export function resetStaticCatalogCacheForTests(): void {
-  cachedIndex = null;
+  cachedIndexes.clear();
 }

@@ -258,7 +258,8 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   await expect(page.getByLabel("Filter by disk per Spark")).toBeVisible();
   await expect(page.getByLabel("Filter by memory per Spark")).toBeVisible();
   await expect(page.getByRole("columnheader")).toHaveCount(16);
-  await expect(page.getByRole("row").nth(1).getByRole("cell")).toHaveCount(16);
+  const compactRecipeRows = await page.evaluate(() => window.innerWidth < 700);
+  await expect(page.getByRole("row").nth(1).getByRole("cell")).toHaveCount(compactRecipeRows ? 8 : 16);
   await expect(page.getByRole("heading", { name: "Qwen Fast" })).toBeVisible();
   await expect(page.getByText(/Source verified/)).toBeVisible();
   await page.getByRole("link", { name: "Qwen Fast" }).click();

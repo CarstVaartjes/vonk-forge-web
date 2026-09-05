@@ -1644,6 +1644,42 @@ a {
 .catalog-table-substatus { display: block; margin-top: 0.35rem; color: var(--faint); font-size: 0.61rem; line-height: 1.35; }
 .catalog-table-number { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .catalog-table-date { white-space: nowrap; }
+
+@media (max-width: 700px) {
+  .catalog-table-scroll { max-height: none; overflow: visible; scrollbar-gutter: auto; }
+  .catalog-table { width: 100%; display: block; table-layout: auto; }
+  .catalog-table thead,
+  .catalog-table tbody,
+  .catalog-table tr { display: block; }
+  .catalog-table thead tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; }
+  .catalog-table th { position: static; display: block; min-width: 0; padding: 0.55rem; }
+  .catalog-table th:nth-child(1), .catalog-table td:nth-child(1) { position: static; box-shadow: none; }
+  .catalog-table tbody { display: grid; gap: 0.75rem; margin-top: 0.75rem; }
+  .catalog-table tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border: 1px solid var(--line); background: var(--panel); }
+  .catalog-table tbody td { display: none; min-width: 0; padding: 0.7rem; border: 0; }
+  .catalog-table tbody td:nth-child(1),
+  .catalog-table tbody td:nth-child(3),
+  .catalog-table tbody td:nth-child(4),
+  .catalog-table tbody td:nth-child(5),
+  .catalog-table tbody td:nth-child(7),
+  .catalog-table tbody td:nth-child(11),
+  .catalog-table tbody td:nth-child(12),
+  .catalog-table tbody td:nth-child(14) { display: block; }
+  .catalog-table tbody td:nth-child(1) { grid-column: 1 / -1; border-bottom: 1px solid var(--line); }
+  .catalog-table tbody td:nth-child(3) { grid-column: 1 / -1; }
+  .catalog-table tbody td:nth-child(4),
+  .catalog-table tbody td:nth-child(5),
+  .catalog-table tbody td:nth-child(7),
+  .catalog-table tbody td:nth-child(11),
+  .catalog-table tbody td:nth-child(12),
+  .catalog-table tbody td:nth-child(14) { border-top: 1px solid var(--line); }
+  .catalog-table tbody td:nth-child(4)::before { content: "Format · "; color: var(--faint); font-size: 0.62rem; font-weight: 800; text-transform: uppercase; }
+  .catalog-table tbody td:nth-child(5)::before { content: "Engine · "; color: var(--faint); font-size: 0.62rem; font-weight: 800; text-transform: uppercase; }
+  .catalog-table tbody td:nth-child(7)::before { content: "Sparks · "; color: var(--faint); font-size: 0.62rem; font-weight: 800; text-transform: uppercase; }
+  .catalog-table tbody td:nth-child(11)::before { content: "Capabilities · "; color: var(--faint); font-size: 0.62rem; font-weight: 800; text-transform: uppercase; }
+  .catalog-table tbody td:nth-child(12)::before { content: "Evidence · "; color: var(--faint); font-size: 0.62rem; font-weight: 800; text-transform: uppercase; }
+  .catalog-table tbody td:nth-child(14)::before { content: "Download · "; color: var(--faint); font-size: 0.62rem; font-weight: 800; text-transform: uppercase; }
+}
 .catalog-source-link { color: var(--ember-soft); text-underline-offset: 0.18rem; }
 .catalog-alignment, .catalog-readiness { display: inline-flex; align-items: center; min-height: 1.6rem; padding: 0.2rem 0.45rem; border: 1px solid var(--line-bright); border-radius: 0.3rem; color: var(--muted); font-size: 0.68rem; white-space: nowrap; }
 .catalog-alignment.alignment-abliterated { border-color: rgb(244 198 107 / 55%); color: var(--warning); }

@@ -2,12 +2,12 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { ModelPage, ModelSummary } from "../api/client";
-import { ModelsPage } from "./models";
+import { ModelDetailPage, ModelsPage } from "./models";
 
-const { listModels } = vi.hoisted(() => ({ listModels: vi.fn<() => Promise<ModelPage>>() }));
+const { getModel, listModels } = vi.hoisted(() => ({ getModel: vi.fn(), listModels: vi.fn<() => Promise<ModelPage>>() }));
 
 vi.mock("../api/client", () => ({
-  getModel: vi.fn(),
+  getModel,
   listModels,
 }));
 
@@ -76,5 +76,17 @@ describe("public model browse", () => {
     render(<ModelsPage />);
     await waitFor(() => expect(screen.getByRole("alert")).toBeVisible());
     expect(screen.getByRole("button", { name: "Retry" })).toBeVisible();
+  });
+
+  test("keeps the full source revision available on the model version detail", async () => {
+    const sourceRevision = "a".repeat(40);
+    const detail = model(1);
+    detail.versions[0]!.source_revision = sourceRevision;
+    getModel.mockResolvedValueOnce(detail);
+    render(<ModelDetailPage publisher="publisher" slug="model-1" />);
+    await waitFor(() => expect(screen.getByRole("heading", { name: "Model 1" })).toBeVisible());
+    const sourceCode = screen.getByLabelText(`Source revision ${sourceRevision}`);
+    expect(sourceCode).toHaveTextContent("aaaaaaaa…");
+    expect(sourceCode).toHaveAttribute("title", sourceRevision);
   });
 });

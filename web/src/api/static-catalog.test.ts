@@ -67,6 +67,43 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("static recipe library adapter", () => {
+  test("binds concurrent catalog views and package links to one publication when main advances", async () => {
+    const publication = "2".repeat(40);
+    const base = "https://raw.githubusercontent.com/CarstVaartjes/vonk-forge-recipes/";
+    const fetchMock = vi.fn(async (url: string) => {
+      if (url === "https://api.github.com/repos/CarstVaartjes/vonk-forge-recipes/commits/main") {
+        return { ok: true, json: async () => ({ sha: publication }) };
+      }
+      if (url === `${base}${publication}/catalog-index.json`) return { ok: true, json: async () => index };
+      throw new Error(`Unexpected mutable request: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    const [recipe, models] = await Promise.all([
+      getStaticRecipe(`${base}main/catalog-index.json`, "vonk-forge", "qwen-fast"),
+      listStaticModels(`${base}main/catalog-index.json`),
+    ]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(recipe.package?.url).toBe(`${base}${publication}/recipe-packages/vonk-forge/qwen-fast.tar.gz`);
+    expect(recipe.package?.url).not.toContain(index.source_commit);
+    expect(models.items[0]?.recipe_count).toBe(2);
+    fetchMock.mockImplementation(async () => { throw new Error("main moved or became unavailable"); });
+    const reopened = await getStaticRecipe(`${base}main/catalog-index.json`, "vonk-forge", "qwen-fast");
+    expect(reopened.package).toEqual(recipe.package);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  test("retries a failed publication lookup without caching a mutable index", async () => {
+    const url = "https://raw.githubusercontent.com/CarstVaartjes/vonk-forge-recipes/main/catalog-index.json";
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce({ ok: false, status: 503 })
+      .mockResolvedValueOnce({ ok: true, json: async () => ({ sha: "2".repeat(40) }) })
+      .mockResolvedValueOnce({ ok: true, json: async () => index });
+    vi.stubGlobal("fetch", fetchMock);
+    await expect(listStaticModels(url)).rejects.toThrow("publication returned 503");
+    expect((await listStaticModels(url)).items).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+  });
+
   test("maps the immutable library index into public recipe cards", async () => {
     const page = await listStaticRecipes("https://example.test/catalog-index.json", new URLSearchParams("runtime=vllm&topology=single"));
 
