@@ -101,6 +101,7 @@ describe("static recipe library adapter", () => {
     const recipe = await getStaticRecipe("https://example.test/catalog-index.json", "vonk-forge", "qwen-fast");
 
     expect(recipe.import?.uri).toBe(`vonk://catalog/vonk-forge/qwen-fast@sha256:${"a".repeat(64)}`);
+    expect(recipe.import?.instruction).toBe("Use this exact recipe in your local Controller.");
     expect(recipe.source?.recipe_url).toBe(`https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${"f".repeat(40)}/recipes/qwen-fast.json`);
     expect(recipe.source?.bundle_url).toBe(`https://github.com/CarstVaartjes/vonk-forge-recipes/tree/${"f".repeat(40)}/adapters/qwen`);
     expect(recipe.package).toMatchObject({ url: "https://example.test/recipe-packages/vonk-forge/qwen-fast.tar.gz", sha256: "1".repeat(64), bytes: 123 });

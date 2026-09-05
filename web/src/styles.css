@@ -1487,12 +1487,9 @@ a {
 
 /* Catalog and publisher surfaces */
 .catalog-page,
-.detail-page,
-.workspace-page {
+.detail-page {
   padding: clamp(3rem, 7vw, 5rem) 0 6rem;
 }
-
-.workspace-page.narrow { width: min(42rem, 100%); }
 
 .page-intro h1,
 .detail-page > h1,
@@ -1531,9 +1528,7 @@ a {
 }
 
 .filters input,
-.filters select,
-.workspace-toolbar select,
-.fork-panel input {
+.filters select {
   width: 100%;
   min-height: 2.75rem;
   padding: 0.65rem 0.75rem;
@@ -1765,8 +1760,7 @@ a {
 .recipe-card:hover { border-color: var(--line-bright); transform: translateY(-2px); }
 
 .card-heading,
-.trust-row,
-.editor-heading {
+.trust-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -1836,38 +1830,6 @@ a {
 .detail-page code,
 .detail-page pre { display: block; max-width: 100%; padding: 1rem; overflow: auto; border-radius: 0.5rem; background: #080705; }
 
-.provider-button { display: inline-block; margin: 0.5rem 0.5rem 0 0; }
-.publish-flow { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; padding: 0; list-style-position: inside; }
-.publish-flow li { padding: 0.8rem; border: 1px solid var(--line); border-radius: 0.5rem; color: var(--muted); font-size: 0.78rem; }
-.workspace-toolbar { display: flex; flex-wrap: wrap; align-items: end; gap: 0.75rem; margin: 2rem 0; padding: 1rem; border: 1px solid var(--line); border-radius: 0.75rem; }
-.workspace-toolbar label { display: grid; gap: 0.35rem; }
-.file-button { padding: 0.7rem; border: 1px dashed var(--ember-soft); border-radius: 0.45rem; cursor: pointer; }
-.file-button input { max-width: 15rem; }
-.workspace-layout { display: grid; grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr); gap: 1rem; }
-.workspace-layout aside { align-self: start; padding: 1rem; border: 1px solid var(--line); border-radius: 0.75rem; }
-.workspace-layout aside h2 { font-size: 1.3rem; }
-.draft-link { display: grid; width: 100%; gap: 0.25rem; margin: 0.4rem 0; padding: 0.7rem; border: 0; border-radius: 0.45rem; color: var(--muted); text-align: left; background: #201c17; cursor: pointer; }
-.draft-link.active { color: #17120d; background: var(--ember-soft); }
-.draft-link span { font-size: 0.68rem; }
-.draft-editor,
-.publish-confirm,
-.validation-panel,
-.fork-panel { margin-bottom: 1rem; padding: 1rem; border: 1px solid var(--line); border-radius: 0.75rem; background: rgb(255 255 255 / 2%); }
-.editor-heading h2 { font-size: 1.8rem; }
-.json-editor { display: grid; gap: 0.4rem; margin: 1rem 0; color: var(--muted); font-size: 0.78rem; }
-.json-editor textarea { min-height: 24rem; padding: 1rem; resize: vertical; border: 1px solid var(--line-bright); border-radius: 0.45rem; color: var(--ink); background: #080705; font: 0.78rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
-.validation-panel h3 { margin-top: 0; }
-.validation-panel.passed { border-color: #3d7651; }
-.validation-panel.failed { border-color: #7b3025; }
-.validation-checks { padding: 0; list-style: none; }
-.validation-checks li { display: grid; gap: 0.25rem; margin: 0.5rem 0; padding: 0.7rem; border-left: 1px solid var(--line-bright); background: var(--night); }
-.validation-checks li.passed { border-color: var(--green); }
-.validation-checks li.failed { border-color: var(--red); }
-.validation-checks span { color: var(--muted); font-size: 0.78rem; }
-.publish-confirm dl { display: grid; gap: 0.5rem; }
-.publish-confirm dl div { display: grid; grid-template-columns: 7rem 1fr; gap: 1rem; }
-.publish-confirm dt { color: var(--faint); }
-.publish-confirm dd { margin: 0; overflow-wrap: anywhere; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
 .publishing-path,
@@ -2055,9 +2017,6 @@ a {
   .catalog-pagination span { grid-column: 1 / -1; grid-row: 1; }
   .filters { grid-template-columns: 1fr; }
   .filters label:first-child { grid-column: auto; }
-  .workspace-layout { grid-template-columns: 1fr; }
-  .publish-flow { grid-template-columns: repeat(2, 1fr); }
-  .publish-confirm dl div { grid-template-columns: 1fr; gap: 0.25rem; }
   .guide-hero { min-height: 25rem; }
   .guide-hero h1 { max-width: 100%; font-size: clamp(2.9rem, 13.5vw, 4.2rem); }
   .guide-jump { grid-template-columns: 1fr; }

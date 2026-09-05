@@ -75,6 +75,18 @@ test("marks the current top-level destination in the primary navigation", () => 
   expect(within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("link", { name: "Publish" })).toHaveAttribute("aria-current", "page");
 });
 
+test("routes publishing to the repository guide without a browser authoring workspace", () => {
+  window.history.replaceState({}, "", "/publish");
+  render(<App />);
+
+  expect(screen.getByRole("heading", { name: "Publish a recipe others can trust." })).toBeVisible();
+  expect(screen.getByRole("link", { name: "Read the recipe authoring guide" })).toHaveAttribute(
+    "href",
+    "https://github.com/CarstVaartjes/vonk-forge-recipes#recipe-contract",
+  );
+  expect(screen.queryByLabelText("Upload local JSON")).not.toBeInTheDocument();
+});
+
 
 test("explains the operator-owned architecture for one to many Sparks", () => {
   window.history.replaceState({}, "", "/architecture");

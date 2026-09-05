@@ -1,4 +1,5 @@
 const recipeLibrary = "https://github.com/CarstVaartjes/vonk-forge-recipes";
+const authoringGuide = `${recipeLibrary}#recipe-contract`;
 
 
 export function PublishingGuidePage() {
@@ -7,13 +8,13 @@ export function PublishingGuidePage() {
       <section className="guide-hero" aria-labelledby="publishing-title">
         <h1 id="publishing-title">Publish a recipe others can trust.</h1>
         <p>
-          Public recipes are reviewed in the version-controlled Vonk Forge
-          recipe library. The hosted publisher workspace is not active yet, so
-          this site will never ask you to sign in and then fail halfway through.
+          Public recipes are authored and reviewed in the version-controlled
+          Vonk Forge recipe library. Use its guide to add or update a recipe;
+          the repository checks and catalog sync carry approved changes here.
         </p>
         <div className="hero-actions">
           <a className="button primary" href={recipeLibrary}>Open the recipe library</a>
-          <a className="button" href={`${recipeLibrary}#add-or-update-a-recipe`}>Read the publishing contract</a>
+          <a className="button" href={authoringGuide}>Read the recipe authoring guide</a>
         </div>
       </section>
 
@@ -34,14 +35,13 @@ export function PublishingGuidePage() {
 
       <section className="publishing-boundary" aria-labelledby="publishing-boundary-title">
         <div>
-          <h2 id="publishing-boundary-title">The browser workspace comes later.</h2>
+          <h2 id="publishing-boundary-title">Keep authoring in the repository.</h2>
           <p>
-            When the hosted catalog API and identity service are available,
-            this route can activate draft upload, validation, and publishing.
-            Until then, the public Git workflow is the complete supported path.
+            The public site is for browsing the catalog. Recipe files, build
+            inputs, review, and publication stay in the recipe repository.
           </p>
         </div>
-        <a className="text-link" href={`${recipeLibrary}/pulls`}>Review current recipe work →</a>
+        <a className="text-link" href={`${recipeLibrary}/pulls`}>Review recipe changes →</a>
       </section>
     </main>
   );

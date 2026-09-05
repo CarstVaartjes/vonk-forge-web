@@ -455,7 +455,7 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex, baseUrl: string): R
     },
     import: {
       uri: `vonk://catalog/${publisher}/${slug}@sha256:${item.content_sha256}`,
-      instruction: "Open Library in your local controller and import this immutable recipe.",
+      instruction: "Use this exact recipe in your local Controller.",
     },
     source: {
       recipe_url: sourceUrl,
