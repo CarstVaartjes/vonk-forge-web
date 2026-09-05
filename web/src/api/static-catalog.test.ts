@@ -14,8 +14,8 @@ const index = {
     path_prefix: "recipe-packages/",
   },
   catalog_entities: [
-    { document: { kind: "model-version", identity: { publisher: "qwen", slug: "qwen-fast-v1" }, model: { publisher: "qwen", slug: "qwen-fast" }, capabilities: { facts: [{ capability: "chat", support: "supported" }, { capability: "reasoning", support: "supported" }] } } },
-    { document: { kind: "model", identity: { publisher: "qwen", slug: "qwen-fast" }, metadata: { title: "Qwen Fast Model" } } },
+    { content_sha256: "3".repeat(64), document: { kind: "model-version", identity: { publisher: "qwen", slug: "qwen-fast-v1" }, model: { kind: "model", publisher: "qwen", slug: "qwen-fast", content_sha256: "4".repeat(64) }, capabilities: { facts: [{ capability: "chat", support: "supported" }, { capability: "reasoning", support: "supported" }] } } },
+    { content_sha256: "4".repeat(64), document: { kind: "model", identity: { publisher: "qwen", slug: "qwen-fast" }, metadata: { title: "Qwen Fast Model" } } },
   ],
   recipes: [
     {
@@ -26,7 +26,7 @@ const index = {
       document: {
         identity: { publisher: "vonk-forge", slug: "qwen-fast" },
         metadata: { title: "Qwen Fast NVFP4", description: "Fast language model", tags: ["candidate", "executable", "reasoning", "nvfp4"], alignment: "standard" },
-        model: { publisher: "qwen", slug: "qwen-fast-v1" },
+        model: { kind: "model-version", publisher: "qwen", slug: "qwen-fast-v1", content_sha256: "3".repeat(64) },
         interfaces: [{ adapter: "openai" }],
         runtime: { distribution: { slug: "vllm" }, entrypoint: ["vllm", "serve"] },
         execution: { harness: { slug: "openai-chat" } },
@@ -124,5 +124,26 @@ describe("static recipe library adapter", () => {
       }],
     });
     await expect(getStaticModel("https://example.test/catalog-index.json", "qwen", "missing")).rejects.toThrow("Model not found");
+  });
+
+  test("does not join same-slug entities when their immutable digests differ", async () => {
+    const adversarialIndex = {
+      ...index,
+      catalog_entities: [
+        { content_sha256: "9".repeat(64), document: { kind: "model-version", identity: { publisher: "qwen", slug: "qwen-fast-v1" }, model: { kind: "model", publisher: "qwen", slug: "qwen-fast", content_sha256: "8".repeat(64) }, metadata: { title: "Wrong version" }, capabilities: { facts: [{ capability: "image-generation", support: "supported" }] } } },
+        { content_sha256: "8".repeat(64), document: { kind: "model", identity: { publisher: "qwen", slug: "qwen-fast" }, metadata: { title: "Wrong model" } } },
+        ...index.catalog_entities,
+      ],
+    };
+    resetStaticCatalogCacheForTests();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => adversarialIndex }));
+    const recipe = await getStaticRecipe("https://example.test/catalog-index.json", "vonk-forge", "qwen-fast");
+    expect(recipe.catalog).toMatchObject({ model_title: "Qwen Fast Model", model_version_title: "qwen-fast-v1", capabilities: ["chat", "reasoning"] });
+  });
+
+  test("rejects an index without immutable catalog entities", async () => {
+    resetStaticCatalogCacheForTests();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ...index, catalog_entities: [] }) }));
+    await expect(listStaticModels("https://example.test/catalog-index.json")).rejects.toThrow("unsupported catalog index");
   });
 });

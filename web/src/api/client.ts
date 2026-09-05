@@ -80,6 +80,7 @@ export interface RecipeSummary {
     model_version_publisher: string;
     model_version_slug: string;
     model_version_title: string;
+    model_version_content_sha256?: string | null;
     source_owner: string | null;
     source_repository: string | null;
     alignment: "standard" | "abliterated" | "derisked" | "other-modified" | "unspecified";

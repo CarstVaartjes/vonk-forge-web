@@ -12,7 +12,7 @@ interface LibraryRecipe {
 }
 
 interface LibraryIndex {
-  catalog_entities?: Array<{ document: JsonRecord }>;
+  catalog_entities: LibraryEntity[];
   repository: string;
   recipes: LibraryRecipe[];
   schema_version: number;
@@ -25,6 +25,13 @@ interface LibraryEntity {
   content_sha256?: string;
   document: JsonRecord;
   source_path?: string;
+}
+
+interface CatalogReference {
+  kind: string;
+  publisher: string;
+  slug: string;
+  content_sha256: string;
 }
 
 let cachedIndex: LibraryIndex | null = null;
@@ -89,7 +96,11 @@ function runtimeAdapter(document: JsonRecord): string {
   return text(distribution.slug, text(harness.slug, "custom"));
 }
 
-const PUBLIC_CAPABILITIES = ["chat", "reasoning", "vision", "image-generation", "image-editing", "video", "audio", "3d"] as const;
+const PUBLIC_CAPABILITIES = [
+  "chat", "text-generation", "text-understanding", "reasoning", "tool-use", "code-generation", "ocr",
+  "image-generation", "image-understanding", "image-editing", "video-generation", "video-understanding",
+  "audio-generation", "audio-understanding", "embeddings", "3d-generation",
+] as const;
 
 function tags(document: JsonRecord): string[] {
   return array(record(document.metadata).tags).map((value) => text(value).toLowerCase()).filter(Boolean);
@@ -104,16 +115,8 @@ function publicCapabilities(document: JsonRecord, recipeTags: string[]): string[
 }
 
 function modelVersionCapabilities(document: JsonRecord, index: LibraryIndex): string[] {
-  const reference = record(document.model);
-  const modelVersion = array(index.catalog_entities)
-    .map((value) => record(record(value).document))
-    .find((candidate) => {
-      const identity = record(candidate.identity);
-      return candidate.kind === "model-version"
-        && identity.publisher === reference.publisher
-        && identity.slug === reference.slug;
-    });
-  return modelVersion ? publicCapabilities(modelVersion, []) : [];
+  const modelVersion = index.catalog_entities.find((candidate) => sameReference(document.model, candidate));
+  return modelVersion ? publicCapabilities(modelVersion.document, []) : [];
 }
 
 function qualification(recipeTags: string[]): "candidate" | "cataloged" {
@@ -161,7 +164,7 @@ function canonicalSource(sourceReference: string): { owner: string; repository: 
   }
 }
 
-function modelMetadata(document: JsonRecord, index: LibraryIndex): { publisher: string; slug: string; title: string; versionPublisher: string; versionSlug: string; versionTitle: string } {
+function modelMetadata(document: JsonRecord, index: LibraryIndex): { publisher: string; slug: string; title: string; versionPublisher: string; versionSlug: string; versionTitle: string; versionRevisionId: string } {
   const reference = record(document.model);
   const versionPublisher = text(reference.publisher, "unknown");
   const versionSlug = text(reference.slug, "unknown");
@@ -169,28 +172,44 @@ function modelMetadata(document: JsonRecord, index: LibraryIndex): { publisher: 
   let publisher = versionPublisher;
   let slug = versionSlug;
   let title = slug;
-  const entities = array(index.catalog_entities).map((value) => record(record(value).document));
-  const version = entities.find((entity) => {
-    const identity = record(entity.identity);
-    return entity.kind === "model-version" && identity.publisher === versionPublisher && identity.slug === versionSlug;
-  });
+  const versionEntity = index.catalog_entities.find((entity) => sameReference(reference, entity));
+  const version = versionEntity?.document;
   versionTitle = text(record(version?.metadata).title, versionSlug);
   const modelReference = record(version?.model);
   if (text(modelReference.publisher) && text(modelReference.slug)) {
     publisher = text(modelReference.publisher);
     slug = text(modelReference.slug);
-    const model = entities.find((entity) => {
-      const identity = record(entity.identity);
-      return entity.kind === "model" && identity.publisher === publisher && identity.slug === slug;
-    });
+    const model = index.catalog_entities.find((entity) => sameReference(modelReference, entity))?.document;
     title = text(record(model?.metadata).title, slug);
   }
-  return { publisher, slug, title, versionPublisher, versionSlug, versionTitle };
+  return { publisher, slug, title, versionPublisher, versionSlug, versionTitle, versionRevisionId: text(versionEntity?.content_sha256) };
 }
 
 function entityIdentity(document: JsonRecord): { publisher: string; slug: string } {
   const identity = record(document.identity);
   return { publisher: text(identity.publisher), slug: text(identity.slug) };
+}
+
+function reference(value: unknown): CatalogReference {
+  const source = record(value);
+  const document = record(source.document);
+  const identity = record(document.identity);
+  return {
+    kind: text(source.kind, text(document.kind)),
+    publisher: text(source.publisher, text(identity.publisher)),
+    slug: text(source.slug, text(identity.slug)),
+    content_sha256: text(source.content_sha256),
+  };
+}
+
+function sameReference(left: unknown, right: unknown): boolean {
+  const a = reference(left);
+  const b = reference(right);
+  return Boolean(a.kind && a.publisher && a.slug && a.content_sha256)
+    && a.kind === b.kind
+    && a.publisher === b.publisher
+    && a.slug === b.slug
+    && a.content_sha256 === b.content_sha256;
 }
 
 function explicitCapabilities(document: JsonRecord): { values: Array<{ name: string; support: "supported" | "unsupported" | "unknown"; evidence_status: "declared" | "tested" | "contradicted" | "unknown"; evidence_digest?: string | null }>; evidence: "declared" | "unknown" } {
@@ -209,12 +228,12 @@ function explicitCapabilities(document: JsonRecord): { values: Array<{ name: str
 
 function mapModelVersion(
   entity: LibraryEntity,
-  model: JsonRecord,
+  model: LibraryEntity,
   recipes: RecipeSummary[],
 ): ModelVersionSummary {
   const document = entity.document;
   const identity = entityIdentity(document);
-  const modelIdentity = entityIdentity(model);
+  const modelIdentity = entityIdentity(model.document);
   const metadata = record(document.metadata);
   const source = record(document.source);
   const format = record(document.format);
@@ -226,7 +245,9 @@ function mapModelVersion(
   const recipeSlugs = recipes
     .filter((recipe) => {
       const catalog = recipe.catalog;
-      return catalog?.model_version_publisher === identity.publisher && catalog.model_version_slug === identity.slug;
+      return catalog?.model_version_publisher === identity.publisher
+        && catalog.model_version_slug === identity.slug
+        && catalog.model_version_content_sha256 === entity.content_sha256;
     })
     .map((recipe) => `${recipe.publisher}/${recipe.slug}`)
     .sort();
@@ -238,7 +259,7 @@ function mapModelVersion(
     revision_id: text(entity.content_sha256, "unknown"),
     model_publisher: modelIdentity.publisher,
     model_slug: modelIdentity.slug,
-    model_title: text(record(model.metadata).title, modelIdentity.slug),
+    model_title: text(record(model.document.metadata).title, modelIdentity.slug),
     source_repository: text(source.repository) || undefined,
     source_revision: text(source.revision) || undefined,
     format: { container: text(format.container) || undefined, precision: text(format.precision) || undefined, quantization: text(format.quantization) || undefined },
@@ -255,7 +276,7 @@ function mapModelVersion(
 }
 
 function mapModels(index: LibraryIndex, baseUrl: string): ModelSummary[] {
-  const entities = array(index.catalog_entities).map((value) => record(value) as unknown as LibraryEntity).filter((entity) => Object.keys(entity.document ?? {}).length > 0);
+  const entities = index.catalog_entities;
   const recipes = index.recipes.map((item) => mapRecipe(item, index, baseUrl));
   const models = entities.filter((entity) => entity.document.kind === "model");
   const versions = entities.filter((entity) => entity.document.kind === "model-version");
@@ -263,10 +284,10 @@ function mapModels(index: LibraryIndex, baseUrl: string): ModelSummary[] {
     const identity = entityIdentity(entity.document);
     const versionsForModel = versions.filter((version) => {
       const reference = record(version.document.model);
-      return reference.publisher === identity.publisher && reference.slug === identity.slug;
+      return sameReference(reference, entity);
     });
     const group = record(entity.document.model_group);
-    const versionRows = versionsForModel.map((version) => mapModelVersion(version, entity.document, recipes)).sort((left, right) => left.title.localeCompare(right.title));
+    const versionRows = versionsForModel.map((version) => mapModelVersion(version, entity, recipes)).sort((left, right) => left.title.localeCompare(right.title));
     return {
       publisher: identity.publisher,
       slug: identity.slug,
@@ -305,6 +326,7 @@ function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: Re
     model_version_publisher: model.versionPublisher,
     model_version_slug: model.versionSlug,
     model_version_title: model.versionTitle,
+    model_version_content_sha256: model.versionRevisionId || null,
     source_owner: source?.owner ?? null,
     source_repository: source?.repository ?? null,
     alignment,
@@ -424,7 +446,17 @@ async function loadIndex(url: string, signal?: AbortSignal): Promise<LibraryInde
   const response = await fetch(url, { headers: { Accept: "application/json" }, signal });
   if (!response.ok) throw new Error(`Recipe library returned ${response.status}`);
   const body = await response.json() as Partial<LibraryIndex>;
-  if (body.schema_version !== 2 || body.kind !== "recipe-library-index" || typeof body.repository !== "string" || typeof body.source_commit !== "string" || !Array.isArray(body.recipes) || !body.package_contract || body.package_contract.schema_version !== 2 || typeof body.package_contract.media_type !== "string" || typeof body.package_contract.path_prefix !== "string") {
+  const entities = body.catalog_entities;
+  const validEntities = Array.isArray(entities) && entities.length > 0 && entities.every((value) => {
+    const entity = record(value);
+    const document = record(entity.document);
+    const identity = record(document.identity);
+    return /^[0-9a-f]{64}$/.test(text(entity.content_sha256))
+      && typeof document.kind === "string"
+      && typeof identity.publisher === "string"
+      && typeof identity.slug === "string";
+  });
+  if (body.schema_version !== 2 || body.kind !== "recipe-library-index" || typeof body.repository !== "string" || typeof body.source_commit !== "string" || !validEntities || !Array.isArray(body.recipes) || !body.package_contract || body.package_contract.schema_version !== 2 || typeof body.package_contract.media_type !== "string" || typeof body.package_contract.path_prefix !== "string") {
     throw new Error("Recipe library returned an unsupported catalog index");
   }
   cachedIndex = body as LibraryIndex;
