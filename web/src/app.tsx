@@ -8,6 +8,7 @@ import { PublisherWorkspacePage } from "./pages/publisher-workspace";
 import { PublishingGuidePage } from "./pages/publishing-guide";
 import { RecipeDetailPage } from "./pages/recipe-detail";
 import { RecipesPage } from "./pages/recipes";
+import { ModelDetailPage, ModelsPage } from "./pages/models";
 import { usesStaticCatalog } from "./api/client";
 
 
@@ -22,6 +23,8 @@ function CurrentPage() {
   if (parts[0] === "recipes" && parts.length === 3) {
     return <RecipeDetailPage publisher={parts[1] ?? ""} slug={parts[2] ?? ""} />;
   }
+  if (parts[0] === "models" && parts.length === 1) return <ModelsPage />;
+  if (parts[0] === "models" && parts.length === 3) return <ModelDetailPage publisher={parts[1] ?? ""} slug={parts[2] ?? ""} />;
   if (parts[0] === "publishers" && parts.length === 2) {
     return <PublisherPage publisher={parts[1] ?? ""} />;
   }
@@ -59,6 +62,7 @@ export function App() {
             <NavigationLink primary href="/install">Install</NavigationLink>
             <NavigationLink href="/architecture">How it works</NavigationLink>
             <NavigationLink href="/control">Control</NavigationLink>
+            <NavigationLink href="/models">Models</NavigationLink>
             <NavigationLink href="/recipes">Recipes</NavigationLink>
             <NavigationLink href="/publish">Publish</NavigationLink>
           </nav>
@@ -72,7 +76,8 @@ export function App() {
             <a href="/install">Install</a>
             <a href="/architecture">How it works</a>
             <a href="/control">Control</a>
-            <a href="/recipes">Catalog</a>
+            <a href="/models">Models</a>
+            <a href="/recipes">Recipes</a>
             <a href="/publish">Publish</a>
             <a href="/privacy">Privacy</a>
             <a href="https://github.com/CarstVaartjes/vonk-forge">GitHub</a>

@@ -3,13 +3,21 @@ import type { RecipeSummary } from "./api/client";
 
 export const CAPABILITY_OPTIONS = [
   { value: "chat", label: "Chat" },
+  { value: "text-generation", label: "Text generation" },
+  { value: "text-understanding", label: "Text understanding" },
   { value: "reasoning", label: "Reasoning" },
-  { value: "vision", label: "Vision" },
+  { value: "tool-use", label: "Tool use" },
+  { value: "code-generation", label: "Code generation" },
+  { value: "ocr", label: "OCR" },
   { value: "image-generation", label: "Image generation" },
+  { value: "image-understanding", label: "Image understanding" },
   { value: "image-editing", label: "Image editing" },
-  { value: "video", label: "Video" },
-  { value: "audio", label: "Audio" },
-  { value: "3d", label: "3D" },
+  { value: "video-generation", label: "Video generation" },
+  { value: "video-understanding", label: "Video understanding" },
+  { value: "audio-generation", label: "Audio generation" },
+  { value: "audio-understanding", label: "Audio understanding" },
+  { value: "embeddings", label: "Embeddings" },
+  { value: "3d-generation", label: "3D generation" },
 ] as const;
 
 export const READINESS_OPTIONS = [

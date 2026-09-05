@@ -1,7 +1,7 @@
 import createClient from "openapi-fetch";
 
 import type { paths } from "./schema";
-import { getStaticRecipe, listStaticRecipeCatalog, listStaticRecipes } from "./static-catalog";
+import { getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog, listStaticRecipes } from "./static-catalog";
 
 
 export interface Problem {
@@ -70,6 +70,7 @@ export interface RecipeSummary {
   };
   import?: { uri: string; instruction: string };
   source?: { recipe_url?: string; bundle_url?: string };
+  package?: { url: string; sha256: string; bytes: number; media_type: string };
   catalog?: {
     description: string;
     tags: string[];
@@ -79,6 +80,7 @@ export interface RecipeSummary {
     model_version_publisher: string;
     model_version_slug: string;
     model_version_title: string;
+    model_version_content_sha256?: string | null;
     source_owner: string | null;
     source_repository: string | null;
     alignment: "standard" | "abliterated" | "derisked" | "other-modified" | "unspecified";
@@ -106,6 +108,45 @@ export interface RecipeDetail extends RecipeSummary {
 export interface RecipePage {
   items: RecipeSummary[];
   next_cursor: string | null;
+}
+
+export interface ModelVersionSummary {
+  publisher: string;
+  slug: string;
+  title: string;
+  version: string;
+  revision_id: string;
+  model_publisher: string;
+  model_slug: string;
+  model_title: string;
+  source_repository?: string;
+  source_revision?: string;
+  format?: { container?: string; precision?: string; quantization?: string };
+  parameters?: { total?: number | null; active?: number | null };
+  limits?: { context_tokens?: number | null; resolution_pixels?: number | null; frames?: number | null; sample_rate_hz?: number | null };
+  sizes?: { download_bytes?: number; installed_bytes?: number };
+  license?: { spdx?: string; url?: string; attribution?: string[]; operator_acceptance_required?: boolean };
+  availability?: "active" | "withdrawn" | "superseded";
+  tags: string[];
+  capabilities: Array<{ name: string; support: "supported" | "unsupported" | "unknown"; evidence_status: "declared" | "tested" | "contradicted" | "unknown"; evidence_digest?: string | null }>;
+  capability_evidence: "declared" | "unknown";
+  recipe_slugs: string[];
+}
+
+export interface ModelSummary {
+  publisher: string;
+  slug: string;
+  title: string;
+  description: string;
+  family?: string;
+  tags: string[];
+  revision_id: string;
+  versions: ModelVersionSummary[];
+  recipe_count: number;
+}
+
+export interface ModelPage {
+  items: ModelSummary[];
 }
 
 const catalogApiUrl = import.meta.env.VITE_CATALOG_API_URL ?? "";
@@ -307,6 +348,20 @@ export function getRecipe(
     `/v1/recipes/${encodeURIComponent(publisher)}/${encodeURIComponent(slug)}`,
     signal,
   );
+}
+
+export function listModels(signal?: AbortSignal): Promise<ModelPage> {
+  if (usesStaticCatalog) return listStaticModels(recipeLibraryIndexUrl, signal);
+  return Promise.reject(new Error("The public model index is not available from this catalog endpoint yet."));
+}
+
+export function getModel(
+  publisher: string,
+  slug: string,
+  signal?: AbortSignal,
+): Promise<ModelSummary> {
+  if (usesStaticCatalog) return getStaticModel(recipeLibraryIndexUrl, publisher, slug, signal);
+  return Promise.reject(new Error("The public model index is not available from this catalog endpoint yet."));
 }
 
 export async function unwrap<T>(

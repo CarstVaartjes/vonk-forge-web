@@ -78,8 +78,8 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "DGX Spark fleet", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Install the controller" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Connect your Sparks" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Choose a recipe" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Preview, then run" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose a model or recipe" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Download, run, switch" })).toBeVisible();
 
   await page.keyboard.press("Tab");
   const skipLink = page.getByRole("link", { name: "Skip to content" });
@@ -143,6 +143,29 @@ test("minimum supported viewport does not overflow", async ({ page }) => {
 });
 
 
+test("models page explains the public to local boundary on demand", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: /See how models, recipes, and your Controller fit together/i }).click();
+  await expect(page).toHaveURL(/\/models#model-recipe-explainer$/);
+
+  const explainer = page.locator(".public-contract-explainer");
+  const summary = explainer.locator("summary");
+  await expect(summary).toBeVisible();
+  await summary.focus();
+  await expect(summary).toBeFocused();
+  await expect(page.getByRole("heading", { name: "A model is the AI. A recipe is how you run it." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Download once. Reuse across your Sparks." })).toBeVisible();
+  await expect(page.getByText(/view downloads, running models, and Spark status in your private Controller/i)).toBeVisible();
+  await expect(explainer.getByText("Recipe A · one Spark")).toBeVisible();
+  await expect(explainer.getByText("Recipe B · two Sparks")).toBeVisible();
+
+  const horizontalOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth - window.innerWidth,
+  );
+  expect(horizontalOverflow).toBeLessThanOrEqual(0);
+});
+
+
 test("architecture, installation, and control guides stay navigable at 1…N scale", async ({ page }) => {
   await page.goto("/architecture");
   await expect(page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "How it works" })).toHaveAttribute("aria-current", "page");
@@ -200,7 +223,7 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
   await expect(page.getByRole("heading", { name: "Choose browser or terminal." })).toBeVisible();
   await expect(page.getByText(/uv tool install 'git\+https:\/\/github\.com\/CarstVaartjes\/vonk-forge\.git@main'/)).toBeVisible();
   await expect(page.getByText(/browser password is not a CLI credential/i)).toBeVisible();
-  await expect(page.getByText(/vonkctl library public facets/)).toBeVisible();
+  await expect(page.getByText(/vonkctl models list/)).toBeVisible();
 
   for (const width of [320, 1280]) {
     await page.setViewportSize({ width, height: 900 });

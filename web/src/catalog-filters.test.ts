@@ -48,12 +48,13 @@ describe("public catalog Controller-parity filters", () => {
     const filters = filtersFromParameters(new URLSearchParams("model_family=GLM+5.3+Flash&model=models%2Fboth-v1&abliterated=true&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&capability=chat&capability=reasoning&capability=chat&download=100&disk=unknown&memory=200&sort=download&direction=desc"));
     expect(filters).toMatchObject({ modelFamily: "GLM 5.3 Flash", model: "models/both-v1", abliterated: "true", sourceOwner: "owner", quantization: "NVFP4", updated: "30", sparks: "4+", capabilities: ["chat", "reasoning"], download: "100", disk: "unknown", memory: "200", sort: "download", direction: "desc" });
     expect(filtersFromParameters(new URLSearchParams("abliterated=unknown&sort=bogus")).abliterated).toBe("");
+    expect(filtersFromParameters(new URLSearchParams("capability=video-generation&capability=ocr&capability=video")).capabilities).toEqual(["video-generation", "ocr"]);
   });
 
   test("requires every selected capability and combines model, readiness, and Spark facets", () => {
     const both = recipe("both", { capabilities: ["chat", "reasoning"], node_count: 4, topology_mode: "distributed" });
     const chat = recipe("chat", { capabilities: ["chat"], node_count: 4, topology_mode: "distributed" });
-    const filters = { ...EMPTY_FILTERS, model: "models/both-v1", quantization: "NVFP4", updated: "7" as const, sparks: "4+" as const, readiness: "executable" as const, capabilities: ["chat", "reasoning"] };
+    const filters = { ...EMPTY_FILTERS, model: "models/both-v1", quantization: "NVFP4", updated: "30" as const, sparks: "4+" as const, readiness: "executable" as const, capabilities: ["chat", "reasoning"] };
     expect(recipeMatches(both, filters)).toBe(true);
     expect(recipeMatches(chat, filters)).toBe(false);
   });
