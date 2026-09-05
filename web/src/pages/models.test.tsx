@@ -47,7 +47,11 @@ describe("public model browse", () => {
   test("paginates the family index and persists filters in the URL", async () => {
     render(<ModelsPage />);
     await waitFor(() => expect(screen.getByText("13 of 13 model families")).toBeVisible());
-    expect(screen.getAllByRole("article")).toHaveLength(12);
+    expect(document.querySelectorAll(".model-list > article")).toHaveLength(12);
+    fireEvent.click(screen.getByText("How a model becomes a local run"));
+    expect(screen.getByRole("heading", { name: "A model is the AI. A recipe is how you run it." })).toBeVisible();
+    expect(screen.getByText(/One exact model can have several recipes/)).toBeVisible();
+    expect(screen.getByText(/view downloads, running models, and Spark status/i)).toBeVisible();
     fireEvent.change(screen.getByLabelText("Capability"), { target: { value: "ocr" } });
     expect(window.location.search).toBe("?capability=ocr");
     expect(screen.getByText("7 of 13 model families")).toBeVisible();

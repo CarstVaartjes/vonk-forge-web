@@ -141,6 +141,7 @@ export function HomePage() {
             </li>
           ))}
         </ol>
+        <a className="text-link setup-explainer-link" href="/models#model-recipe-explainer">See how models, recipes, and your Controller fit together ↗</a>
       </section>
 
       <section id="product-tour" className="product-tour" aria-labelledby="tour-title">

@@ -34,6 +34,79 @@ function CapabilityFacts({ version }: { version: ModelVersionSummary }) {
   return <ul className="model-capability-facts" aria-label="Declared capabilities">{version.capabilities.map((fact) => <li key={fact.name}><strong>{fact.name}</strong><span className={`capability-${fact.support}`}>{fact.support}</span><small>{fact.evidence_status} evidence</small></li>)}</ul>;
 }
 
+export function PublicCatalogExplainer() {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (window.location.hash === "#model-recipe-explainer") setOpen(true);
+  }, []);
+  return <details id="model-recipe-explainer" className="public-contract-explainer" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
+    <summary>How a model becomes a local run</summary>
+    <div className="public-contract-content" aria-labelledby="public-contract-heading">
+      <header className="public-contract-heading">
+        <h2 id="public-contract-heading">A model is the AI. A recipe is how you run it.</h2>
+        <p>The catalog shows published details. Your Controller uses them when you choose a local run.</p>
+      </header>
+      <div className="model-recipe-relationship" aria-label="One model can have several recipes">
+      <article className="explainer-entity explainer-model">
+        <p className="explainer-label">Example · Illustrative text model</p>
+        <h3>Model</h3>
+        <p>One exact release: the weights and files it points to, plus what it can do.</p>
+        <ul className="explainer-fields" aria-label="Model details">
+          <li><strong>Family</strong><span>related models</span></li>
+          <li><strong>Version</strong><span>one specific release</span></li>
+          <li><strong>Variant</strong><span>a different format or precision</span></li>
+        </ul>
+      </article>
+      <div className="relationship-join" aria-hidden="true"><span>same<br />model</span></div>
+      <div className="recipe-options">
+        <article className="explainer-entity explainer-recipe">
+          <p className="explainer-label">Recipe A · one Spark</p>
+          <h3>One way to run it</h3>
+          <p>The same model, with one engine, Spark choice, and set of settings.</p>
+          <p className="explainer-fields-inline"><span>engine</span><span>Sparks</span><span>settings</span></p>
+        </article>
+        <article className="explainer-entity explainer-recipe">
+          <p className="explainer-label">Recipe B · two Sparks</p>
+          <h3>Another way to run it</h3>
+          <p>Same model again, with a different engine or number of Sparks.</p>
+          <p className="explainer-fields-inline"><span>engine</span><span>Sparks</span><span>settings</span></p>
+        </article>
+      </div>
+      </div>
+      <p className="relationship-caption">One exact model can have several recipes. The recipe changes how the model runs; it does not change the model files.</p>
+      <section className="controller-handoff" aria-labelledby="controller-handoff-heading">
+        <header>
+          <h3 id="controller-handoff-heading">Download once. Reuse across your Sparks.</h3>
+          <p>Published model and recipe details travel to your Controller. The work of preparing a run stays on your side of the boundary.</p>
+        </header>
+        <div className="handoff-map">
+          <div className="handoff-public">
+            <strong>Published catalog</strong>
+            <p>Model details, recipes, and the download sources they point to.</p>
+          </div>
+          <div className="handoff-arrow" aria-hidden="true"><span>choose a run</span></div>
+          <div className="handoff-local">
+            <strong>Your Controller</strong>
+            <p>Run downloads or builds missing assets with visible progress. It caches model files and the runtime container separately on your NAS or local storage, reuses cached assets when you switch, copies verified assets to selected Sparks, then starts the application.</p>
+            <div className="handoff-inputs" aria-label="Local Controller inputs">
+              <span><strong>Model files</strong><small>download sources</small></span>
+              <span><strong>Runtime container</strong><small>the software that runs the model</small></span>
+            </div>
+            <ol aria-label="Local Controller run sequence">
+              <li>download or build</li>
+              <li>local cache</li>
+              <li>selected Sparks</li>
+              <li>application run</li>
+            </ol>
+          </div>
+        </div>
+        <p className="private-boundary"><strong>Private by design:</strong> view downloads, running models, and Spark status in your private Controller.</p>
+        <p className="profile-note">Profiles save your model and recipe choices plus Spark assignments, including idle Sparks.</p>
+      </section>
+    </div>
+  </details>;
+}
+
 function VersionRow({ version }: { version: ModelVersionSummary }) {
   return <article className="model-version" aria-labelledby={`version-${version.publisher}-${version.slug}`}>
     <div className="model-version-heading">
@@ -101,6 +174,7 @@ export function ModelsPage() {
   return <main className="models-page">
     <header className="page-intro models-intro"><div><p className="eyebrow">Public model index</p><h1>Models, with their exact versions.</h1></div><p>Start with a model family, then inspect the immutable weight variant and the recipes that bind it. Facts come from the published model-version authority; local cache and running state stay in your Controller.</p></header>
     <section className="model-index-tools" aria-label="Model index controls"><label htmlFor="model-search">Find a model</label><input id="model-search" type="search" value={filters.query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder="Search family, publisher, or tag" /><label htmlFor="model-publisher">Publisher</label><select id="model-publisher" value={filters.publisher} onChange={(event) => updateFilters({ publisher: event.target.value })}><option value="">All publishers</option>{publishers.map((publisher) => <option key={publisher} value={publisher}>{publisher}</option>)}</select><label htmlFor="model-capability">Capability</label><select id="model-capability" value={filters.capability} onChange={(event) => updateFilters({ capability: event.target.value })}><option value="">All declared capabilities</option>{CAPABILITY_OPTIONS.map((capability) => <option key={capability} value={capability}>{filterLabel(capability)}</option>)}</select><label htmlFor="model-recipes">Recipe support</label><select id="model-recipes" value={filters.recipes} onChange={(event) => updateFilters({ recipes: event.target.value })}><option value="">All models</option><option value="recipes">Has public recipes</option><option value="none">No public recipes</option></select><label htmlFor="model-sort">Sort</label><select id="model-sort" value={filters.sort} onChange={(event) => updateFilters({ sort: event.target.value })}><option value="name">Name</option><option value="versions">Most versions</option><option value="recipes">Most recipes</option></select><span aria-live="polite">{models ? `${filtered.length} of ${models.length} model families` : "Loading models…"}</span>{(filters.query || filters.publisher || filters.capability || filters.recipes || filters.sort !== "name") ? <button className="text-button" type="button" onClick={clearFilters}>Clear filters</button> : null}</section>
+    <PublicCatalogExplainer />
     {error ? <div className="status-panel error" role="alert"><h2>Models are temporarily unavailable.</h2><p>The public model index could not be loaded. Try again when the catalog source is reachable.</p><button className="button" type="button" onClick={() => { setModels(null); setAttempt((value) => value + 1); }}>Retry</button></div> : null}
     {!models && !error ? <div className="status-panel" role="status">Loading immutable model index…</div> : null}
     {models && filtered.length === 0 ? <div className="status-panel"><h2>No matching models.</h2><p>Try a broader family, publisher, or capability.</p><button className="button" type="button" onClick={clearFilters}>Show all models</button></div> : null}
