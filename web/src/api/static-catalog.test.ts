@@ -130,6 +130,23 @@ describe("static recipe library adapter", () => {
     await expect(getStaticModel("https://example.test/catalog-index.json", "qwen", "missing")).rejects.toThrow("Model not found");
   });
 
+  test("keeps published model entities visible when no recipe selects them", async () => {
+    const standaloneModel = {
+      content_sha256: "4".repeat(64),
+      document: {
+        kind: "model",
+        schema_version: 2,
+        identity: { publisher: "standalone", slug: "standalone-v1", family: { publisher: "standalone", slug: "standalone", title: "Standalone" }, model: { publisher: "standalone", slug: "standalone", title: "Standalone" }, version: "1", variant: "bf16" },
+        metadata: { title: "Standalone", tags: [] },
+      },
+    };
+    resetStaticCatalogCacheForTests();
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ...index, catalog_entities: [...index.catalog_entities, standaloneModel] }) }));
+    const page = await listStaticModels("https://example.test/catalog-index.json");
+    expect(page.items).toHaveLength(2);
+    expect(page.items.find((item) => item.publisher === "standalone")).toMatchObject({ slug: "standalone", recipe_count: 0, versions: [{ recipe_slugs: [] }] });
+  });
+
   test("does not join same-slug entities when their immutable digests differ", async () => {
     const adversarialIndex = {
       ...index,

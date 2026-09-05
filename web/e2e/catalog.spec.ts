@@ -225,6 +225,8 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
   await expect(page.getByText(/uv tool install 'git\+https:\/\/github\.com\/CarstVaartjes\/vonk-forge\.git@main'/)).toBeVisible();
   await expect(page.getByText(/browser password is not a CLI credential/i)).toBeVisible();
   await expect(page.getByText(/vonkctl models list/)).toBeVisible();
+  await expect(page.getByText(/recipe repository syncs automatically/i)).toBeVisible();
+  await expect(page.getByText(/vonkctl library public preview/i)).toHaveCount(0);
 
   for (const width of [320, 1280]) {
     await page.setViewportSize({ width, height: 900 });
@@ -273,7 +275,7 @@ test("publisher navigation points to repository authoring without an upload work
   await page.goto("/publish");
   await expect(page.getByRole("heading", { name: "Publish a recipe others can trust." })).toBeVisible();
   await expect(page.getByRole("link", { name: "Read the recipe authoring guide" })).toHaveAttribute(
-    "href", "https://github.com/CarstVaartjes/vonk-forge-recipes#recipe-contract",
+    "href", "https://github.com/CarstVaartjes/vonk-forge-recipes/blob/main/docs/recipe-authoring.md",
   );
   await expect(page.getByLabel("Upload local JSON")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Publish publicly" })).toHaveCount(0);

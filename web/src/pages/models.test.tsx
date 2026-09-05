@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { ModelPage, ModelSummary } from "../api/client";
@@ -49,11 +49,13 @@ describe("public model browse", () => {
   test("paginates the model index and persists filters in the URL", async () => {
     render(<ModelsPage />);
     await waitFor(() => expect(screen.getByText("13 of 13 models")).toBeVisible());
-    expect(document.querySelectorAll(".model-list > article")).toHaveLength(12);
+    expect(document.querySelectorAll(".model-list > li")).toHaveLength(12);
+    expect(within(screen.getByRole("list", { name: "Models" })).getAllByRole("listitem")).toHaveLength(12);
     expect(screen.getAllByText("Version").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Public access").length).toBeGreaterThan(0);
     expect(screen.queryByText("Published model")).not.toBeInTheDocument();
     expect(screen.queryByText(/000000000000/)).not.toBeInTheDocument();
+    expect(screen.getAllByRole("link", { name: /View versions/ })[0]).toHaveAttribute("href", "/models/publisher/model-1");
     fireEvent.click(screen.getByText("How a model becomes a local run"));
     expect(screen.getByRole("heading", { name: "A model is the AI. A recipe is how you run it." })).toBeVisible();
     expect(screen.getByText(/One exact model can have several recipes/)).toBeVisible();
@@ -66,7 +68,7 @@ describe("public model browse", () => {
     await waitFor(() => expect(screen.getByText("13 of 13 models")).toBeVisible());
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(window.location.search).toBe("?page=2");
-    await waitFor(() => expect(screen.getByRole("heading", { name: "Model 13" })).toBeVisible());
+    await waitFor(() => expect(screen.getByText("Model 13")).toBeVisible());
   });
 
   test("offers recovery when the immutable index fails", async () => {
