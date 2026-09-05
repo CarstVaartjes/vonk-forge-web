@@ -1,5 +1,5 @@
 const recipeLibrary = "https://github.com/CarstVaartjes/vonk-forge-recipes";
-const authoringGuide = `${recipeLibrary}#recipe-contract`;
+const authoringGuide = `${recipeLibrary}/blob/main/docs/recipe-authoring.md`;
 
 
 export function PublishingGuidePage() {
@@ -20,16 +20,17 @@ export function PublishingGuidePage() {
 
       <section className="publishing-path" aria-labelledby="publishing-path-title">
         <header>
-          <h2 id="publishing-path-title">One reviewable path from source to catalog.</h2>
+          <h2 id="publishing-path-title">One clear path from source to catalog.</h2>
           <p>
-            Model weights and private credentials never belong in a recipe
-            submission. GitHub Actions is the publication authority.
+            Model weights and private credentials stay out of recipe files.
+            Automatic checks run with each pull request and sync approved
+            changes to the catalog.
           </p>
         </header>
         <ol>
-          <li><span>1</span><div><h3>Describe the exact workload</h3><p>Bind immutable model, runtime, topology, capacity, source, and qualification identities.</p></div></li>
-          <li><span>2</span><div><h3>Validate the complete closure</h3><p>Rebuild the catalog index and run repository validation before requesting review.</p></div></li>
-          <li><span>3</span><div><h3>Publish through review</h3><p>Open a focused pull request. CI verifies schema, semantics, source boundaries, and catalog freshness.</p></div></li>
+          <li><span>1</span><div><h3>Describe the model and run</h3><p>List the model files, software, settings, and Spark requirements.</p></div></li>
+          <li><span>2</span><div><h3>Check the recipe</h3><p>Rebuild the catalog index and run the repository checks before opening a pull request.</p></div></li>
+          <li><span>3</span><div><h3>Open a pull request</h3><p>Automatic checks review the documents, source links, and catalog update before sync.</p></div></li>
         </ol>
       </section>
 

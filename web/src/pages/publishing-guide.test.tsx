@@ -14,9 +14,9 @@ test("points recipe authors to the repository workflow", () => {
   );
   expect(screen.getByRole("link", { name: "Read the recipe authoring guide" })).toHaveAttribute(
     "href",
-    "https://github.com/CarstVaartjes/vonk-forge-recipes#recipe-contract",
+    "https://github.com/CarstVaartjes/vonk-forge-recipes/blob/main/docs/recipe-authoring.md",
   );
-  for (const name of ["Describe the exact workload", "Validate the complete closure", "Publish through review"]) {
+  for (const name of ["Describe the model and run", "Check the recipe", "Open a pull request"]) {
     expect(screen.getByRole("heading", { name })).toBeVisible();
   }
   expect(screen.getByRole("heading", { name: "Keep authoring in the repository." })).toBeVisible();

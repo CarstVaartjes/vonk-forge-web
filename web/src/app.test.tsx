@@ -82,7 +82,7 @@ test("routes publishing to the repository guide without a browser authoring work
   expect(screen.getByRole("heading", { name: "Publish a recipe others can trust." })).toBeVisible();
   expect(screen.getByRole("link", { name: "Read the recipe authoring guide" })).toHaveAttribute(
     "href",
-    "https://github.com/CarstVaartjes/vonk-forge-recipes#recipe-contract",
+    "https://github.com/CarstVaartjes/vonk-forge-recipes/blob/main/docs/recipe-authoring.md",
   );
   expect(screen.queryByLabelText("Upload local JSON")).not.toBeInTheDocument();
 });
