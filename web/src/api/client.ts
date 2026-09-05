@@ -152,7 +152,18 @@ export interface ModelPage {
 const catalogApiUrl = import.meta.env.VITE_CATALOG_API_URL ?? "";
 const recipeLibraryIndexUrl = import.meta.env.VITE_RECIPE_LIBRARY_INDEX_URL ?? "";
 
-export const usesStaticCatalog = Boolean(recipeLibraryIndexUrl) && !catalogApiUrl;
+// Public Models and Recipes share the immutable generated index. The API origin
+// is reserved for publisher and private Controller operations.
+export const usesStaticCatalog = Boolean(recipeLibraryIndexUrl);
+
+export type PublicModelSource = "static-index" | "unavailable";
+
+/** Models are public immutable facts, so the generated public index remains their source when an API origin is also configured. */
+export function selectPublicModelSource(config: { apiUrl: string; indexUrl: string }): PublicModelSource {
+  return config.indexUrl ? "static-index" : "unavailable";
+}
+
+export const usesStaticModelCatalog = selectPublicModelSource({ apiUrl: catalogApiUrl, indexUrl: recipeLibraryIndexUrl }) === "static-index";
 
 export async function loadRecipeCatalog(signal?: AbortSignal): Promise<RecipeSummary[]> {
   if (usesStaticCatalog) return listStaticRecipeCatalog(recipeLibraryIndexUrl, signal);
@@ -351,7 +362,7 @@ export function getRecipe(
 }
 
 export function listModels(signal?: AbortSignal): Promise<ModelPage> {
-  if (usesStaticCatalog) return listStaticModels(recipeLibraryIndexUrl, signal);
+  if (usesStaticModelCatalog) return listStaticModels(recipeLibraryIndexUrl, signal);
   return Promise.reject(new Error("The public model index is not available from this catalog endpoint yet."));
 }
 
@@ -360,7 +371,7 @@ export function getModel(
   slug: string,
   signal?: AbortSignal,
 ): Promise<ModelSummary> {
-  if (usesStaticCatalog) return getStaticModel(recipeLibraryIndexUrl, publisher, slug, signal);
+  if (usesStaticModelCatalog) return getStaticModel(recipeLibraryIndexUrl, publisher, slug, signal);
   return Promise.reject(new Error("The public model index is not available from this catalog endpoint yet."));
 }
 

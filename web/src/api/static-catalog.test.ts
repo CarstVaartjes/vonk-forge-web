@@ -14,8 +14,7 @@ const index = {
     path_prefix: "recipe-packages/",
   },
   catalog_entities: [
-    { content_sha256: "3".repeat(64), document: { kind: "model-version", identity: { publisher: "qwen", slug: "qwen-fast-v1" }, model: { kind: "model", publisher: "qwen", slug: "qwen-fast", content_sha256: "4".repeat(64) }, capabilities: { facts: [{ capability: "chat", support: "supported" }, { capability: "reasoning", support: "supported" }] } } },
-    { content_sha256: "4".repeat(64), document: { kind: "model", identity: { publisher: "qwen", slug: "qwen-fast" }, metadata: { title: "Qwen Fast Model" } } },
+    { content_sha256: "3".repeat(64), document: { kind: "model", schema_version: 2, identity: { publisher: "qwen", slug: "qwen-fast-nvfp4", family: { publisher: "qwen", slug: "qwen", title: "Qwen" }, model: { publisher: "qwen", slug: "qwen-fast", title: "Qwen Fast", architecture: "transformer" }, version: "1.0", variant: "nvfp4" }, metadata: { title: "Qwen Fast NVFP4", description: "Fast language model", tags: ["language"] }, source: { repository: "https://huggingface.co/Qwen/Qwen", revision: "c".repeat(40) }, format: { container: "safetensors", precision: "nvfp4", quantization: "nvfp4" }, parameters: { total: 20 }, limits: { context_tokens: 8192 }, sizes: { download_bytes: 20, installed_bytes: 20 }, license: { spdx: "Apache-2.0", url: "https://example.test/license", attribution: ["Qwen"], operator_acceptance_required: false }, files: [{ id: "weights", path: "weights.safetensors", sha256: "b".repeat(64), size_bytes: 20, roles: ["weights"] }], capabilities: { schema_version: 2, facts: [{ capability: "chat", support: "supported", evidence_status: "declared" }, { capability: "reasoning", support: "supported", evidence_status: "declared" }], provenance: { source_url: "https://example.test/evidence", source_revision: "c".repeat(40), evidence_digest: "d".repeat(64) } }, provenance: { source_url: "https://example.test/evidence", source_revision: "c".repeat(40), evidence_digest: "d".repeat(64), attribution: ["Qwen"] } } },
   ],
   recipes: [
     {
@@ -26,18 +25,19 @@ const index = {
       document: {
         identity: { publisher: "vonk-forge", slug: "qwen-fast" },
         metadata: { title: "Qwen Fast NVFP4", description: "Fast language model", tags: ["candidate", "executable", "reasoning", "nvfp4"], alignment: "standard" },
-        model: { kind: "model-version", publisher: "qwen", slug: "qwen-fast-v1", content_sha256: "3".repeat(64) },
+        kind: "recipe",
+        schema_version: 2,
+        models: [{ id: "primary", model: { kind: "model", publisher: "qwen", slug: "qwen-fast-nvfp4", content_sha256: "3".repeat(64) }, files: [{ id: "weights", file_id: "weights", roles: ["entrypoint"], mount: { target: "/models", read_only: true } }] }],
         interfaces: [{ adapter: "openai" }],
-        runtime: { distribution: { slug: "vllm" }, entrypoint: ["vllm", "serve"] },
-        execution: { harness: { slug: "openai-chat" } },
+        runtime: { engine: "vllm", entrypoint: ["vllm", "serve"], arguments: [], environment: [], lifecycle: { pre_start: [], post_stop: [], stop_timeout_seconds: 120 } },
+        execution: { mode: "build", build: { base_image: { repository: "ubuntu", digest: "e".repeat(64), platform: "linux/arm64" }, context: { path: "adapters/qwen" }, dockerfile: "Dockerfile", patches: [], target: null, arguments: [], network: { mode: "none", hosts: [] } } },
         topology: {
           name: "solo",
           node_count: 1,
           roles: [{ resources: { disk: { artifact_bytes: 20 }, memory: { startup_peak_bytes: 48 } } }],
         },
-        build: { context: { path: "adapters/qwen", sha256: "b".repeat(64), expected_bytes: 10 }, dockerfile: "Dockerfile" },
-        artifacts: [{ kind: "huggingface.snapshot", repository: "Qwen/Qwen", revision: "c".repeat(40), download_bytes: 20 }],
-        provenance: { source_kind: "global", source_reference: "https://huggingface.co/Qwen/Qwen-Fast/tree/abc", attribution: ["Qwen"] },
+        provenance: { source_kind: "global", source_reference: "https://huggingface.co/Qwen/Qwen/tree/abc", attribution: ["Qwen"] },
+        settings: { kind: "generation", context_tokens: { value: 8192, change_effect: "restart" }, concurrency: { value: 1, change_effect: "restart" }, max_batch_tokens: null, knobs: {} },
       },
     },
     {
@@ -48,9 +48,12 @@ const index = {
       document: {
         identity: { publisher: "community", slug: "glm-dual" },
         metadata: { title: "GLM Dual", tags: ["chat"] },
-        runtime: { distribution: { slug: "sglang" }, entrypoint: ["sglang", "serve"] },
+        kind: "recipe",
+        schema_version: 2,
+        models: [{ id: "primary", model: { kind: "model", publisher: "qwen", slug: "qwen-fast-nvfp4", content_sha256: "3".repeat(64) }, files: [{ id: "weights", file_id: "weights", roles: ["entrypoint"], mount: { target: "/models", read_only: true } }] }],
+        runtime: { engine: "sglang", entrypoint: ["sglang", "serve"], arguments: [], environment: [], lifecycle: { pre_start: [], post_stop: [], stop_timeout_seconds: 120 } },
+        execution: { mode: "build", build: { base_image: { repository: "ubuntu", digest: "f".repeat(64), platform: "linux/arm64" }, context: { path: "adapters/glm" }, dockerfile: "Dockerfile", patches: [], target: null, arguments: [], network: { mode: "none", hosts: [] } } },
         topology: { name: "dual", node_count: 2, roles: [] },
-        build: { context: { path: "adapters/glm", sha256: "e".repeat(64) }, dockerfile: "Dockerfile" },
       },
     },
   ],
@@ -78,17 +81,17 @@ describe("static recipe library adapter", () => {
       catalog: {
         model_publisher: "qwen",
         model_slug: "qwen-fast",
-        model_title: "Qwen Fast Model",
+        model_title: "Qwen Fast",
         model_version_publisher: "qwen",
-        model_version_slug: "qwen-fast-v1",
-        model_version_title: "qwen-fast-v1",
+        model_version_slug: "qwen-fast-nvfp4",
+        model_version_title: "Qwen Fast NVFP4",
         source_owner: "Qwen",
-        source_repository: "https://huggingface.co/Qwen/Qwen-Fast",
+        source_repository: "https://huggingface.co/Qwen/Qwen",
         alignment: "standard",
         capabilities: ["chat", "reasoning"],
         qualification: "candidate",
         execution_readiness: "executable",
-        precision: "NVFP4",
+        precision: "nvfp4",
         quantizations: ["NVFP4"],
       },
     });
@@ -110,17 +113,17 @@ describe("static recipe library adapter", () => {
     expect(page.items[0]).toMatchObject({
       publisher: "qwen",
       slug: "qwen-fast",
-      title: "Qwen Fast Model",
-      recipe_count: 1,
+      title: "Qwen Fast",
+      recipe_count: 2,
       versions: [{
-        slug: "qwen-fast-v1",
+        slug: "qwen-fast-nvfp4",
         model_slug: "qwen-fast",
         capabilities: [
           { name: "chat", support: "supported" },
           { name: "reasoning", support: "supported" },
         ],
-        capability_evidence: "unknown",
-        recipe_slugs: ["vonk-forge/qwen-fast"],
+        capability_evidence: "declared",
+        recipe_slugs: ["community/glm-dual", "vonk-forge/qwen-fast"],
       }],
     });
     await expect(getStaticModel("https://example.test/catalog-index.json", "qwen", "missing")).rejects.toThrow("Model not found");
@@ -130,15 +133,14 @@ describe("static recipe library adapter", () => {
     const adversarialIndex = {
       ...index,
       catalog_entities: [
-        { content_sha256: "9".repeat(64), document: { kind: "model-version", identity: { publisher: "qwen", slug: "qwen-fast-v1" }, model: { kind: "model", publisher: "qwen", slug: "qwen-fast", content_sha256: "8".repeat(64) }, metadata: { title: "Wrong version" }, capabilities: { facts: [{ capability: "image-generation", support: "supported" }] } } },
-        { content_sha256: "8".repeat(64), document: { kind: "model", identity: { publisher: "qwen", slug: "qwen-fast" }, metadata: { title: "Wrong model" } } },
+        { content_sha256: "9".repeat(64), document: { kind: "model", schema_version: 2, identity: { publisher: "qwen", slug: "qwen-fast-wrong", family: { publisher: "qwen", slug: "qwen", title: "Qwen" }, model: { publisher: "qwen", slug: "qwen-fast", title: "Wrong model", architecture: "transformer" }, version: "1.0", variant: "wrong" }, metadata: { title: "Wrong version", description: "Wrong", tags: [] } } },
         ...index.catalog_entities,
       ],
     };
     resetStaticCatalogCacheForTests();
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => adversarialIndex }));
     const recipe = await getStaticRecipe("https://example.test/catalog-index.json", "vonk-forge", "qwen-fast");
-    expect(recipe.catalog).toMatchObject({ model_title: "Qwen Fast Model", model_version_title: "qwen-fast-v1", capabilities: ["chat", "reasoning"] });
+    expect(recipe.catalog).toMatchObject({ model_title: "Qwen Fast", model_version_title: "Qwen Fast NVFP4", capabilities: ["chat", "reasoning"] });
   });
 
   test("rejects an index without immutable catalog entities", async () => {
