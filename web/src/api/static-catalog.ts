@@ -81,19 +81,16 @@ function nodeResources(document: JsonRecord): { disk: number; memory: number } {
 
 function runtimeAdapter(document: JsonRecord): string {
   const runtime = record(document.runtime);
-  const distribution = record(runtime.distribution);
-  const execution = record(document.execution);
-  const harness = record(execution.harness);
+  const engine = text(runtime.engine);
   const haystack = [
-    text(distribution.slug),
-    text(harness.slug),
+    engine,
     ...array(runtime.entrypoint).map((value) => text(value)),
   ].join(" ").toLowerCase();
   if (haystack.includes("vllm")) return "vllm";
   if (haystack.includes("sglang")) return "sglang";
   if (haystack.includes("llama")) return "llama.cpp";
   if (haystack.includes("ds4")) return "ds4";
-  return text(distribution.slug, text(harness.slug, "custom"));
+  return engine || "custom";
 }
 
 const PUBLIC_CAPABILITIES = [
@@ -114,9 +111,8 @@ function publicCapabilities(document: JsonRecord, recipeTags: string[]): string[
   return PUBLIC_CAPABILITIES.filter((value) => values.has(value));
 }
 
-function modelVersionCapabilities(document: JsonRecord, index: LibraryIndex): string[] {
-  const modelVersion = index.catalog_entities.find((candidate) => sameReference(document.model, candidate));
-  return modelVersion ? publicCapabilities(modelVersion.document, []) : [];
+function modelVersionCapabilities(document: JsonRecord): string[] {
+  return publicCapabilities(document, []);
 }
 
 function qualification(recipeTags: string[]): "candidate" | "cataloged" {
@@ -165,24 +161,24 @@ function canonicalSource(sourceReference: string): { owner: string; repository: 
 }
 
 function modelMetadata(document: JsonRecord, index: LibraryIndex): { publisher: string; slug: string; title: string; versionPublisher: string; versionSlug: string; versionTitle: string; versionRevisionId: string } {
-  const reference = record(document.model);
-  const versionPublisher = text(reference.publisher, "unknown");
-  const versionSlug = text(reference.slug, "unknown");
-  let versionTitle = versionSlug;
-  let publisher = versionPublisher;
-  let slug = versionSlug;
-  let title = slug;
-  const versionEntity = index.catalog_entities.find((entity) => sameReference(reference, entity));
+  const selected = recipeModelSelections(document)[0];
+  const versionEntity = index.catalog_entities.find((entity) => selected && sameReference(selected.model, entity));
   const version = versionEntity?.document;
-  versionTitle = text(record(version?.metadata).title, versionSlug);
-  const modelReference = record(version?.model);
-  if (text(modelReference.publisher) && text(modelReference.slug)) {
-    publisher = text(modelReference.publisher);
-    slug = text(modelReference.slug);
-    const model = index.catalog_entities.find((entity) => sameReference(modelReference, entity))?.document;
-    title = text(record(model?.metadata).title, slug);
-  }
-  return { publisher, slug, title, versionPublisher, versionSlug, versionTitle, versionRevisionId: text(versionEntity?.content_sha256) };
+  const versionIdentity = entityIdentity(version ?? {});
+  const logical = modelIdentity(version ?? {});
+  const versionTitle = text(record(version?.metadata).title, text(versionIdentity.slug, "unknown"));
+  const versionPublisher = text(versionIdentity.publisher, "unknown");
+  const versionSlug = text(versionIdentity.slug, "unknown");
+  const slug = text(logical.slug, versionSlug);
+  return {
+    publisher: text(logical.publisher, versionPublisher),
+    slug,
+    title: text(logical.title, slug),
+    versionPublisher,
+    versionSlug,
+    versionTitle,
+    versionRevisionId: text(versionEntity?.content_sha256),
+  };
 }
 
 function entityIdentity(document: JsonRecord): { publisher: string; slug: string } {
@@ -226,46 +222,68 @@ function explicitCapabilities(document: JsonRecord): { values: Array<{ name: str
   return { values, evidence: values.length && declaration.provenance ? "declared" : "unknown" };
 }
 
+function modelIdentity(document: JsonRecord): JsonRecord {
+  return record(record(document.identity).model);
+}
+
+function modelFamily(document: JsonRecord): JsonRecord {
+  return record(record(document.identity).family);
+}
+
+function modelFiles(document: JsonRecord): JsonRecord[] {
+  return array(document.files).map(record);
+}
+
+function modelSize(document: JsonRecord, deduplicate: boolean): number {
+  const files = modelFiles(document);
+  const seen = new Set<string>();
+  return files.reduce((total, file) => {
+    const digest = text(file.sha256);
+    if (deduplicate && digest && seen.has(digest)) return total;
+    if (deduplicate && digest) seen.add(digest);
+    return total + number(file.size_bytes);
+  }, 0);
+}
+
 function mapModelVersion(
   entity: LibraryEntity,
-  model: LibraryEntity,
   recipes: RecipeSummary[],
 ): ModelVersionSummary {
   const document = entity.document;
   const identity = entityIdentity(document);
-  const modelIdentity = entityIdentity(model.document);
+  const logicalModel = modelIdentity(document);
   const metadata = record(document.metadata);
   const source = record(document.source);
   const format = record(document.format);
   const parameters = record(document.parameters);
   const limits = record(document.limits);
-  const sizes = record(document.sizes);
   const license = record(document.license);
   const capabilities = explicitCapabilities(document);
   const recipeSlugs = recipes
-    .filter((recipe) => {
-      const catalog = recipe.catalog;
-      return catalog?.model_version_publisher === identity.publisher
-        && catalog.model_version_slug === identity.slug
-        && catalog.model_version_content_sha256 === entity.content_sha256;
-    })
+    .filter((recipe) => recipeModels(recipe).some((candidate) => sameReference(candidate, entity)))
     .map((recipe) => `${recipe.publisher}/${recipe.slug}`)
     .sort();
   return {
     publisher: identity.publisher,
     slug: identity.slug,
     title: text(metadata.title, identity.slug),
-    version: text(document.version, identity.slug),
+    version: text(record(document.identity).version, identity.slug),
     revision_id: text(entity.content_sha256, "unknown"),
-    model_publisher: modelIdentity.publisher,
-    model_slug: modelIdentity.slug,
-    model_title: text(record(model.document.metadata).title, modelIdentity.slug),
+    model_publisher: text(logicalModel.publisher),
+    model_slug: text(logicalModel.slug),
+    model_title: text(logicalModel.title, text(logicalModel.slug)),
+    variant: text(record(document.identity).variant) || undefined,
+    access: {
+      visibility: text(record(document.access).visibility) || undefined,
+      gated: typeof record(document.access).gated === "boolean" ? record(document.access).gated as boolean : undefined,
+      authentication: text(record(document.access).authentication) || undefined,
+    },
     source_repository: text(source.repository) || undefined,
     source_revision: text(source.revision) || undefined,
     format: { container: text(format.container) || undefined, precision: text(format.precision) || undefined, quantization: text(format.quantization) || undefined },
     parameters: { total: optionalNumber(parameters.total), active: optionalNumber(parameters.active) },
     limits: { context_tokens: optionalNumber(limits.context_tokens), resolution_pixels: optionalNumber(limits.resolution_pixels), frames: optionalNumber(limits.frames), sample_rate_hz: optionalNumber(limits.sample_rate_hz) },
-    sizes: { download_bytes: number(sizes.download_bytes), installed_bytes: number(sizes.installed_bytes) },
+    sizes: { download_bytes: modelSize(document, true), installed_bytes: modelSize(document, false) },
     license: { spdx: text(license.spdx) || undefined, url: text(license.url) || undefined, attribution: array(license.attribution).map((value) => text(value)).filter(Boolean), operator_acceptance_required: typeof license.operator_acceptance_required === "boolean" ? license.operator_acceptance_required : undefined },
     availability: ["active", "withdrawn", "superseded"].includes(text(document.availability)) ? text(document.availability) as ModelVersionSummary["availability"] : undefined,
     tags: array(metadata.tags).map((value) => text(value).toLowerCase()).filter(Boolean),
@@ -275,27 +293,38 @@ function mapModelVersion(
   };
 }
 
+function recipeModels(recipe: RecipeSummary): JsonRecord[] {
+  return array((recipe as RecipeSummary & { latest_revision: { document: JsonRecord } }).latest_revision.document.models)
+    .map((selection) => record(record(selection).model));
+}
+
+function recipeModelSelections(document: JsonRecord): JsonRecord[] {
+  return array(document.models).map(record);
+}
+
 function mapModels(index: LibraryIndex, baseUrl: string): ModelSummary[] {
   const entities = index.catalog_entities;
   const recipes = index.recipes.map((item) => mapRecipe(item, index, baseUrl));
   const models = entities.filter((entity) => entity.document.kind === "model");
-  const versions = entities.filter((entity) => entity.document.kind === "model-version");
-  return models.map((entity) => {
-    const identity = entityIdentity(entity.document);
-    const versionsForModel = versions.filter((version) => {
-      const reference = record(version.document.model);
-      return sameReference(reference, entity);
-    });
-    const group = record(entity.document.model_group);
-    const versionRows = versionsForModel.map((version) => mapModelVersion(version, entity, recipes)).sort((left, right) => left.title.localeCompare(right.title));
+  const groups = new Map<string, LibraryEntity[]>();
+  for (const entity of models) {
+    const logical = modelIdentity(entity.document);
+    const key = `${text(logical.publisher)}\0${text(logical.slug)}`;
+    groups.set(key, [...(groups.get(key) ?? []), entity]);
+  }
+  return Array.from(groups.values()).map((variants) => {
+    const first = variants[0]!;
+    const identity = modelIdentity(first.document);
+    const family = modelFamily(first.document);
+    const versionRows = variants.map((version) => mapModelVersion(version, recipes)).sort((left, right) => left.title.localeCompare(right.title));
     return {
-      publisher: identity.publisher,
-      slug: identity.slug,
-      title: text(record(entity.document.metadata).title, identity.slug),
-      description: text(record(entity.document.metadata).description),
-      family: text(group.slug) || undefined,
-      tags: array(record(entity.document.metadata).tags).map((value) => text(value).toLowerCase()).filter(Boolean),
-      revision_id: text(entity.content_sha256, "unknown"),
+      publisher: text(identity.publisher),
+      slug: text(identity.slug),
+      title: text(identity.title, text(identity.slug)),
+      description: text(record(first.document.metadata).description),
+      family: text(family.slug) || undefined,
+      tags: array(record(first.document.metadata).tags).map((value) => text(value).toLowerCase()).filter(Boolean),
+      revision_id: text(first.content_sha256, "unknown"),
       versions: versionRows,
       recipe_count: new Set(versionRows.flatMap((version) => version.recipe_slugs)).size,
     };
@@ -305,18 +334,19 @@ function mapModels(index: LibraryIndex, baseUrl: string): ModelSummary[] {
 function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: RecipeSummary["artifacts"]): NonNullable<RecipeSummary["catalog"]> {
   const recipeTags = tags(document);
   const metadata = record(document.metadata);
-  const runtime = record(record(document.runtime).distribution);
+  const runtime = record(document.runtime);
   const topology = record(document.topology);
   const provenance = record(document.provenance);
   const model = modelMetadata(document, index);
   const source = canonicalSource(text(provenance.source_reference));
   const alignmentValue = text(metadata.alignment, "unspecified");
   const alignment = ["standard", "abliterated", "derisked", "other-modified", "unspecified"].includes(alignmentValue) ? alignmentValue as NonNullable<RecipeSummary["catalog"]>["alignment"] : "unspecified";
-  const precisionTokens = new Set([...recipeTags, ...(text(metadata.title).toLowerCase().match(/[a-z0-9]+/g) ?? []), ...(model.versionTitle.toLowerCase().match(/[a-z0-9]+/g) ?? [])]);
-  const quantizations = ["nvfp4", "bf16", "fp8", "fp4", "fp16", "int8", "int4", "exl3", "aqlm", "awq", "gptq", "gguf", "torchao"]
-    .filter((value) => precisionTokens.has(value))
-    .map((value) => value === "torchao" ? "TorchAO" : value.toUpperCase());
-  const precision = quantizations[0] ?? null;
+  const selected = recipeModelSelections(document)[0];
+  const modelEntity = index.catalog_entities.find((entity) => selected && sameReference(selected.model, entity));
+  const format = record(modelEntity?.document.format);
+  const quantization = text(format.quantization);
+  const quantizations = quantization ? [quantization.toUpperCase()] : [];
+  const precision = text(format.precision) || null;
   return {
     description: text(metadata.description),
     tags: recipeTags,
@@ -330,10 +360,10 @@ function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: Re
     source_owner: source?.owner ?? null,
     source_repository: source?.repository ?? null,
     alignment,
-    capabilities: modelVersionCapabilities(document, index),
+    capabilities: modelEntity ? modelVersionCapabilities(modelEntity.document) : [],
     qualification: qualification(recipeTags),
     execution_readiness: executionReadiness(recipeTags),
-    runtime_distribution: text(runtime.slug, "unknown"),
+    runtime_distribution: text(runtime.engine, "unknown"),
     precision,
     quantizations,
     topology_name: text(topology.name),
@@ -347,7 +377,8 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex, baseUrl: string): R
   const document = record(item.document);
   const identity = record(document.identity);
   const metadata = record(document.metadata);
-  const build = record(document.build);
+  const execution = record(document.execution);
+  const build = record(execution.build);
   const context = record(build.context);
   const topology = record(document.topology);
   const release = record(item.release);
@@ -356,15 +387,19 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex, baseUrl: string): R
   const slug = text(identity.slug);
   const nodeCount = Math.max(1, number(topology.node_count));
   const resources = nodeResources(document);
-  const artifacts = array(document.artifacts).map((value) => {
-    const artifact = record(value);
-    return {
-      kind: text(artifact.kind),
-      repository: text(artifact.repository),
-      revision: text(artifact.revision),
-      download_bytes: number(artifact.download_bytes),
-      installed_bytes: number(artifact.installed_bytes),
-    };
+  const artifacts = recipeModelSelections(document).flatMap((selection) => {
+    const entity = index.catalog_entities.find((candidate) => sameReference(selection.model, candidate));
+    const source = record(entity?.document.source);
+    const selectedFiles = new Set(array(selection.files).map((value) => text(record(value).file_id)));
+    return entity ? modelFiles(entity.document)
+      .filter((file) => selectedFiles.has(text(file.id)))
+      .map((file) => ({
+        kind: "model-file",
+        repository: text(source.repository),
+        revision: text(source.revision),
+        download_bytes: number(file.size_bytes),
+        installed_bytes: number(file.size_bytes),
+      })) : [];
   });
   const provenance = record(document.provenance);
   const version = text(release.version);
@@ -400,8 +435,8 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex, baseUrl: string): R
       attribution: array(provenance.attribution).map((value) => text(value)).filter(Boolean),
     },
     workload: {
-      family: text(record(document.model).slug, publisher),
-      capabilities: modelVersionCapabilities(document, index),
+      family: modelMetadata(document, index).slug || publisher,
+      capabilities: publicMetadata(document, index, artifacts).capabilities,
     },
     deployment_profiles: [{ name: text(topology.name, nodeCount === 1 ? "single" : `${nodeCount}-node`), node_count: nodeCount }],
     capacity: {
@@ -420,7 +455,7 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex, baseUrl: string): R
     },
     import: {
       uri: `vonk://catalog/${publisher}/${slug}@sha256:${item.content_sha256}`,
-      instruction: "Open Library in your local controller and import this immutable recipe.",
+      instruction: "Use this exact recipe in your local Controller.",
     },
     source: {
       recipe_url: sourceUrl,

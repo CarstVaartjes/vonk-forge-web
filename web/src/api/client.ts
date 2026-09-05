@@ -119,6 +119,8 @@ export interface ModelVersionSummary {
   model_publisher: string;
   model_slug: string;
   model_title: string;
+  variant?: string;
+  access?: { visibility?: string; gated?: boolean; authentication?: string };
   source_repository?: string;
   source_revision?: string;
   format?: { container?: string; precision?: string; quantization?: string };
@@ -152,7 +154,18 @@ export interface ModelPage {
 const catalogApiUrl = import.meta.env.VITE_CATALOG_API_URL ?? "";
 const recipeLibraryIndexUrl = import.meta.env.VITE_RECIPE_LIBRARY_INDEX_URL ?? "";
 
-export const usesStaticCatalog = Boolean(recipeLibraryIndexUrl) && !catalogApiUrl;
+// Public Models and Recipes share the immutable generated index. The API origin
+// is reserved for publisher and private Controller operations.
+export const usesStaticCatalog = Boolean(recipeLibraryIndexUrl);
+
+export type PublicModelSource = "static-index" | "unavailable";
+
+/** Models are public immutable facts, so the generated public index remains their source when an API origin is also configured. */
+export function selectPublicModelSource(config: { apiUrl: string; indexUrl: string }): PublicModelSource {
+  return config.indexUrl ? "static-index" : "unavailable";
+}
+
+export const usesStaticModelCatalog = selectPublicModelSource({ apiUrl: catalogApiUrl, indexUrl: recipeLibraryIndexUrl }) === "static-index";
 
 export async function loadRecipeCatalog(signal?: AbortSignal): Promise<RecipeSummary[]> {
   if (usesStaticCatalog) return listStaticRecipeCatalog(recipeLibraryIndexUrl, signal);
@@ -181,154 +194,6 @@ async function requestJson<T>(path: string, signal?: AbortSignal): Promise<T> {
   return body as T;
 }
 
-export interface Me {
-  user: { id: string; display_name: string };
-  accounts: Array<{ provider: string; email: string | null }>;
-  csrf_token: string;
-  session_expires_at: string;
-}
-
-export interface PublisherMembership {
-  id: string;
-  slug: string;
-  name: string;
-  role: "owner" | "editor" | "viewer";
-  official: boolean;
-}
-
-export interface Draft {
-  id: string;
-  publisher: string;
-  recipe_id: string;
-  version: number;
-  state: string;
-  content_sha256: string;
-  recipe: Record<string, unknown>;
-  source_bundle_sha256?: string;
-  source_bundle_available?: boolean;
-  validation_problems: Array<{ path: string; rule: string; message: string }>;
-  validation: null | {
-    status: "passed" | "failed";
-    checks: Array<{
-      code: string;
-      passed: boolean;
-      detail: string;
-      observed?: Record<string, unknown>;
-    }>;
-    created_at: string;
-  };
-}
-
-async function browserRequest<T>(
-  path: string,
-  init: RequestInit = {},
-): Promise<{ data: T; response: Response }> {
-  const response = await fetch(`${import.meta.env.VITE_CATALOG_API_URL ?? ""}${path}`, {
-    ...init,
-    credentials: "include",
-    headers: { Accept: "application/json", ...init.headers },
-  });
-  const body = response.status === 204 ? undefined : await response.json();
-  if (!response.ok) throw new CatalogProblem(body as Problem);
-  return { data: body as T, response };
-}
-
-export async function getProviders(): Promise<string[]> {
-  const { data } = await browserRequest<{ providers: string[] }>("/v1/auth/providers");
-  return data.providers;
-}
-
-export async function getMe(): Promise<Me> {
-  return (await browserRequest<Me>("/v1/me")).data;
-}
-
-export async function getPublishers(): Promise<PublisherMembership[]> {
-  const { data } = await browserRequest<{ items: PublisherMembership[] }>("/v1/publishers");
-  return data.items;
-}
-
-export async function getDrafts(publisher: string): Promise<Draft[]> {
-  const { data } = await browserRequest<{ items: Draft[] }>(`/v1/publishers/${encodeURIComponent(publisher)}/drafts`);
-  return data.items;
-}
-
-export async function uploadDraft(
-  publisher: string,
-  envelope: Record<string, unknown>,
-  csrf: string,
-  idempotencyKey: string,
-): Promise<Draft> {
-  return (
-    await browserRequest<Draft>(`/v1/publishers/${encodeURIComponent(publisher)}/drafts`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf, "Idempotency-Key": idempotencyKey },
-      body: JSON.stringify(envelope),
-    })
-  ).data;
-}
-
-export async function uploadSourceBundle(
-  publisher: string,
-  sha256: string,
-  archive: File,
-  csrf: string,
-): Promise<{sha256: string; files: string[]}> {
-  return (
-    await browserRequest<{sha256: string; files: string[]}>(`/v1/publishers/${encodeURIComponent(publisher)}/source-bundles/${encodeURIComponent(sha256)}`, {
-      method: "PUT",
-      headers: {"Content-Type": "application/vnd.vonk-forge.source-bundle.v1+tar", "X-CSRF-Token": csrf},
-      body: archive,
-    })
-  ).data;
-}
-
-export async function updateDraft(
-  draft: Draft,
-  recipe: Record<string, unknown>,
-  csrf: string,
-): Promise<Draft> {
-  return (
-    await browserRequest<Draft>(`/v1/publishers/${encodeURIComponent(draft.publisher)}/drafts/${draft.id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf, "If-Match": `"draft-version-${draft.version}"` },
-      body: JSON.stringify({ recipe }),
-    })
-  ).data;
-}
-
-export async function validateDraft(draft: Draft, csrf: string): Promise<{ job_id: string; state: string }> {
-  return (
-    await browserRequest<{ job_id: string; state: string }>(`/v1/publishers/${encodeURIComponent(draft.publisher)}/drafts/${draft.id}/validate`, {
-      method: "POST",
-      headers: { "X-CSRF-Token": csrf },
-    })
-  ).data;
-}
-
-export async function publishDraft(draft: Draft, csrf: string, idempotencyKey: string) {
-  return (
-    await browserRequest<{ revision_id: string; revision_number: number; content_sha256: string; official: boolean }>(`/v1/publishers/${encodeURIComponent(draft.publisher)}/drafts/${draft.id}/publish`, {
-      method: "POST",
-      headers: { "X-CSRF-Token": csrf, "Idempotency-Key": idempotencyKey },
-    })
-  ).data;
-}
-
-export async function forkRevision(
-  publisher: string,
-  sourceRevisionId: string,
-  slug: string,
-  csrf: string,
-) {
-  return (
-    await browserRequest<{ draft_id: string }>(`/v1/publishers/${encodeURIComponent(publisher)}/forks`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "X-CSRF-Token": csrf, "Idempotency-Key": crypto.randomUUID() },
-      body: JSON.stringify({ source_revision_id: sourceRevisionId, slug }),
-    })
-  ).data;
-}
-
 export function listRecipes(
   parameters: URLSearchParams,
   signal?: AbortSignal,
@@ -351,7 +216,7 @@ export function getRecipe(
 }
 
 export function listModels(signal?: AbortSignal): Promise<ModelPage> {
-  if (usesStaticCatalog) return listStaticModels(recipeLibraryIndexUrl, signal);
+  if (usesStaticModelCatalog) return listStaticModels(recipeLibraryIndexUrl, signal);
   return Promise.reject(new Error("The public model index is not available from this catalog endpoint yet."));
 }
 
@@ -360,7 +225,7 @@ export function getModel(
   slug: string,
   signal?: AbortSignal,
 ): Promise<ModelSummary> {
-  if (usesStaticCatalog) return getStaticModel(recipeLibraryIndexUrl, publisher, slug, signal);
+  if (usesStaticModelCatalog) return getStaticModel(recipeLibraryIndexUrl, publisher, slug, signal);
   return Promise.reject(new Error("The public model index is not available from this catalog endpoint yet."));
 }
 
