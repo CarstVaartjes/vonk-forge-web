@@ -1634,7 +1634,7 @@ a {
 .models-intro { margin-bottom: 2rem; }
 .models-intro h1 { max-width: 12ch; }
 .models-intro > p { max-width: 38rem; color: var(--muted); line-height: 1.65; }
-.model-index-tools { display: grid; grid-template-columns: auto minmax(16rem, 28rem) 1fr; align-items: center; gap: 1rem; padding: 1rem 1.25rem; border: 1px solid var(--line); border-radius: 0.55rem; background: var(--panel); }
+.model-index-tools { display: grid; grid-template-columns: auto minmax(14rem, 1fr) auto minmax(8rem, 1fr) auto minmax(10rem, 1fr); align-items: center; gap: 0.75rem 1rem; padding: 1rem 1.25rem; border: 1px solid var(--line); border-radius: 0.55rem; background: var(--panel); }
 .model-index-tools label { color: var(--ink); font-size: 0.78rem; font-weight: 800; }
 .model-index-tools input { min-height: 2.6rem; padding: 0.5rem 0.7rem; border: 1px solid var(--line-bright); border-radius: 0.35rem; color: var(--ink); background: var(--night); }
 .model-index-tools span { justify-self: end; color: var(--muted); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
@@ -1649,11 +1649,18 @@ a {
 .model-card > p { min-height: 3.3em; margin: 1rem 0; color: var(--muted); line-height: 1.5; }
 .model-tags { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0; margin: 0; list-style: none; }
 .model-tags li { padding: 0.25rem 0.45rem; border: 1px solid var(--line-bright); border-radius: 0.25rem; color: var(--muted); font-size: 0.66rem; }
-.model-recipe-count, .model-availability { flex: 0 0 auto; padding: 0.3rem 0.5rem; border: 1px solid rgb(138 213 42 / 45%); border-radius: 0.25rem; color: var(--green-soft); font-size: 0.66rem; font-weight: 750; }
+.model-recipe-count, .model-availability { flex: 0 0 auto; padding: 0.3rem 0.5rem; border: 1px solid var(--line-bright); border-radius: 0.25rem; color: var(--muted); font-size: 0.66rem; font-weight: 750; }
 .model-availability.availability-withdrawn, .model-availability.availability-superseded { border-color: rgb(255 113 94 / 45%); color: var(--red); }
 .model-availability.availability-unknown { border-color: var(--line-bright); color: var(--faint); }
 .model-card-footer { display: flex; flex-wrap: wrap; align-items: center; gap: 0.8rem; padding-top: 1rem; margin-top: 1rem; border-top: 1px solid var(--line); color: var(--muted); font-size: 0.7rem; }
 .model-card-footer .text-link { margin-left: auto; color: var(--green-soft); }
+.model-card-footer > a:first-child { color: var(--green-soft); }
+.models-page .button.primary, .model-detail-page .button.primary { border-color: var(--green); color: var(--night); background: var(--green); }
+.models-page .button.primary:hover, .model-detail-page .button.primary:hover { border-color: var(--green-soft); background: var(--green-soft); }
+.model-detail-identity { color: var(--muted); font-size: 0.75rem; }
+.model-detail-identity code { color: var(--ink); overflow-wrap: anywhere; }
+.model-pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.5rem; color: var(--muted); font-size: 0.75rem; }
+.text-button { padding: 0; border: 0; color: var(--green-soft); background: transparent; text-decoration: underline; text-underline-offset: 0.2rem; cursor: pointer; }
 .model-detail-page .page-intro { max-width: 60rem; }
 .model-detail-page .page-intro h1 { max-width: 15ch; }
 .model-detail-page .page-intro > p:last-child { max-width: 45rem; color: var(--muted); line-height: 1.65; }
@@ -1663,7 +1670,7 @@ a {
 .model-detail-boundary > div:first-child p { color: var(--muted); line-height: 1.6; }
 .model-version-list { display: grid; gap: 1rem; }
 .model-version-heading .eyebrow { margin-bottom: 0.3rem; }
-.model-fact-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem 1rem; margin-top: 1.5rem; }
+.model-fact-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem 1rem; margin: 1.5rem 0 0; }
 .model-fact-grid > div { padding-top: 0.65rem; border-top: 1px solid var(--line); }
 .model-fact-grid dt { color: var(--faint); font-size: 0.65rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
 .model-fact-grid dd { margin: 0.3rem 0 0; color: var(--ink); font-size: 0.78rem; line-height: 1.45; }

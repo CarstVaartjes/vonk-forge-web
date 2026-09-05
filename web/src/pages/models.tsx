@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 
 import { getModel, listModels, type ModelSummary, type ModelVersionSummary } from "../api/client";
 
+const PAGE_SIZE = 12;
+const CAPABILITY_OPTIONS = ["chat", "text-generation", "text-understanding", "reasoning", "tool-use", "code-generation", "ocr", "image-generation", "image-understanding", "image-editing", "video-generation", "video-understanding", "audio-generation", "audio-understanding", "embeddings", "3d-generation"];
+
 function bytes(value?: number | null): string {
   if (!value) return "Not declared";
   const units = ["B", "KiB", "MiB", "GiB", "TiB"];
@@ -14,6 +17,14 @@ function bytes(value?: number | null): string {
 function count(value?: number | null): string {
   if (!value) return "Not declared";
   return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value);
+}
+
+function modelCapabilities(model: ModelSummary): string[] {
+  return Array.from(new Set(model.versions.flatMap((version) => version.capabilities.filter((fact) => fact.support === "supported").map((fact) => fact.name))));
+}
+
+function filterLabel(value: string): string {
+  return value.replaceAll("-", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function CapabilityFacts({ version }: { version: ModelVersionSummary }) {
@@ -29,49 +40,82 @@ function VersionRow({ version }: { version: ModelVersionSummary }) {
       <div><p className="eyebrow">Model version</p><h3 id={`version-${version.publisher}-${version.slug}`}>{version.title}</h3><code>{version.publisher}/{version.slug}</code></div>
       <span className={`model-availability availability-${version.availability ?? "unknown"}`}>{version.availability ?? "availability not declared"}</span>
     </div>
-    <div className="model-fact-grid">
+    <dl className="model-fact-grid">
+      <div><dt>Identity</dt><dd><code>{version.revision_id}</code></dd></div>
       <div><dt>Version</dt><dd>{version.version}</dd></div>
       <div><dt>Format</dt><dd>{[version.format?.container, version.format?.quantization].filter(Boolean).join(" · ") || "Not declared"}</dd></div>
       <div><dt>Weights</dt><dd>{bytes(version.sizes?.download_bytes)} download · {bytes(version.sizes?.installed_bytes)} installed</dd></div>
       <div><dt>Parameters</dt><dd>{count(version.parameters?.total)} total{version.parameters?.active ? ` · ${count(version.parameters.active)} active` : ""}</dd></div>
       <div><dt>Source</dt><dd>{version.source_repository ? <a href={version.source_repository}>Pinned source ↗</a> : "Not declared"}{version.source_revision ? <code>{version.source_revision}</code> : null}</dd></div>
-      <div><dt>Recipes</dt><dd>{version.recipe_slugs.length ? <span className="model-recipe-links">{version.recipe_slugs.map((path) => <a key={path} href={`/recipes/${path}`}>{path.split("/").slice(1).join("/")}</a>)}</span> : "No public recipe"}</dd></div>
-    </div>
+      <div><dt>Recipes</dt><dd>{version.recipe_slugs.length ? <span className="model-recipe-links">{version.recipe_slugs.map((path) => <a key={path} href={`/recipes?q=${encodeURIComponent(path)}`}>{path}</a>)}</span> : "No public recipe"}</dd></div>
+    </dl>
     <div className="model-version-capabilities"><strong>Capabilities</strong><CapabilityFacts version={version} /></div>
     {version.license?.spdx ? <p className="model-license">License: <a href={version.license.url}>{version.license.spdx}</a>{version.license.operator_acceptance_required ? " · operator acceptance required" : ""}</p> : null}
   </article>;
 }
 
+function initialFilters() {
+  const params = new URLSearchParams(window.location.search);
+  return { query: params.get("q") ?? "", publisher: params.get("publisher") ?? "", capability: params.get("capability") ?? "", recipes: params.get("recipes") ?? "", sort: params.get("sort") ?? "name", page: Math.max(1, Number(params.get("page")) || 1) };
+}
+
 export function ModelsPage() {
   const [models, setModels] = useState<ModelSummary[] | null>(null);
-  const [query, setQuery] = useState("");
+  const [filters, setFilters] = useState(initialFilters);
   const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
+    setError(false);
     listModels(controller.signal).then((page) => setModels(page.items)).catch(() => { if (!controller.signal.aborted) setError(true); });
     return () => controller.abort();
-  }, []);
+  }, [attempt]);
+  const publishers = useMemo(() => Array.from(new Set((models ?? []).map((model) => model.publisher))).sort(), [models]);
   const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    return (models ?? []).filter((model) => !needle || [model.title, model.publisher, model.slug, model.family, ...model.tags].join(" ").toLowerCase().includes(needle));
-  }, [models, query]);
+    const needle = filters.query.trim().toLowerCase();
+    const result = (models ?? []).filter((model) => {
+      const capabilities = modelCapabilities(model);
+      const matchesText = !needle || [model.title, model.publisher, model.slug, model.family, ...model.tags].join(" ").toLowerCase().includes(needle);
+      const matchesRecipes = !filters.recipes || filters.recipes === "all" || (filters.recipes === "recipes" ? model.recipe_count > 0 : model.recipe_count === 0);
+      return matchesText && (!filters.publisher || model.publisher === filters.publisher) && (!filters.capability || capabilities.includes(filters.capability)) && matchesRecipes;
+    });
+    return result.sort((left, right) => filters.sort === "recipes" ? right.recipe_count - left.recipe_count || left.title.localeCompare(right.title, undefined, { numeric: true }) : filters.sort === "versions" ? right.versions.length - left.versions.length || left.title.localeCompare(right.title, undefined, { numeric: true }) : left.title.localeCompare(right.title, undefined, { numeric: true }));
+  }, [filters, models]);
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const page = Math.min(filters.page, pageCount);
+  const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  function updateFilters(next: Partial<typeof filters>) {
+    const updated = { ...filters, ...next, page: next.page ?? 1 };
+    setFilters(updated);
+    const params = new URLSearchParams();
+    if (updated.query) params.set("q", updated.query);
+    if (updated.publisher) params.set("publisher", updated.publisher);
+    if (updated.capability) params.set("capability", updated.capability);
+    if (updated.recipes) params.set("recipes", updated.recipes);
+    if (updated.sort !== "name") params.set("sort", updated.sort);
+    if (updated.page > 1) params.set("page", String(updated.page));
+    window.history.replaceState({}, "", `/models${params.toString() ? `?${params}` : ""}`);
+  }
+  function clearFilters() { updateFilters({ query: "", publisher: "", capability: "", recipes: "", sort: "name" }); }
   useEffect(() => { document.title = "Models · Vonk Forge"; }, []);
   return <main className="models-page">
     <header className="page-intro models-intro"><div><p className="eyebrow">Public model index</p><h1>Models, with their exact versions.</h1></div><p>Start with a model family, then inspect the immutable weight variant and the recipes that bind it. Facts come from the published model-version authority; local cache and running state stay in your Controller.</p></header>
-    <section className="model-index-tools" aria-label="Model index controls"><label htmlFor="model-search">Find a model</label><input id="model-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search family, publisher, or tag" /><span aria-live="polite">{models ? `${filtered.length} of ${models.length} models` : "Loading models…"}</span></section>
-    {error ? <div className="status-panel error" role="alert"><h2>Models are temporarily unavailable.</h2><p>The public model index could not be loaded. Try again when the catalog source is reachable.</p></div> : null}
+    <section className="model-index-tools" aria-label="Model index controls"><label htmlFor="model-search">Find a model</label><input id="model-search" type="search" value={filters.query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder="Search family, publisher, or tag" /><label htmlFor="model-publisher">Publisher</label><select id="model-publisher" value={filters.publisher} onChange={(event) => updateFilters({ publisher: event.target.value })}><option value="">All publishers</option>{publishers.map((publisher) => <option key={publisher} value={publisher}>{publisher}</option>)}</select><label htmlFor="model-capability">Capability</label><select id="model-capability" value={filters.capability} onChange={(event) => updateFilters({ capability: event.target.value })}><option value="">All declared capabilities</option>{CAPABILITY_OPTIONS.map((capability) => <option key={capability} value={capability}>{filterLabel(capability)}</option>)}</select><label htmlFor="model-recipes">Recipe support</label><select id="model-recipes" value={filters.recipes} onChange={(event) => updateFilters({ recipes: event.target.value })}><option value="">All models</option><option value="recipes">Has public recipes</option><option value="none">No public recipes</option></select><label htmlFor="model-sort">Sort</label><select id="model-sort" value={filters.sort} onChange={(event) => updateFilters({ sort: event.target.value })}><option value="name">Name</option><option value="versions">Most versions</option><option value="recipes">Most recipes</option></select><span aria-live="polite">{models ? `${filtered.length} of ${models.length} model families` : "Loading models…"}</span>{(filters.query || filters.publisher || filters.capability || filters.recipes || filters.sort !== "name") ? <button className="text-button" type="button" onClick={clearFilters}>Clear filters</button> : null}</section>
+    {error ? <div className="status-panel error" role="alert"><h2>Models are temporarily unavailable.</h2><p>The public model index could not be loaded. Try again when the catalog source is reachable.</p><button className="button" type="button" onClick={() => { setModels(null); setAttempt((value) => value + 1); }}>Retry</button></div> : null}
     {!models && !error ? <div className="status-panel" role="status">Loading immutable model index…</div> : null}
-    {models && filtered.length === 0 ? <div className="status-panel"><h2>No matching models.</h2><p>Try a broader family, publisher, or tag.</p></div> : null}
-    {models && filtered.length ? <div className="model-list">{filtered.map((model) => <article className="model-card" key={`${model.publisher}/${model.slug}`}><div className="model-card-heading"><div><p className="eyebrow">{model.family ? `Family · ${model.family}` : "Model"}</p><h2><a href={`/models/${model.publisher}/${model.slug}`}>{model.title}</a></h2><code>{model.publisher}/{model.slug}</code></div><span className="model-recipe-count">{model.recipe_count} {model.recipe_count === 1 ? "recipe" : "recipes"}</span></div><p>{model.description || "No description published."}</p><ul className="model-tags" aria-label="Model tags">{model.tags.slice(0, 6).map((tag) => <li key={tag}>{tag}</li>)}</ul><div className="model-card-footer"><span>{model.versions.length} {model.versions.length === 1 ? "version" : "versions"}</span><span>Immutable identity <code>{model.revision_id.slice(0, 12)}…</code></span><a className="text-link" href={`/models/${model.publisher}/${model.slug}`}>Inspect versions →</a></div></article>)}</div> : null}
+    {models && filtered.length === 0 ? <div className="status-panel"><h2>No matching models.</h2><p>Try a broader family, publisher, or capability.</p><button className="button" type="button" onClick={clearFilters}>Show all models</button></div> : null}
+    {models && visible.length ? <div className="model-list">{visible.map((model) => { const capabilities = modelCapabilities(model); return <article className="model-card" key={`${model.publisher}/${model.slug}`}><div className="model-card-heading"><div><p className="eyebrow">{model.family ? `Family · ${model.family}` : "Model"}</p><h2><a href={`/models/${model.publisher}/${model.slug}`}>{model.title}</a></h2><code>{model.publisher}/{model.slug}</code></div><span className="model-recipe-count">{model.versions.length} {model.versions.length === 1 ? "version" : "versions"}</span></div><p>{model.description || "No description published."}</p><ul className="model-tags" aria-label="Declared capabilities and model tags">{capabilities.slice(0, 3).map((capability) => <li key={capability}>{filterLabel(capability)}</li>)}{!capabilities.length ? <li>Capability evidence unknown</li> : null}</ul><div className="model-card-footer"><a href={`/recipes?q=${encodeURIComponent(model.title)}`}>{model.recipe_count} {model.recipe_count === 1 ? "public recipe" : "public recipes"}</a><span>Identity <code>{model.revision_id.slice(0, 12)}…</code></span><a className="button primary" href={`/models/${model.publisher}/${model.slug}`}>View versions</a></div></article>; })}</div> : null}
+    {models && filtered.length > PAGE_SIZE ? <nav className="model-pagination" aria-label="Model pages"><button className="button" type="button" disabled={page <= 1} onClick={() => updateFilters({ page: page - 1 })}>Previous</button><span aria-live="polite">Page {page} of {pageCount}</span><button className="button" type="button" disabled={page >= pageCount} onClick={() => updateFilters({ page: page + 1 })}>Next</button></nav> : null}
   </main>;
 }
 
 export function ModelDetailPage({ publisher, slug }: { publisher: string; slug: string }) {
   const [model, setModel] = useState<ModelSummary | null>(null);
   const [error, setError] = useState(false);
-  useEffect(() => { const controller = new AbortController(); getModel(publisher, slug, controller.signal).then(setModel).catch(() => { if (!controller.signal.aborted) setError(true); }); return () => controller.abort(); }, [publisher, slug]);
+  const [attempt, setAttempt] = useState(0);
+  useEffect(() => { const controller = new AbortController(); setError(false); getModel(publisher, slug, controller.signal).then(setModel).catch(() => { if (!controller.signal.aborted) setError(true); }); return () => controller.abort(); }, [publisher, slug, attempt]);
   useEffect(() => { if (model) document.title = `${model.title} · Models · Vonk Forge`; }, [model]);
-  if (error) return <main className="status-panel error"><h1>Model unavailable</h1><p>This model is not present in the published index.</p></main>;
+  if (error) return <main className="status-panel error"><h1>Model unavailable</h1><p>This model is not present in the published index.</p><button className="button" type="button" onClick={() => { setModel(null); setAttempt((value) => value + 1); }}>Retry</button></main>;
   if (!model) return <main className="status-panel" role="status">Loading immutable model…</main>;
-  return <main className="model-detail-page"><header className="page-intro"><p className="eyebrow">{model.family ? `Model family · ${model.family}` : "Model"}</p><h1>{model.title}</h1><p className="recipe-path">{model.publisher}/{model.slug} · immutable identity <code>{model.revision_id}</code></p><p>{model.description || "No description published."}</p></header><div className="model-detail-actions"><a className="button" href="/models">All models</a><a className="button secondary" href={`/recipes?model_family=${encodeURIComponent(model.title)}`}>Compare recipes</a></div><section className="model-detail-boundary"><div><h2>Versions and weight variants</h2><p>Each row is a published model-version identity. Download size, source revision, format, license, and capability evidence are shown only when declared by that version.</p></div><div className="model-version-list">{model.versions.map((version) => <VersionRow key={`${version.publisher}/${version.slug}`} version={version} />)}</div></section></main>;
+  return <main className="model-detail-page"><header className="page-intro"><p className="eyebrow">{model.family ? `Model family · ${model.family}` : "Model"}</p><h1>{model.title}</h1><p className="recipe-path">{model.publisher}/{model.slug}</p><p className="model-detail-identity">Immutable model identity <code>{model.revision_id}</code></p><p>{model.description || "No description published."}</p></header><div className="model-detail-actions"><a className="button" href="/models">All models</a><a className="button" href={`/recipes?q=${encodeURIComponent(model.title)}`}>Compare recipes</a><a className="button primary" href="/control#library-import">Open Controller instructions</a></div><section className="model-detail-boundary"><div><h2>Versions and weight variants</h2><p>Each row is a published model-version identity. Download size, source revision, format, license, and capability evidence are shown only when declared by that version.</p></div><div className="model-version-list">{model.versions.map((version) => <VersionRow key={`${version.publisher}/${version.slug}-${version.revision_id}`} version={version} />)}</div></section></main>;
 }
