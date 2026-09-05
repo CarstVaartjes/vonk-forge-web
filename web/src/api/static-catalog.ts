@@ -1,4 +1,4 @@
-import type { RecipeDetail, RecipePage, RecipeSummary } from "./client";
+import type { ModelPage, ModelSummary, ModelVersionSummary, RecipeDetail, RecipePage, RecipeSummary } from "./client";
 
 
 type JsonRecord = Record<string, unknown>;
@@ -6,6 +6,7 @@ type JsonRecord = Record<string, unknown>;
 interface LibraryRecipe {
   content_sha256: string;
   document: JsonRecord;
+  package: { expected_bytes: number; media_type: string; minimum_consumer_schema: number; path: string; recipe_content_sha256: string; sha256: string };
   release?: JsonRecord;
   source_path: string;
 }
@@ -15,6 +16,15 @@ interface LibraryIndex {
   repository: string;
   recipes: LibraryRecipe[];
   schema_version: number;
+  kind: "recipe-library-index";
+  source_commit: string;
+  package_contract: { media_type: string; path_prefix: string; schema_version: 2 };
+}
+
+interface LibraryEntity {
+  content_sha256?: string;
+  document: JsonRecord;
+  source_path?: string;
 }
 
 let cachedIndex: LibraryIndex | null = null;
@@ -33,6 +43,11 @@ function text(value: unknown, fallback = ""): string {
 
 function number(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function optionalNumber(value: unknown): number | null | undefined {
+  if (value === null) return null;
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
 }
 
 function nodeResources(document: JsonRecord): { disk: number; memory: number } {
@@ -81,18 +96,24 @@ function tags(document: JsonRecord): string[] {
 }
 
 function publicCapabilities(document: JsonRecord, recipeTags: string[]): string[] {
-  const adapters = new Set(array(document.interfaces).map((value) => text(record(value).adapter)));
-  const values = new Set<string>();
-  if (adapters.has("openai")) values.add("chat");
-  if (recipeTags.includes("reasoning")) values.add("reasoning");
-  if (recipeTags.some((value) => ["vision", "multimodal", "omni"].includes(value))) values.add("vision");
-  const editing = recipeTags.some((value) => ["editing", "image-to-image", "layered"].includes(value));
-  if (editing) values.add("image-editing");
-  if ((adapters.has("image-job") && !editing) || recipeTags.some((value) => ["generation", "text-to-image"].includes(value))) values.add("image-generation");
-  if (adapters.has("video-job") || recipeTags.includes("video")) values.add("video");
-  if (adapters.has("audio-job") || recipeTags.includes("audio")) values.add("audio");
-  if (adapters.has("mesh-job") || recipeTags.some((value) => ["three-d", "3d", "mesh"].includes(value))) values.add("3d");
+  void recipeTags;
+  const declaration = record(document.capabilities);
+  const facts = array(declaration.facts).map(record);
+  const values = new Set(facts.filter((fact) => fact.support === "supported").map((fact) => text(fact.capability)));
   return PUBLIC_CAPABILITIES.filter((value) => values.has(value));
+}
+
+function modelVersionCapabilities(document: JsonRecord, index: LibraryIndex): string[] {
+  const reference = record(document.model);
+  const modelVersion = array(index.catalog_entities)
+    .map((value) => record(record(value).document))
+    .find((candidate) => {
+      const identity = record(candidate.identity);
+      return candidate.kind === "model-version"
+        && identity.publisher === reference.publisher
+        && identity.slug === reference.slug;
+    });
+  return modelVersion ? publicCapabilities(modelVersion, []) : [];
 }
 
 function qualification(recipeTags: string[]): "candidate" | "cataloged" {
@@ -167,6 +188,99 @@ function modelMetadata(document: JsonRecord, index: LibraryIndex): { publisher: 
   return { publisher, slug, title, versionPublisher, versionSlug, versionTitle };
 }
 
+function entityIdentity(document: JsonRecord): { publisher: string; slug: string } {
+  const identity = record(document.identity);
+  return { publisher: text(identity.publisher), slug: text(identity.slug) };
+}
+
+function explicitCapabilities(document: JsonRecord): { values: Array<{ name: string; support: "supported" | "unsupported" | "unknown"; evidence_status: "declared" | "tested" | "contradicted" | "unknown"; evidence_digest?: string | null }>; evidence: "declared" | "unknown" } {
+  const declaration = record(document.capabilities);
+  const raw = declaration.facts;
+  if (!Array.isArray(raw)) return { values: [], evidence: "unknown" };
+  const values = raw.map((value) => {
+    const fact = record(value);
+    const name = text(fact.capability);
+    const support = ["supported", "unsupported", "unknown"].includes(text(fact.support)) ? text(fact.support) as "supported" | "unsupported" | "unknown" : "unknown";
+    const evidence_status = ["declared", "tested", "contradicted", "unknown"].includes(text(fact.evidence_status)) ? text(fact.evidence_status) as "declared" | "tested" | "contradicted" | "unknown" : "unknown";
+    return { name, support, evidence_status, evidence_digest: text(fact.evidence_digest) || null };
+  }).filter((value) => value.name);
+  return { values, evidence: values.length && declaration.provenance ? "declared" : "unknown" };
+}
+
+function mapModelVersion(
+  entity: LibraryEntity,
+  model: JsonRecord,
+  recipes: RecipeSummary[],
+): ModelVersionSummary {
+  const document = entity.document;
+  const identity = entityIdentity(document);
+  const modelIdentity = entityIdentity(model);
+  const metadata = record(document.metadata);
+  const source = record(document.source);
+  const format = record(document.format);
+  const parameters = record(document.parameters);
+  const limits = record(document.limits);
+  const sizes = record(document.sizes);
+  const license = record(document.license);
+  const capabilities = explicitCapabilities(document);
+  const recipeSlugs = recipes
+    .filter((recipe) => {
+      const catalog = recipe.catalog;
+      return catalog?.model_version_publisher === identity.publisher && catalog.model_version_slug === identity.slug;
+    })
+    .map((recipe) => `${recipe.publisher}/${recipe.slug}`)
+    .sort();
+  return {
+    publisher: identity.publisher,
+    slug: identity.slug,
+    title: text(metadata.title, identity.slug),
+    version: text(document.version, identity.slug),
+    revision_id: text(entity.content_sha256, "unknown"),
+    model_publisher: modelIdentity.publisher,
+    model_slug: modelIdentity.slug,
+    model_title: text(record(model.metadata).title, modelIdentity.slug),
+    source_repository: text(source.repository) || undefined,
+    source_revision: text(source.revision) || undefined,
+    format: { container: text(format.container) || undefined, precision: text(format.precision) || undefined, quantization: text(format.quantization) || undefined },
+    parameters: { total: optionalNumber(parameters.total), active: optionalNumber(parameters.active) },
+    limits: { context_tokens: optionalNumber(limits.context_tokens), resolution_pixels: optionalNumber(limits.resolution_pixels), frames: optionalNumber(limits.frames), sample_rate_hz: optionalNumber(limits.sample_rate_hz) },
+    sizes: { download_bytes: number(sizes.download_bytes), installed_bytes: number(sizes.installed_bytes) },
+    license: { spdx: text(license.spdx) || undefined, url: text(license.url) || undefined, attribution: array(license.attribution).map((value) => text(value)).filter(Boolean), operator_acceptance_required: typeof license.operator_acceptance_required === "boolean" ? license.operator_acceptance_required : undefined },
+    availability: ["active", "withdrawn", "superseded"].includes(text(document.availability)) ? text(document.availability) as ModelVersionSummary["availability"] : undefined,
+    tags: array(metadata.tags).map((value) => text(value).toLowerCase()).filter(Boolean),
+    capabilities: capabilities.values,
+    capability_evidence: capabilities.evidence,
+    recipe_slugs: recipeSlugs,
+  };
+}
+
+function mapModels(index: LibraryIndex, baseUrl: string): ModelSummary[] {
+  const entities = array(index.catalog_entities).map((value) => record(value) as unknown as LibraryEntity).filter((entity) => Object.keys(entity.document ?? {}).length > 0);
+  const recipes = index.recipes.map((item) => mapRecipe(item, index, baseUrl));
+  const models = entities.filter((entity) => entity.document.kind === "model");
+  const versions = entities.filter((entity) => entity.document.kind === "model-version");
+  return models.map((entity) => {
+    const identity = entityIdentity(entity.document);
+    const versionsForModel = versions.filter((version) => {
+      const reference = record(version.document.model);
+      return reference.publisher === identity.publisher && reference.slug === identity.slug;
+    });
+    const group = record(entity.document.model_group);
+    const versionRows = versionsForModel.map((version) => mapModelVersion(version, entity.document, recipes)).sort((left, right) => left.title.localeCompare(right.title));
+    return {
+      publisher: identity.publisher,
+      slug: identity.slug,
+      title: text(record(entity.document.metadata).title, identity.slug),
+      description: text(record(entity.document.metadata).description),
+      family: text(group.slug) || undefined,
+      tags: array(record(entity.document.metadata).tags).map((value) => text(value).toLowerCase()).filter(Boolean),
+      revision_id: text(entity.content_sha256, "unknown"),
+      versions: versionRows,
+      recipe_count: new Set(versionRows.flatMap((version) => version.recipe_slugs)).size,
+    };
+  }).sort((left, right) => left.title.localeCompare(right.title));
+}
+
 function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: RecipeSummary["artifacts"]): NonNullable<RecipeSummary["catalog"]> {
   const recipeTags = tags(document);
   const metadata = record(document.metadata);
@@ -194,7 +308,7 @@ function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: Re
     source_owner: source?.owner ?? null,
     source_repository: source?.repository ?? null,
     alignment,
-    capabilities: publicCapabilities(document, recipeTags),
+    capabilities: modelVersionCapabilities(document, index),
     qualification: qualification(recipeTags),
     execution_readiness: executionReadiness(recipeTags),
     runtime_distribution: text(runtime.slug, "unknown"),
@@ -207,7 +321,7 @@ function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: Re
   };
 }
 
-function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
+function mapRecipe(item: LibraryRecipe, index: LibraryIndex, baseUrl: string): RecipeDetail {
   const document = record(item.document);
   const identity = record(document.identity);
   const metadata = record(document.metadata);
@@ -232,7 +346,8 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
   });
   const provenance = record(document.provenance);
   const version = text(release.version);
-  const sourceUrl = `https://github.com/${index.repository}/blob/main/${item.source_path}`;
+  const sourceUrl = `https://github.com/${index.repository}/blob/${index.source_commit}/${item.source_path}`;
+  const packageUrl = new URL(item.package.path, baseUrl).toString();
   const contextPath = text(context.path);
 
   return {
@@ -264,7 +379,7 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
     },
     workload: {
       family: text(record(document.model).slug, publisher),
-      capabilities: publicCapabilities(document, tags(document)),
+      capabilities: modelVersionCapabilities(document, index),
     },
     deployment_profiles: [{ name: text(topology.name, nodeCount === 1 ? "single" : `${nodeCount}-node`), node_count: nodeCount }],
     capacity: {
@@ -287,7 +402,13 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
     },
     source: {
       recipe_url: sourceUrl,
-      bundle_url: contextPath ? `https://github.com/${index.repository}/tree/main/${contextPath}` : undefined,
+      bundle_url: contextPath ? `https://github.com/${index.repository}/tree/${index.source_commit}/${contextPath}` : undefined,
+    },
+    package: {
+      url: packageUrl,
+      sha256: item.package.sha256,
+      bytes: item.package.expected_bytes,
+      media_type: item.package.media_type,
     },
     catalog: publicMetadata(document, index, artifacts),
     latest_revision: {
@@ -303,7 +424,7 @@ async function loadIndex(url: string, signal?: AbortSignal): Promise<LibraryInde
   const response = await fetch(url, { headers: { Accept: "application/json" }, signal });
   if (!response.ok) throw new Error(`Recipe library returned ${response.status}`);
   const body = await response.json() as Partial<LibraryIndex>;
-  if (body.schema_version !== 2 || typeof body.repository !== "string" || !Array.isArray(body.recipes)) {
+  if (body.schema_version !== 2 || body.kind !== "recipe-library-index" || typeof body.repository !== "string" || typeof body.source_commit !== "string" || !Array.isArray(body.recipes) || !body.package_contract || body.package_contract.schema_version !== 2 || typeof body.package_contract.media_type !== "string" || typeof body.package_contract.path_prefix !== "string") {
     throw new Error("Recipe library returned an unsupported catalog index");
   }
   cachedIndex = body as LibraryIndex;
@@ -341,7 +462,7 @@ export async function listStaticRecipes(
   const sort = parameters.get("sort") ?? "newest";
   const offset = Math.max(0, Number.parseInt(parameters.get("cursor") ?? "0", 10) || 0);
   const pageSize = 24;
-  const recipes = index.recipes.map((item) => mapRecipe(item, index)).filter((recipe) => matches(recipe, parameters));
+  const recipes = index.recipes.map((item) => mapRecipe(item, index, url)).filter((recipe) => matches(recipe, parameters));
   recipes.sort((left, right) => {
     if (sort === "title") return left.title.localeCompare(right.title);
     if (sort === "disk") return (left.capacity?.maximum_installed_bytes_per_node ?? Number.MAX_SAFE_INTEGER) - (right.capacity?.maximum_installed_bytes_per_node ?? Number.MAX_SAFE_INTEGER);
@@ -356,7 +477,19 @@ export async function listStaticRecipes(
 
 export async function listStaticRecipeCatalog(url: string, signal?: AbortSignal): Promise<RecipeSummary[]> {
   const index = await loadIndex(url, signal);
-  return index.recipes.map((item) => mapRecipe(item, index));
+  return index.recipes.map((item) => mapRecipe(item, index, url));
+}
+
+export async function listStaticModels(url: string, signal?: AbortSignal): Promise<ModelPage> {
+  const index = await loadIndex(url, signal);
+  return { items: mapModels(index, url) };
+}
+
+export async function getStaticModel(url: string, publisher: string, slug: string, signal?: AbortSignal): Promise<ModelSummary> {
+  const page = await listStaticModels(url, signal);
+  const model = page.items.find((item) => item.publisher === publisher && item.slug === slug);
+  if (!model) throw new Error("Model not found in the public library");
+  return model;
 }
 
 export async function getStaticRecipe(
@@ -371,7 +504,7 @@ export async function getStaticRecipe(
     return identity.publisher === publisher && identity.slug === slug;
   });
   if (!item) throw new Error("Recipe not found in the public library");
-  return mapRecipe(item, index);
+  return mapRecipe(item, index, url);
 }
 
 export function resetStaticCatalogCacheForTests(): void {

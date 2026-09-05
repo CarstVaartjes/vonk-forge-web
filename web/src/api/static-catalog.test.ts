@@ -1,19 +1,27 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { getStaticRecipe, listStaticRecipes, resetStaticCatalogCacheForTests } from "./static-catalog";
+import { getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipes, resetStaticCatalogCacheForTests } from "./static-catalog";
 
 
 const index = {
   schema_version: 2,
+  kind: "recipe-library-index",
   repository: "CarstVaartjes/vonk-forge-recipes",
+  source_commit: "f".repeat(40),
+  package_contract: {
+    schema_version: 2,
+    media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip",
+    path_prefix: "recipe-packages/",
+  },
   catalog_entities: [
-    { document: { kind: "model-version", identity: { publisher: "qwen", slug: "qwen-fast-v1" }, model: { publisher: "qwen", slug: "qwen-fast" } } },
+    { document: { kind: "model-version", identity: { publisher: "qwen", slug: "qwen-fast-v1" }, model: { publisher: "qwen", slug: "qwen-fast" }, capabilities: { facts: [{ capability: "chat", support: "supported" }, { capability: "reasoning", support: "supported" }] } } },
     { document: { kind: "model", identity: { publisher: "qwen", slug: "qwen-fast" }, metadata: { title: "Qwen Fast Model" } } },
   ],
   recipes: [
     {
       content_sha256: "a".repeat(64),
       source_path: "recipes/qwen-fast.json",
+      package: { expected_bytes: 123, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", minimum_consumer_schema: 2, path: "recipe-packages/vonk-forge/qwen-fast.tar.gz", recipe_content_sha256: "a".repeat(64), sha256: "1".repeat(64) },
       release: { version: "2.1.0", released_at: "2026-08-28", history: [{}, {}] },
       document: {
         identity: { publisher: "vonk-forge", slug: "qwen-fast" },
@@ -35,6 +43,7 @@ const index = {
     {
       content_sha256: "d".repeat(64),
       source_path: "recipes/glm-dual.json",
+      package: { expected_bytes: 321, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", minimum_consumer_schema: 2, path: "recipe-packages/community/glm-dual.tar.gz", recipe_content_sha256: "d".repeat(64), sha256: "2".repeat(64) },
       release: { version: "1.0.0", released_at: "2026-08-27", history: [{}] },
       document: {
         identity: { publisher: "community", slug: "glm-dual" },
@@ -89,8 +98,31 @@ describe("static recipe library adapter", () => {
     const recipe = await getStaticRecipe("https://example.test/catalog-index.json", "vonk-forge", "qwen-fast");
 
     expect(recipe.import?.uri).toBe(`vonk://catalog/vonk-forge/qwen-fast@sha256:${"a".repeat(64)}`);
-    expect(recipe.source?.recipe_url).toBe("https://github.com/CarstVaartjes/vonk-forge-recipes/blob/main/recipes/qwen-fast.json");
-    expect(recipe.source?.bundle_url).toBe("https://github.com/CarstVaartjes/vonk-forge-recipes/tree/main/adapters/qwen");
+    expect(recipe.source?.recipe_url).toBe(`https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${"f".repeat(40)}/recipes/qwen-fast.json`);
+    expect(recipe.source?.bundle_url).toBe(`https://github.com/CarstVaartjes/vonk-forge-recipes/tree/${"f".repeat(40)}/adapters/qwen`);
+    expect(recipe.package).toMatchObject({ url: "https://example.test/recipe-packages/vonk-forge/qwen-fast.tar.gz", sha256: "1".repeat(64), bytes: 123 });
     expect(recipe.latest_revision.document).toMatchObject({ identity: { slug: "qwen-fast" } });
+  });
+
+  test("links model versions to recipes and preserves declared capability facts", async () => {
+    const page = await listStaticModels("https://example.test/catalog-index.json");
+    expect(page.items).toHaveLength(1);
+    expect(page.items[0]).toMatchObject({
+      publisher: "qwen",
+      slug: "qwen-fast",
+      title: "Qwen Fast Model",
+      recipe_count: 1,
+      versions: [{
+        slug: "qwen-fast-v1",
+        model_slug: "qwen-fast",
+        capabilities: [
+          { name: "chat", support: "supported" },
+          { name: "reasoning", support: "supported" },
+        ],
+        capability_evidence: "unknown",
+        recipe_slugs: ["vonk-forge/qwen-fast"],
+      }],
+    });
+    await expect(getStaticModel("https://example.test/catalog-index.json", "qwen", "missing")).rejects.toThrow("Model not found");
   });
 });

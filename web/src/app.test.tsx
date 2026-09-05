@@ -38,6 +38,10 @@ test("provides the catalog and publishing navigation", () => {
     "href",
     "/recipes",
   );
+  expect(within(primaryNavigation).getByRole("link", { name: "Models" })).toHaveAttribute(
+    "href",
+    "/models",
+  );
   expect(within(primaryNavigation).getByRole("link", { name: "Publish" })).toHaveAttribute(
     "href",
     "/publish",
@@ -197,7 +201,7 @@ test("maps the public catalog to operator-owned control and execution", () => {
 test("shows the safe operating loop without hiding the private boundary", () => {
   render(<App />);
 
-  for (const name of ["Install the controller", "Connect your Sparks", "Choose a recipe", "Preview, then run"]) {
+  for (const name of ["Install the controller", "Connect your Sparks", "Choose a model or recipe", "Download, run, switch"]) {
     expect(screen.getByRole("heading", { name })).toBeVisible();
   }
   expect(screen.getByRole("heading", { name: /your controller, your choice/i })).toBeVisible();

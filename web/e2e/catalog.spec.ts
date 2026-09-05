@@ -78,8 +78,8 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "DGX Spark fleet", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Install the controller" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Connect your Sparks" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Choose a recipe" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Preview, then run" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Choose a model or recipe" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Download, run, switch" })).toBeVisible();
 
   await page.keyboard.press("Tab");
   const skipLink = page.getByRole("link", { name: "Skip to content" });
@@ -200,7 +200,7 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
   await expect(page.getByRole("heading", { name: "Choose browser or terminal." })).toBeVisible();
   await expect(page.getByText(/uv tool install 'git\+https:\/\/github\.com\/CarstVaartjes\/vonk-forge\.git@main'/)).toBeVisible();
   await expect(page.getByText(/browser password is not a CLI credential/i)).toBeVisible();
-  await expect(page.getByText(/vonkctl library public facets/)).toBeVisible();
+  await expect(page.getByText(/vonkctl models list/)).toBeVisible();
 
   for (const width of [320, 1280]) {
     await page.setViewportSize({ width, height: 900 });

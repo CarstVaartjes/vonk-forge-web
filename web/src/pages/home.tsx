@@ -8,12 +8,12 @@ const setupFlow = [
     body: "Create a one-use grant, run the signed agent installer, and see each node arrive in Fleet.",
   },
   {
-    title: "Choose a recipe",
-    body: "Compare exact model, runtime, download, memory, topology, and qualification facts.",
+    title: "Choose a model or recipe",
+    body: "Compare exact versions, immutable weights, runtime, download, memory, topology, and evidence.",
   },
   {
-    title: "Preview, then run",
-    body: "Review placement and every planned change before you confirm it.",
+    title: "Download, run, switch",
+    body: "Let the local Controller prepare the selected scope, reuse verified assets, and show durable progress.",
   },
 ];
 
@@ -88,7 +88,7 @@ export function HomePage() {
           <p className="home-definition">
             Vonk Forge turns a laptop, NAS, or local server into the command
             center for your NVIDIA DGX Sparks. Find reproducible model recipes,
-            preview every change, and operate the result from one clear interface.
+            download exact assets, and operate the result from one clear interface.
           </p>
           <div className="hero-actions">
             <a className="button primary" href="/install">Install your controller</a>
@@ -156,7 +156,7 @@ export function HomePage() {
             src="/product/controller-library.webp"
             alt="Vonk Forge Library with browse, compare, model recipe, and lifecycle controls"
             title="Library makes the next action obvious"
-            body="Browse, compare, preview, install, and run from one model-centered workspace."
+            body="Browse models, compare recipes, download exact assets, and run from one model-centered workspace."
           />
           <ProductShot
             src="/product/controller-fleet.webp"
@@ -237,7 +237,7 @@ export function HomePage() {
         </div>
         <div className="hero-actions">
           <a className="button primary" href="/install">Install Vonk Forge</a>
-          <a className="button secondary" href="/recipes">Browse model recipes</a>
+          <a className="button secondary" href="/models">Browse models and recipes</a>
         </div>
       </section>
     </main>

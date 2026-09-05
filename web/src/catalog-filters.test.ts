@@ -53,7 +53,7 @@ describe("public catalog Controller-parity filters", () => {
   test("requires every selected capability and combines model, readiness, and Spark facets", () => {
     const both = recipe("both", { capabilities: ["chat", "reasoning"], node_count: 4, topology_mode: "distributed" });
     const chat = recipe("chat", { capabilities: ["chat"], node_count: 4, topology_mode: "distributed" });
-    const filters = { ...EMPTY_FILTERS, model: "models/both-v1", quantization: "NVFP4", updated: "7" as const, sparks: "4+" as const, readiness: "executable" as const, capabilities: ["chat", "reasoning"] };
+    const filters = { ...EMPTY_FILTERS, model: "models/both-v1", quantization: "NVFP4", updated: "30" as const, sparks: "4+" as const, readiness: "executable" as const, capabilities: ["chat", "reasoning"] };
     expect(recipeMatches(both, filters)).toBe(true);
     expect(recipeMatches(chat, filters)).toBe(false);
   });

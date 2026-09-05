@@ -80,7 +80,7 @@ export function ControlPage() {
         </p>
         <div className="usage-grid">
           <article><span>Fleet</span><h3>Enroll and watch Sparks</h3><p>Create one-use enrollment grants, inspect health and warnings, search nodes, choose telemetry ranges, edit profiles, re-enroll, and revoke.</p></article>
-          <article><span>Library</span><h3>Import and operate recipes</h3><p>Search local or public recipes, compare, preview, import, create, map, install, load, stop, retry, and uninstall with confirmation before changes.</p></article>
+          <article id="library-import"><span>Library</span><h3>Download, run, and switch</h3><p>Search models and public recipes, download exact model assets and recipe packages, then run or switch a saved profile. The Controller reports durable progress and actual per-Spark results.</p></article>
           <article><span>Activity</span><h3>Follow every operation</h3><p>Filter audit and job history by search, area, operator, status, or attention; inspect progress and resume recoverable work.</p></article>
         </div>
         <div className="control-note">
@@ -128,14 +128,15 @@ vonkctl fleet list`}</CommandBlock>
         </div>
 
         <div className="cli-section" aria-labelledby="cli-read-title">
-          <h3 id="cli-read-title"><span>03</span> Browse the same lists and options</h3>
+          <h3 id="cli-read-title"><span>03</span> Browse models and recipes</h3>
           <CommandBlock label="Fleet">{`vonkctl fleet list --search spark-2 --health stale --warnings-only
 vonkctl fleet show SPARK_ID --json
 vonkctl fleet telemetry SPARK_ID --range 24h --json
 vonkctl fleet enroll
 vonkctl fleet enroll --apply`}</CommandBlock>
-          <CommandBlock label="Library">{`vonkctl library list --search qwen --all --json
-vonkctl library compare RECIPE_ID RECIPE_ID --json
+          <CommandBlock label="Library">{`vonkctl models list --search qwen --json
+vonkctl models show MODEL_ID --json
+vonkctl models compare MODEL_ID MODEL_ID --json
 vonkctl library public facets --source-owner Qwen --json
 vonkctl library public list --model-type language --capability chat \
   --qualification cataloged --readiness executable --sort download --json
@@ -152,17 +153,15 @@ vonkctl activity job JOB_ID --json`}</CommandBlock>
         </div>
 
         <div className="cli-section" aria-labelledby="cli-change-title">
-          <h3 id="cli-change-title"><span>04</span> Preview, then apply changes</h3>
-          <CommandBlock label="Safe mutation pattern">{`vonkctl library install preview --mapping-id MAPPING_ID \
-  --recipe-build-id BUILD_ID --json
-
-vonkctl library install apply --mapping-id MAPPING_ID \
-  --recipe-build-id BUILD_ID --plan-digest DIGEST --apply`}</CommandBlock>
+          <h3 id="cli-change-title"><span>04</span> Download, run, or switch</h3>
+          <CommandBlock label="Normal workflow">{`vonkctl models download \
+  --model-version-sha256 MODEL_VERSION_SHA256 --json
+vonkctl models run --input-file run-request.json --json
+vonkctl profiles switch PROFILE_ID --apply --json`}</CommandBlock>
           <p>
-            Read commands are safe by default. Mutations require the appropriate
-            <code> apply</code> subcommand and <code>--apply</code>; omitting it prints a
-            dry-run plan. Request keys are generated automatically and can be supplied
-            explicitly for retry-safe automation.
+            Download, run, and switch use the same Controller authority as the browser.
+            The Controller handles preparation, reuse, and recovery; <code>--json</code>
+            exposes stable progress for scripts.
           </p>
         </div>
 
