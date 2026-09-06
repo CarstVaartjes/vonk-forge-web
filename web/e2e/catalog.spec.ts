@@ -72,15 +72,15 @@ test.beforeEach(async ({ page }) => {
 test("platform story stays navigable and bounded", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: /Local AI\.\s*One private control plane\./i })).toBeVisible();
-  await expect(page.getByText(/turns a laptop, NAS, or local server into the command center/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Run state-of-the-art local AI on your Sparks—with one click\./i })).toBeVisible();
+  await expect(page.getByText(/Models are the AI files\. Recipes describe the software and settings/i)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Catalog + signed releases", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Vonk Forge controller", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "DGX Spark fleet", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Install the controller" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Connect your Sparks" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Choose a model or recipe" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Download, run, switch" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Prepare, run, switch" })).toBeVisible();
 
   await page.keyboard.press("Tab");
   const skipLink = page.getByRole("link", { name: "Skip to content" });
@@ -135,7 +135,7 @@ test("minimum supported viewport does not overflow", async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { name: /Local AI\.\s*One private control plane\./i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Run state-of-the-art local AI on your Sparks—with one click\./i })).toBeVisible();
     const horizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );
@@ -154,14 +154,15 @@ test("models page explains the public to local boundary on demand", async ({ pag
   await expect(summary).toBeVisible();
   await summary.focus();
   await expect(summary).toBeFocused();
-  await expect(page.getByRole("heading", { name: "A model names the files. Your Controller prepares the run." })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Global facts. Local preparation. One run." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Pick a model. Choose how to run it." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "From the catalog to your NAS" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Available globally" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Prepared locally" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Run on Sparks" })).toBeVisible();
-  await expect(page.getByText(/Verified NAS model cache/)).toBeVisible();
-  await expect(page.getByText(/runtime image is downloaded or built correctly into the exact archive/i)).toBeVisible();
-  await expect(page.getByText(/sole authority for recipe instructions/i)).toBeVisible();
+  await expect(page.getByText(/Model files downloaded and verified on your NAS/i)).toBeVisible();
+  await expect(page.getByText(/container image—the software needed to run the model—has been downloaded or built and cached on your NAS/i)).toBeVisible();
+  await expect(page.getByText(/Local means cached on your NAS. Running starts when you choose Run. Recipe definitions stay in the global repository/i)).toBeVisible();
+  await expect(page.getByText(/Profiles remember your model, recipe, and Spark assignments/i)).toBeVisible();
 
   const horizontalOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,

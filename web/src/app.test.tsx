@@ -11,11 +11,9 @@ test("defines the product and puts installation first", () => {
   render(<App />);
 
   expect(
-    screen.getByRole("heading", { name: /local ai\.\s*one private control plane/i }),
+    screen.getByRole("heading", { name: /run state-of-the-art local ai on your sparks—with one click/i }),
   ).toBeVisible();
-  expect(
-    screen.getByText(/turns a laptop, NAS, or local server into the command center/i),
-  ).toBeVisible();
+  expect(screen.getByText(/Models are the AI files\. Recipes describe the software and settings/i)).toBeVisible();
   expect(screen.getByRole("link", { name: "Install your controller" })).toHaveAttribute("href", "/install");
   expect(screen.queryByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).not.toBeInTheDocument();
   expect(screen.getByRole("link", { name: /review the four checks, then copy the command/i })).toHaveAttribute(
@@ -102,9 +100,8 @@ test("explains the operator-owned architecture for one to many Sparks", () => {
   expect(screen.getByText(/management-lan tls \/ mtls/i)).toBeVisible();
   expect(screen.getByText("NVIDIA fabric", { selector: "strong" })).toBeVisible();
   expect(screen.getByText("Local project files")).toBeVisible();
-  expect(screen.getByText(/base install publishes only/)).toHaveTextContent(
-    /svc:vonk-forge.*enabling Hermes adds svc:hermes-api and svc:hermes-dashboard/i,
-  );
+  expect(screen.getByText(/Prepares and caches verified model files and runtime images on your NAS/i)).toBeVisible();
+  expect(screen.getByText(/Prepared assets are distributed as needed/i)).toBeVisible();
 
 });
 
@@ -215,7 +212,7 @@ test("maps the public catalog to operator-owned control and execution", () => {
 test("shows the safe operating loop without hiding the private boundary", () => {
   render(<App />);
 
-  for (const name of ["Install the controller", "Connect your Sparks", "Choose a model or recipe", "Download, run, switch"]) {
+  for (const name of ["Install the controller", "Connect your Sparks", "Choose a model or recipe", "Prepare, run, switch"]) {
     expect(screen.getByRole("heading", { name })).toBeVisible();
   }
   expect(screen.getByRole("heading", { name: /your controller, your choice/i })).toBeVisible();

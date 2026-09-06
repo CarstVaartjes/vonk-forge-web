@@ -1,19 +1,19 @@
 const setupFlow = [
   {
     title: "Install the controller",
-    body: "Prepare one self-contained Docker Compose project on a computer you own.",
+    body: "Put one Controller on a laptop, NAS, or local server.",
   },
   {
     title: "Connect your Sparks",
-    body: "Create a one-use grant, run the signed agent installer, and see each node arrive in Fleet.",
+    body: "Connect one or more Sparks and see which nodes are ready.",
   },
   {
     title: "Choose a model or recipe",
-    body: "Compare exact versions, immutable weights, runtime, download, memory, topology, and evidence.",
+    body: "Choose a model for what it can do, then a recipe for the engine, settings, and number of Sparks.",
   },
   {
-    title: "Download, run, switch",
-    body: "Let the local Controller prepare the selected scope, reuse verified assets, and show durable progress.",
+    title: "Prepare, run, switch",
+    body: "Your Controller caches verified model files and runtime images on the NAS, then shows progress, recovery, and the next action.",
   },
 ];
 
@@ -84,11 +84,10 @@ export function HomePage() {
     <main className="home-page">
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero-copy">
-          <h1 id="home-title">Local AI.<br />One private control plane.</h1>
+          <h1 id="home-title">Run state-of-the-art local AI on your Sparks—with one click.</h1>
           <p className="home-definition">
-            Vonk Forge turns a laptop, NAS, or local server into the command
-            center for your NVIDIA DGX Sparks. Find reproducible model recipes,
-            download exact assets, and operate the result from one clear interface.
+            Models are the AI files. Recipes describe the software and settings
+            that run them on your Sparks.
           </p>
           <div className="hero-actions">
             <a className="button primary" href="/install">Install your controller</a>
@@ -127,10 +126,10 @@ export function HomePage() {
 
       <section className="setup-section" aria-labelledby="setup-title">
         <div className="home-section-heading">
-          <h2 id="setup-title">From blank host to running model. One visible flow.</h2>
+          <h2 id="setup-title">From choice to running Sparks. One visible flow.</h2>
           <p>
-            No mystery automation and no routine SSH scavenger hunt. Each stage
-            has a clear input, a visible result, and a deliberate confirmation.
+            Your Controller prepares the selected assets, places them for the
+            recipe, starts the run, and keeps updates and recovery close by.
           </p>
         </div>
         <ol className="setup-flow">
@@ -157,13 +156,13 @@ export function HomePage() {
             src="/product/controller-library.webp"
             alt="Vonk Forge Library with browse, compare, model recipe, and lifecycle controls"
             title="Library makes the next action obvious"
-            body="Browse models, compare recipes, download exact assets, and run from one model-centered workspace."
+            body="Browse models by capability, compare recipes, prepare cached assets, and run from one model-centered workspace."
           />
           <ProductShot
             src="/product/controller-fleet.webp"
             alt="Vonk Forge Fleet showing two Sparks, live capacity, workloads, and operational warnings"
             title="Fleet shows reality, including blockers"
-            body="Capacity, placement, telemetry, workloads, and recovery guidance stay together."
+            body="Progress, placement, workloads, updates, and recovery guidance stay together."
           />
         </div>
         <div className="control-paths">

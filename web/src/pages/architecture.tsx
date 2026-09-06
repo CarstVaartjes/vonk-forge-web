@@ -1,7 +1,7 @@
 const connections = [
   { className: "tailnet", label: "Tailscale HTTPS", detail: "Human browser access" },
   { className: "management", label: "Management-LAN TLS / mTLS", detail: "Enrollment, claims, and evidence" },
-  { className: "artifact", label: "Verified downloads", detail: "Recipes, packages, images, and models" },
+  { className: "artifact", label: "Prepared assets", detail: "Model files and runtime images" },
   { className: "fabric", label: "NVIDIA fabric", detail: "Recipe-selected multi-node ranks" },
 ];
 
@@ -13,10 +13,10 @@ export function ArchitecturePage() {
         <p className="eyebrow">System architecture · 1…N nodes</p>
         <h1 id="architecture-title"><span>One control plane.</span><span>One to many Sparks.</span></h1>
         <p>
-          The public catalog describes reproducible work. Your local controller
-          owns policy, state, and runtime authority. It can run on this laptop,
-          a NAS, or another Docker Compose host. Each Spark contributes native NVIDIA
-          compute without receiving control-plane or registry secrets.
+          Find a model by what it can do, then choose a recipe for its engine,
+          settings, and number of Sparks. Your local Controller prepares verified
+          model files and runtime images on a laptop, NAS, or local server, then
+          distributes the selected assets and placement needed to run the workload.
         </p>
       </section>
 
@@ -29,7 +29,7 @@ export function ArchitecturePage() {
         <figure className="architecture-canvas" aria-labelledby="placement-title">
           <article className="architecture-zone zone-public">
             <div className="zone-heading"><span>Public</span><h3>Public catalog</h3></div>
-            <p>Vonkforge.ai, typed recipes, source bundles, bounded evidence, and immutable revisions.</p>
+            <p>Models, their capabilities, and recipes with the software and settings for one or more Sparks.</p>
             <ul><li>Cloudflare Pages</li><li>GitHub + GHCR</li><li>Signed APT repository</li></ul>
           </article>
 
@@ -37,7 +37,7 @@ export function ArchitecturePage() {
 
           <article className="architecture-zone zone-operator">
             <div className="zone-heading"><span>Your device</span><h3>Operator workstation</h3></div>
-            <p>Runs the installer, stages secrets, and either hosts Compose here or transfers the project to another local computer.</p>
+            <p>Runs the installer and opens the private Controller, wherever you choose to host it.</p>
             <ul><li>Browser + Tailscale</li><li>1Password</li><li>Local project files</li></ul>
           </article>
 
@@ -45,19 +45,19 @@ export function ArchitecturePage() {
 
           <article className="architecture-zone zone-control">
             <div className="zone-heading"><span>Operator owned</span><h3>Local controller</h3></div>
-            <p>Docker Compose runs the API, worker, PostgreSQL, Caddy, LiteLLM, and one userspace Tailscale gateway. The base install publishes only <code>svc:vonk-forge</code>; enabling Hermes adds <code>svc:hermes-api</code> and <code>svc:hermes-dashboard</code>.</p>
-            <ul><li>Runtime secret files</li><li>Policy + durable state</li><li>Placement + route authority</li></ul>
+            <p>Prepares and caches verified model files and runtime images on your NAS, then keeps progress, updates, recovery, and profiles in one place.</p>
+            <ul><li>Policy + durable state</li><li>Progress + recovery</li><li>Placement + route authority</li></ul>
           </article>
 
           <div className="architecture-flow flow-management" aria-hidden="true"><span>outbound agent mTLS</span></div>
 
           <article className="architecture-zone zone-fleet">
             <div className="zone-heading"><span>1…N nodes</span><h3>Spark fleet</h3></div>
-            <p>Every node runs one signed Rust agent and accepted workloads through the native NVIDIA container stack.</p>
+            <p>Runs the selected workload through the native NVIDIA container stack. Prepared assets are distributed as needed; a sharded model does not mean a full copy on every Spark.</p>
             <div className="spark-row" aria-label="Example scalable Spark fleet">
               <span>Spark 01</span><i aria-hidden="true" /><span>Spark 02</span><i aria-hidden="true" /><span>Spark N</span>
             </div>
-            <ul><li>Local NVMe model cache</li><li>Rootless source build</li><li>Recipe-selected ranks</li></ul>
+            <ul><li>Prepared assets as needed</li><li>Rootless source build</li><li>Recipe-selected ranks</li></ul>
           </article>
         </figure>
 
