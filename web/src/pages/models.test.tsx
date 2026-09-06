@@ -82,6 +82,7 @@ describe("public model browse", () => {
     render(<ModelsPage />);
     await waitFor(() => expect(screen.getByRole("alert")).toBeVisible());
     expect(screen.getByRole("button", { name: "Retry" })).toBeVisible();
+    expect(screen.queryByText("Loading models…")).not.toBeInTheDocument();
   });
 
   test("keeps the full source revision available on the model version detail", async () => {

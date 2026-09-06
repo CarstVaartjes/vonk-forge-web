@@ -72,9 +72,9 @@ test.beforeEach(async ({ page }) => {
 test("platform story stays navigable and bounded", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: /Run state-of-the-art local AI on your Sparks—with one click\./i })).toBeVisible();
-  await expect(page.getByText(/Models are the AI files\. Recipes describe the software and settings/i)).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Catalog + signed releases", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Frontier AI\.\s*Your Sparks\.\s*One click\./i })).toBeVisible();
+  await expect(page.getByText(/Run state-of-the-art models locally on your Sparks with one private Controller/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Catalog + verified releases", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Vonk Forge controller", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "DGX Spark fleet", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Install the controller" })).toBeVisible();
@@ -100,7 +100,7 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   expect(horizontalOverflow).toBeLessThanOrEqual(0);
 
   await page.keyboard.press("Tab");
-  await expect(page.getByRole("link", { name: "Install your controller" })).toBeFocused();
+  await expect(page.locator(".home-hero").getByRole("link", { name: "Set up your Controller" })).toBeFocused();
 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(page.locator("html")).toHaveCSS("scroll-behavior", "auto");
@@ -135,7 +135,7 @@ test("minimum supported viewport does not overflow", async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { name: /Run state-of-the-art local AI on your Sparks—with one click\./i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Frontier AI\.\s*Your Sparks\.\s*One click\./i })).toBeVisible();
     const horizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );

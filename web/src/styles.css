@@ -2176,11 +2176,13 @@ a {
 }
 
 .home-hero-copy h1 {
-  max-width: 10.5ch;
+  max-width: 14ch;
   margin: 0;
   font-size: clamp(3.6rem, 6.6vw, 6rem);
   line-height: 0.91;
 }
+
+.home-hero-copy h1 span { display: block; }
 
 .home-definition {
   max-width: 39rem;
