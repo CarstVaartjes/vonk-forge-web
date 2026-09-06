@@ -51,17 +51,17 @@ export function PublicCatalogExplainer() {
     if (window.location.hash === "#model-recipe-explainer") setOpen(true);
   }, []);
   return <details id="model-recipe-explainer" className="public-contract-explainer" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
-    <summary>How a model becomes a local run</summary>
+    <summary>How global availability becomes a local run</summary>
     <div className="public-contract-content" aria-labelledby="public-contract-heading">
       <header className="public-contract-heading">
-        <h2 id="public-contract-heading">A model is the AI. A recipe is how you run it.</h2>
-        <p>The catalog shows published details. Your Controller uses them when you choose a local run.</p>
+        <h2 id="public-contract-heading">A model names the files. A recipe prepares the run.</h2>
+        <p>The global catalog publishes the contract. Your Controller prepares the matching assets on your side of the boundary.</p>
       </header>
       <div className="model-recipe-relationship" aria-label="One model can have several recipes">
       <article className="explainer-entity explainer-model">
         <h3>Model</h3>
-        <p className="explainer-label">Example · Illustrative text model</p>
-        <p>One exact release: the weights and files it points to, plus what it can do.</p>
+        <p className="explainer-label">Global catalog · one exact release</p>
+        <p>The weights and files it points to, plus the capabilities the publisher declares.</p>
         <ul className="explainer-fields" aria-label="Model details">
           <li><strong>Family</strong><span>related models</span></li>
           <li><strong>Version</strong><span>one specific release</span></li>
@@ -72,47 +72,47 @@ export function PublicCatalogExplainer() {
       <div className="recipe-options">
         <article className="explainer-entity explainer-recipe">
           <h3>One way to run it</h3>
-          <p className="explainer-label">Recipe A · one Spark</p>
-          <p>The same model, with one engine, Spark choice, and set of settings.</p>
+          <p className="explainer-label">Global recipe instructions · one Spark</p>
+          <p>The same model, with one engine, Spark topology, and set of settings.</p>
           <p className="explainer-fields-inline"><span>engine</span><span>Sparks</span><span>settings</span></p>
         </article>
         <article className="explainer-entity explainer-recipe">
           <h3>Another way to run it</h3>
-          <p className="explainer-label">Recipe B · two Sparks</p>
-          <p>Same model again, with a different engine or number of Sparks.</p>
+          <p className="explainer-label">Global recipe instructions · two Sparks</p>
+          <p>Same model again, with a different engine or Spark topology.</p>
           <p className="explainer-fields-inline"><span>engine</span><span>Sparks</span><span>settings</span></p>
         </article>
       </div>
       </div>
-      <p className="relationship-caption">One exact model can have several recipes. The recipe changes how the model runs; it does not change the model files.</p>
+      <p className="relationship-caption">One exact model can have several recipes. The recipe changes how the model runs; it does not change the model files or become an authored fork.</p>
       <section className="controller-handoff" aria-labelledby="controller-handoff-heading">
         <header>
-          <h3 id="controller-handoff-heading">Download once. Reuse across your Sparks.</h3>
-          <p>Published model and recipe details travel to your Controller. The work of preparing a run stays on your side of the boundary.</p>
+          <h3 id="controller-handoff-heading">Global facts. Local preparation. One run.</h3>
+          <p>Models and recipes are available globally; their prepared assets live in your private Controller storage until you choose Sparks.</p>
         </header>
-        <div className="handoff-map">
-          <div className="handoff-public">
-            <strong>Published catalog</strong>
-            <p>Model details, recipes, and the download sources they point to.</p>
-          </div>
-          <div className="handoff-arrow" aria-hidden="true"><span>choose a run</span></div>
-          <div className="handoff-local">
-            <strong>Your Controller</strong>
-            <p>Run downloads or builds missing assets with visible progress. It caches model files and the runtime container separately on your NAS or Controller storage, reuses cached assets when you switch, copies verified assets to selected Sparks, then starts the application.</p>
-            <div className="handoff-inputs" aria-label="Local Controller inputs">
-              <span><strong>Model files</strong><small>download sources</small></span>
-              <span><strong>Runtime container</strong><small>the software that runs the model</small></span>
-            </div>
-            <ol aria-label="Local Controller run sequence">
-              <li>download or build</li>
-              <li>local cache</li>
-              <li>selected Sparks</li>
-              <li>application run</li>
-            </ol>
-          </div>
+        <div className="availability-map" aria-label="Global catalog to local run">
+          <section className="availability-column availability-global" aria-labelledby="availability-global-heading">
+            <h4 id="availability-global-heading">Available globally</h4>
+            <ul className="availability-list">
+              <li><strong>Available models</strong><span>Global catalog</span><p>Published model identity, exact revision, and weight sources.</p></li>
+              <li><strong>Available recipes</strong><span>Global recipe repository</span><p>Instructions for the model, runtime, Spark topology, and settings.</p></li>
+            </ul>
+          </section>
+          <div className="availability-connector" aria-hidden="true"><span>prepare locally</span></div>
+          <section className="availability-column availability-local" aria-labelledby="availability-local-heading">
+            <h4 id="availability-local-heading">Prepared locally</h4>
+            <ul className="availability-list">
+              <li><strong>Local models</strong><span>Verified NAS model cache</span><p>Model files prepared for a Controller run. Cached does not mean running.</p></li>
+              <li><strong>Local recipes</strong><span>Exact runtime archives on NAS</span><p>Recipe metadata and package are downloaded separately; the runtime image is downloaded or built correctly into the exact archive the recipe names.</p></li>
+            </ul>
+          </section>
+          <section className="availability-run" aria-labelledby="availability-run-heading">
+            <h4 id="availability-run-heading">Run on Sparks</h4>
+            <p>Your Controller combines the verified model cache and prepared runtime image, sends the selected assets to the chosen Sparks, and starts the application.</p>
+          </section>
         </div>
-        <p className="private-boundary"><strong>Private by design:</strong> view downloads, running models, and Spark status in your private Controller.</p>
-        <p className="profile-note">Profiles save your model and recipe choices plus Spark assignments, including idle Sparks.</p>
+        <p className="private-boundary"><strong>Authority stays global:</strong> the global recipe repository remains the sole authority for recipe instructions. Local recipes are prepared copies and runtime artifacts, not authored forks.</p>
+        <p className="profile-note">The public site cannot see private NAS cache, download, or running state. View that state in your <a href="/control">private Controller</a>. <a href="https://github.com/CarstVaartjes/vonk-forge-recipes/blob/main/docs/recipe-authoring.md">Read the recipe authoring guide ↗</a></p>
       </section>
     </div>
   </details>;

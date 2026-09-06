@@ -56,10 +56,15 @@ describe("public model browse", () => {
     expect(screen.queryByText("Published model")).not.toBeInTheDocument();
     expect(screen.queryByText(/000000000000/)).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /View versions/ })[0]).toHaveAttribute("href", "/models/publisher/model-1");
-    fireEvent.click(screen.getByText("How a model becomes a local run"));
-    expect(screen.getByRole("heading", { name: "A model is the AI. A recipe is how you run it." })).toBeVisible();
+    fireEvent.click(screen.getByText("How global availability becomes a local run"));
+    expect(screen.getByRole("heading", { name: "A model names the files. A recipe prepares the run." })).toBeVisible();
     expect(screen.getByText(/One exact model can have several recipes/)).toBeVisible();
-    expect(screen.getByText(/view downloads, running models, and Spark status/i)).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Available globally" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Prepared locally" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Run on Sparks" })).toBeVisible();
+    expect(screen.getByText(/Verified NAS model cache/)).toBeVisible();
+    expect(screen.getByText(/runtime image is downloaded or built correctly into the exact archive/i)).toBeVisible();
+    expect(screen.getByText(/sole authority for recipe instructions/i)).toBeVisible();
     fireEvent.change(screen.getByLabelText("Capability"), { target: { value: "ocr" } });
     expect(window.location.search).toBe("?capability=ocr");
     expect(screen.getByText("7 of 13 models")).toBeVisible();

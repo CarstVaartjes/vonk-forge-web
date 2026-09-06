@@ -154,11 +154,14 @@ test("models page explains the public to local boundary on demand", async ({ pag
   await expect(summary).toBeVisible();
   await summary.focus();
   await expect(summary).toBeFocused();
-  await expect(page.getByRole("heading", { name: "A model is the AI. A recipe is how you run it." })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Download once. Reuse across your Sparks." })).toBeVisible();
-  await expect(page.getByText(/view downloads, running models, and Spark status in your private Controller/i)).toBeVisible();
-  await expect(explainer.getByText("Recipe A · one Spark")).toBeVisible();
-  await expect(explainer.getByText("Recipe B · two Sparks")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "A model names the files. A recipe prepares the run." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Global facts. Local preparation. One run." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Available globally" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Prepared locally" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Run on Sparks" })).toBeVisible();
+  await expect(page.getByText(/Verified NAS model cache/)).toBeVisible();
+  await expect(page.getByText(/runtime image is downloaded or built correctly into the exact archive/i)).toBeVisible();
+  await expect(page.getByText(/sole authority for recipe instructions/i)).toBeVisible();
 
   const horizontalOverflow = await page.evaluate(
     () => document.documentElement.scrollWidth - window.innerWidth,
