@@ -51,17 +51,17 @@ export function PublicCatalogExplainer() {
     if (window.location.hash === "#model-recipe-explainer") setOpen(true);
   }, []);
   return <details id="model-recipe-explainer" className="public-contract-explainer" open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
-    <summary>How a model becomes a local run</summary>
+    <summary>How global availability becomes a local run</summary>
     <div className="public-contract-content" aria-labelledby="public-contract-heading">
       <header className="public-contract-heading">
-        <h2 id="public-contract-heading">A model is the AI. A recipe is how you run it.</h2>
-        <p>The catalog shows published details. Your Controller uses them when you choose a local run.</p>
+        <h2 id="public-contract-heading">Pick a model. Choose how to run it.</h2>
+        <p>Models are the AI files. Recipes describe the software and settings that run them on your Sparks.</p>
       </header>
       <div className="model-recipe-relationship" aria-label="One model can have several recipes">
       <article className="explainer-entity explainer-model">
         <h3>Model</h3>
-        <p className="explainer-label">Example · Illustrative text model</p>
-        <p>One exact release: the weights and files it points to, plus what it can do.</p>
+        <p className="explainer-label">Global catalog · one exact release</p>
+        <p>The files to download, the capabilities it has, and its exact versions.</p>
         <ul className="explainer-fields" aria-label="Model details">
           <li><strong>Family</strong><span>related models</span></li>
           <li><strong>Version</strong><span>one specific release</span></li>
@@ -72,13 +72,13 @@ export function PublicCatalogExplainer() {
       <div className="recipe-options">
         <article className="explainer-entity explainer-recipe">
           <h3>One way to run it</h3>
-          <p className="explainer-label">Recipe A · one Spark</p>
-          <p>The same model, with one engine, Spark choice, and set of settings.</p>
+          <p className="explainer-label">Global recipe instructions · one Spark</p>
+          <p>The same model, with one engine, number of Sparks, and set of settings.</p>
           <p className="explainer-fields-inline"><span>engine</span><span>Sparks</span><span>settings</span></p>
         </article>
         <article className="explainer-entity explainer-recipe">
           <h3>Another way to run it</h3>
-          <p className="explainer-label">Recipe B · two Sparks</p>
+          <p className="explainer-label">Global recipe instructions · two Sparks</p>
           <p>Same model again, with a different engine or number of Sparks.</p>
           <p className="explainer-fields-inline"><span>engine</span><span>Sparks</span><span>settings</span></p>
         </article>
@@ -87,32 +87,32 @@ export function PublicCatalogExplainer() {
       <p className="relationship-caption">One exact model can have several recipes. The recipe changes how the model runs; it does not change the model files.</p>
       <section className="controller-handoff" aria-labelledby="controller-handoff-heading">
         <header>
-          <h3 id="controller-handoff-heading">Download once. Reuse across your Sparks.</h3>
-          <p>Published model and recipe details travel to your Controller. The work of preparing a run stays on your side of the boundary.</p>
+          <h3 id="controller-handoff-heading">From the catalog to your NAS</h3>
+          <p>The catalog describes what is available. Your Controller prepares the files on your NAS; running starts when you choose Run.</p>
         </header>
-        <div className="handoff-map">
-          <div className="handoff-public">
-            <strong>Published catalog</strong>
-            <p>Model details, recipes, and the download sources they point to.</p>
-          </div>
-          <div className="handoff-arrow" aria-hidden="true"><span>choose a run</span></div>
-          <div className="handoff-local">
-            <strong>Your Controller</strong>
-            <p>Run downloads or builds missing assets with visible progress. It caches model files and the runtime container separately on your NAS or Controller storage, reuses cached assets when you switch, copies verified assets to selected Sparks, then starts the application.</p>
-            <div className="handoff-inputs" aria-label="Local Controller inputs">
-              <span><strong>Model files</strong><small>download sources</small></span>
-              <span><strong>Runtime container</strong><small>the software that runs the model</small></span>
-            </div>
-            <ol aria-label="Local Controller run sequence">
-              <li>download or build</li>
-              <li>local cache</li>
-              <li>selected Sparks</li>
-              <li>application run</li>
-            </ol>
-          </div>
+        <div className="availability-map" aria-label="Global catalog to local run">
+          <section className="availability-column availability-global" aria-labelledby="availability-global-heading">
+            <h4 id="availability-global-heading">Available globally</h4>
+            <ul className="availability-list">
+              <li><strong>Available models</strong><span>Global catalog</span><p>Capabilities, versions, and download files.</p></li>
+              <li><strong>Available recipes</strong><span>Global recipe repository</span><p>Software, settings, and the number of Sparks.</p></li>
+            </ul>
+          </section>
+          <div className="availability-connector" aria-hidden="true"><span>prepare locally</span></div>
+          <section className="availability-column availability-local" aria-labelledby="availability-local-heading">
+            <h4 id="availability-local-heading">Prepared locally</h4>
+            <ul className="availability-list">
+              <li><strong>Local models</strong><span>Verified NAS model cache</span><p>Model files downloaded and verified on your NAS.</p></li>
+              <li><strong>Local recipes</strong><span>Prepared runtime image on NAS</span><p>Recipes whose container image—the software needed to run the model—has been downloaded or built and cached on your NAS.</p></li>
+            </ul>
+          </section>
+          <section className="availability-run" aria-labelledby="availability-run-heading">
+            <h4 id="availability-run-heading">Run on Sparks</h4>
+            <p>Your Controller combines the verified model cache and prepared runtime image, sends the selected assets to the chosen Sparks, and starts the application.</p>
+          </section>
         </div>
-        <p className="private-boundary"><strong>Private by design:</strong> view downloads, running models, and Spark status in your private Controller.</p>
-        <p className="profile-note">Profiles save your model and recipe choices plus Spark assignments, including idle Sparks.</p>
+        <p className="private-boundary">Local means cached on your NAS. Running starts when you choose Run. Recipe definitions stay in the global repository.</p>
+        <p className="profile-note">Profiles remember your model, recipe, and Spark assignments. The public site cannot see private NAS cache, download, or running state; view that state in your <a href="/control">private Controller</a>. <a href="https://github.com/CarstVaartjes/vonk-forge-recipes/blob/main/docs/recipe-authoring.md">Read the recipe authoring guide ↗</a></p>
       </section>
     </div>
   </details>;
@@ -186,7 +186,7 @@ export function ModelsPage() {
   useEffect(() => { document.title = "Models · Vonk Forge"; }, []);
   return <main className="models-page">
     <header className="page-intro models-intro"><div><p className="eyebrow">Public model index</p><h1>Models, with their exact versions.</h1></div><p>Start with a model, then inspect its exact versions and variants and the recipes that bind them. Details come from the published catalog; local cache and running state stay in your Controller.</p></header>
-    <section className="model-index-tools" aria-label="Model index controls"><label htmlFor="model-search">Find a model</label><input id="model-search" type="search" value={filters.query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder="Search model, family, publisher, or tag" /><label htmlFor="model-publisher">Publisher</label><select id="model-publisher" value={filters.publisher} onChange={(event) => updateFilters({ publisher: event.target.value })}><option value="">All publishers</option>{publishers.map((publisher) => <option key={publisher} value={publisher}>{publisher}</option>)}</select><label htmlFor="model-capability">Capability</label><select id="model-capability" value={filters.capability} onChange={(event) => updateFilters({ capability: event.target.value })}><option value="">All declared capabilities</option>{CAPABILITY_OPTIONS.map((capability) => <option key={capability} value={capability}>{filterLabel(capability)}</option>)}</select><label htmlFor="model-recipes">Recipe support</label><select id="model-recipes" value={filters.recipes} onChange={(event) => updateFilters({ recipes: event.target.value })}><option value="">All models</option><option value="recipes">Has public recipes</option><option value="none">No public recipes</option></select><label htmlFor="model-sort">Sort</label><select id="model-sort" value={filters.sort} onChange={(event) => updateFilters({ sort: event.target.value })}><option value="name">Name</option><option value="versions">Most versions</option><option value="recipes">Most recipes</option></select><span aria-live="polite">{models ? `${filtered.length} of ${models.length} models` : "Loading models…"}</span>{(filters.query || filters.publisher || filters.capability || filters.recipes || filters.sort !== "name") ? <button className="text-button" type="button" onClick={clearFilters}>Clear filters</button> : null}</section>
+    <section className="model-index-tools" aria-label="Model index controls"><label htmlFor="model-search">Find a model</label><input id="model-search" type="search" value={filters.query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder="Search model, family, publisher, or tag" /><label htmlFor="model-publisher">Publisher</label><select id="model-publisher" value={filters.publisher} onChange={(event) => updateFilters({ publisher: event.target.value })}><option value="">All publishers</option>{publishers.map((publisher) => <option key={publisher} value={publisher}>{publisher}</option>)}</select><label htmlFor="model-capability">Capability</label><select id="model-capability" value={filters.capability} onChange={(event) => updateFilters({ capability: event.target.value })}><option value="">All declared capabilities</option>{CAPABILITY_OPTIONS.map((capability) => <option key={capability} value={capability}>{filterLabel(capability)}</option>)}</select><label htmlFor="model-recipes">Recipe support</label><select id="model-recipes" value={filters.recipes} onChange={(event) => updateFilters({ recipes: event.target.value })}><option value="">All models</option><option value="recipes">Has public recipes</option><option value="none">No public recipes</option></select><label htmlFor="model-sort">Sort</label><select id="model-sort" value={filters.sort} onChange={(event) => updateFilters({ sort: event.target.value })}><option value="name">Name</option><option value="versions">Most versions</option><option value="recipes">Most recipes</option></select><span aria-live="polite">{models ? `${filtered.length} of ${models.length} models` : error ? "Model index unavailable" : "Loading models…"}</span>{(filters.query || filters.publisher || filters.capability || filters.recipes || filters.sort !== "name") ? <button className="text-button" type="button" onClick={clearFilters}>Clear filters</button> : null}</section>
     <PublicCatalogExplainer />
     {error ? <div className="status-panel error" role="alert"><h2>Models are temporarily unavailable.</h2><p>The public model index could not be loaded. Try again when the catalog source is reachable.</p><button className="button" type="button" onClick={() => { setModels(null); setAttempt((value) => value + 1); }}>Retry</button></div> : null}
     {!models && !error ? <div className="status-panel" role="status">Loading immutable model index…</div> : null}

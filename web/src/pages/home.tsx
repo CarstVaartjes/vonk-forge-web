@@ -1,19 +1,19 @@
 const setupFlow = [
   {
     title: "Install the controller",
-    body: "Prepare one self-contained Docker Compose project on a computer you own.",
+    body: "Put one Controller on a laptop, NAS, or local server.",
   },
   {
     title: "Connect your Sparks",
-    body: "Create a one-use grant, run the signed agent installer, and see each node arrive in Fleet.",
+    body: "Connect one or more Sparks and see which nodes are ready.",
   },
   {
     title: "Choose a model or recipe",
-    body: "Compare exact versions, immutable weights, runtime, download, memory, topology, and evidence.",
+    body: "Choose a model for what it can do, then a recipe for the engine, settings, and number of Sparks.",
   },
   {
-    title: "Download, run, switch",
-    body: "Let the local Controller prepare the selected scope, reuse verified assets, and show durable progress.",
+    title: "Prepare, run, switch",
+    body: "Your Controller caches verified model files and runtime images on the NAS, then shows progress, recovery, and the next action.",
   },
 ];
 
@@ -65,7 +65,7 @@ function ProductShot({
           src={src}
           alt={alt}
           width="1280"
-          height={src.includes("library") ? "900" : "1239"}
+          height="800"
           loading={eager ? "eager" : "lazy"}
           fetchPriority={eager ? "high" : "auto"}
         />
@@ -84,14 +84,13 @@ export function HomePage() {
     <main className="home-page">
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-hero-copy">
-          <h1 id="home-title">Local AI.<br />One private control plane.</h1>
+          <h1 id="home-title"><span>Frontier AI.</span><span>Your Sparks.</span><span>One click.</span></h1>
           <p className="home-definition">
-            Vonk Forge turns a laptop, NAS, or local server into the command
-            center for your NVIDIA DGX Sparks. Find reproducible model recipes,
-            download exact assets, and operate the result from one clear interface.
+            Run state-of-the-art models locally on your Sparks with one private
+            Controller.
           </p>
           <div className="hero-actions">
-            <a className="button primary" href="/install">Install your controller</a>
+            <a className="button primary" href="/install">Set up your Controller</a>
             <a className="button secondary" href="#product-tour">See the real interface</a>
           </div>
           <ul className="home-facts" aria-label="Product facts">
@@ -103,7 +102,7 @@ export function HomePage() {
         </div>
         <ProductShot
           src="/product/controller-library.webp"
-          alt="Vonk Forge Library showing model recipes, lifecycle state, and the recommended next action"
+          alt="Vonk Forge Library showing model and recipe lists from illustrative fixture data"
           title="The real Web Controller"
           body="Fixture-backed product screen · no live fleet data"
           eager
@@ -119,18 +118,18 @@ export function HomePage() {
           </p>
         </div>
         <div className="quickstart-command quickstart-preflight">
-          <span>Mandatory preflight</span>
-          <strong>Set up private Tailscale HTTPS before the installer asks for OAuth credentials.</strong>
-          <a href="/install#tailscale-preflight">Review the four checks, then copy the command</a>
+          <span>One clear next step</span>
+          <strong>Set up your Controller, then choose a model and recipe for your first run.</strong>
+          <a href="/install">Set up your Controller</a>
         </div>
       </section>
 
       <section className="setup-section" aria-labelledby="setup-title">
         <div className="home-section-heading">
-          <h2 id="setup-title">From blank host to running model. One visible flow.</h2>
+          <h2 id="setup-title">From choice to running Sparks. One visible flow.</h2>
           <p>
-            No mystery automation and no routine SSH scavenger hunt. Each stage
-            has a clear input, a visible result, and a deliberate confirmation.
+            Your Controller prepares the selected assets, places them for the
+            recipe, starts the run, and keeps updates and recovery close by.
           </p>
         </div>
         <ol className="setup-flow">
@@ -155,15 +154,15 @@ export function HomePage() {
         <div className="tour-grid">
           <ProductShot
             src="/product/controller-library.webp"
-            alt="Vonk Forge Library with browse, compare, model recipe, and lifecycle controls"
+            alt="Vonk Forge Library showing paired model and recipe lists from illustrative fixture data"
             title="Library makes the next action obvious"
-            body="Browse models, compare recipes, download exact assets, and run from one model-centered workspace."
+            body="Fixture-backed catalog view · illustrative test data"
           />
           <ProductShot
             src="/product/controller-fleet.webp"
-            alt="Vonk Forge Fleet showing two Sparks, live capacity, workloads, and operational warnings"
+            alt="Vonk Forge Fleet showing an illustrative Spark roster, workloads, and attention state"
             title="Fleet shows reality, including blockers"
-            body="Capacity, placement, telemetry, workloads, and recovery guidance stay together."
+            body="Fixture-backed fleet view · illustrative test data"
           />
         </div>
         <div className="control-paths">
@@ -183,7 +182,7 @@ export function HomePage() {
         <div className="security-map" aria-label="Security boundary flow">
           <article className="source-zone">
             <span>Public source</span>
-            <h3>Catalog + signed releases</h3>
+            <h3>Catalog + verified releases</h3>
             <p>Recipe metadata, verified source, installer and package identity.</p>
           </article>
           <div className="security-link"><span>verified inputs</span></div>

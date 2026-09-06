@@ -56,10 +56,16 @@ describe("public model browse", () => {
     expect(screen.queryByText("Published model")).not.toBeInTheDocument();
     expect(screen.queryByText(/000000000000/)).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /View versions/ })[0]).toHaveAttribute("href", "/models/publisher/model-1");
-    fireEvent.click(screen.getByText("How a model becomes a local run"));
-    expect(screen.getByRole("heading", { name: "A model is the AI. A recipe is how you run it." })).toBeVisible();
+    fireEvent.click(screen.getByText("How global availability becomes a local run"));
+    expect(screen.getByRole("heading", { name: "Pick a model. Choose how to run it." })).toBeVisible();
     expect(screen.getByText(/One exact model can have several recipes/)).toBeVisible();
-    expect(screen.getByText(/view downloads, running models, and Spark status/i)).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Available globally" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Prepared locally" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Run on Sparks" })).toBeVisible();
+    expect(screen.getByText(/Model files downloaded and verified on your NAS/i)).toBeVisible();
+    expect(screen.getByText(/container image—the software needed to run the model—has been downloaded or built and cached on your NAS/i)).toBeVisible();
+    expect(screen.getByText(/Local means cached on your NAS. Running starts when you choose Run. Recipe definitions stay in the global repository/i)).toBeVisible();
+    expect(screen.getByText(/Profiles remember your model, recipe, and Spark assignments/i)).toBeVisible();
     fireEvent.change(screen.getByLabelText("Capability"), { target: { value: "ocr" } });
     expect(window.location.search).toBe("?capability=ocr");
     expect(screen.getByText("7 of 13 models")).toBeVisible();
@@ -76,6 +82,7 @@ describe("public model browse", () => {
     render(<ModelsPage />);
     await waitFor(() => expect(screen.getByRole("alert")).toBeVisible());
     expect(screen.getByRole("button", { name: "Retry" })).toBeVisible();
+    expect(screen.queryByText("Loading models…")).not.toBeInTheDocument();
   });
 
   test("keeps the full source revision available on the model version detail", async () => {
