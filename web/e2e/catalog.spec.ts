@@ -154,7 +154,7 @@ test("models page explains the public to local boundary on demand", async ({ pag
   await expect(summary).toBeVisible();
   await summary.focus();
   await expect(summary).toBeFocused();
-  await expect(page.getByRole("heading", { name: "A model names the files. A recipe prepares the run." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "A model names the files. Your Controller prepares the run." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Global facts. Local preparation. One run." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Available globally" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Prepared locally" })).toBeVisible();

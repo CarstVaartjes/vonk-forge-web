@@ -57,7 +57,7 @@ describe("public model browse", () => {
     expect(screen.queryByText(/000000000000/)).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /View versions/ })[0]).toHaveAttribute("href", "/models/publisher/model-1");
     fireEvent.click(screen.getByText("How global availability becomes a local run"));
-    expect(screen.getByRole("heading", { name: "A model names the files. A recipe prepares the run." })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "A model names the files. Your Controller prepares the run." })).toBeVisible();
     expect(screen.getByText(/One exact model can have several recipes/)).toBeVisible();
     expect(screen.getByRole("heading", { name: "Available globally" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Prepared locally" })).toBeVisible();

@@ -54,7 +54,7 @@ export function PublicCatalogExplainer() {
     <summary>How global availability becomes a local run</summary>
     <div className="public-contract-content" aria-labelledby="public-contract-heading">
       <header className="public-contract-heading">
-        <h2 id="public-contract-heading">A model names the files. A recipe prepares the run.</h2>
+        <h2 id="public-contract-heading">A model names the files. Your Controller prepares the run.</h2>
         <p>The global catalog publishes the contract. Your Controller prepares the matching assets on your side of the boundary.</p>
       </header>
       <div className="model-recipe-relationship" aria-label="One model can have several recipes">
@@ -111,7 +111,7 @@ export function PublicCatalogExplainer() {
             <p>Your Controller combines the verified model cache and prepared runtime image, sends the selected assets to the chosen Sparks, and starts the application.</p>
           </section>
         </div>
-        <p className="private-boundary"><strong>Authority stays global:</strong> the global recipe repository remains the sole authority for recipe instructions. Local recipes are prepared copies and runtime artifacts, not authored forks.</p>
+        <p className="private-boundary"><strong>Authority stays global:</strong> the global recipe repository remains the sole authority for recipe instructions. Local recipe availability means the global recipe's prepared runtime image or archive is on your NAS; it is not a locally authored recipe or fork.</p>
         <p className="profile-note">The public site cannot see private NAS cache, download, or running state. View that state in your <a href="/control">private Controller</a>. <a href="https://github.com/CarstVaartjes/vonk-forge-recipes/blob/main/docs/recipe-authoring.md">Read the recipe authoring guide ↗</a></p>
       </section>
     </div>
