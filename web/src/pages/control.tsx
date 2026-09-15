@@ -59,7 +59,7 @@ export function ControlPage() {
             <h3>Local CLI</h3>
             <p>The same lists and choices in a terminal, with JSON output and clear operation results.</p>
             <ul>
-              <li>Install locally on Python 3.12+</li>
+              <li>Install locally on Python 3.14+</li>
               <li>Best for repeatable work, scripts, and remote shells</li>
               <li>Requires a provisioned admin bearer token</li>
             </ul>
@@ -96,7 +96,7 @@ export function ControlPage() {
         </header>
         <p className="lane-intro">
           Install <code>vonkctl</code> on the workstation or operator host from
-          which you can reach the controller. It requires Python 3.12 or newer,
+          which you can reach the controller. It requires Python 3.14 or newer,
           <a href="https://docs.astral.sh/uv/getting-started/installation/"> <code>uv</code></a>,
           and Git access to the public repository.
         </p>

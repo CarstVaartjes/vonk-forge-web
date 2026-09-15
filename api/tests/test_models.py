@@ -2,7 +2,6 @@ from datetime import UTC, datetime
 
 import pytest
 from sqlalchemy.exc import IntegrityError
-
 from vonk_catalog.models import (
     OAuthAccount,
     Publisher,

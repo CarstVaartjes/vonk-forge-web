@@ -46,7 +46,7 @@ def create_app(
     def ready() -> dict[str, str] | JSONResponse:
         try:
             readiness_probe()
-        except Exception:
+        except Exception:  # noqa: BLE001 - any probe failure is a 503, never a crash
             return JSONResponse(
                 status_code=503,
                 media_type="application/problem+json",

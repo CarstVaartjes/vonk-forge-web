@@ -1,7 +1,39 @@
 [project]
 name = "vonk-forge-web-workspace"
 version = "0.0.0"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.14,<3.15"
 
 [tool.uv.workspace]
 members = ["api", "worker"]
+
+[tool.ruff]
+# The pinned formatter and linter are the repository's formatting authority.
+# There are no exclusions: the API, worker, deploy tests and scripts are all
+# reviewed code in this repository.
+required-version = "==0.16.1"
+target-version = "py314"
+
+[tool.pyright]
+# One checker for the whole repository. The workspace virtualenv carries the
+# union of the API and worker dependencies, so import resolution is complete.
+pythonVersion = "3.14"
+venvPath = "."
+venv = ".venv"
+typeCheckingMode = "basic"
+# Mirror the import roots the test suites add to sys.path, so static analysis
+# resolves the same modules the runtime does.
+extraPaths = ["api/src", "worker/src", "api/tests", "deploy/tests"]
+include = [
+    "api/src",
+    "api/tests",
+    "api/tools",
+    "worker/src",
+    "worker/tests",
+    "deploy/tests",
+    "scripts/verify_contracts.py",
+]
+exclude = [
+    "**/.venv/**",
+    "**/node_modules/**",
+    "**/__pycache__/**",
+]

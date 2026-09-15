@@ -106,7 +106,10 @@ def _validate_recipe_semantics(document: Mapping[str, object]) -> None:
         default = parameter.get("default")
         kind = parameter.get("type")
         if (
-            (kind == "integer" and (not isinstance(default, int) or isinstance(default, bool)))
+            (
+                kind == "integer"
+                and (not isinstance(default, int) or isinstance(default, bool))
+            )
             or (kind == "boolean" and not isinstance(default, bool))
             or (kind in {"string", "enum"} and not isinstance(default, str))
         ):
@@ -116,9 +119,7 @@ def _validate_recipe_semantics(document: Mapping[str, object]) -> None:
         minimum = parameter.get("minimum")
         maximum = parameter.get("maximum")
         if isinstance(minimum, int) and isinstance(maximum, int) and minimum > maximum:
-            raise RecipeContractError(
-                f"parameters.{index}: minimum exceeds maximum"
-            )
+            raise RecipeContractError(f"parameters.{index}: minimum exceeds maximum")
         allowed = parameter.get("allowed_values")
         if kind == "enum" and (
             not isinstance(allowed, Sequence) or default not in allowed

@@ -7,7 +7,6 @@ from sqlalchemy.orm import Session
 from vonk_catalog.models import Publisher, Recipe, RecipeRevision
 from vonk_catalog.search import search_document
 
-
 FIXTURE = (
     Path(__file__).resolve().parents[2] / "schemas/fixtures/recipe-v1-minimal.json"
 )

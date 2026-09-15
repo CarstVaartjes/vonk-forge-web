@@ -58,7 +58,7 @@ def build_public_router(
         sort: str = Query(default="newest", pattern="^(newest|title|disk|memory)$"),
         cursor: str | None = Query(default=None, max_length=512),
         limit: int = Query(default=20, ge=1, le=100),
-        session: Session = Depends(database_session),
+        session: Session = Depends(database_session),  # noqa: B008 - FastAPI resolves Depends in the signature
     ) -> dict[str, object]:
         page = SearchService(session).search(
             query=q,
@@ -90,7 +90,7 @@ def build_public_router(
     def recipe_detail(
         publisher: str,
         slug: str,
-        session: Session = Depends(database_session),
+        session: Session = Depends(database_session),  # noqa: B008 - FastAPI resolves Depends in the signature
     ) -> dict[str, object]:
         item = CatalogRepository(session).latest(publisher, slug)
         if item is None or not _visible(session, item):
@@ -110,7 +110,7 @@ def build_public_router(
         revision_number: int,
         response: Response,
         if_none_match: str | None = Header(default=None),
-        session: Session = Depends(database_session),
+        session: Session = Depends(database_session),  # noqa: B008 - FastAPI resolves Depends in the signature
     ) -> dict[str, object] | Response:
         item = CatalogRepository(session).revision(publisher, slug, revision_number)
         if item is None or not _visible(session, item):
@@ -127,7 +127,7 @@ def build_public_router(
         content_sha256: str,
         response: Response,
         if_none_match: str | None = Header(default=None),
-        session: Session = Depends(database_session),
+        session: Session = Depends(database_session),  # noqa: B008 - FastAPI resolves Depends in the signature
     ) -> dict[str, object] | Response:
         if len(content_sha256) != 64 or any(
             character not in "0123456789abcdef" for character in content_sha256
@@ -149,7 +149,8 @@ def build_public_router(
 
     @router.get("/source-bundles/{sha256}", response_model=None)
     def download_source_bundle(
-        sha256: str, session: Session = Depends(database_session)
+        sha256: str,
+        session: Session = Depends(database_session),  # noqa: B008 - FastAPI resolves Depends in the signature
     ) -> FileResponse:
         if len(sha256) != 64 or any(
             character not in "0123456789abcdef" for character in sha256

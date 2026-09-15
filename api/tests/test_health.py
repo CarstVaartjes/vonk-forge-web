@@ -1,5 +1,4 @@
 from fastapi.testclient import TestClient
-
 from vonk_catalog.api import create_app
 
 

@@ -11,10 +11,8 @@ import tempfile
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
-
 from vonk_catalog.api import create_app
 from vonk_catalog.canonical import canonical_json, content_sha256
-
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_FILES = (
@@ -32,9 +30,7 @@ def verify(*, update: bool = False) -> None:
         Draft202012Validator.check_schema(json.loads(path.read_text(encoding="utf-8")))
 
     runtime_policy = json.loads(
-        (ROOT / "schemas/container-runtime-policy/v1.json").read_text(
-            encoding="utf-8"
-        )
+        (ROOT / "schemas/container-runtime-policy/v1.json").read_text(encoding="utf-8")
     )
     if runtime_policy != {
         "schema_version": 1,
@@ -69,9 +65,7 @@ def verify(*, update: bool = False) -> None:
             raise SystemExit(f"fixture hash is stale: {path.name}")
 
     expected_openapi = (
-        json.dumps(
-            create_app().openapi(), ensure_ascii=False, indent=2, sort_keys=True
-        )
+        json.dumps(create_app().openapi(), ensure_ascii=False, indent=2, sort_keys=True)
         + "\n"
     ).encode()
     actual_openapi = (ROOT / "openapi/openapi.json").read_bytes()
@@ -106,22 +100,24 @@ def create_archive(destination: Path) -> None:
         for path in entries
     }
     entries.append(Path("contract-manifest.json"))
-    with destination.open("wb") as raw:
-        with gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as compressed:
-            with tarfile.open(fileobj=compressed, mode="w") as archive:
-                for path in entries:
-                    content = (
-                        canonical_json(manifest) + b"\n"
-                        if path.name == "contract-manifest.json"
-                        else (ROOT / path).read_bytes()
-                    )
-                    info = tarfile.TarInfo(str(path))
-                    info.size = len(content)
-                    info.mode = 0o644
-                    info.mtime = 0
-                    info.uid = info.gid = 0
-                    info.uname = info.gname = "root"
-                    archive.addfile(info, io.BytesIO(content))
+    with (
+        destination.open("wb") as raw,
+        gzip.GzipFile(filename="", mode="wb", fileobj=raw, mtime=0) as compressed,
+        tarfile.open(fileobj=compressed, mode="w") as archive,
+    ):
+        for path in entries:
+            content = (
+                canonical_json(manifest) + b"\n"
+                if path.name == "contract-manifest.json"
+                else (ROOT / path).read_bytes()
+            )
+            info = tarfile.TarInfo(str(path))
+            info.size = len(content)
+            info.mode = 0o644
+            info.mtime = 0
+            info.uid = info.gid = 0
+            info.uname = info.gname = "root"
+            archive.addfile(info, io.BytesIO(content))
 
 
 def main() -> None:

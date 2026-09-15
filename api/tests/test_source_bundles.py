@@ -7,13 +7,6 @@ from datetime import UTC, datetime
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import sessionmaker
-
-from vonk_catalog.source_bundles import (
-    BundleLimits,
-    SourceBundleError,
-    SourceBundleStore,
-    inspect_source_bundle,
-)
 from vonk_catalog.api import create_app
 from vonk_catalog.models import (
     Publisher,
@@ -25,7 +18,12 @@ from vonk_catalog.models import (
 )
 from vonk_catalog.session import SessionService
 from vonk_catalog.settings import Settings
-
+from vonk_catalog.source_bundles import (
+    BundleLimits,
+    SourceBundleError,
+    SourceBundleStore,
+    inspect_source_bundle,
+)
 
 LIMITS = BundleLimits(
     max_archive_bytes=16_384,

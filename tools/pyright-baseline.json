@@ -1,0 +1,149 @@
+{
+  "schema_version": 1,
+  "exceptions": [
+    {
+      "file": "api/src/vonk_catalog/api.py",
+      "rule": "reportArgumentType",
+      "count": 3,
+      "reason": "FastAPI reads the handler signature for query/body binding, so parameters are annotated with Query/Depends defaults that pyright cannot reconcile with the plain Python types the handlers declare."
+    },
+    {
+      "file": "api/src/vonk_catalog/contracts.py",
+      "rule": "reportArgumentType",
+      "count": 5,
+      "reason": "Contract documents are validated by the canonical Pydantic models before use; pyright sees loosely typed JSON mappings where the models expect concrete members."
+    },
+    {
+      "file": "api/src/vonk_catalog/draft_api.py",
+      "rule": "reportArgumentType",
+      "count": 4,
+      "reason": "Request payloads arrive as validated JSON mappings and are passed to services typed with the canonical contract models; the runtime validation is the guarantee, not the annotation."
+    },
+    {
+      "file": "api/src/vonk_catalog/moderation.py",
+      "rule": "reportReturnType",
+      "count": 1,
+      "reason": "The moderation service returns a mapping assembled from several optional repository rows; pyright cannot prove the non-None shape that the service logic guarantees."
+    },
+    {
+      "file": "api/src/vonk_catalog/oauth.py",
+      "rule": "reportGeneralTypeIssues",
+      "count": 1,
+      "reason": "OAuth provider responses are dynamically shaped JSON; the code narrows fields before use and rejects malformed payloads at runtime."
+    },
+    {
+      "file": "api/src/vonk_catalog/oauth.py",
+      "rule": "reportOptionalMemberAccess",
+      "count": 1,
+      "reason": "The member is reached only after an explicit None check on the same value; pyright loses that narrowing across the closure."
+    },
+    {
+      "file": "api/src/vonk_catalog/publisher_api.py",
+      "rule": "reportOptionalMemberAccess",
+      "count": 1,
+      "reason": "The member is reached only after an explicit None check on the same value; pyright loses that narrowing across the closure."
+    },
+    {
+      "file": "api/src/vonk_catalog/repositories.py",
+      "rule": "reportAttributeAccessIssue",
+      "count": 6,
+      "reason": "SQLAlchemy declarative models expose columns through descriptors that pyright cannot resolve as instance attributes."
+    },
+    {
+      "file": "api/src/vonk_catalog/source_api.py",
+      "rule": "reportArgumentType",
+      "count": 1,
+      "reason": "Stored source-bundle metadata is loaded as JSON and narrowed before use; pyright sees the ungrown mapping type."
+    },
+    {
+      "file": "api/tests/test_db.py",
+      "rule": "reportAttributeAccessIssue",
+      "count": 2,
+      "reason": "Tests assert on SQLAlchemy model attributes, which pyright cannot resolve through the declarative descriptor layer."
+    },
+    {
+      "file": "api/tests/test_drafts.py",
+      "rule": "reportArgumentType",
+      "count": 1,
+      "reason": "The test drives the API with deliberately partial payloads to prove rejection; the mismatch is the assertion."
+    },
+    {
+      "file": "api/tests/test_drafts.py",
+      "rule": "reportIndexIssue",
+      "count": 3,
+      "reason": "The test indexes into JSON response bodies whose shape is asserted separately; pyright sees object."
+    },
+    {
+      "file": "api/tests/test_drafts.py",
+      "rule": "reportOptionalMemberAccess",
+      "count": 3,
+      "reason": "The test dereferences a response member after asserting the response exists; pyright cannot follow the assertion."
+    },
+    {
+      "file": "api/tests/test_oauth.py",
+      "rule": "reportArgumentType",
+      "count": 2,
+      "reason": "Fake provider responses are intentionally ungrown dicts so the test can vary fields a real provider would send."
+    },
+    {
+      "file": "api/tests/test_publisher_authorization.py",
+      "rule": "reportArgumentType",
+      "count": 1,
+      "reason": "The test constructs requests with partially specified payloads to prove authorization refuses them."
+    },
+    {
+      "file": "api/tests/test_recipe_contract.py",
+      "rule": "reportGeneralTypeIssues",
+      "count": 1,
+      "reason": "The test feeds deliberately malformed documents to the contract validators, so the static types cannot match the runtime intent."
+    },
+    {
+      "file": "api/tests/test_recipe_contract.py",
+      "rule": "reportIndexIssue",
+      "count": 4,
+      "reason": "The test indexes into validated contract JSON whose shape is asserted separately."
+    },
+    {
+      "file": "api/tests/test_source_bundles.py",
+      "rule": "reportArgumentType",
+      "count": 2,
+      "reason": "The test builds archives with deliberately irregular member types to exercise the rejection paths."
+    },
+    {
+      "file": "worker/src/vonk_catalog_worker/registry.py",
+      "rule": "reportArgumentType",
+      "count": 1,
+      "reason": "Job payloads are validated against the canonical request model before dispatch; pyright sees the pre-validation mapping."
+    },
+    {
+      "file": "worker/src/vonk_catalog_worker/registry.py",
+      "rule": "reportReturnType",
+      "count": 1,
+      "reason": "The registry returns a handler selected from a typed mapping of job kinds; pyright cannot prove the selected callable matches the declared protocol."
+    },
+    {
+      "file": "worker/src/vonk_catalog_worker/validation.py",
+      "rule": "reportArgumentType",
+      "count": 1,
+      "reason": "Validation reads decoded JSON values and narrows them explicitly, so the declared argument types are wider than the checked values."
+    },
+    {
+      "file": "worker/src/vonk_catalog_worker/validation.py",
+      "rule": "reportGeneralTypeIssues",
+      "count": 3,
+      "reason": "The validator deliberately accepts malformed documents to report structured errors; the static types describe valid ones."
+    },
+    {
+      "file": "worker/tests/test_validation.py",
+      "rule": "reportIndexIssue",
+      "count": 1,
+      "reason": "The test indexes into reported validation errors whose structure is asserted separately."
+    },
+    {
+      "file": "worker/tests/test_worker_health.py",
+      "rule": "reportAttributeAccessIssue",
+      "count": 2,
+      "reason": "Health responses are assembled as JSON mappings and asserted field by field."
+    }
+  ]
+}

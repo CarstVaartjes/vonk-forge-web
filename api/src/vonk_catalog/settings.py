@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     )
 
     @model_validator(mode="after")
-    def secure_production(self) -> "Settings":
+    def secure_production(self) -> Settings:
         if self.production:
             if not self.public_base_url.startswith("https://"):
                 raise ValueError("production public base URL must use HTTPS")

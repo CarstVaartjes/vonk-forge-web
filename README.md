@@ -80,7 +80,7 @@ npm --prefix web run test:e2e
 
 ## Run the catalog API
 
-Use Python 3.12 and [uv](https://docs.astral.sh/uv/):
+Use Python 3.14 and [uv](https://docs.astral.sh/uv/):
 
 ```bash
 uv sync --project api

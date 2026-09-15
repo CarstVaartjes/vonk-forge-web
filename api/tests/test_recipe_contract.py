@@ -3,13 +3,11 @@ import json
 from pathlib import Path
 
 import pytest
-
 from vonk_catalog.contracts import (
     RecipeContractError,
     deployment_profile,
     validate_recipe,
 )
-
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -18,9 +16,7 @@ def fixture(name: str) -> dict[str, object]:
     return json.loads((ROOT / "schemas" / "fixtures" / name).read_text())
 
 
-@pytest.mark.parametrize(
-    "name", ["recipe-v1-minimal.json", "recipe-v1-multinode.json"]
-)
+@pytest.mark.parametrize("name", ["recipe-v1-minimal.json", "recipe-v1-multinode.json"])
 def test_valid_recipe_fixtures_match_v1(name: str) -> None:
     validate_recipe(fixture(name))
 

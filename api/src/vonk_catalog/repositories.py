@@ -98,10 +98,7 @@ class CatalogRepository:
             .join(
                 RecipeRevision,
                 (RecipeRevision.recipe_id == latest_number.c.recipe_id)
-                & (
-                    RecipeRevision.revision_number
-                    == latest_number.c.revision_number
-                ),
+                & (RecipeRevision.revision_number == latest_number.c.revision_number),
             )
             .where(Recipe.state == "active")
             .order_by(RecipeRevision.published_at.desc(), RecipeRevision.id.desc())
@@ -169,4 +166,6 @@ def _matches_document(
 
 
 def _integer(value: object) -> int:
-    return value if isinstance(value, int) and not isinstance(value, bool) else 2**63 - 1
+    return (
+        value if isinstance(value, int) and not isinstance(value, bool) else 2**63 - 1
+    )

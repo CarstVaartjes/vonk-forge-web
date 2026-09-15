@@ -182,7 +182,7 @@ class RegistryClient:
                     - parsedate_to_datetime(response.headers["Date"])
                 ).total_seconds()
                 return min(3600, max(0, int(delay)))
-            except (KeyError, TypeError, ValueError):
+            except KeyError, TypeError, ValueError:
                 return None
 
     def _fetch(

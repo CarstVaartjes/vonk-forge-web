@@ -162,7 +162,7 @@ curl --fail --show-error --silent \\
             <span className="path-number">02</span>
             <p className="eyebrow">Local and scriptable</p>
             <h3><code>vonkctl</code> CLI</h3>
-            <p>Install on Python 3.12+, connect with an HTTPS origin and private administrator token file, then use the same lists, filters, previews, and operations.</p>
+            <p>Install on Python 3.14+, connect with an HTTPS origin and private administrator token file, then use the same lists, filters, previews, and operations.</p>
             <a className="button secondary" href="/control#local-cli">CLI install + usage <span aria-hidden="true">→</span></a>
           </article>
         </div>
