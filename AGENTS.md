@@ -55,7 +55,7 @@ one `uv` workspace; the workspace lock is authoritative.
 # Python: lint, format, types. All three are pinned and run repo-wide in CI.
 uv sync --all-packages --locked
 uvx --from ruff==0.16.1 ruff check .
-uvx --from ruff==0.16.1 ruff format --check .
+scripts/check-python-format          # ruff format, plus extensionless entry points
 scripts/check-python-types           # pyright==1.1.408, reviewed baseline
 
 # Tests. The API suite expects PostgreSQL 18.
@@ -77,8 +77,12 @@ stale entry fails, and an entry with no reason fails. Run
 anything it adds. Prefer fixing the code; record a `noqa` or a baseline entry
 only when the linter or checker is wrong, and say why.
 
-The formatter skips markdown via `[tool.ruff.format]`; the linter still reads it,
-so Python samples in documents are checked.
+Use `scripts/check-python-format` rather than a bare `ruff format --check .`:
+`ruff format` resolves files by extension, so the extensionless executables in
+`scripts/` are only touched when they are named explicitly. The wrapper
+discovers them from their shebang and checks both sets. The formatter also skips
+markdown via `[tool.ruff.format]` because dated plan documents are history; the
+linter still reads them, so Python samples in documents are checked.
 
 Do not add a digest that hashes a file shipped in the same commit. A source edit
 must not require hand-editing a digest the tooling owns; pin by version instead.

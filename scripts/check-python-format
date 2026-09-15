@@ -1,0 +1,21 @@
+#!/bin/sh
+# Check formatting for every Python file, including the extensionless
+# executables under scripts/.
+#
+# `ruff format .` skips those: the formatter resolves files by extension, so an
+# entry point named `scripts/verify-restored-database` is only formatted when it
+# is named explicitly.
+set -eu
+
+cd "$(dirname "$0")/.."
+
+entry_points=""
+for path in $(git ls-files | grep -v '\.'); do
+  IFS= read -r first_line < "$path" || continue
+  case "$first_line" in
+    '#!'*python*) entry_points="$entry_points $path" ;;
+  esac
+done
+
+# shellcheck disable=SC2086 # the discovered paths are space-separated
+uvx --from ruff==0.16.1 ruff format --check . $entry_points
