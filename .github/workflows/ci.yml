@@ -39,7 +39,7 @@ jobs:
       - name: Check formatting with pinned Ruff
         run: |
           set -euo pipefail
-          uvx --from ruff==0.16.1 ruff format --check .
+          scripts/check-python-format
       - name: Type check the repository with pinned Pyright
         run: |
           set -euo pipefail
