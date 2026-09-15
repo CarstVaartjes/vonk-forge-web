@@ -120,7 +120,7 @@ def test_hidden_revision_is_removed_from_anonymous_catalog_and_unhide_restores_i
     client, engine
 ) -> None:
     with Session(engine, expire_on_commit=False) as database:
-        publisher, revision = _revision(database, "visible-community")
+        _publisher, revision = _revision(database, "visible-community")
         moderator = User(display_name="Mod", system_role="moderator")
         database.add(moderator)
         database.flush()

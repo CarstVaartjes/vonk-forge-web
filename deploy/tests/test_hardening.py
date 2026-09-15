@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def _wait_for_container_health(command: list[str]) -> str:
     last = None
     for _ in range(50):
-        last = subprocess.run(command, text=True, capture_output=True)
+        last = subprocess.run(command, text=True, capture_output=True, check=False)
         if last.returncode == 0:
             return last.stdout
         time.sleep(0.2)
@@ -50,6 +50,7 @@ def test_service_separation_migration_and_egress_policy_are_declared() -> None:
     assert set(services["web"]["networks"]) == {"application", "public_ingress"}
     assert compose["networks"]["database"]["internal"] is True
 
+
 def test_local_and_pages_assets_are_immutable_but_html_is_not_cached() -> None:
     caddy = (ROOT / "deploy" / "Caddyfile").read_text()
     assert "path /assets/*" in caddy
@@ -60,7 +61,9 @@ def test_local_and_pages_assets_are_immutable_but_html_is_not_cached() -> None:
     pages_headers = (ROOT / "web" / "public" / "_headers").read_text()
     assert "Content-Security-Policy:" in pages_headers
     assert "max-age=31536000, immutable" in pages_headers
-    assert (ROOT / "web" / "public" / "_redirects").read_text().strip() == "/* /index.html 200"
+    assert (
+        ROOT / "web" / "public" / "_redirects"
+    ).read_text().strip() == "/* /index.html 200"
 
 
 def test_backup_and_restore_are_encrypted_independent_and_verify_hashes() -> None:

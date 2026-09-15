@@ -1,7 +1,6 @@
 import math
 
 import pytest
-
 from vonk_catalog.canonical import canonical_json, content_sha256, parse_json
 
 

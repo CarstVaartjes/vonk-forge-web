@@ -3,9 +3,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-
 from vonk_catalog.contracts import RecipeContractError, validate_recipe
-
 
 ROOT = Path(__file__).resolve().parents[2]
 

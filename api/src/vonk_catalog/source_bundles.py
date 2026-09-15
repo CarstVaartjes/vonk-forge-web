@@ -6,6 +6,8 @@ import json
 import os
 import tarfile
 import tempfile
+from collections.abc import Iterator
+from contextlib import ExitStack, contextmanager
 from dataclasses import asdict, dataclass
 from pathlib import Path, PurePosixPath
 from typing import BinaryIO
@@ -143,17 +145,25 @@ def _read_archive(payload: BinaryIO, limits: BundleLimits) -> bytes:
     return archive
 
 
+@contextmanager
+def _open_archive(archive: bytes) -> Iterator[tarfile.TarFile]:
+    with ExitStack() as stack:
+        try:
+            bundle = stack.enter_context(
+                tarfile.open(fileobj=io.BytesIO(archive), mode="r:*")
+            )
+        except (tarfile.TarError, OSError) as error:
+            raise SourceBundleError(
+                "bundle.invalid_archive", "source bundle is invalid"
+            ) from error
+        yield bundle
+
+
 def _inspect_archive(archive: bytes, limits: BundleLimits) -> BundleManifest:
     files: list[BundleFile] = []
     seen: set[str] = set()
     total = 0
-    try:
-        bundle = tarfile.open(fileobj=io.BytesIO(archive), mode="r:*")
-    except (tarfile.TarError, OSError) as error:
-        raise SourceBundleError(
-            "bundle.invalid_archive", "source bundle is invalid"
-        ) from error
-    with bundle:
+    with _open_archive(archive) as bundle:
         for member in bundle:
             path = _safe_path(member.name)
             if path in seen:

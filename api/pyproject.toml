@@ -2,14 +2,14 @@
 name = "vonk-catalog-api"
 version = "0.1.0"
 description = "Public recipe catalog API for Vonk Forge"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.14,<3.15"
 dependencies = [
   "alembic==1.16.4",
   "cryptography==46.0.3",
   "fastapi==0.116.1",
   "httpx==0.28.1",
   "jsonschema==4.25.1",
-  "psycopg[binary]==3.2.9",
+  "psycopg[binary]==3.3.5",
   "pydantic-settings==2.10.1",
   "pyjwt==2.10.1",
   "sqlalchemy==2.0.42",
