@@ -25,9 +25,17 @@ weights remain at immutable origins and in node-local caches.
 - [Deferred backup and restore](operations/backup-restore.md)
 - [Catalog moderation](operations/moderation.md)
 
-Cloudflare Pages serves the static site. Railway remains deferred unless a global
-catalog API and validation worker are explicitly enabled. Caddy belongs to each
-operator's local controller and is not part of the public website.
+Cloudflare Pages serves the static site. Railway and independent backup remain
+deferred unless a global catalog API and validation worker are explicitly
+enabled. Caddy belongs to each operator's local controller and is not part of
+the public website.
+
+## Reference
+
+- [Repository guide](AGENTS.md): working agreement and the lint, format, and
+  type gates every change has to pass.
+- [Product context](PRODUCT.md): who this serves and what it promises.
+- [Design tokens](DESIGN.md): the visual system the site is built from.
 
 ## Publishing flow
 
@@ -38,4 +46,4 @@ operator's local controller and is not part of the public website.
 5. Import that revision into an operator-owned local controller.
 
 The API, schemas, generated OpenAPI document, and TypeScript declarations are
-the implementation contract. Historical planning material is not authority.
+the implementation contract.
