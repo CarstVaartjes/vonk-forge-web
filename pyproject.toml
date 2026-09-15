@@ -8,10 +8,16 @@ members = ["api", "worker"]
 
 [tool.ruff]
 # The pinned formatter and linter are the repository's formatting authority.
-# There are no exclusions: the API, worker, deploy tests and scripts are all
-# reviewed code in this repository.
+# Authored code is covered; see [tool.ruff.format] for the historical-document
+# carve-out.
 required-version = "==0.16.1"
 target-version = "py314"
+
+[tool.ruff.format]
+# Dated plan documents are history, not sources: formatting the Python samples
+# embedded in them would rewrite the record of what was planned. They are
+# still linted.
+exclude = ["docs/**/*.md"]
 
 [tool.pyright]
 # One checker for the whole repository. The workspace virtualenv carries the
