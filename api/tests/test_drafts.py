@@ -44,6 +44,30 @@ def _recipe() -> dict[str, object]:
     return json.loads(FIXTURE.read_text())
 
 
+def _report(recipe_sha256: str) -> dict[str, object]:
+    return {
+        "schema_version": 1,
+        "recipe_sha256": recipe_sha256,
+        "source_bundle_sha256": "a" * 64,
+        "build_input_sha256": "b" * 64,
+        "image_digest": "sha256:" + "c" * 64,
+        "topology_name": "solo",
+        "node_count": 1,
+        "runtime": {
+            "agent_version": "1.0.0",
+            "container_runtime": "podman",
+            "architecture": "linux/arm64",
+        },
+        "checks": [
+            {"name": "container.started", "passed": True},
+            {"name": "endpoint.healthy", "passed": True},
+            {"name": "inference.completed", "passed": True},
+        ],
+        "started_at": "2026-08-07T10:00:00Z",
+        "finished_at": "2026-08-07T10:05:00Z",
+    }
+
+
 def test_create_update_read_delete_and_force_destination_identity(session) -> None:
     owner, _, publisher = _setup(session)
     document = _recipe()
@@ -93,10 +117,30 @@ def test_schema_paths_evidence_hash_and_cross_publisher_access(session) -> None:
         service.get(outsider.id, publisher.slug, draft.id)
     assert denied.value.code == "publisher.access_denied"
 
-    report = {"schema_version": 1, "recipe_sha256": "0" * 64}
+    report = _report(draft.content_sha256)
     service.add_test_report(owner.id, publisher.slug, draft.id, report)
     assert session.scalar(
         select(StoredTestReport).where(StoredTestReport.draft_id == draft.id)
+    )
+
+
+def test_add_test_report_rejects_a_report_that_is_not_canonical(session) -> None:
+    owner, _, publisher = _setup(session)
+    service = DraftService(session)
+    draft = service.create(
+        owner.id, publisher.slug, _recipe(), idempotency_key="report"
+    )
+    legacy = _report(draft.content_sha256)
+    legacy["deployment_profile"] = legacy.pop("topology_name")
+    with pytest.raises(Problem) as invalid:
+        service.add_test_report(owner.id, publisher.slug, draft.id, legacy)
+    assert invalid.value.code == "draft.test_report_invalid"
+    assert "topology_name" in invalid.value.detail
+    assert (
+        session.scalar(
+            select(StoredTestReport).where(StoredTestReport.draft_id == draft.id)
+        )
+        is None
     )
 
 
