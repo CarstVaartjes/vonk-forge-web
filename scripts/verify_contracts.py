@@ -13,6 +13,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 from vonk_catalog.api import create_app
 from vonk_catalog.canonical import canonical_json, content_sha256
+from vonk_forge_contracts import test_report_json_schema
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTRACT_FILES = (
@@ -63,6 +64,18 @@ def verify(*, update: bool = False) -> None:
         validator.validate(document)
         if content_sha256(document) != manifest[path.name]:
             raise SystemExit(f"fixture hash is stale: {path.name}")
+
+    # This repository does not author the test-report contract; the canonical
+    # package does. Regenerate it from the model so a checked-in copy that has
+    # drifted from vonk-forge-public-contracts cannot pass the gate.
+    expected_test_report = (
+        json.dumps(test_report_json_schema(), ensure_ascii=False, indent=2) + "\n"
+    ).encode()
+    test_report_path = ROOT / "schemas/test-report/v1.schema.json"
+    if test_report_path.read_bytes() != expected_test_report:
+        if not update:
+            raise SystemExit("schemas/test-report/v1.schema.json is stale")
+        test_report_path.write_bytes(expected_test_report)
 
     expected_openapi = (
         json.dumps(create_app().openapi(), ensure_ascii=False, indent=2, sort_keys=True)

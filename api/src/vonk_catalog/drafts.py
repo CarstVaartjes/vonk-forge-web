@@ -3,8 +3,10 @@ from __future__ import annotations
 import copy
 from collections.abc import Mapping
 
+from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from vonk_forge_contracts import TestReport as CanonicalTestReport
 
 from .canonical import content_sha256, parse_json
 from .contracts import recipe_problems
@@ -305,6 +307,17 @@ class DraftService:
         report: Mapping[str, object],
     ) -> TestReport:
         draft = self._draft(user_id, publisher_slug, draft_id, "editor")
+        try:
+            CanonicalTestReport.model_validate(dict(report))
+        except ValidationError as error:
+            first = error.errors()[0]
+            path = ".".join(str(part) for part in first["loc"]) or "$"
+            raise Problem(
+                422,
+                "draft.test_report_invalid",
+                "Test report is invalid",
+                f"{path}: {first['msg']}"[:512],
+            ) from error
         row = TestReport(
             draft_id=draft.id,
             recipe_sha256=draft.content_sha256,

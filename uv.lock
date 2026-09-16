@@ -698,6 +698,7 @@ dependencies = [
     { name = "pyjwt" },
     { name = "sqlalchemy" },
     { name = "uvicorn" },
+    { name = "vonk-forge-public-contracts" },
 ]
 
 [package.dev-dependencies]
@@ -719,6 +720,7 @@ requires-dist = [
     { name = "pyjwt", specifier = "==2.10.1" },
     { name = "sqlalchemy", specifier = "==2.0.42" },
     { name = "uvicorn", specifier = "==0.35.0" },
+    { name = "vonk-forge-public-contracts", git = "https://github.com/CarstVaartjes/vonk-forge-recipes.git?subdirectory=contracts&branch=main" },
 ]
 
 [package.metadata.requires-dev]
@@ -758,6 +760,14 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [{ name = "pytest", specifier = "==9.1.1" }]
+
+[[package]]
+name = "vonk-forge-public-contracts"
+version = "0.1.0"
+source = { git = "https://github.com/CarstVaartjes/vonk-forge-recipes.git?subdirectory=contracts&branch=main#48fb0834ff66c6cc65555d3c9bb64f6affc1b0c3" }
+dependencies = [
+    { name = "pydantic" },
+]
 
 [[package]]
 name = "vonk-forge-web-workspace"

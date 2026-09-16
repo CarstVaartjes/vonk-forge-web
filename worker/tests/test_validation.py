@@ -68,7 +68,7 @@ def _report(recipe_hash: str, image_digest: str, nodes: int = 1) -> dict[str, ob
         "source_bundle_sha256": "a" * 64,
         "build_input_sha256": "b" * 64,
         "image_digest": image_digest,
-        "deployment_profile": "solo",
+        "topology_name": "solo",
         "node_count": nodes,
         "runtime": {
             "agent_version": "1.0.0",

@@ -14,7 +14,15 @@ dependencies = [
   "pyjwt==2.10.1",
   "sqlalchemy==2.0.42",
   "uvicorn==0.35.0",
+  "vonk-forge-public-contracts",
 ]
+
+[tool.uv.sources]
+# The canonical public contracts live in the recipe repository, never in a
+# hand-maintained copy here. Resolve them from the recipe repository's moving
+# main branch, mirroring the platform control declaration; uv.lock records the
+# exact commit consumed by a lock/build update.
+vonk-forge-public-contracts = { git = "https://github.com/CarstVaartjes/vonk-forge-recipes.git", branch = "main", subdirectory = "contracts" }
 
 [project.scripts]
 vonk-catalog-admin = "vonk_catalog.admin:main"

@@ -133,13 +133,13 @@ def validate_test_evidence(
         )
     )
     node_count = report.get("node_count")
-    profile = report.get("deployment_profile")
+    topology_name = report.get("topology_name")
     checks.append(
         _check(
             "evidence.node_count_unverified",
-            isinstance(profile, str)
+            isinstance(topology_name, str)
             and isinstance(node_count, int)
-            and deployment_profiles.get(profile) == node_count,
+            and deployment_profiles.get(topology_name) == node_count,
             "report names an exact recipe deployment profile and node count",
         )
     )
