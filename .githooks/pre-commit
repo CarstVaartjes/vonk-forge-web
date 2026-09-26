@@ -1,0 +1,30 @@
+#!/bin/sh
+set -eu
+
+root=$(git rev-parse --show-toplevel)
+cd "$root"
+
+staged=$(git diff --cached --name-only)
+if ! printf '%s\n' "$staged" | grep -Eq '^(api/|schemas/|openapi/|scripts/verify_contracts\.py|web/)'; then
+    exit 0
+fi
+
+# Generated contracts must describe the exact tree being committed. A staged
+# subset alongside other tracked edits would let the hook hash bytes that are
+# not part of the commit, so ask the caller to stage the complete change first.
+if [ -n "$(git diff --name-only)" ]; then
+    echo "contract hook: stage all tracked edits before committing" >&2
+    exit 1
+fi
+
+scripts/verify-contracts --update
+git add schemas/fixtures/manifest.json schemas/test-report/v1.schema.json \
+    openapi/openapi.json web/src/api/schema.d.ts
+scripts/verify-contracts
+UV_TOOL_DIR="${UV_TOOL_DIR:-/private/tmp/vonk-forge-web-hook-uv-tools}" \
+    uvx --from ruff==0.16.1 ruff check api
+UV_TOOL_DIR="${UV_TOOL_DIR:-/private/tmp/vonk-forge-web-hook-uv-tools}" \
+    uvx --from ruff==0.16.1 ruff format --check api
+UV_CACHE_DIR="${UV_CACHE_DIR:-/private/tmp/vonk-forge-web-hook-uv-cache}" \
+    scripts/check-python-types
+npm --prefix web run build

@@ -53,17 +53,31 @@ def verify(*, update: bool = False) -> None:
         (ROOT / "schemas/recipe/v1.schema.json").read_text(encoding="utf-8")
     )
     validator = Draft202012Validator(recipe_schema)
-    manifest = json.loads(
-        (ROOT / "schemas/fixtures/manifest.json").read_text(encoding="utf-8")
-    )
+    manifest_path = ROOT / "schemas/fixtures/manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     fixtures = sorted((ROOT / "schemas/fixtures").glob("recipe-v1-*.json"))
-    if set(manifest) != {path.name for path in fixtures}:
-        raise SystemExit("fixture manifest does not match the recipe fixture set")
+    expected_manifest: dict[str, str] = {}
     for path in fixtures:
         document = json.loads(path.read_text(encoding="utf-8"))
         validator.validate(document)
-        if content_sha256(document) != manifest[path.name]:
-            raise SystemExit(f"fixture hash is stale: {path.name}")
+        expected_manifest[path.name] = content_sha256(document)
+    if manifest != expected_manifest:
+        if not update:
+            if set(manifest) != set(expected_manifest):
+                raise SystemExit(
+                    "fixture manifest does not match the recipe fixture set"
+                )
+            stale = next(
+                name
+                for name in expected_manifest
+                if manifest.get(name) != expected_manifest[name]
+            )
+            raise SystemExit(f"fixture hash is stale: {stale}")
+        manifest_path.write_text(
+            json.dumps(expected_manifest, ensure_ascii=False, indent=2, sort_keys=True)
+            + "\n",
+            encoding="utf-8",
+        )
 
     # This repository does not author the test-report contract; the canonical
     # package does. Regenerate it from the model so a checked-in copy that has
