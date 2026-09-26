@@ -139,6 +139,17 @@ scripts/verify-contracts
 scripts/export-contract
 ```
 
+Install the repository hook once per checkout to regenerate and stage the
+contract manifests and generated API files before relevant commits:
+
+```bash
+scripts/install-git-hooks
+```
+
+The hook also runs the pinned Python lint, format, API type check, and web
+build. It requires tracked edits to be staged together before it updates
+generated files; CI remains the authoritative verification.
+
 The export is a deterministic `dist/vonk-contracts-v1.tar.gz` archive. Local
 Vonk Forge installations pin a released archive and its SHA-256; they never load
 schema authority from this repository's moving `main` branch.
