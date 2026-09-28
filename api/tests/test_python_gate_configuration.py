@@ -30,7 +30,7 @@ def test_pyright_configuration_is_pinned() -> None:
 def test_ruff_configuration_is_pinned() -> None:
     ruff = PYPROJECT.get("tool", {}).get("ruff")
     assert isinstance(ruff, dict), "pyproject.toml has no [tool.ruff] section"
-    assert ruff.get("required-version") == "==0.16.1"
+    assert ruff.get("required-version") == "==0.16.9"
     assert ruff.get("target-version") == "py314"
 
 
@@ -43,7 +43,7 @@ def test_formatter_skips_only_historical_documents() -> None:
 
 def test_every_python_gate_runs_in_ci() -> None:
     checks = {
-        "lint": re.compile(r"ruff==0\.16\.1\s+ruff\s+check\s+\."),
+        "lint": re.compile(r"ruff==0\.16\.9\s+ruff\s+check\s+\."),
         "format": re.compile(r"scripts/check-python-format"),
         "types": re.compile(r"scripts/check-python-types"),
     }

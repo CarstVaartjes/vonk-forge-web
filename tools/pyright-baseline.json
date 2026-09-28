@@ -20,24 +20,6 @@
       "reason": "Request payloads arrive as validated JSON mappings and are passed to services typed with the canonical contract models; the runtime validation is the guarantee, not the annotation."
     },
     {
-      "file": "api/src/vonk_catalog/moderation.py",
-      "rule": "reportReturnType",
-      "count": 1,
-      "reason": "The moderation service returns a mapping assembled from several optional repository rows; pyright cannot prove the non-None shape that the service logic guarantees."
-    },
-    {
-      "file": "api/src/vonk_catalog/oauth.py",
-      "rule": "reportGeneralTypeIssues",
-      "count": 1,
-      "reason": "OAuth provider responses are dynamically shaped JSON; the code narrows fields before use and rejects malformed payloads at runtime."
-    },
-    {
-      "file": "api/src/vonk_catalog/oauth.py",
-      "rule": "reportOptionalMemberAccess",
-      "count": 1,
-      "reason": "The member is reached only after an explicit None check on the same value; pyright loses that narrowing across the closure."
-    },
-    {
       "file": "api/src/vonk_catalog/publisher_api.py",
       "rule": "reportOptionalMemberAccess",
       "count": 1,

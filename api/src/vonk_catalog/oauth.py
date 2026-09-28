@@ -210,12 +210,12 @@ class HttpOAuthBackend:
         subject = profile.get("id")
         name = profile.get("name") or profile.get("login")
         verified = [
-            item.get("email")
+            email
             for item in emails
             if isinstance(item, dict)
             and item.get("verified") is True
             and item.get("primary") is True
-            and isinstance(item.get("email"), str)
+            and isinstance(email := item.get("email"), str)
         ]
         if not isinstance(subject, (str, int)) or not isinstance(name, str):
             raise OAuthVerificationError("GitHub identity is incomplete")
@@ -243,13 +243,14 @@ class HttpOAuthBackend:
             raise OAuthVerificationError(
                 "Google signing keys are unavailable"
             ) from error
-        if not isinstance(jwks, dict) or not isinstance(jwks.get("keys"), list):
+        keys = jwks.get("keys") if isinstance(jwks, dict) else None
+        if not isinstance(keys, list):
             raise OAuthVerificationError("Google signing keys are invalid")
         header = jwt.get_unverified_header(id_token)
         key_data = next(
             (
                 item
-                for item in jwks["keys"]
+                for item in keys
                 if isinstance(item, dict) and item.get("kid") == header.get("kid")
             ),
             None,
@@ -272,8 +273,13 @@ class HttpOAuthBackend:
         subject = claims.get("sub")
         name = claims.get("name")
         email = claims.get("email")
-        if not all(
-            isinstance(value, str) and value for value in (subject, name, email)
+        if not (
+            isinstance(subject, str)
+            and subject
+            and isinstance(name, str)
+            and name
+            and isinstance(email, str)
+            and email
         ):
             raise OAuthVerificationError("Google identity is incomplete")
         del access_token

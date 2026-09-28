@@ -13,7 +13,7 @@ function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["cata
     revision_number: 1,
     revision_id: slug,
     content_sha256: slug.padEnd(64, "0").slice(0, 64),
-    published_at: "2026-08-28",
+    published_at: new Date().toISOString().slice(0, 10),
     runtime: { adapter: "vllm" },
     workload: { family: slug, capabilities: [] },
     catalog: {

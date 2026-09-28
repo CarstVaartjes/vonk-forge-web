@@ -22,9 +22,9 @@ git add schemas/fixtures/manifest.json schemas/test-report/v1.schema.json \
     openapi/openapi.json web/src/api/schema.d.ts
 scripts/verify-contracts
 UV_TOOL_DIR="${UV_TOOL_DIR:-/private/tmp/vonk-forge-web-hook-uv-tools}" \
-    uvx --from ruff==0.16.1 ruff check api
+    uvx --from ruff==0.16.9 ruff check api
 UV_TOOL_DIR="${UV_TOOL_DIR:-/private/tmp/vonk-forge-web-hook-uv-tools}" \
-    uvx --from ruff==0.16.1 ruff format --check api
+    uvx --from ruff==0.16.9 ruff format --check api
 UV_CACHE_DIR="${UV_CACHE_DIR:-/private/tmp/vonk-forge-web-hook-uv-cache}" \
     scripts/check-python-types
 npm --prefix web run build

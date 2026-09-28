@@ -10,7 +10,7 @@ members = ["api", "worker"]
 # The pinned formatter and linter are the repository's formatting authority.
 # Authored code is covered; see [tool.ruff.format] for the historical-document
 # carve-out.
-required-version = "==0.16.1"
+required-version = "==0.16.9"
 target-version = "py314"
 
 [tool.ruff.format]
