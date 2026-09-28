@@ -13,3 +13,6 @@ test-results/
 **/.impeccable/review/
 
 .DS_Store
+
+# Verified recipe release written by web/scripts/recipe-release.mjs
+web/public/catalog/

@@ -70,16 +70,21 @@ The Vite development server prints its local URL.
 
 The Models and Recipes routes read one file: the `catalog-index.json` that
 [`vonk-forge-recipes`](https://github.com/CarstVaartjes/vonk-forge-recipes)
-generates from its reviewed recipe and model documents and commits beside them. The browser resolves
-the library's current `main` commit through the GitHub API, then fetches the
-index and recipe packages from that exact commit on `raw.githubusercontent.com`,
-so every view and download link is bound to one immutable publication. Nothing
-is copied into this repository or its build.
+generates from its reviewed recipe and model documents and publishes as an
+asset of a signed GitHub release. Browsers cannot fetch release assets
+cross-origin, so the Pages build copies it:
+[`web/scripts/recipe-release.mjs`](web/scripts/recipe-release.mjs) downloads the
+latest release (or the tag in `VONK_RECIPE_RELEASE`), verifies `SHA256SUMS`
+against its Sigstore attestation from the library's `publish.yml` on `main`,
+checks the index and every package digest against `SHA256SUMS`, and writes
+`web/public/catalog/` (`catalog-index.json`, `release.json`, `SHA256SUMS` and its
+bundle). The browser reads only those same-origin files. Package download links
+point at the verified release's assets on GitHub.
 
-The default source is the standard library. A build can point at another
-library's generated index with `VITE_RECIPE_LIBRARY_INDEX_URL`. Publishing a
-recipe is a pull request against the recipe library; the site updates as soon
-as that library's `main` moves, without a redeploy.
+Publishing a recipe is a pull request against the recipe library followed by a
+library release; the hourly Pages build picks up the new release. For local
+development with the real catalog, run `node web/scripts/recipe-release.mjs`
+first (requires an authenticated `gh`).
 
 ## Checks
 
@@ -92,7 +97,7 @@ npm --prefix web run test:e2e   # builds, serves web/dist, and runs Playwright
 ```
 
 The end-to-end suite runs against the production bundle with `vite preview` and
-serves a fixture catalog index in place of GitHub.
+serves a fixture release at `/catalog/` in place of the verified one.
 
 ## Deployment
 

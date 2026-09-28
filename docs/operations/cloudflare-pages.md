@@ -1,8 +1,8 @@
 # Cloudflare Pages deployment
 
 Cloudflare Pages is the only production host for Vonk Forge Web. The site is
-fully static: the build output in `web/dist` is the whole deployment, and the
-catalog is read in the browser from the recipe library's generated index. The
+fully static: the build output in `web/dist` is the whole deployment, including
+the verified recipe-library catalog under `/catalog/`. The
 local product does not depend on this site being available.
 
 The live production site is [vonkforge.ai](https://vonkforge.ai). Cloudflare's
@@ -59,18 +59,43 @@ and incoming data in the dashboard.
 
 ## Releases
 
-Every push to `main` and every manual dispatch runs `pages.yml`. It installs
-the locked frontend dependencies, builds `web/dist`, and uploads that directory
-as the production Pages deployment with Wrangler. Pull requests run CI only;
-they do not publish production.
+`pages.yml` runs on every push to `main`, on manual dispatch, and hourly (at
+minute 17). It:
 
-Recipe changes do not need a deployment. The browser resolves the recipe
-library's current `main` commit and reads `catalog-index.json` from that commit,
-so a merged recipe appears on the next page load. Publishers use the
-version-controlled GitHub review path; local recipe authoring and execution
-remain in `vonk-forge`.
+1. installs the locked frontend dependencies;
+2. runs `web/scripts/recipe-release.mjs`, which downloads the latest signed
+   [`vonk-forge-recipes`](https://github.com/CarstVaartjes/vonk-forge-recipes)
+   release, verifies `SHA256SUMS` with `gh attestation verify` against the
+   Sigstore bundle (signer workflow
+   `CarstVaartjes/vonk-forge-recipes/.github/workflows/publish.yml`, source ref
+   `refs/heads/main`, repository ID `1336002555`, GitHub-hosted runner, and a
+   source commit equal to the index's `source_commit`), checks
+   `catalog-index.json` and every package digest the index names against
+   `SHA256SUMS`, and writes `web/public/catalog/`;
+3. builds `web/dist` and uploads it as the production Pages deployment with
+   Wrangler. A scheduled run whose verified `release.json` equals the one
+   already served at `https://<project>.pages.dev/catalog/release.json` skips
+   the upload.
+
+Any download, signature, or digest failure fails the job before the upload, so
+the previously deployed site keeps serving the last verified catalog. The job
+uses only the workflow's `GITHUB_TOKEN`; no extra secret is involved.
+
+To pin a release instead of following `latest`, set the `production`
+environment (or repository) variable `VONK_RECIPE_RELEASE` to an exact tag such
+as `v1.1.2` and dispatch the workflow; clear it to follow `latest` again.
+
+New recipe releases arrive through the hourly schedule. `vonk-forge-recipes`
+does not hold a token that could send a `repository_dispatch` to this
+repository, so polling is the deliberate choice; dispatch `pages.yml` manually
+to publish a release immediately. Pull requests run CI only; they do not
+publish production.
+
+Package download links go to the verified release's assets on
+`github.com/CarstVaartjes/vonk-forge-recipes/releases/download/<tag>/`, a plain
+browser navigation that needs no CORS. Packages are not copied into the Pages
+deployment because some exceed Cloudflare Pages' 25 MiB per-file limit.
 
 The `_headers` and `_redirects` files under `web/public` provide the security
-headers (including the Content Security Policy that allows only
-`api.github.com`, `raw.githubusercontent.com`, and the Cloudflare analytics
-endpoints), immutable asset caching, and SPA fallback.
+headers (the Content Security Policy's `connect-src` allows only this origin and
+the Cloudflare analytics endpoint), immutable asset caching, and SPA fallback.

@@ -11,7 +11,7 @@ const index = {
   package_contract: {
     schema_version: 2,
     media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip",
-    path_prefix: "recipe-packages/",
+    path_prefix: "packages/",
   },
   catalog_entities: [
     { content_sha256: "3".repeat(64), document: { kind: "model", schema_version: 2, identity: { publisher: "qwen", slug: "qwen-fast-nvfp4", family: { publisher: "qwen", slug: "qwen", title: "Qwen" }, model: { publisher: "qwen", slug: "qwen-fast", title: "Qwen Fast", architecture: "transformer" }, version: "1.0", variant: "nvfp4" }, metadata: { title: "Qwen Fast NVFP4", description: "Fast language model", tags: ["language"] }, source: { repository: "https://huggingface.co/Qwen/Qwen", revision: "c".repeat(40) }, format: { container: "safetensors", precision: "nvfp4", quantization: "nvfp4" }, parameters: { total: 20 }, limits: { context_tokens: 8192 }, sizes: { download_bytes: 20, installed_bytes: 20 }, license: { spdx: "Apache-2.0", url: "https://example.test/license", attribution: ["Qwen"], operator_acceptance_required: false }, files: [{ id: "weights", path: "weights.safetensors", sha256: "b".repeat(64), size_bytes: 20, roles: ["weights"] }], capabilities: { schema_version: 2, facts: [{ capability: "chat", support: "supported", evidence_status: "declared" }, { capability: "reasoning", support: "supported", evidence_status: "declared" }], provenance: { source_url: "https://example.test/evidence", source_revision: "c".repeat(40), evidence_digest: "d".repeat(64) } }, provenance: { source_url: "https://example.test/evidence", source_revision: "c".repeat(40), evidence_digest: "d".repeat(64), attribution: ["Qwen"] } } },
@@ -20,7 +20,7 @@ const index = {
     {
       content_sha256: "a".repeat(64),
       source_path: "recipes/qwen-fast.json",
-      package: { expected_bytes: 123, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", minimum_consumer_schema: 2, path: "recipe-packages/vonk-forge/qwen-fast.tar.gz", recipe_content_sha256: "a".repeat(64), sha256: "1".repeat(64) },
+      package: { expected_bytes: 123, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", minimum_consumer_schema: 2, path: "packages/vonk-forge-qwen-fast.tar.gz", recipe_content_sha256: "a".repeat(64), sha256: "1".repeat(64) },
       release: { version: "2.1.0", released_at: "2026-08-28", history: [{}, {}] },
       document: {
         identity: { publisher: "vonk-forge", slug: "qwen-fast" },
@@ -43,7 +43,7 @@ const index = {
     {
       content_sha256: "d".repeat(64),
       source_path: "recipes/glm-dual.json",
-      package: { expected_bytes: 321, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", minimum_consumer_schema: 2, path: "recipe-packages/community/glm-dual.tar.gz", recipe_content_sha256: "d".repeat(64), sha256: "2".repeat(64) },
+      package: { expected_bytes: 321, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", minimum_consumer_schema: 2, path: "packages/community-glm-dual.tar.gz", recipe_content_sha256: "d".repeat(64), sha256: "2".repeat(64) },
       release: { version: "1.0.0", released_at: "2026-08-27", history: [{}] },
       document: {
         identity: { publisher: "community", slug: "glm-dual" },
@@ -59,53 +59,67 @@ const index = {
   ],
 };
 
+const release = { repository: "CarstVaartjes/vonk-forge-recipes", tag: "v1.2.3", source_commit: "f".repeat(40) };
+const indexUrl = "https://example.test/catalog/catalog-index.json";
+
+// Serve the verified release the Pages build writes: the index and its manifest.
+function serve(indexBody: unknown, releaseBody: unknown = release) {
+  const fetchMock = vi.fn(async (url: string) => {
+    if (url === "https://example.test/catalog/release.json") return { ok: true, json: async () => releaseBody };
+    if (url === indexUrl) return { ok: true, json: async () => indexBody };
+    throw new Error(`Unexpected request: ${url}`);
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
 beforeEach(() => {
   resetStaticCatalogCacheForTests();
-  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => index }));
+  serve(index);
 });
 
 afterEach(() => vi.unstubAllGlobals());
 
 describe("static recipe library adapter", () => {
-  test("binds concurrent catalog views and package links to one publication when main advances", async () => {
-    const publication = "2".repeat(40);
-    const base = "https://raw.githubusercontent.com/CarstVaartjes/vonk-forge-recipes/";
-    const fetchMock = vi.fn(async (url: string) => {
-      if (url === "https://api.github.com/repos/CarstVaartjes/vonk-forge-recipes/commits/main") {
-        return { ok: true, json: async () => ({ sha: publication }) };
-      }
-      if (url === `${base}${publication}/catalog-index.json`) return { ok: true, json: async () => index };
-      throw new Error(`Unexpected mutable request: ${url}`);
-    });
-    vi.stubGlobal("fetch", fetchMock);
+  test("reads one verified release from this origin and links packages to its signed assets", async () => {
+    const fetchMock = serve(index);
     const [recipe, models] = await Promise.all([
-      getStaticRecipe(`${base}main/catalog-index.json`, "vonk-forge", "qwen-fast"),
-      listStaticModels(`${base}main/catalog-index.json`),
+      getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast"),
+      listStaticModels(indexUrl),
     ]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(recipe.package?.url).toBe(`${base}${publication}/recipe-packages/vonk-forge/qwen-fast.tar.gz`);
-    expect(recipe.package?.url).not.toContain(index.source_commit);
+    expect(recipe.package?.url).toBe("https://github.com/CarstVaartjes/vonk-forge-recipes/releases/download/v1.2.3/vonk-forge-qwen-fast.tar.gz");
     expect(models.items[0]?.recipe_count).toBe(2);
-    fetchMock.mockImplementation(async () => { throw new Error("main moved or became unavailable"); });
-    const reopened = await getStaticRecipe(`${base}main/catalog-index.json`, "vonk-forge", "qwen-fast");
-    expect(reopened.package).toEqual(recipe.package);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
-  test("retries a failed publication lookup without caching a mutable index", async () => {
-    const url = "https://raw.githubusercontent.com/CarstVaartjes/vonk-forge-recipes/main/catalog-index.json";
+  test("resolves the default same-origin index path against the page", async () => {
+    const fetchMock = vi.fn(async (url: string) => ({ ok: true, json: async () => (url.endsWith("release.json") ? release : index) }));
+    vi.stubGlobal("fetch", fetchMock);
+    await listStaticModels("/catalog/catalog-index.json");
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(["/catalog/catalog-index.json", `${window.location.origin}/catalog/release.json`]);
+  });
+
+  test("rejects an index that does not belong to its release manifest", async () => {
+    serve(index, { ...release, source_commit: "0".repeat(40) });
+    await expect(listStaticModels(indexUrl)).rejects.toThrow("does not match its release");
+    resetStaticCatalogCacheForTests();
+    serve(index, { ...release, tag: "main" });
+    await expect(listStaticModels(indexUrl)).rejects.toThrow("does not match its release");
+  });
+
+  test("retries a failed load without caching it", async () => {
     const fetchMock = vi.fn()
       .mockResolvedValueOnce({ ok: false, status: 503 })
-      .mockResolvedValueOnce({ ok: true, json: async () => ({ sha: "2".repeat(40) }) })
-      .mockResolvedValueOnce({ ok: true, json: async () => index });
+      .mockResolvedValueOnce({ ok: true, json: async () => release })
+      .mockImplementation(async (url: string) => ({ ok: true, json: async () => (url.endsWith("release.json") ? release : index) }));
     vi.stubGlobal("fetch", fetchMock);
-    await expect(listStaticModels(url)).rejects.toThrow("publication returned 503");
-    expect((await listStaticModels(url)).items).toHaveLength(1);
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    await expect(listStaticModels(indexUrl)).rejects.toThrow("returned 503");
+    expect((await listStaticModels(indexUrl)).items).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
   test("maps the immutable library index into public recipe cards", async () => {
-    const recipes = await listStaticRecipeCatalog("https://example.test/catalog-index.json");
+    const recipes = await listStaticRecipeCatalog(indexUrl);
 
     expect(recipes).toHaveLength(2);
     expect(recipes.find((recipe) => recipe.slug === "qwen-fast")).toMatchObject({
@@ -135,18 +149,18 @@ describe("static recipe library adapter", () => {
   });
 
   test("provides immutable detail, import, and source links without an API", async () => {
-    const recipe = await getStaticRecipe("https://example.test/catalog-index.json", "vonk-forge", "qwen-fast");
+    const recipe = await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast");
 
     expect(recipe.import?.uri).toBe(`vonk://catalog/vonk-forge/qwen-fast@sha256:${"a".repeat(64)}`);
     expect(recipe.import?.instruction).toBe("Use this exact recipe in your local Controller.");
     expect(recipe.source?.recipe_url).toBe(`https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${"f".repeat(40)}/recipes/qwen-fast.json`);
     expect(recipe.source?.bundle_url).toBe(`https://github.com/CarstVaartjes/vonk-forge-recipes/tree/${"f".repeat(40)}/adapters/qwen`);
-    expect(recipe.package).toMatchObject({ url: "https://example.test/recipe-packages/vonk-forge/qwen-fast.tar.gz", sha256: "1".repeat(64), bytes: 123 });
+    expect(recipe.package).toMatchObject({ url: "https://github.com/CarstVaartjes/vonk-forge-recipes/releases/download/v1.2.3/vonk-forge-qwen-fast.tar.gz", sha256: "1".repeat(64), bytes: 123 });
     expect(recipe.latest_revision.document).toMatchObject({ identity: { slug: "qwen-fast" } });
   });
 
   test("links model versions to recipes and preserves declared capability facts", async () => {
-    const page = await listStaticModels("https://example.test/catalog-index.json");
+    const page = await listStaticModels(indexUrl);
     expect(page.items).toHaveLength(1);
     expect(page.items[0]).toMatchObject({
       publisher: "qwen",
@@ -164,7 +178,7 @@ describe("static recipe library adapter", () => {
         recipe_slugs: ["community/glm-dual", "vonk-forge/qwen-fast"],
       }],
     });
-    await expect(getStaticModel("https://example.test/catalog-index.json", "qwen", "missing")).rejects.toThrow("Model not found");
+    await expect(getStaticModel(indexUrl, "qwen", "missing")).rejects.toThrow("Model not found");
   });
 
   test("keeps published model entities visible when no recipe selects them", async () => {
@@ -178,8 +192,8 @@ describe("static recipe library adapter", () => {
       },
     };
     resetStaticCatalogCacheForTests();
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ...index, catalog_entities: [...index.catalog_entities, standaloneModel] }) }));
-    const page = await listStaticModels("https://example.test/catalog-index.json");
+    serve({ ...index, catalog_entities: [...index.catalog_entities, standaloneModel] });
+    const page = await listStaticModels(indexUrl);
     expect(page.items).toHaveLength(2);
     expect(page.items.find((item) => item.publisher === "standalone")).toMatchObject({ slug: "standalone", recipe_count: 0, versions: [{ recipe_slugs: [] }] });
   });
@@ -193,14 +207,14 @@ describe("static recipe library adapter", () => {
       ],
     };
     resetStaticCatalogCacheForTests();
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => adversarialIndex }));
-    const recipe = await getStaticRecipe("https://example.test/catalog-index.json", "vonk-forge", "qwen-fast");
+    serve(adversarialIndex);
+    const recipe = await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast");
     expect(recipe.catalog).toMatchObject({ model_title: "Qwen Fast", model_version_title: "Qwen Fast NVFP4", capabilities: ["chat", "reasoning"] });
   });
 
   test("rejects an index without immutable catalog entities", async () => {
     resetStaticCatalogCacheForTests();
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => ({ ...index, catalog_entities: [] }) }));
-    await expect(listStaticModels("https://example.test/catalog-index.json")).rejects.toThrow("unsupported catalog index");
+    serve({ ...index, catalog_entities: [] });
+    await expect(listStaticModels(indexUrl)).rejects.toThrow("unsupported catalog index");
   });
 });
