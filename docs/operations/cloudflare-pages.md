@@ -30,6 +30,11 @@ default Pages hostname is `vonk-forge-web.pages.dev`.
    Analytics**. Cloudflare injects its beacon into the next deployment. Keep
    automatic installation enabled for the complete `vonkforge.ai` hostname.
 
+6. In the `vonkforge.ai` zone, turn off **JavaScript detections**
+   (**Security → Settings → Bot traffic → JavaScript detections → Off**; on the
+   older dashboard, **Security → Bots → Configure → JavaScript Detections**).
+   See [Content Security Policy](#content-security-policy) below.
+
 ## Visitor analytics
 
 Vonk Forge Web uses Cloudflare Web Analytics instead of Google Analytics. It
@@ -99,3 +104,24 @@ deployment because some exceed Cloudflare Pages' 25 MiB per-file limit.
 The `_headers` and `_redirects` files under `web/public` provide the security
 headers (the Content Security Policy's `connect-src` allows only this origin and
 the Cloudflare analytics endpoint), immutable asset caching, and SPA fallback.
+
+## Content Security Policy
+
+The CSP in `web/public/_headers` allows scripts only from this origin and the
+Cloudflare Web Analytics beacon; it never allows `'unsafe-inline'`. The build
+emits no inline scripts, so nothing in `web/dist` needs a hash.
+
+Cloudflare's zone-level **JavaScript detections** (part of Bot Fight Mode /
+bot protection) injects an inline script before `</body>` that loads
+`/cdn-cgi/challenge-platform/scripts/jsd/main.js`. The CSP blocks it and the
+browser console shows `Executing inline script violates ... script-src`. The
+script embeds the request's Ray ID and timestamp
+(`window.__CF$cv$params={r:'…',t:'…'}`), so its hash changes on every response
+and cannot be allowed by hash, and a static Pages site has no per-request
+nonce. The site does not rely on bot detection, so keep the feature off (setup
+step 6). Check that no inline script is injected:
+
+```bash
+curl -fsSL https://vonkforge.ai | grep -c 'challenge-platform'   # expect 0
+```
+
