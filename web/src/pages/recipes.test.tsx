@@ -1,9 +1,14 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 
+import type { RecipeSummary } from "../api/client";
 import { RecipesPage } from "./recipes";
 
 
-const recipe = {
+const { loadRecipeCatalog } = vi.hoisted(() => ({ loadRecipeCatalog: vi.fn() }));
+vi.mock("../api/client", () => ({ loadRecipeCatalog }));
+
+
+const recipe: RecipeSummary = {
   publisher: "vonk",
   slug: "qwen-fast",
   title: "Qwen Fast",
@@ -28,13 +33,8 @@ const recipe = {
 
 beforeEach(() => {
   window.history.replaceState(null, "", "/recipes?runtime=vllm");
-  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
-    ok: true,
-    json: async () => ({ items: [recipe], next_cursor: null }),
-  }));
+  loadRecipeCatalog.mockReset().mockResolvedValue([recipe]);
 });
-
-afterEach(() => vi.unstubAllGlobals());
 
 
 test("shows sizing, immutable identity, and evidence provenance", async () => {

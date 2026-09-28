@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
-import { CatalogProblem, loadRecipeCatalog, type RecipeSummary } from "../api/client";
+import { loadRecipeCatalog, type RecipeSummary } from "../api/client";
 import {
   CAPABILITY_OPTIONS,
   READINESS_OPTIONS,
@@ -89,7 +89,7 @@ export function RecipesPage({ fixedPublisher }: { fixedPublisher?: string } = {}
     setError(null);
     loadRecipeCatalog(controller.signal).then(setCatalog).catch((reason: unknown) => {
       if (!controller.signal.aborted) {
-        setError(reason instanceof CatalogProblem ? reason.problem.detail : reason instanceof Error ? reason.message : "The public recipe index could not be loaded.");
+        setError(reason instanceof Error ? reason.message : "The public recipe index could not be loaded.");
       }
     });
     return () => controller.abort();

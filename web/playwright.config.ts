@@ -18,8 +18,10 @@ export default defineConfig({
     { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
   webServer: {
-    command: `npm run dev -- --host 127.0.0.1 --port ${port} --strictPort`,
+    // Serve the production build, exactly as uploaded to Cloudflare Pages.
+    command: `npm run build && npx vite preview --host 127.0.0.1 --port ${port} --strictPort`,
     url: baseURL,
     reuseExistingServer: false,
+    timeout: 180_000,
   },
 });

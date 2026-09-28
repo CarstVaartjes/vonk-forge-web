@@ -1,70 +1,90 @@
 import { expect, test } from "@playwright/test";
 
 
-const recipe = {
-  publisher: "vonk",
-  slug: "qwen-fast",
-  title: "Qwen Fast",
-  official: true,
-  revision_number: 3,
-  revision_id: "revision-qwen-3",
-  content_sha256: "a".repeat(64),
-  published_at: "2026-08-07T10:00:00Z",
-  runtime: { adapter: "vllm", entrypoint: ["vllm", "serve", "/models"] },
-  build: { context: { sha256: "b".repeat(64), expected_bytes: 2048 }, dockerfile: "Dockerfile" },
-  artifacts: [{ repository: "Qwen/Qwen", revision: "c".repeat(40), download_bytes: 20_000_000_000 }],
-  workload: { family: "qwen", capabilities: ["openai.chat"] },
-  deployment_profiles: [{ name: "pair", node_count: 2 }, { name: "quad", node_count: 4 }],
-  capacity: {
-    profile_node_counts: [2, 4],
-    maximum_installed_bytes_per_node: 21_474_836_480,
-    maximum_runtime_memory_bytes_per_node: 51_539_607_552,
+const publication = "2".repeat(40);
+const sourceCommit = "f".repeat(40);
+const recipeDigest = "a".repeat(64);
+const modelDigest = "3".repeat(64);
+const recipeImportUri = `vonk://catalog/vonk-forge/qwen-fast@sha256:${recipeDigest}`;
+
+// The production build reads the recipe library's generated index, pinned to the
+// commit `main` resolves to. Serve both requests locally so the static build is
+// exercised end to end without reaching GitHub.
+const catalogIndex = {
+  schema_version: 2,
+  kind: "recipe-library-index",
+  repository: "CarstVaartjes/vonk-forge-recipes",
+  source_commit: sourceCommit,
+  package_contract: {
+    schema_version: 2,
+    media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip",
+    path_prefix: "recipe-packages/",
   },
-  moderation_warning: null,
-  facts: { declared: true, source_bundle_observed: true, publisher_tested: true, publisher_tested_label: "Publisher-submitted; not Vonk-certified", vonk_verified: false, last_validation: "2026-08-07T10:00:00Z" },
-  source: { recipe_url: "https://github.com/CarstVaartjes/vonk-forge-recipes/blob/main/recipes/qwen-fast.json" },
-  import: { uri: `vonk://catalog/vonk/qwen-fast@sha256:${"a".repeat(64)}`, instruction: "Open this recipe locally." },
-  catalog: {
-    description: "Fast language model",
-    tags: ["chat", "reasoning", "candidate", "executable", "nvfp4"],
-    model_publisher: "qwen",
-    model_slug: "qwen-fast",
-    model_title: "Qwen Fast",
-    model_version_publisher: "qwen",
-    model_version_slug: "qwen-fast-v1",
-    model_version_title: "Qwen Fast v1",
-    source_owner: "Qwen",
-    source_repository: "https://huggingface.co/Qwen/Qwen-Fast",
-    alignment: "standard",
-    capabilities: ["chat", "reasoning"],
-    qualification: "candidate",
-    execution_readiness: "executable",
-    runtime_distribution: "vllm-0-27-1",
-    precision: "NVFP4",
-    quantizations: ["NVFP4"],
-    topology_name: "pair",
-    topology_mode: "distributed",
-    node_count: 2,
-    expected_download_bytes: 20_000_000_000,
-  },
+  catalog_entities: [{
+    content_sha256: modelDigest,
+    document: {
+      kind: "model",
+      schema_version: 2,
+      identity: {
+        publisher: "qwen",
+        slug: "qwen-fast-nvfp4",
+        family: { publisher: "qwen", slug: "qwen", title: "Qwen" },
+        model: { publisher: "qwen", slug: "qwen-fast", title: "Qwen Fast", architecture: "transformer" },
+        version: "1.0",
+        variant: "nvfp4",
+      },
+      metadata: { title: "Qwen Fast NVFP4", description: "Fast language model", tags: ["language"] },
+      source: { repository: "https://huggingface.co/Qwen/Qwen-Fast", revision: "c".repeat(40) },
+      format: { container: "safetensors", precision: "nvfp4", quantization: "nvfp4" },
+      sizes: { download_bytes: 20_000_000_000, installed_bytes: 20_000_000_000 },
+      files: [{ id: "weights", path: "weights.safetensors", sha256: "b".repeat(64), size_bytes: 20_000_000_000, roles: ["weights"] }],
+      capabilities: {
+        schema_version: 2,
+        facts: [
+          { capability: "chat", support: "supported", evidence_status: "declared" },
+          { capability: "reasoning", support: "supported", evidence_status: "declared" },
+        ],
+      },
+    },
+  }],
+  recipes: [{
+    content_sha256: recipeDigest,
+    source_path: "recipes/qwen-fast.json",
+    package: {
+      expected_bytes: 123,
+      media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip",
+      minimum_consumer_schema: 2,
+      path: "recipe-packages/vonk-forge/qwen-fast.tar.gz",
+      recipe_content_sha256: recipeDigest,
+      sha256: "1".repeat(64),
+    },
+    release: { version: "2.1.0", released_at: "2026-08-07", history: [{}, {}, {}] },
+    document: {
+      kind: "recipe",
+      schema_version: 2,
+      identity: { publisher: "vonk-forge", slug: "qwen-fast" },
+      metadata: { title: "Qwen Fast", description: "Fast language model", tags: ["candidate", "executable", "chat", "nvfp4"], alignment: "standard" },
+      models: [{ id: "primary", model: { kind: "model", publisher: "qwen", slug: "qwen-fast-nvfp4", content_sha256: modelDigest }, files: [{ id: "weights", file_id: "weights", roles: ["entrypoint"], mount: { target: "/models", read_only: true } }] }],
+      runtime: { engine: "vllm", entrypoint: ["vllm", "serve", "/models"] },
+      execution: { mode: "build", build: { context: { path: "adapters/qwen", sha256: "e".repeat(64) }, dockerfile: "Dockerfile" } },
+      topology: {
+        name: "pair",
+        mode: "distributed",
+        node_count: 2,
+        roles: [{ resources: { disk: { artifact_bytes: 21_474_836_480 }, memory: { startup_peak_bytes: 51_539_607_552 } } }],
+      },
+      provenance: { source_kind: "global", source_reference: "https://huggingface.co/Qwen/Qwen-Fast", attribution: ["Qwen"] },
+    },
+  }],
 };
 
 
 test.beforeEach(async ({ page }) => {
-  await page.route(/\/v1\/recipes(?:\?.*)?$/, (route) =>
-    route.fulfill({ json: { items: [recipe], next_cursor: null } }),
+  await page.route("https://api.github.com/repos/CarstVaartjes/vonk-forge-recipes/commits/main", (route) =>
+    route.fulfill({ json: { sha: publication } }),
   );
-  await page.route(/\/v1\/recipes\/vonk\/qwen-fast$/, (route) =>
-    route.fulfill({
-      json: {
-        ...recipe,
-        latest_revision: {
-          revision_number: 3,
-          content_sha256: recipe.content_sha256,
-          document: recipe,
-        },
-      },
-    }),
+  await page.route(`https://raw.githubusercontent.com/CarstVaartjes/vonk-forge-recipes/${publication}/catalog-index.json`, (route) =>
+    route.fulfill({ json: catalogIndex }),
   );
 });
 
@@ -268,10 +288,14 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   await expect(page.getByText(/Source verified/)).toBeVisible();
   await page.getByRole("link", { name: "Qwen Fast" }).click();
   await expect(page.getByRole("heading", { name: "Trust, precisely stated" })).toBeVisible();
-  await expect(page.getByText(/publisher-submitted test accepted/i)).toBeVisible();
-  await expect(page.locator("code").filter({ hasText: recipe.import.uri })).toBeVisible();
+  await expect(page.getByText("Source: canonical bundle verified by Vonk")).toBeVisible();
+  await expect(page.getByText("Runtime test: no accepted publisher test")).toBeVisible();
+  await expect(page.locator("code").filter({ hasText: recipeImportUri })).toBeVisible();
   await expect(page.getByRole("link", { name: "Inspect recipe source" })).toHaveAttribute(
-    "href", "https://github.com/CarstVaartjes/vonk-forge-recipes/blob/main/recipes/qwen-fast.json",
+    "href", `https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${sourceCommit}/recipes/qwen-fast.json`,
+  );
+  await expect(page.getByRole("link", { name: "Download package" })).toHaveAttribute(
+    "href", `https://raw.githubusercontent.com/CarstVaartjes/vonk-forge-recipes/${publication}/recipe-packages/vonk-forge/qwen-fast.tar.gz`,
   );
 });
 

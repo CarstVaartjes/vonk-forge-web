@@ -1,6 +1,0 @@
-#!/bin/sh
-set -eu
-
-root=$(git rev-parse --show-toplevel)
-git -C "$root" config core.hooksPath .githooks
-echo "Installed Vonk Forge web Git hooks in $root/.githooks"

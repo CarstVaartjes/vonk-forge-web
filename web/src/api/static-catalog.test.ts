@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipes, resetStaticCatalogCacheForTests } from "./static-catalog";
+import { getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog, resetStaticCatalogCacheForTests } from "./static-catalog";
 
 
 const index = {
@@ -105,10 +105,10 @@ describe("static recipe library adapter", () => {
   });
 
   test("maps the immutable library index into public recipe cards", async () => {
-    const page = await listStaticRecipes("https://example.test/catalog-index.json", new URLSearchParams("runtime=vllm&topology=single"));
+    const recipes = await listStaticRecipeCatalog("https://example.test/catalog-index.json");
 
-    expect(page.items).toHaveLength(1);
-    expect(page.items[0]).toMatchObject({
+    expect(recipes).toHaveLength(2);
+    expect(recipes.find((recipe) => recipe.slug === "qwen-fast")).toMatchObject({
       publisher: "vonk-forge",
       slug: "qwen-fast",
       title: "Qwen Fast NVFP4",
