@@ -14,13 +14,8 @@ function bytes(value?: number | null): string {
   return `${amount >= 10 || unit === 0 ? Math.round(amount) : amount.toFixed(1)} ${units[unit]}`;
 }
 
-function count(value?: number | null): string {
-  if (!value) return "Not declared";
-  return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value);
-}
-
 function modelCapabilities(model: ModelSummary): string[] {
-  return Array.from(new Set(model.versions.flatMap((version) => version.capabilities.filter((fact) => fact.support === "supported").map((fact) => fact.name))));
+  return Array.from(new Set(model.versions.flatMap((version) => version.capabilities)));
 }
 
 function filterLabel(value: string): string {
@@ -28,10 +23,8 @@ function filterLabel(value: string): string {
 }
 
 function accessLabel(version?: ModelVersionSummary): string {
-  if (!version?.access) return "Access not declared";
-  if (version.access.gated) return "Gated access";
-  if (version.access.visibility === "public") return "Public access";
-  return version.access.visibility ? `${filterLabel(version.access.visibility)} access` : "Access not declared";
+  if (version?.requires_token === undefined) return "Access not declared";
+  return version.requires_token ? "Token required" : "Public access";
 }
 
 function compactRevision(value: string): string {
@@ -39,10 +32,10 @@ function compactRevision(value: string): string {
 }
 
 function CapabilityFacts({ version }: { version: ModelVersionSummary }) {
-  if (version.capability_evidence === "unknown") {
-    return <p className="model-unknown"><span aria-hidden="true">?</span> Capability evidence not declared for this model version.</p>;
+  if (!version.capabilities.length) {
+    return <p className="model-unknown"><span aria-hidden="true">?</span> No capabilities declared for this model version.</p>;
   }
-  return <ul className="model-capability-facts" aria-label="Declared capabilities">{version.capabilities.map((fact) => <li key={fact.name}><strong>{fact.name}</strong><span className={`capability-${fact.support}`}>{fact.support}</span><small>{fact.evidence_status} evidence</small></li>)}</ul>;
+  return <ul className="model-capability-facts" aria-label="Declared capabilities">{version.capabilities.map((name) => <li key={name}><strong>{filterLabel(name)}</strong></li>)}</ul>;
 }
 
 export function PublicCatalogExplainer() {
@@ -122,21 +115,19 @@ function VersionRow({ version }: { version: ModelVersionSummary }) {
   return <article className="model-version" aria-labelledby={`version-${version.publisher}-${version.slug}`}>
     <div className="model-version-heading">
       <div><p className="eyebrow">Model version</p><h3 id={`version-${version.publisher}-${version.slug}`}>{version.title}</h3><code>{version.publisher}/{version.slug}</code></div>
-      <span className={`model-availability availability-${version.availability ?? "unknown"}`}>{version.availability ?? "availability not declared"}</span>
     </div>
     <dl className="model-fact-grid">
       <div><dt>Identity</dt><dd><code title={version.revision_id} aria-label={`Model identity ${version.revision_id}`}>{compactRevision(version.revision_id)}</code></dd></div>
       <div><dt>Version</dt><dd>{version.version}</dd></div>
       <div><dt>Variant</dt><dd>{version.variant || "Not declared"}</dd></div>
       <div><dt>Access</dt><dd>{accessLabel(version)}</dd></div>
-      <div><dt>Format</dt><dd>{[version.format?.container, version.format?.quantization].filter(Boolean).join(" · ") || "Not declared"}</dd></div>
+      <div><dt>Format</dt><dd>{[version.format?.precision, version.format?.quantization].filter(Boolean).join(" · ") || "Not declared"}</dd></div>
       <div><dt>Weights</dt><dd>{bytes(version.sizes?.download_bytes)} download · {bytes(version.sizes?.installed_bytes)} installed</dd></div>
-      <div><dt>Parameters</dt><dd>{count(version.parameters?.total)} total{version.parameters?.active ? ` · ${count(version.parameters.active)} active` : ""}</dd></div>
       <div><dt>Source</dt><dd>{version.source_repository ? <a href={version.source_repository}>Pinned source ↗</a> : "Not declared"}{version.source_revision ? <code title={version.source_revision} aria-label={`Source revision ${version.source_revision}`}>{compactRevision(version.source_revision)}</code> : null}</dd></div>
       <div><dt>Recipes</dt><dd>{version.recipe_slugs.length ? <span className="model-recipe-links">{version.recipe_slugs.map((path) => <a key={path} href={`/recipes?q=${encodeURIComponent(path)}`}>{path}</a>)}</span> : "No public recipe"}</dd></div>
     </dl>
     <div className="model-version-capabilities"><strong>Capabilities</strong><CapabilityFacts version={version} /></div>
-    {version.license?.spdx ? <p className="model-license">License: <a href={version.license.url}>{version.license.spdx}</a>{version.license.operator_acceptance_required ? " · operator acceptance required" : ""}</p> : null}
+    {version.license?.spdx ? <p className="model-license">License: <a href={version.license.url}>{version.license.spdx}</a></p> : null}
   </article>;
 }
 
@@ -191,7 +182,7 @@ export function ModelsPage() {
     {error ? <div className="status-panel error" role="alert"><h2>Models are temporarily unavailable.</h2><p>The public model index could not be loaded. Try again when the catalog source is reachable.</p><button className="button" type="button" onClick={() => { setModels(null); setAttempt((value) => value + 1); }}>Retry</button></div> : null}
     {!models && !error ? <div className="status-panel" role="status">Loading immutable model index…</div> : null}
     {models && filtered.length === 0 ? <div className="status-panel"><h2>No matching models.</h2><p>Try a broader family, publisher, or capability.</p><button className="button" type="button" onClick={clearFilters}>Show all models</button></div> : null}
-    {models && visible.length ? <ul className="model-list" aria-label="Models">{visible.map((model) => { const capabilities = modelCapabilities(model); const version = model.versions[0]; const key = `${model.publisher}/${model.slug}`; return <li key={key}><a className="model-row" href={`/models/${model.publisher}/${model.slug}`}><span className="model-row-main"><span className="eyebrow">{model.family ? `Family · ${model.family}` : "Model"}</span><strong>{model.title}</strong><code>{model.publisher}/{model.slug}</code></span><span className="model-row-facts">{version ? <><span><small>Version</small>{version.version}</span><span><small>Variant</small>{version.variant || "Not declared"}</span><span><small>Access</small>{accessLabel(version)}</span></> : null}</span><span className="model-row-capabilities" aria-label="Declared capabilities">{capabilities.slice(0, 3).map((capability) => <span key={capability}>{filterLabel(capability)}</span>)}{!capabilities.length ? <span>Capability evidence unknown</span> : null}</span><span className="model-row-action"><span>{model.recipe_count} {model.recipe_count === 1 ? "recipe" : "recipes"}</span><span className="button primary">View versions</span></span></a></li>; })}</ul> : null}
+    {models && visible.length ? <ul className="model-list" aria-label="Models">{visible.map((model) => { const capabilities = modelCapabilities(model); const version = model.versions[0]; const key = `${model.publisher}/${model.slug}`; return <li key={key}><a className="model-row" href={`/models/${model.publisher}/${model.slug}`}><span className="model-row-main"><span className="eyebrow">{model.family ? `Family · ${model.family}` : "Model"}</span><strong>{model.title}</strong><code>{model.publisher}/{model.slug}</code></span><span className="model-row-facts">{version ? <><span><small>Version</small>{version.version}</span><span><small>Variant</small>{version.variant || "Not declared"}</span><span><small>Access</small>{accessLabel(version)}</span></> : null}</span><span className="model-row-capabilities" aria-label="Declared capabilities">{capabilities.slice(0, 3).map((capability) => <span key={capability}>{filterLabel(capability)}</span>)}{!capabilities.length ? <span>No capabilities declared</span> : null}</span><span className="model-row-action"><span>{model.recipe_count} {model.recipe_count === 1 ? "recipe" : "recipes"}</span><span className="button primary">View versions</span></span></a></li>; })}</ul> : null}
     {models && filtered.length > PAGE_SIZE ? <nav className="model-pagination" aria-label="Model pages"><button className="button" type="button" disabled={page <= 1} onClick={() => updateFilters({ page: page - 1 })}>Previous</button><span aria-live="polite">Page {page} of {pageCount}</span><button className="button" type="button" disabled={page >= pageCount} onClick={() => updateFilters({ page: page + 1 })}>Next</button></nav> : null}
   </main>;
 }
@@ -204,5 +195,5 @@ export function ModelDetailPage({ publisher, slug }: { publisher: string; slug: 
   useEffect(() => { if (model) document.title = `${model.title} · Models · Vonk Forge`; }, [model]);
   if (error) return <main className="status-panel error"><h1>Model unavailable</h1><p>This model is not present in the published index.</p><button className="button" type="button" onClick={() => { setModel(null); setAttempt((value) => value + 1); }}>Retry</button></main>;
   if (!model) return <main className="status-panel" role="status">Loading immutable model…</main>;
-  return <main className="model-detail-page"><header className="page-intro"><p className="eyebrow">{model.family ? `Model family · ${model.family}` : "Model"}</p><h1>{model.title}</h1><p className="recipe-path">{model.publisher}/{model.slug}</p><p className="model-detail-identity">Immutable model identity <code>{model.revision_id}</code></p><p>{model.description || "No description published."}</p></header><div className="model-detail-actions"><a className="button" href="/models">All models</a><a className="button" href={`/recipes?q=${encodeURIComponent(model.title)}`}>Compare recipes</a><a className="button primary" href="/control#library-import">Open Controller instructions</a></div><section className="model-detail-boundary"><div><h2>Versions and weight variants</h2><p>Each row is a published version and variant. Download size, source revision, format, license, access, and capability evidence appear when the catalog declares them.</p></div><div className="model-version-list">{model.versions.map((version) => <VersionRow key={`${version.publisher}/${version.slug}-${version.revision_id}`} version={version} />)}</div></section></main>;
+  return <main className="model-detail-page"><header className="page-intro"><p className="eyebrow">{model.family ? `Model family · ${model.family}` : "Model"}</p><h1>{model.title}</h1><p className="recipe-path">{model.publisher}/{model.slug}</p><p className="model-detail-identity">Immutable model identity <code>{model.revision_id}</code></p><p>{model.description || "No description published."}</p></header><div className="model-detail-actions"><a className="button" href="/models">All models</a><a className="button" href={`/recipes?q=${encodeURIComponent(model.title)}`}>Compare recipes</a><a className="button primary" href="/control#library-import">Open Controller instructions</a></div><section className="model-detail-boundary"><div><h2>Versions and weight variants</h2><p>Each row is a published version and variant. Download size, source revision, format, license, access, and capabilities appear when the catalog declares them.</p></div><div className="model-version-list">{model.versions.map((version) => <VersionRow key={`${version.publisher}/${version.slug}-${version.revision_id}`} version={version} />)}</div></section></main>;
 }

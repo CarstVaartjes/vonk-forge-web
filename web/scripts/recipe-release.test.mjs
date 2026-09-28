@@ -5,11 +5,12 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
-import { parseChecksums, publishRecipeRelease } from "./recipe-release.mjs";
+import { parseChecksums, publishRecipeRelease, selectReleaseTag } from "./recipe-release.mjs";
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const commit = "a".repeat(40);
-const tag = "v1.2.3";
+const tag = "v2.1.0";
+const updatedAt = "2026-09-28T20:04:06Z";
 
 // A fixture release shaped like vonk-forge-recipes publish.yml output.
 function fixtureRelease({ index: indexOverride = {}, checksums: checksumsOverride } = {}) {
@@ -17,6 +18,8 @@ function fixtureRelease({ index: indexOverride = {}, checksums: checksumsOverrid
   const index = {
     kind: "recipe-library-index",
     schema_version: 2,
+    contract_version: "2.1.0",
+    updated_at: updatedAt,
     repository: "CarstVaartjes/vonk-forge-recipes",
     source_commit: commit,
     package_contract: { schema_version: 2, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", path_prefix: "packages/" },
@@ -89,6 +92,8 @@ describe("recipe release publication", () => {
     expect(JSON.parse(await readFile(path.join(outDir, "release.json"), "utf8"))).toEqual({
       repository: "CarstVaartjes/vonk-forge-recipes",
       tag,
+      contract_version: "2.1.0",
+      updated_at: updatedAt,
       source_commit: commit,
       sha256sums_sha256: sha256(assets.SHA256SUMS),
       catalog_index_sha256: sha256(assets["catalog-index.json"]),
@@ -134,6 +139,25 @@ describe("recipe release publication", () => {
   test("rejects a mutable or malformed release tag", async () => {
     await expect(publish(fixtureRelease(), { releaseTag: "main" })).rejects.toThrow("invalid release tag");
     await expectPreviousCatalogKept();
+  });
+
+  test("rejects a release or index for another contract major", async () => {
+    await expect(publish(fixtureRelease(), { releaseTag: "v3.0.0" })).rejects.toThrow("contract major 2");
+    await expect(publish(fixtureRelease({ index: { contract_version: "3.0.0" } }))).rejects.toThrow("unsupported contract version");
+    await expectPreviousCatalogKept();
+  });
+
+  test("follows the newest non-draft release within the supported contract major", () => {
+    const releases = [
+      { tag_name: "v3.0.0", draft: false },
+      { tag_name: "v2.10.0", draft: true },
+      { tag_name: "v2.2.0", draft: false },
+      { tag_name: "v2.10.1-rc", draft: false },
+      { tag_name: "v2.9.3", draft: false },
+      { tag_name: "v1.9.0", draft: false },
+    ];
+    expect(selectReleaseTag(releases)).toBe("v2.9.3");
+    expect(() => selectReleaseTag([{ tag_name: "v1.0.0", draft: false }])).toThrow("no published release");
   });
 
   test("parses only well-formed checksum manifests", () => {

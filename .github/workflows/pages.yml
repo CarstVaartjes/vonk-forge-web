@@ -30,7 +30,8 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - name: Install frontend dependencies
         run: npm --prefix web ci
-      # Downloads the latest signed recipe-library release (or the tag in the
+      # Downloads the newest signed recipe-library release for the supported
+      # contract major (or the tag in the
       # optional VONK_RECIPE_RELEASE variable), verifies SHA256SUMS against its
       # Sigstore attestation from publish.yml and every file against
       # SHA256SUMS, and writes web/public/catalog. Any failure stops the job, so

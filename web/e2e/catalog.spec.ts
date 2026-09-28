@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 
-const releaseTag = "v1.2.3";
+const releaseTag = "v2.0.0";
 const sourceCommit = "f".repeat(40);
 const recipeDigest = "a".repeat(64);
 const modelDigest = "3".repeat(64);
@@ -12,6 +12,8 @@ const recipeImportUri = `vonk://catalog/vonk-forge/qwen-fast@sha256:${recipeDige
 // static build is exercised end to end without reaching GitHub.
 const catalogIndex = {
   schema_version: 2,
+  contract_version: "2.0.0",
+  updated_at: "2026-09-28T20:04:06Z",
   kind: "recipe-library-index",
   repository: "CarstVaartjes/vonk-forge-recipes",
   source_commit: sourceCommit,
@@ -24,27 +26,20 @@ const catalogIndex = {
     content_sha256: modelDigest,
     document: {
       kind: "model",
-      schema_version: 2,
       identity: {
         publisher: "qwen",
         slug: "qwen-fast-nvfp4",
         family: { publisher: "qwen", slug: "qwen", title: "Qwen" },
-        model: { publisher: "qwen", slug: "qwen-fast", title: "Qwen Fast", architecture: "transformer" },
+        model: { publisher: "qwen", slug: "qwen-fast", title: "Qwen Fast" },
         version: "1.0",
         variant: "nvfp4",
       },
       metadata: { title: "Qwen Fast NVFP4", description: "Fast language model", tags: ["language"] },
       source: { repository: "https://huggingface.co/Qwen/Qwen-Fast", revision: "c".repeat(40) },
-      format: { container: "safetensors", precision: "nvfp4", quantization: "nvfp4" },
-      sizes: { download_bytes: 20_000_000_000, installed_bytes: 20_000_000_000 },
+      requires_token: false,
+      format: { precision: "nvfp4", quantization: "nvfp4" },
       files: [{ id: "weights", path: "weights.safetensors", sha256: "b".repeat(64), size_bytes: 20_000_000_000, roles: ["weights"] }],
-      capabilities: {
-        schema_version: 2,
-        facts: [
-          { capability: "chat", support: "supported", evidence_status: "declared" },
-          { capability: "reasoning", support: "supported", evidence_status: "declared" },
-        ],
-      },
+      capabilities: ["chat", "reasoning"],
     },
   }],
   recipes: [{
@@ -58,22 +53,20 @@ const catalogIndex = {
       recipe_content_sha256: recipeDigest,
       sha256: "1".repeat(64),
     },
-    release: { version: "2.1.0", released_at: "2026-08-07", history: [{}, {}, {}] },
+    release: { version: "2.1.0", released_at: "2026-08-07" },
     document: {
       kind: "recipe",
-      schema_version: 2,
       identity: { publisher: "vonk-forge", slug: "qwen-fast" },
       metadata: { title: "Qwen Fast", description: "Fast language model", tags: ["candidate", "executable", "chat", "nvfp4"], alignment: "standard" },
-      models: [{ id: "primary", model: { kind: "model", publisher: "qwen", slug: "qwen-fast-nvfp4", content_sha256: modelDigest }, files: [{ id: "weights", file_id: "weights", roles: ["entrypoint"], mount: { target: "/models", read_only: true } }] }],
+      models: [{ id: "primary", model: { kind: "model", publisher: "qwen", slug: "qwen-fast-nvfp4", content_sha256: modelDigest }, files: [{ id: "weights", file_id: "weights", roles: ["entrypoint"], mount: { target: "/models" } }] }],
       runtime: { engine: "vllm", entrypoint: ["vllm", "serve", "/models"] },
-      execution: { mode: "build", build: { context: { path: "adapters/qwen", sha256: "e".repeat(64) }, dockerfile: "Dockerfile" } },
+      execution: { build: { context: { path: "adapters/qwen" }, dockerfile: "Dockerfile" } },
       topology: {
         name: "pair",
-        mode: "distributed",
         node_count: 2,
-        roles: [{ resources: { disk: { artifact_bytes: 21_474_836_480 }, memory: { startup_peak_bytes: 51_539_607_552 } } }],
+        roles: [{ resources: { disk: { artifact_bytes: 21_474_836_480 }, memory: { peak_bytes: 51_539_607_552, reserve_bytes: 0 } } }],
       },
-      provenance: { source_kind: "global", source_reference: "https://huggingface.co/Qwen/Qwen-Fast", attribution: ["Qwen"] },
+      provenance: { source_reference: "https://huggingface.co/Qwen/Qwen-Fast", attribution: ["Qwen"] },
     },
   }],
 };
@@ -84,7 +77,7 @@ test.beforeEach(async ({ page }) => {
   await page.route((url) => !["127.0.0.1", "localhost"].includes(url.hostname), (route) => route.abort());
   await page.route("**/catalog/catalog-index.json", (route) => route.fulfill({ json: catalogIndex }));
   await page.route("**/catalog/release.json", (route) =>
-    route.fulfill({ json: { repository: "CarstVaartjes/vonk-forge-recipes", tag: releaseTag, source_commit: sourceCommit } }),
+    route.fulfill({ json: { repository: "CarstVaartjes/vonk-forge-recipes", tag: releaseTag, contract_version: "2.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: sourceCommit } }),
   );
 });
 

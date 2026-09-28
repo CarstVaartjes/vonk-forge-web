@@ -74,15 +74,19 @@ generates from its reviewed recipe and model documents and publishes as an
 asset of a signed GitHub release. Browsers cannot fetch release assets
 cross-origin, so the Pages build copies it:
 [`web/scripts/recipe-release.mjs`](web/scripts/recipe-release.mjs) downloads the
-latest release (or the tag in `VONK_RECIPE_RELEASE`), verifies `SHA256SUMS`
+newest release whose tag major matches the supported recipe contract major (or
+the tag in `VONK_RECIPE_RELEASE`), verifies `SHA256SUMS`
 against its Sigstore attestation from the library's `publish.yml` on `main`,
 checks the index and every package digest against `SHA256SUMS`, and writes
 `web/public/catalog/` (`catalog-index.json`, `release.json`, `SHA256SUMS` and its
 bundle). The browser reads only those same-origin files. Package download links
 point at the verified release's assets on GitHub.
 
-Publishing a recipe is a pull request against the recipe library followed by a
-library release; the hourly Pages build picks up the new release. For local
+The library's release tag is its contract version (for example `v2.0.0`).
+Recipe changes do not create a new release: the library updates that release's
+assets in place and records `updated_at` in the index, which the site shows
+beside the library version. Publishing a recipe is a pull request against the
+recipe library; the hourly Pages build picks up the updated release. For local
 development with the real catalog, run `node web/scripts/recipe-release.mjs`
 first (requires an authenticated `gh`).
 

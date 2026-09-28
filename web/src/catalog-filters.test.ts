@@ -10,7 +10,6 @@ function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["cata
     slug,
     title: slug,
     official: true,
-    revision_number: 1,
     revision_id: slug,
     content_sha256: slug.padEnd(64, "0").slice(0, 64),
     published_at: new Date().toISOString().slice(0, 10),

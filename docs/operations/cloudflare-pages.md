@@ -68,15 +68,18 @@ and incoming data in the dashboard.
 minute 17). It:
 
 1. installs the locked frontend dependencies;
-2. runs `web/scripts/recipe-release.mjs`, which downloads the latest signed
+2. runs `web/scripts/recipe-release.mjs`, which lists the
    [`vonk-forge-recipes`](https://github.com/CarstVaartjes/vonk-forge-recipes)
-   release, verifies `SHA256SUMS` with `gh attestation verify` against the
+   releases, downloads the newest non-draft release whose tag major equals
+   the supported contract major (`SUPPORTED_CONTRACT_MAJOR`), verifies `SHA256SUMS` with `gh attestation verify` against the
    Sigstore bundle (signer workflow
    `CarstVaartjes/vonk-forge-recipes/.github/workflows/publish.yml`, source ref
    `refs/heads/main`, repository ID `1336002555`, GitHub-hosted runner, and a
    source commit equal to the index's `source_commit`), checks
    `catalog-index.json` and every package digest the index names against
-   `SHA256SUMS`, and writes `web/public/catalog/`;
+   `SHA256SUMS`, requires the index's `contract_version` to have that major,
+   and writes `web/public/catalog/` (its `release.json` records the tag,
+   `contract_version` and `updated_at`);
 3. builds `web/dist` and uploads it as the production Pages deployment with
    Wrangler. A scheduled run whose verified `release.json` equals the one
    already served at `https://<project>.pages.dev/catalog/release.json` skips
@@ -86,14 +89,20 @@ Any download, signature, or digest failure fails the job before the upload, so
 the previously deployed site keeps serving the last verified catalog. The job
 uses only the workflow's `GITHUB_TOKEN`; no extra secret is involved.
 
-To pin a release instead of following `latest`, set the `production`
-environment (or repository) variable `VONK_RECIPE_RELEASE` to an exact tag such
-as `v1.1.2` and dispatch the workflow; clear it to follow `latest` again.
+The library updates its release in place (same tag, new assets) when recipes
+change, so the verified `release.json` changes and the next run redeploys. A
+run that catches the assets mid-replacement fails verification and the next
+run heals it.
 
-New recipe releases arrive through the hourly schedule. `vonk-forge-recipes`
+To pin a release instead of following the newest one, set the `production`
+environment (or repository) variable `VONK_RECIPE_RELEASE` to an exact tag such
+as `v2.0.0` and dispatch the workflow; clear it to follow the newest release
+again.
+
+Recipe updates arrive through the hourly schedule. `vonk-forge-recipes`
 does not hold a token that could send a `repository_dispatch` to this
 repository, so polling is the deliberate choice; dispatch `pages.yml` manually
-to publish a release immediately. Pull requests run CI only; they do not
+to publish an update immediately. Pull requests run CI only; they do not
 publish production.
 
 Package download links go to the verified release's assets on

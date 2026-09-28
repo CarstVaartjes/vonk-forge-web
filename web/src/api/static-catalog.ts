@@ -1,7 +1,11 @@
-import type { ModelPage, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
+import type { LibraryRelease, ModelPage, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
 
 
 type JsonRecord = Record<string, unknown>;
+
+// The recipe/model contract major this site renders (web/scripts/recipe-release.mjs
+// selects the matching library release).
+const SUPPORTED_CONTRACT_MAJOR = 2;
 
 interface LibraryRecipe {
   content_sha256: string;
@@ -13,6 +17,8 @@ interface LibraryRecipe {
 
 interface LibraryIndex {
   catalog_entities: LibraryEntity[];
+  contract_version: string;
+  updated_at: string;
   repository: string;
   recipes: LibraryRecipe[];
   schema_version: number;
@@ -53,11 +59,6 @@ function number(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
-function optionalNumber(value: unknown): number | null | undefined {
-  if (value === null) return null;
-  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
-}
-
 function nodeResources(document: JsonRecord): { disk: number; memory: number } {
   const topology = record(document.topology);
   const roles = array(topology.roles).map(record);
@@ -67,10 +68,7 @@ function nodeResources(document: JsonRecord): { disk: number; memory: number } {
       const disk = record(resources.disk);
       const memory = record(resources.memory);
       const diskBytes = Object.values(disk).reduce<number>((total, value) => total + number(value), 0);
-      const runtimeBytes = Math.max(
-        number(memory.startup_peak_bytes),
-        number(memory.steady_state_bytes) + number(memory.runtime_growth_bytes) + number(memory.system_reserve_bytes),
-      );
+      const runtimeBytes = number(memory.peak_bytes) + number(memory.reserve_bytes);
       return {
         disk: Math.max(maximum.disk, diskBytes),
         memory: Math.max(maximum.memory, runtimeBytes),
@@ -104,16 +102,14 @@ function tags(document: JsonRecord): string[] {
   return array(record(document.metadata).tags).map((value) => text(value).toLowerCase()).filter(Boolean);
 }
 
-function publicCapabilities(document: JsonRecord, recipeTags: string[]): string[] {
-  void recipeTags;
-  const declaration = record(document.capabilities);
-  const facts = array(declaration.facts).map(record);
-  const values = new Set(facts.filter((fact) => fact.support === "supported").map((fact) => text(fact.capability)));
-  return PUBLIC_CAPABILITIES.filter((value) => values.has(value));
+// A model declares the capabilities it supports as a plain list of names.
+function declaredCapabilities(document: JsonRecord): string[] {
+  return Array.from(new Set(array(document.capabilities).map((value) => text(value)).filter(Boolean)));
 }
 
-function modelVersionCapabilities(document: JsonRecord): string[] {
-  return publicCapabilities(document, []);
+function publicCapabilities(document: JsonRecord): string[] {
+  const values = new Set(declaredCapabilities(document));
+  return PUBLIC_CAPABILITIES.filter((value) => values.has(value));
 }
 
 function qualification(recipeTags: string[]): "candidate" | "cataloged" {
@@ -209,20 +205,6 @@ function sameReference(left: unknown, right: unknown): boolean {
     && a.content_sha256 === b.content_sha256;
 }
 
-function explicitCapabilities(document: JsonRecord): { values: Array<{ name: string; support: "supported" | "unsupported" | "unknown"; evidence_status: "declared" | "tested" | "contradicted" | "unknown"; evidence_digest?: string | null }>; evidence: "declared" | "unknown" } {
-  const declaration = record(document.capabilities);
-  const raw = declaration.facts;
-  if (!Array.isArray(raw)) return { values: [], evidence: "unknown" };
-  const values = raw.map((value) => {
-    const fact = record(value);
-    const name = text(fact.capability);
-    const support = ["supported", "unsupported", "unknown"].includes(text(fact.support)) ? text(fact.support) as "supported" | "unsupported" | "unknown" : "unknown";
-    const evidence_status = ["declared", "tested", "contradicted", "unknown"].includes(text(fact.evidence_status)) ? text(fact.evidence_status) as "declared" | "tested" | "contradicted" | "unknown" : "unknown";
-    return { name, support, evidence_status, evidence_digest: text(fact.evidence_digest) || null };
-  }).filter((value) => value.name);
-  return { values, evidence: values.length && declaration.provenance ? "declared" : "unknown" };
-}
-
 function modelIdentity(document: JsonRecord): JsonRecord {
   return record(record(document.identity).model);
 }
@@ -256,10 +238,7 @@ function mapModelVersion(
   const metadata = record(document.metadata);
   const source = record(document.source);
   const format = record(document.format);
-  const parameters = record(document.parameters);
-  const limits = record(document.limits);
   const license = record(document.license);
-  const capabilities = explicitCapabilities(document);
   const recipeSlugs = recipes
     .filter((recipe) => recipeModels(recipe).some((candidate) => sameReference(candidate, entity)))
     .map((recipe) => `${recipe.publisher}/${recipe.slug}`)
@@ -274,22 +253,14 @@ function mapModelVersion(
     model_slug: text(logicalModel.slug),
     model_title: text(logicalModel.title, text(logicalModel.slug)),
     variant: text(record(document.identity).variant) || undefined,
-    access: {
-      visibility: text(record(document.access).visibility) || undefined,
-      gated: typeof record(document.access).gated === "boolean" ? record(document.access).gated as boolean : undefined,
-      authentication: text(record(document.access).authentication) || undefined,
-    },
+    requires_token: typeof document.requires_token === "boolean" ? document.requires_token : undefined,
     source_repository: text(source.repository) || undefined,
     source_revision: text(source.revision) || undefined,
-    format: { container: text(format.container) || undefined, precision: text(format.precision) || undefined, quantization: text(format.quantization) || undefined },
-    parameters: { total: optionalNumber(parameters.total), active: optionalNumber(parameters.active) },
-    limits: { context_tokens: optionalNumber(limits.context_tokens), resolution_pixels: optionalNumber(limits.resolution_pixels), frames: optionalNumber(limits.frames), sample_rate_hz: optionalNumber(limits.sample_rate_hz) },
+    format: { precision: text(format.precision) || undefined, quantization: text(format.quantization) || undefined },
     sizes: { download_bytes: modelSize(document, true), installed_bytes: modelSize(document, false) },
-    license: { spdx: text(license.spdx) || undefined, url: text(license.url) || undefined, attribution: array(license.attribution).map((value) => text(value)).filter(Boolean), operator_acceptance_required: typeof license.operator_acceptance_required === "boolean" ? license.operator_acceptance_required : undefined },
-    availability: ["active", "withdrawn", "superseded"].includes(text(document.availability)) ? text(document.availability) as ModelVersionSummary["availability"] : undefined,
+    license: { spdx: text(license.spdx) || undefined, url: text(license.url) || undefined, attribution: array(license.attribution).map((value) => text(value)).filter(Boolean) },
     tags: array(metadata.tags).map((value) => text(value).toLowerCase()).filter(Boolean),
-    capabilities: capabilities.values,
-    capability_evidence: capabilities.evidence,
+    capabilities: declaredCapabilities(document),
     recipe_slugs: recipeSlugs,
   };
 }
@@ -361,14 +332,14 @@ function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: Re
     source_owner: source?.owner ?? null,
     source_repository: source?.repository ?? null,
     alignment,
-    capabilities: modelEntity ? modelVersionCapabilities(modelEntity.document) : [],
+    capabilities: modelEntity ? publicCapabilities(modelEntity.document) : [],
     qualification: qualification(recipeTags),
     execution_readiness: executionReadiness(recipeTags),
     runtime_distribution: text(runtime.engine, "unknown"),
     precision,
     quantizations,
     topology_name: text(topology.name),
-    topology_mode: text(topology.mode),
+    topology_mode: number(topology.node_count) > 1 ? "distributed" : "single",
     node_count: Math.max(1, number(topology.node_count)),
     expected_download_bytes: (artifacts ?? []).reduce((total, artifact) => total + (artifact.download_bytes ?? 0), 0),
   };
@@ -383,7 +354,6 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
   const context = record(build.context);
   const topology = record(document.topology);
   const release = record(item.release);
-  const history = array(release.history);
   const publisher = text(identity.publisher);
   const slug = text(identity.slug);
   const nodeCount = Math.max(1, number(topology.node_count));
@@ -418,7 +388,6 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
     slug,
     title: text(metadata.title, slug),
     official: publisher === "vonk-forge",
-    revision_number: Math.max(1, history.length),
     revision_id: item.content_sha256,
     content_sha256: item.content_sha256,
     published_at: text(release.released_at),
@@ -428,15 +397,10 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
       entrypoint: array(record(document.runtime).entrypoint).map((value) => text(value)).filter(Boolean),
     },
     build: {
-      context: {
-        sha256: text(context.sha256),
-        expected_bytes: number(context.expected_bytes),
-      },
       dockerfile: text(build.dockerfile),
     },
     artifacts,
     provenance: {
-      source_kind: text(provenance.source_kind),
       source_reference: text(provenance.source_reference) || null,
       attribution: array(provenance.attribution).map((value) => text(value)).filter(Boolean),
     },
@@ -453,7 +417,8 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
     moderation_warning: null,
     facts: {
       declared: true,
-      source_bundle_observed: Boolean(text(context.sha256)),
+      // The build context ships inside the package the Pages build verified.
+      source_bundle_observed: Boolean(contextPath),
       publisher_tested: false,
       publisher_tested_label: "No accepted publisher test report",
       vonk_verified: false,
@@ -475,7 +440,6 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
     },
     catalog: publicMetadata(document, index, artifacts),
     latest_revision: {
-      revision_number: Math.max(1, history.length),
       content_sha256: item.content_sha256,
       document,
     },
@@ -485,7 +449,14 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
 interface ReleaseManifest {
   repository: string;
   tag: string;
+  contract_version: string;
+  updated_at: string;
   source_commit: string;
+}
+
+function contractMajor(version: unknown): number | null {
+  const match = /^(\d+)\.\d+\.\d+$/.exec(text(version));
+  return match ? Number(match[1]) : null;
 }
 
 // The Pages build writes the verified release's index and a manifest naming
@@ -498,6 +469,14 @@ async function readJson(url: string, signal?: AbortSignal): Promise<unknown> {
 
 function releaseUrl(indexUrl: string): string {
   return new URL("release.json", new URL(indexUrl, globalThis.location?.href)).toString();
+}
+
+function libraryRelease(value: unknown): LibraryRelease {
+  const release = record(value) as Partial<ReleaseManifest>;
+  if (typeof release.tag !== "string" || !/^v\d+\.\d+\.\d+$/.test(release.tag) || typeof release.updated_at !== "string") {
+    throw new Error("Recipe library returned an unsupported release manifest");
+  }
+  return { version: release.tag, updated_at: release.updated_at };
 }
 
 async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
@@ -514,7 +493,7 @@ async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryInde
       && typeof identity.publisher === "string"
       && typeof identity.slug === "string";
   });
-  if (body.schema_version !== 2 || body.kind !== "recipe-library-index" || typeof body.repository !== "string" || typeof body.source_commit !== "string" || !validEntities || !Array.isArray(body.recipes) || !body.package_contract || body.package_contract.schema_version !== 2 || typeof body.package_contract.media_type !== "string" || typeof body.package_contract.path_prefix !== "string") {
+  if (body.schema_version !== 2 || contractMajor(body.contract_version) !== SUPPORTED_CONTRACT_MAJOR || typeof body.updated_at !== "string" || body.kind !== "recipe-library-index" || typeof body.repository !== "string" || typeof body.source_commit !== "string" || !validEntities || !Array.isArray(body.recipes) || !body.package_contract || body.package_contract.schema_version !== 2 || typeof body.package_contract.media_type !== "string" || typeof body.package_contract.path_prefix !== "string") {
     throw new Error("Recipe library returned an unsupported catalog index");
   }
   if (typeof release.tag !== "string" || !/^v\d+\.\d+\.\d+$/.test(release.tag) || release.repository !== body.repository || release.source_commit !== body.source_commit) {
@@ -534,6 +513,12 @@ function loadIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
   });
   cachedIndexes.set(url, pending);
   return pending;
+}
+
+// The library version (its release tag, which is the contract version) and when
+// its content last changed. Reads only the small release manifest.
+export async function getStaticLibraryRelease(url: string, signal?: AbortSignal): Promise<LibraryRelease> {
+  return libraryRelease(await readJson(releaseUrl(url), signal));
 }
 
 export async function listStaticRecipeCatalog(url: string, signal?: AbortSignal): Promise<RecipeSummary[]> {
