@@ -14,3 +14,9 @@ separate account, and restored only into an isolated database. They must never
 be confused with the public `vonk-forge-packages` R2 bucket, which distributes
 agent Debian packages and is owned by the `vonk-forge` repository's release
 workflow.
+
+The `Dockerfile.backup` image runs `scripts/backup-database` and
+`scripts/restore-database` with the PostgreSQL 18 client tools, `age`, and
+rclone's official static release binary, pinned by version and by the SHA256
+published in that release's signed `SHA256SUMS`. Upgrade rclone by bumping the
+release and both architecture checksums together.
