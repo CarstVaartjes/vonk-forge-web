@@ -1,15 +1,15 @@
 import { expect, test } from "@playwright/test";
 
 
-const publication = "2".repeat(40);
+const releaseTag = "v1.2.3";
 const sourceCommit = "f".repeat(40);
 const recipeDigest = "a".repeat(64);
 const modelDigest = "3".repeat(64);
 const recipeImportUri = `vonk://catalog/vonk-forge/qwen-fast@sha256:${recipeDigest}`;
 
-// The production build reads the recipe library's generated index, pinned to the
-// commit `main` resolves to. Serve both requests locally so the static build is
-// exercised end to end without reaching GitHub.
+// The production build reads the verified recipe release that the Pages build
+// writes to /catalog on this origin. Serve a fixture release at those paths so the
+// static build is exercised end to end without reaching GitHub.
 const catalogIndex = {
   schema_version: 2,
   kind: "recipe-library-index",
@@ -18,7 +18,7 @@ const catalogIndex = {
   package_contract: {
     schema_version: 2,
     media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip",
-    path_prefix: "recipe-packages/",
+    path_prefix: "packages/",
   },
   catalog_entities: [{
     content_sha256: modelDigest,
@@ -54,7 +54,7 @@ const catalogIndex = {
       expected_bytes: 123,
       media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip",
       minimum_consumer_schema: 2,
-      path: "recipe-packages/vonk-forge/qwen-fast.tar.gz",
+      path: "packages/vonk-forge-qwen-fast.tar.gz",
       recipe_content_sha256: recipeDigest,
       sha256: "1".repeat(64),
     },
@@ -80,11 +80,11 @@ const catalogIndex = {
 
 
 test.beforeEach(async ({ page }) => {
-  await page.route("https://api.github.com/repos/CarstVaartjes/vonk-forge-recipes/commits/main", (route) =>
-    route.fulfill({ json: { sha: publication } }),
-  );
-  await page.route(`https://raw.githubusercontent.com/CarstVaartjes/vonk-forge-recipes/${publication}/catalog-index.json`, (route) =>
-    route.fulfill({ json: catalogIndex }),
+  // Block every other origin: the catalog must be served from this site.
+  await page.route((url) => !["127.0.0.1", "localhost"].includes(url.hostname), (route) => route.abort());
+  await page.route("**/catalog/catalog-index.json", (route) => route.fulfill({ json: catalogIndex }));
+  await page.route("**/catalog/release.json", (route) =>
+    route.fulfill({ json: { repository: "CarstVaartjes/vonk-forge-recipes", tag: releaseTag, source_commit: sourceCommit } }),
   );
 });
 
@@ -295,7 +295,7 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
     "href", `https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${sourceCommit}/recipes/qwen-fast.json`,
   );
   await expect(page.getByRole("link", { name: "Download package" })).toHaveAttribute(
-    "href", `https://raw.githubusercontent.com/CarstVaartjes/vonk-forge-recipes/${publication}/recipe-packages/vonk-forge/qwen-fast.tar.gz`,
+    "href", `https://github.com/CarstVaartjes/vonk-forge-recipes/releases/download/${releaseTag}/vonk-forge-qwen-fast.tar.gz`,
   );
 });
 

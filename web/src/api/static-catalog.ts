@@ -35,7 +35,7 @@ interface CatalogReference {
 }
 
 const cachedIndexes = new Map<string, Promise<LibraryIndex>>();
-const publicationUrls = new WeakMap<LibraryIndex, string>();
+const releaseTags = new WeakMap<LibraryIndex, string>();
 
 function record(value: unknown): JsonRecord {
   return typeof value === "object" && value !== null ? value as JsonRecord : {};
@@ -303,9 +303,9 @@ function recipeModelSelections(document: JsonRecord): JsonRecord[] {
   return array(document.models).map(record);
 }
 
-function mapModels(index: LibraryIndex, baseUrl: string): ModelSummary[] {
+function mapModels(index: LibraryIndex): ModelSummary[] {
   const entities = index.catalog_entities;
-  const recipes = index.recipes.map((item) => mapRecipe(item, index, baseUrl));
+  const recipes = index.recipes.map((item) => mapRecipe(item, index));
   const models = entities.filter((entity) => entity.document.kind === "model");
   const groups = new Map<string, LibraryEntity[]>();
   for (const entity of models) {
@@ -374,7 +374,7 @@ function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: Re
   };
 }
 
-function mapRecipe(item: LibraryRecipe, index: LibraryIndex, baseUrl: string): RecipeDetail {
+function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
   const document = record(item.document);
   const identity = record(document.identity);
   const metadata = record(document.metadata);
@@ -405,7 +405,12 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex, baseUrl: string): R
   const provenance = record(document.provenance);
   const version = text(release.version);
   const sourceUrl = `https://github.com/${index.repository}/blob/${index.source_commit}/${item.source_path}`;
-  const packageUrl = new URL(item.package.path, publicationUrls.get(index) ?? baseUrl).toString();
+  const packageName = item.package.path.startsWith(index.package_contract.path_prefix)
+    ? item.package.path.slice(index.package_contract.path_prefix.length)
+    : item.package.path;
+  // Packages are downloaded from the signed release asset, whose SHA-256 the
+  // Pages build checked against the attested SHA256SUMS.
+  const packageUrl = `https://github.com/${index.repository}/releases/download/${releaseTags.get(index)}/${encodeURIComponent(packageName)}`;
   const contextPath = text(context.path);
 
   return {
@@ -477,28 +482,28 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex, baseUrl: string): R
   };
 }
 
-async function resolvePublicationUrl(url: string, signal?: AbortSignal): Promise<string> {
-  const target = new URL(url);
-  const match = target.pathname.match(/^\/([^/]+)\/([^/]+)\/main\/catalog-index\.json$/);
-  if (target.origin !== "https://raw.githubusercontent.com" || !match) return url;
-  const [, owner, repository] = match;
-  const response = await fetch(`https://api.github.com/repos/${owner}/${repository}/commits/main`, {
-    headers: { Accept: "application/vnd.github+json" }, signal,
-  });
-  if (!response.ok) throw new Error(`Recipe library publication returned ${response.status}`);
-  const commit = record(await response.json()).sha;
-  if (typeof commit !== "string" || !/^[0-9a-f]{40}$/.test(commit)) {
-    throw new Error("Recipe library returned an invalid publication identity");
-  }
-  target.pathname = `/${owner}/${repository}/${commit}/catalog-index.json`;
-  return target.toString();
+interface ReleaseManifest {
+  repository: string;
+  tag: string;
+  source_commit: string;
+}
+
+// The Pages build writes the verified release's index and a manifest naming
+// that release beside it; both are read from this site's own origin.
+async function readJson(url: string, signal?: AbortSignal): Promise<unknown> {
+  const response = await fetch(url, { headers: { Accept: "application/json" }, signal });
+  if (!response.ok) throw new Error(`Recipe library returned ${response.status}`);
+  return response.json();
+}
+
+function releaseUrl(indexUrl: string): string {
+  return new URL("release.json", new URL(indexUrl, globalThis.location?.href)).toString();
 }
 
 async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
-  const publicationUrl = await resolvePublicationUrl(url, signal);
-  const response = await fetch(publicationUrl, { headers: { Accept: "application/json" }, signal });
-  if (!response.ok) throw new Error(`Recipe library returned ${response.status}`);
-  const body = await response.json() as Partial<LibraryIndex>;
+  const [rawBody, rawRelease] = await Promise.all([readJson(url, signal), readJson(releaseUrl(url), signal)]);
+  const body = rawBody as Partial<LibraryIndex>;
+  const release = record(rawRelease) as Partial<ReleaseManifest>;
   const entities = body.catalog_entities;
   const validEntities = Array.isArray(entities) && entities.length > 0 && entities.every((value) => {
     const entity = record(value);
@@ -512,8 +517,11 @@ async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryInde
   if (body.schema_version !== 2 || body.kind !== "recipe-library-index" || typeof body.repository !== "string" || typeof body.source_commit !== "string" || !validEntities || !Array.isArray(body.recipes) || !body.package_contract || body.package_contract.schema_version !== 2 || typeof body.package_contract.media_type !== "string" || typeof body.package_contract.path_prefix !== "string") {
     throw new Error("Recipe library returned an unsupported catalog index");
   }
+  if (typeof release.tag !== "string" || !/^v\d+\.\d+\.\d+$/.test(release.tag) || release.repository !== body.repository || release.source_commit !== body.source_commit) {
+    throw new Error("Recipe library returned an index that does not match its release");
+  }
   const index = body as LibraryIndex;
-  publicationUrls.set(index, publicationUrl);
+  releaseTags.set(index, release.tag);
   return index;
 }
 
@@ -530,12 +538,12 @@ function loadIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
 
 export async function listStaticRecipeCatalog(url: string, signal?: AbortSignal): Promise<RecipeSummary[]> {
   const index = await loadIndex(url, signal);
-  return index.recipes.map((item) => mapRecipe(item, index, url));
+  return index.recipes.map((item) => mapRecipe(item, index));
 }
 
 export async function listStaticModels(url: string, signal?: AbortSignal): Promise<ModelPage> {
   const index = await loadIndex(url, signal);
-  return { items: mapModels(index, url) };
+  return { items: mapModels(index) };
 }
 
 export async function getStaticModel(url: string, publisher: string, slug: string, signal?: AbortSignal): Promise<ModelSummary> {
@@ -557,7 +565,7 @@ export async function getStaticRecipe(
     return identity.publisher === publisher && identity.slug === slug;
   });
   if (!item) throw new Error("Recipe not found in the public library");
-  return mapRecipe(item, index, url);
+  return mapRecipe(item, index);
 }
 
 export function resetStaticCatalogCacheForTests(): void {
