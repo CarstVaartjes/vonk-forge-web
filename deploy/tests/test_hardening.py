@@ -88,22 +88,34 @@ def test_ci_scans_secrets_vulnerabilities_sboms_and_signs_images() -> None:
         for step in containers
         if step.get("run", "").startswith("docker build ")
     }
-    scanned = {
-        step["with"]["image-ref"]: step["with"]
+    scans = [
+        step["with"]
         for step in containers
         if step.get("uses", "").startswith("aquasecurity/trivy-action@")
+    ]
+    images = {
+        f"vonk-catalog-{name}:test" for name in ("api", "worker", "web", "backup")
     }
-    assert (
-        built
-        == set(scanned)
-        == {f"vonk-catalog-{name}:test" for name in ("api", "worker", "web", "backup")}
-    )
-    for scan in scanned.values():
+    # Unmodified upstream release binaries: reported, not gated.
+    upstream = {
+        "vonk-catalog-web:test": "/usr/bin/caddy",
+        "vonk-catalog-backup:test": "/usr/local/bin/rclone",
+    }
+    reports = {scan["image-ref"]: scan for scan in scans if scan["exit-code"] == "0"}
+    gates = {scan["image-ref"]: scan for scan in scans if scan["exit-code"] == "1"}
+    assert len(scans) == len(reports) + len(gates) == 2 * len(images)
+    assert built == set(reports) == set(gates) == images
+    for scan in scans:
         assert scan["scan-type"] == "image"
         assert scan["severity"] == "HIGH,CRITICAL"
         assert scan["ignore-unfixed"] is True
-        assert scan["exit-code"] == "1"
-        assert scan["limit-severities-for-sarif"] is True
+    for report in reports.values():
+        assert report["format"] == "sarif"
+        assert report["limit-severities-for-sarif"] is True
+        assert "vuln-type" not in report and "skip-files" not in report
+    for image, gate in gates.items():
+        assert gate["vuln-type"] == "os,library"
+        assert gate.get("skip-files") == upstream.get(image)
     assert "cloudflare/wrangler-action@" in pages
     assert "CLOUDFLARE_API_TOKEN" in pages
     assert "CLOUDFLARE_ACCOUNT_ID" in pages
@@ -152,7 +164,8 @@ def test_built_images_are_non_root_secret_free_read_only_and_healthy() -> None:
         )
         assert probe.stdout.strip() == "None"
     backup_probe = (
-        "test ! -e /usr/local/bin/gosu && pg_dump --version"
+        "test ! -e /usr/local/bin/gosu && test ! -e /usr/bin/rclone"
+        " && pg_dump --version"
         " && age --version && rclone version"
     )
     backup_tools = subprocess.run(

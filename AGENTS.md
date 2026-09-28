@@ -89,6 +89,16 @@ must not require hand-editing a digest the tooling owns; pin by version instead.
 Keep digests that pin content we did not author, such as downloaded archives and
 container image digests.
 
+Ship third-party tools as their official upstream releases: the web image uses
+the digest-pinned official Caddy image as shipped, and the backup image installs
+rclone's static release binary pinned by version and the SHA256 from the
+release's signed `SHA256SUMS`. Do not rebuild upstream binaries to chase their
+dependency advisories. CI scans every image twice with Trivy: a report scan of
+the whole image uploads SARIF to GitHub Security and never fails the job, and a
+gate scan fails it on fixable HIGH/CRITICAL findings in what this repository
+controls (OS packages and our Python and npm dependencies), skipping only the
+named upstream binaries. Upgrade those binaries by bumping the upstream release.
+
 ## Entry points
 
 - [Documentation index](docs/README.md): the system boundary and operations
