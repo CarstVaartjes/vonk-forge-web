@@ -21,7 +21,10 @@ RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev --no-edi
 FROM python:3.14.7-slim-trixie@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d
 LABEL org.opencontainers.image.title="Vonk Forge catalog API" \
       org.opencontainers.image.source="https://github.com/CarstVaartjes/vonk-forge-web"
-RUN groupadd --gid 10001 vonk && useradd --uid 10001 --gid 10001 --no-create-home --home-dir /nonexistent vonk
+# The runtime installs nothing: the virtualenv is built by uv. Drop the base
+# image's pip, which vendors msgpack and setuptools releases with open advisories.
+RUN python -m pip uninstall --yes --no-cache-dir pip \
+    && groupadd --gid 10001 vonk && useradd --uid 10001 --gid 10001 --no-create-home --home-dir /nonexistent vonk
 WORKDIR /app
 COPY --from=build --chown=10001:10001 /app/.venv /app/.venv
 COPY --chown=10001:10001 api/migrations api/migrations
