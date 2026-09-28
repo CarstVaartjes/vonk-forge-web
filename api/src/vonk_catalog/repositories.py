@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from .models import Publisher, Recipe, RecipeRevision
@@ -91,7 +91,7 @@ class CatalogRepository:
             .group_by(RecipeRevision.recipe_id)
             .subquery()
         )
-        statement: Select[tuple[Publisher, Recipe, RecipeRevision]] = (
+        statement = (
             select(Publisher, Recipe, RecipeRevision)
             .join(Recipe, Recipe.publisher_id == Publisher.id)
             .join(latest_number, latest_number.c.recipe_id == Recipe.id)

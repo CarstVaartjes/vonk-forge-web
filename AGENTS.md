@@ -48,15 +48,15 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
 
 ## Toolchain and gates
 
-Python is **3.14** and Node is **24.12.0**. `api/` and `worker/` are members of
+Python is **3.14** and Node is **24.21.0**. `api/` and `worker/` are members of
 one `uv` workspace; the workspace lock is authoritative.
 
 ```bash
 # Python: lint, format, types. All three are pinned and run repo-wide in CI.
 uv sync --all-packages --locked
-uvx --from ruff==0.16.1 ruff check .
+uvx --from ruff==0.16.9 ruff check .
 scripts/check-python-format          # ruff format, plus extensionless entry points
-scripts/check-python-types           # pyright==1.1.408, reviewed baseline
+scripts/check-python-types           # pyright==1.1.414, reviewed baseline
 
 # Tests. The API suite expects PostgreSQL 18.
 VONK_TEST_DATABASE_URL=postgresql+psycopg://vonk:test-only@127.0.0.1:5432/vonk_catalog_test \
