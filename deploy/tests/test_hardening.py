@@ -82,6 +82,28 @@ def test_ci_scans_secrets_vulnerabilities_sboms_and_signs_images() -> None:
     pages = (ROOT / ".github" / "workflows" / "pages.yml").read_text()
     assert "gitleaks/gitleaks-action@" in ci
     assert "aquasecurity/trivy-action@" in ci
+    containers = yaml.safe_load(ci)["jobs"]["containers"]["steps"]
+    built = {
+        step["run"].split(" -t ")[1].split()[0]
+        for step in containers
+        if step.get("run", "").startswith("docker build ")
+    }
+    scanned = {
+        step["with"]["image-ref"]: step["with"]
+        for step in containers
+        if step.get("uses", "").startswith("aquasecurity/trivy-action@")
+    }
+    assert (
+        built
+        == set(scanned)
+        == {f"vonk-catalog-{name}:test" for name in ("api", "worker", "web", "backup")}
+    )
+    for scan in scanned.values():
+        assert scan["scan-type"] == "image"
+        assert scan["severity"] == "HIGH,CRITICAL"
+        assert scan["ignore-unfixed"] is True
+        assert scan["exit-code"] == "1"
+        assert scan["limit-severities-for-sarif"] is True
     assert "cloudflare/wrangler-action@" in pages
     assert "CLOUDFLARE_API_TOKEN" in pages
     assert "CLOUDFLARE_ACCOUNT_ID" in pages
@@ -103,11 +125,11 @@ def test_ci_scans_secrets_vulnerabilities_sboms_and_signs_images() -> None:
     reason="set after building test images",
 )
 def test_built_images_are_non_root_secret_free_read_only_and_healthy() -> None:
+    # CI builds the ``test`` tag; a shared local daemon can use a unique one.
+    tag = os.getenv("VONK_TEST_IMAGE_TAG", "test")
     images = {
-        "api": "vonk-catalog-api:test",
-        "worker": "vonk-catalog-worker:test",
-        "web": "vonk-catalog-web:test",
-        "backup": "vonk-catalog-backup:test",
+        name: f"vonk-catalog-{name}:{tag}"
+        for name in ("api", "worker", "web", "backup")
     }
     for image in images.values():
         details = json.loads(
@@ -117,6 +139,30 @@ def test_built_images_are_non_root_secret_free_read_only_and_healthy() -> None:
         serialized = json.dumps(details["Config"]).lower()
         assert "development-only-session-secret" not in serialized
         assert "postgres-password" not in serialized
+
+    # Runtime images carry no package installer, and the backup image carries
+    # only the PostgreSQL client tools it runs, not the server's gosu helper.
+    for name in ("api", "worker", "backup"):
+        probe = subprocess.run(
+            ["docker", "run", "--rm", "--entrypoint", "python", images[name]]
+            + ["-c", "import importlib.util; print(importlib.util.find_spec('pip'))"],
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        assert probe.stdout.strip() == "None"
+    backup_probe = (
+        "test ! -e /usr/local/bin/gosu && pg_dump --version"
+        " && age --version && rclone version"
+    )
+    backup_tools = subprocess.run(
+        ["docker", "run", "--rm", images["backup"], "sh", "-c", backup_probe],
+        text=True,
+        capture_output=True,
+        check=True,
+    ).stdout
+    assert "pg_dump (PostgreSQL) 18." in backup_tools
+    assert "rclone v" in backup_tools
 
     api_id = subprocess.check_output(
         [
@@ -130,7 +176,7 @@ def test_built_images_are_non_root_secret_free_read_only_and_healthy() -> None:
             "no-new-privileges",
             "--tmpfs",
             "/tmp:rw,noexec,nosuid,size=16m",
-            "vonk-catalog-api:test",
+            images["api"],
         ],
         text=True,
     ).strip()
@@ -150,7 +196,7 @@ def test_built_images_are_non_root_secret_free_read_only_and_healthy() -> None:
             "/data:rw,noexec,nosuid,size=8m",
             "--tmpfs",
             "/tmp:rw,noexec,nosuid,size=8m",
-            "vonk-catalog-web:test",
+            images["web"],
         ],
         text=True,
     ).strip()

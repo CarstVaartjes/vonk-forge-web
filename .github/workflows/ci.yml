@@ -87,6 +87,9 @@ jobs:
 
   containers:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
@@ -103,6 +106,93 @@ jobs:
           version: "0.12.19"
       - run: uv sync --project api --locked
       - run: VONK_TEST_CONTAINER_IMAGES=1 uv run --project api pytest deploy/tests -q
+      # Scan every image built above. The first scan installs Trivy and restores the
+      # vulnerability database from the dated Actions cache; the rest reuse both.
+      # Each scan runs even if an earlier one found something, so every image
+      # reports its SARIF before the job fails.
+      - name: Scan the api image with Trivy
+        if: ${{ !cancelled() }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: vonk-catalog-api:test
+          format: sarif
+          output: trivy-image-api.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          limit-severities-for-sarif: true
+      - name: Scan the worker image with Trivy
+        if: ${{ !cancelled() }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_SKIP_DB_UPDATE: "true"
+          TRIVY_SKIP_JAVA_DB_UPDATE: "true"
+        with:
+          scan-type: image
+          image-ref: vonk-catalog-worker:test
+          format: sarif
+          output: trivy-image-worker.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          limit-severities-for-sarif: true
+          skip-setup-trivy: true
+          cache: false
+      - name: Scan the web image with Trivy
+        if: ${{ !cancelled() }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_SKIP_DB_UPDATE: "true"
+          TRIVY_SKIP_JAVA_DB_UPDATE: "true"
+        with:
+          scan-type: image
+          image-ref: vonk-catalog-web:test
+          format: sarif
+          output: trivy-image-web.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          limit-severities-for-sarif: true
+          skip-setup-trivy: true
+          cache: false
+      - name: Scan the backup image with Trivy
+        if: ${{ !cancelled() }}
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_SKIP_DB_UPDATE: "true"
+          TRIVY_SKIP_JAVA_DB_UPDATE: "true"
+        with:
+          scan-type: image
+          image-ref: vonk-catalog-backup:test
+          format: sarif
+          output: trivy-image-backup.sarif
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          limit-severities-for-sarif: true
+          skip-setup-trivy: true
+          cache: false
+      - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        if: ${{ !cancelled() && hashFiles('trivy-image-api.sarif') != '' }}
+        with:
+          sarif_file: trivy-image-api.sarif
+          category: trivy-image-api
+      - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        if: ${{ !cancelled() && hashFiles('trivy-image-worker.sarif') != '' }}
+        with:
+          sarif_file: trivy-image-worker.sarif
+          category: trivy-image-worker
+      - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        if: ${{ !cancelled() && hashFiles('trivy-image-web.sarif') != '' }}
+        with:
+          sarif_file: trivy-image-web.sarif
+          category: trivy-image-web
+      - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
+        if: ${{ !cancelled() && hashFiles('trivy-image-backup.sarif') != '' }}
+        with:
+          sarif_file: trivy-image-backup.sarif
+          category: trivy-image-backup
 
   security:
     runs-on: ubuntu-24.04
@@ -125,6 +215,7 @@ jobs:
           severity: HIGH,CRITICAL
           ignore-unfixed: true
           exit-code: "1"
+          limit-severities-for-sarif: true
       - uses: github/codeql-action/upload-sarif@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4.38.2
         if: always()
         with:
