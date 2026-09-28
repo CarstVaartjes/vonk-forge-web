@@ -75,8 +75,8 @@ and an update to `/privacy`.
 
 ## Entry points
 
-- [Documentation index](docs/README.md): the system boundary and the Pages
-  deployment runbook.
+- [Cloudflare Pages runbook](docs/operations/cloudflare-pages.md): how the
+  site is built, verified and deployed.
 - [Product context](PRODUCT.md) and [design tokens](DESIGN.md): what the site
   promises and the system it is built from.
 - [CI workflow](.github/workflows/ci.yml) and
