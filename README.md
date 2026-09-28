@@ -4,7 +4,7 @@
 
 This repository powers [`vonkforge.ai`](https://vonkforge.ai): the Vonk Forge
 product site, installation guide, architecture explainer, and public recipe
-catalog. It helps an NVIDIA DGX Spark owner understand the system and get to a
+catalog. It is a static site served by Cloudflare Pages; there is no backend. It helps an NVIDIA DGX Spark owner understand the system and get to a
 local controller without pretending the public website is the controller.
 
 [Open the website](https://vonkforge.ai) ·
@@ -14,7 +14,7 @@ local controller without pretending the public website is the controller.
 
 | Library: choose with exact model and lifecycle facts | Fleet: see capacity, placement, and blockers |
 | --- | --- |
-| ![Vonk Forge Library](docs/assets/controller-library.webp) | ![Vonk Forge Fleet](docs/assets/controller-fleet.webp) |
+| ![Vonk Forge Library](web/public/product/controller-library.webp) | ![Vonk Forge Fleet](web/public/product/controller-fleet.webp) |
 
 These are fixture-backed screenshots of the private Web Controller implemented
 in `vonk-forge`; they contain no live fleet data.
@@ -39,8 +39,8 @@ flowchart LR
     Controller -->|previewed operations| Sparks
 ```
 
-The public site stores bounded recipe metadata and validation evidence. It does
-not control Sparks, execute workloads, accept model uploads, or hold runtime
+The public site reads immutable recipe metadata from the recipe library's
+generated index. It stores nothing, does not control Sparks, execute workloads, accept model uploads, or hold runtime
 secrets. Container images remain in registries; model weights remain at immutable
 origins and in node-local caches.
 
@@ -52,8 +52,9 @@ origins and in node-local caches.
 | `/install` | Explain the signed controller and Spark installation path |
 | `/architecture` | Show public, controller, network, identity, and runtime boundaries |
 | `/control` | Tour the private Web Controller and equivalent `vonkctl` path |
+| `/models` | Browse public models and the recipes that run them |
 | `/recipes` | Filter public immutable recipes by runtime, topology, and publisher |
-| `/publish` | Explain and validate the recipe publishing contract |
+| `/publish` | Point recipe authors to the reviewed GitHub workflow |
 | `/privacy` | Disclose aggregate, cookie-free website analytics |
 
 ## Run the frontend
@@ -63,96 +64,47 @@ npm --prefix web ci
 npm --prefix web run dev
 ```
 
-The Vite development server prints its local URL. The homepage and documentation
-routes run without a global control service. Catalog routes expect the same-origin
-`/v1` API unless `VITE_CATALOG_API_URL` is configured. A frontend-only deployment
-can instead set `VITE_RECIPE_LIBRARY_INDEX_URL` to the public recipe library's
-generated `catalog-index.json`; this enables read-only catalog browsing while
-the Publish route explains the GitHub review workflow.
+The Vite development server prints its local URL.
 
-Run the frontend checks with:
+## Static catalog
 
-```bash
-npm --prefix web test -- --run
-npm --prefix web run build
-npm --prefix web run test:e2e
-```
+The Models and Recipes routes read one file: the `catalog-index.json` that
+[`vonk-forge-recipes`](https://github.com/CarstVaartjes/vonk-forge-recipes)
+generates from its reviewed recipe and model documents and commits beside them. The browser resolves
+the library's current `main` commit through the GitHub API, then fetches the
+index and recipe packages from that exact commit on `raw.githubusercontent.com`,
+so every view and download link is bound to one immutable publication. Nothing
+is copied into this repository or its build.
 
-## Run the catalog API
+The default source is the standard library. A build can point at another
+library's generated index with `VITE_RECIPE_LIBRARY_INDEX_URL`. Publishing a
+recipe is a pull request against the recipe library; the site updates as soon
+as that library's `main` moves, without a redeploy.
 
-Use Python 3.14 and [uv](https://docs.astral.sh/uv/):
-
-```bash
-uv sync --project api
-VONK_DATABASE_URL=postgresql+psycopg://vonk:vonk@127.0.0.1:5432/vonk_catalog \
-  uv run --project api uvicorn vonk_catalog.api:create_app --factory --reload
-```
-
-Liveness is available at `/health/live`; readiness is available at
-`/health/ready`.
-
-## Run the reference stack
-
-The local reference stack contains PostgreSQL, a one-shot migration, the private
-API, the public static gateway, and a private validation worker. Only the gateway
-publishes a host port.
-
-Create `deploy/secrets/postgres-password.txt` with a long random local password,
-then run:
-
-```bash
-export VONK_POSTGRES_PASSWORD_FILE="$PWD/deploy/secrets/postgres-password.txt"
-docker compose -f deploy/compose.yaml up -d --build --wait
-```
-
-The site and same-origin API are available at `http://127.0.0.1:8080`.
-
-```bash
-docker compose -f deploy/compose.yaml down
-```
-
-This stack is for development and contract testing. It is separate from the
-operator-owned controller installed from `install.vonkforge.ai`.
-
-## Deployment boundary
-
-- Cloudflare Pages serves the static frontend at
-  [`vonkforge.ai`](https://vonkforge.ai). The default Pages hostname is
-  `vonk-forge-web.pages.dev`.
-- GitHub Actions in `vonk-forge` publishes the signed agent package and installer
-  artifacts at `packages.vonkforge.ai`.
-- Caddy belongs to each operator's local controller, not to the public catalog.
-- Railway is reserved for a possible future global catalog API and worker. It is
-  not required for the current static product and documentation routes.
-
-See [`docs/operations/cloudflare-pages.md`](docs/operations/cloudflare-pages.md)
-for deployment setup.
-
-## Contract verification
-
-The JSON Schemas, canonical fixture hashes, OpenAPI document, and generated
-TypeScript declarations are checked together:
+## Checks
 
 ```bash
 npm --prefix web ci
-scripts/verify-contracts
-scripts/export-contract
+npm --prefix web audit --audit-level=high
+npm --prefix web test -- --run
+npm --prefix web run build
+npm --prefix web run test:e2e   # builds, serves web/dist, and runs Playwright
 ```
 
-Install the repository hook once per checkout to regenerate and stage the
-contract manifests and generated API files before relevant commits:
+The end-to-end suite runs against the production bundle with `vite preview` and
+serves a fixture catalog index in place of GitHub.
 
-```bash
-scripts/install-git-hooks
-```
+## Deployment
 
-The hook also runs the pinned Python lint, format, API type check, and web
-build. It requires tracked edits to be staged together before it updates
-generated files; CI remains the authoritative verification.
+Cloudflare Pages serves `web/dist` at [`vonkforge.ai`](https://vonkforge.ai)
+(default hostname `vonk-forge-web.pages.dev`). Every push to `main` runs
+[`pages.yml`](.github/workflows/pages.yml), which builds the frontend and uploads
+it with Wrangler. `web/public/_headers` and `web/public/_redirects` supply the
+security headers, asset caching, and SPA fallback. See
+[`docs/operations/cloudflare-pages.md`](docs/operations/cloudflare-pages.md).
 
-The export is a deterministic `dist/vonk-contracts-v1.tar.gz` archive. Local
-Vonk Forge installations pin a released archive and its SHA-256; they never load
-schema authority from this repository's moving `main` branch.
+Signed controller packages and installers are published from `vonk-forge` at
+`packages.vonkforge.ai`, not from this repository.
 
 ## Related repositories
 

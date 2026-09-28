@@ -1,4 +1,4 @@
-import type { ModelPage, ModelSummary, ModelVersionSummary, RecipeDetail, RecipePage, RecipeSummary } from "./client";
+import type { ModelPage, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
 
 
 type JsonRecord = Record<string, unknown>;
@@ -526,50 +526,6 @@ function loadIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
   });
   cachedIndexes.set(url, pending);
   return pending;
-}
-
-function matches(recipe: RecipeSummary, parameters: URLSearchParams): boolean {
-  const query = (parameters.get("q") ?? "").trim().toLowerCase();
-  const runtime = parameters.get("runtime") ?? "";
-  const topology = parameters.get("topology") ?? "";
-  const official = parameters.get("official") ?? "";
-  const searchable = [
-    recipe.title,
-    recipe.publisher,
-    recipe.slug,
-    recipe.workload.family,
-    ...(recipe.workload.capabilities ?? []),
-  ].join(" ").toLowerCase();
-  if (query && !searchable.includes(query)) return false;
-  if (runtime && recipe.runtime.adapter !== runtime) return false;
-  const nodes = recipe.capacity?.profile_node_counts?.[0] ?? 1;
-  if (topology === "single" && nodes !== 1) return false;
-  if (topology === "distributed" && nodes <= 1) return false;
-  if (official === "true" && !recipe.official) return false;
-  if (official === "false" && recipe.official) return false;
-  return true;
-}
-
-export async function listStaticRecipes(
-  url: string,
-  parameters: URLSearchParams,
-  signal?: AbortSignal,
-): Promise<RecipePage> {
-  const index = await loadIndex(url, signal);
-  const sort = parameters.get("sort") ?? "newest";
-  const offset = Math.max(0, Number.parseInt(parameters.get("cursor") ?? "0", 10) || 0);
-  const pageSize = 24;
-  const recipes = index.recipes.map((item) => mapRecipe(item, index, url)).filter((recipe) => matches(recipe, parameters));
-  recipes.sort((left, right) => {
-    if (sort === "title") return left.title.localeCompare(right.title);
-    if (sort === "disk") return (left.capacity?.maximum_installed_bytes_per_node ?? Number.MAX_SAFE_INTEGER) - (right.capacity?.maximum_installed_bytes_per_node ?? Number.MAX_SAFE_INTEGER);
-    if (sort === "memory") return (left.capacity?.maximum_runtime_memory_bytes_per_node ?? Number.MAX_SAFE_INTEGER) - (right.capacity?.maximum_runtime_memory_bytes_per_node ?? Number.MAX_SAFE_INTEGER);
-    return right.published_at.localeCompare(left.published_at) || left.title.localeCompare(right.title);
-  });
-  return {
-    items: recipes.slice(offset, offset + pageSize),
-    next_cursor: offset + pageSize < recipes.length ? String(offset + pageSize) : null,
-  };
 }
 
 export async function listStaticRecipeCatalog(url: string, signal?: AbortSignal): Promise<RecipeSummary[]> {

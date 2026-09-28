@@ -1,9 +1,9 @@
 # Cloudflare Pages deployment
 
-Cloudflare Pages is the production frontend host for Vonk Forge Web. The
-initial local product does not require this repository, its global API, or
-Railway. The future global API and validation worker can be enabled separately
-when the shared catalog is needed.
+Cloudflare Pages is the only production host for Vonk Forge Web. The site is
+fully static: the build output in `web/dist` is the whole deployment, and the
+catalog is read in the browser from the recipe library's generated index. The
+local product does not depend on this site being available.
 
 The live production site is [vonkforge.ai](https://vonkforge.ai). Cloudflare's
 default Pages hostname is `vonk-forge-web.pages.dev`.
@@ -23,12 +23,6 @@ default Pages hostname is `vonk-forge-web.pages.dev`.
    Secret:   CLOUDFLARE_API_TOKEN
    Variable: CLOUDFLARE_PAGES_PROJECT=vonk-forge-web
    ```
-
-   `VITE_CATALOG_API_URL` is optional while the global API is deferred. The
-   deployment workflow supplies the public recipe library index as a read-only
-   catalog source in that mode. Set the API variable later to
-   `https://api.vonkforge.ai` when the hosted backend exists; the authenticated
-   publisher workspace then replaces the GitHub publishing guide.
 4. In the Pages project, add the custom domain `vonkforge.ai`. Because this is
    an apex domain, the zone must use Cloudflare nameservers; Cloudflare then
    provisions the Pages DNS and certificate.
@@ -70,11 +64,13 @@ the locked frontend dependencies, builds `web/dist`, and uploads that directory
 as the production Pages deployment with Wrangler. Pull requests run CI only;
 they do not publish production.
 
-The frontend uses the configured absolute API origin when it is set. Until the
-global backend exists, the Pages workflow uses the generated public recipe index
-for read-only browsing and sends publishers through the version-controlled
-GitHub review path. Local recipe authoring and execution remain in `vonk-forge`.
+Recipe changes do not need a deployment. The browser resolves the recipe
+library's current `main` commit and reads `catalog-index.json` from that commit,
+so a merged recipe appears on the next page load. Publishers use the
+version-controlled GitHub review path; local recipe authoring and execution
+remain in `vonk-forge`.
 
-The `_headers` and `_redirects` files under `web/public` provide the static
-security headers, immutable asset caching, and SPA fallback previously supplied
-by the local development gateway.
+The `_headers` and `_redirects` files under `web/public` provide the security
+headers (including the Content Security Policy that allows only
+`api.github.com`, `raw.githubusercontent.com`, and the Cloudflare analytics
+endpoints), immutable asset caching, and SPA fallback.
