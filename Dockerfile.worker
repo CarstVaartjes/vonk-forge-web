@@ -2,8 +2,8 @@
 FROM ghcr.io/astral-sh/uv:0.12.19@sha256:04d046b13e60d6bcec73cbc5e1cad25d680dea90c8573340950a0ac2d1aef424 AS uv
 
 # Build on the runtime image so the virtualenv targets exactly the interpreter it
-# ships with; uv publishes no bookworm image after 0.9, only its static binary.
-FROM python:3.14.7-slim-bookworm@sha256:82bc3c539b8813ada9d68c63b40158fa002f7f33de9bf3312a3dfdc0620dff56 AS build
+# ships with; only uv's static binary is copied in, not its bundled Python.
+FROM python:3.14.7-slim-trixie@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d AS build
 COPY --from=uv /uv /usr/local/bin/uv
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never
@@ -19,7 +19,7 @@ COPY worker/src worker/src
 COPY schemas schemas
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev --no-editable --project worker
 
-FROM python:3.14.7-slim-bookworm@sha256:82bc3c539b8813ada9d68c63b40158fa002f7f33de9bf3312a3dfdc0620dff56
+FROM python:3.14.7-slim-trixie@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d
 LABEL org.opencontainers.image.title="Vonk Forge catalog validation worker" \
       org.opencontainers.image.source="https://github.com/CarstVaartjes/vonk-forge-web"
 RUN groupadd --gid 10001 vonk && useradd --uid 10001 --gid 10001 --no-create-home --home-dir /nonexistent vonk

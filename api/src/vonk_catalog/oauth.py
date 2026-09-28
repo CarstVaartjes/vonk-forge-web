@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Protocol
 from urllib.parse import urlencode
 
-import httpx
+import httpx2
 import jwt
 
 from .settings import Settings
@@ -66,12 +66,12 @@ class HttpOAuthBackend:
         providers: dict[str, Provider],
         public_base_url: str,
         *,
-        client: httpx.Client | None = None,
+        client: httpx2.Client | None = None,
     ) -> None:
         self._providers = providers
         self._base = public_base_url.rstrip("/")
-        self._client = client or httpx.Client(
-            timeout=httpx.Timeout(10.0, connect=5.0),
+        self._client = client or httpx2.Client(
+            timeout=httpx2.Timeout(10.0, connect=5.0),
             follow_redirects=False,
             trust_env=False,
         )
@@ -137,7 +137,7 @@ class HttpOAuthBackend:
         return f"{configured.authorization_endpoint}?{query}"
 
     @staticmethod
-    def _json(response: httpx.Response) -> dict[str, object] | list[object]:
+    def _json(response: httpx2.Response) -> dict[str, object] | list[object]:
         if response.status_code < 200 or response.status_code >= 300:
             raise OAuthVerificationError("OAuth provider rejected the request")
         if len(response.content) > 65_536:
@@ -176,7 +176,7 @@ class HttpOAuthBackend:
                 },
                 headers={"Accept": "application/json"},
             )
-        except httpx.HTTPError as error:
+        except httpx2.HTTPError as error:
             raise OAuthVerificationError("OAuth provider is unavailable") from error
         token = self._json(token_response)
         if not isinstance(token, dict):
@@ -203,7 +203,7 @@ class HttpOAuthBackend:
             emails = self._json(
                 self._client.get("https://api.github.com/user/emails", headers=headers)
             )
-        except httpx.HTTPError as error:
+        except httpx2.HTTPError as error:
             raise OAuthVerificationError("GitHub identity lookup failed") from error
         if not isinstance(profile, dict) or not isinstance(emails, list):
             raise OAuthVerificationError("GitHub identity response is invalid")
@@ -239,7 +239,7 @@ class HttpOAuthBackend:
             raise OAuthVerificationError("Google ID token is missing")
         try:
             jwks = self._json(self._client.get(configured.jwks_uri))
-        except httpx.HTTPError as error:
+        except httpx2.HTTPError as error:
             raise OAuthVerificationError(
                 "Google signing keys are unavailable"
             ) from error

@@ -4,8 +4,8 @@ version = "0.1.0"
 description = "PostgreSQL-leased validation worker for Vonk Forge"
 requires-python = ">=3.14,<3.15"
 dependencies = [
-  "httpcore>=1.0.9",
-  "httpx>=0.28.1",
+  "httpcore2>=2.13.1",
+  "httpx2>=2.13.1",
   "jsonschema>=4.26.0",
   "psycopg[binary]>=3.3.6",
   "pydantic-settings>=2.15.0",
