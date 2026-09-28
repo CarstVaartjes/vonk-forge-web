@@ -10,9 +10,9 @@ from dataclasses import dataclass
 from email.utils import parsedate_to_datetime
 from urllib.parse import quote, urlencode, urljoin, urlsplit
 
-import httpcore
-import httpx
-from httpcore import SyncBackend
+import httpcore2
+import httpx2
+from httpcore2 import SyncBackend
 
 MAX_METADATA_BYTES = 1_048_576
 MAX_REDIRECTS = 3
@@ -65,12 +65,12 @@ class PinnedNetworkBackend:
         self._backend.sleep(seconds)
 
 
-class PinnedHTTPTransport(httpx.HTTPTransport):
+class PinnedHTTPTransport(httpx2.HTTPTransport):
     def __init__(self, hostname: str, address: str) -> None:
         super().__init__(trust_env=False)
         self._pool.close()
-        self._pool = httpcore.ConnectionPool(
-            ssl_context=httpx.create_ssl_context(trust_env=False),
+        self._pool = httpcore2.ConnectionPool(
+            ssl_context=httpx2.create_ssl_context(trust_env=False),
             network_backend=PinnedNetworkBackend({hostname: address}),
             max_connections=2,
             max_keepalive_connections=0,
@@ -123,19 +123,19 @@ class RegistryClient:
     def __init__(
         self,
         *,
-        client: httpx.Client | None = None,
+        client: httpx2.Client | None = None,
         resolver: Resolver = _resolve,
     ) -> None:
         self.client = client
         self.resolver = resolver
 
     @staticmethod
-    def _pinned_client(url: str, address: str) -> httpx.Client:
+    def _pinned_client(url: str, address: str) -> httpx2.Client:
         hostname = urlsplit(url).hostname
         if hostname is None:
             raise RegistryProblem("registry URL has no hostname")
-        return httpx.Client(
-            timeout=httpx.Timeout(10.0, connect=5.0),
+        return httpx2.Client(
+            timeout=httpx2.Timeout(10.0, connect=5.0),
             follow_redirects=False,
             trust_env=False,
             headers={"User-Agent": "vonk-catalog-validator/1"},
@@ -169,7 +169,7 @@ class RegistryClient:
         return _public_addresses(self.resolver(parsed.hostname))
 
     @staticmethod
-    def _retry_after(response: httpx.Response) -> int | None:
+    def _retry_after(response: httpx2.Response) -> int | None:
         raw = response.headers.get("Retry-After")
         if raw is None:
             return None
@@ -191,7 +191,7 @@ class RegistryClient:
         *,
         headers: dict[str, str] | None = None,
         method: str = "GET",
-    ) -> httpx.Response:
+    ) -> httpx2.Response:
         current = url
         for redirects in range(MAX_REDIRECTS + 1):
             before = self._validate_url(current)
@@ -199,7 +199,7 @@ class RegistryClient:
             try:
                 request = client.build_request(method, current, headers=headers)
                 streamed = client.send(request, stream=True)
-            except (httpx.TimeoutException, httpx.NetworkError) as error:
+            except (httpx2.TimeoutException, httpx2.NetworkError) as error:
                 if self.client is None:
                     client.close()
                 raise RegistryTemporaryProblem(
@@ -225,13 +225,13 @@ class RegistryClient:
                             raise RegistryProblem(
                                 "registry metadata response is oversized"
                             )
-                response = httpx.Response(
+                response = httpx2.Response(
                     streamed.status_code,
                     headers=streamed.headers,
                     content=bytes(body),
                     request=request,
                 )
-            except (httpx.TimeoutException, httpx.NetworkError) as error:
+            except (httpx2.TimeoutException, httpx2.NetworkError) as error:
                 raise RegistryTemporaryProblem(
                     "registry response timed out or failed"
                 ) from error
@@ -355,7 +355,7 @@ class RegistryClient:
         raise RegistryProblem("artifact kind is unsupported")
 
     @staticmethod
-    def _bearer_challenge(response: httpx.Response) -> dict[str, str]:
+    def _bearer_challenge(response: httpx2.Response) -> dict[str, str]:
         challenge = response.headers.get("WWW-Authenticate", "")
         if not challenge.lower().startswith("bearer "):
             raise RegistryProblem(
@@ -385,7 +385,7 @@ class RegistryClient:
         return token
 
     @staticmethod
-    def _json(response: httpx.Response) -> dict[str, object]:
+    def _json(response: httpx2.Response) -> dict[str, object]:
         try:
             payload = json.loads(response.content)
         except (UnicodeDecodeError, json.JSONDecodeError) as error:
@@ -396,7 +396,7 @@ class RegistryClient:
 
     def _metadata(
         self, url: str, *, expected_digest: str, accept: str
-    ) -> tuple[dict[str, object], httpx.Response]:
+    ) -> tuple[dict[str, object], httpx2.Response]:
         response = self._fetch(url, headers={"Accept": accept})
         if response.status_code == 401:
             token = self._token(self._bearer_challenge(response))

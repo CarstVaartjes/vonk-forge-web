@@ -5,7 +5,7 @@ import ssl
 import subprocess
 import threading
 
-import httpx
+import httpx2
 import pytest
 import vonk_catalog_worker.registry as registry_module
 from vonk_catalog_worker.registry import (
@@ -104,29 +104,29 @@ def test_pinned_backend_connects_to_validated_ip_not_a_second_dns_answer() -> No
     assert underlying.hosts == [("93.184.216.34", 443)]
 
 
-def _response(request: httpx.Request) -> httpx.Response:
+def _response(request: httpx2.Request) -> httpx2.Response:
     if request.url.path.endswith(f"/manifests/{DIGEST}"):
-        return httpx.Response(
+        return httpx2.Response(
             200,
             content=INDEX_BODY,
             headers={"Docker-Content-Digest": DIGEST},
             request=request,
         )
     if request.url.path.endswith(f"/manifests/{CHILD}"):
-        return httpx.Response(
+        return httpx2.Response(
             200,
             content=CHILD_BODY,
             headers={"Docker-Content-Digest": CHILD},
             request=request,
         )
     if request.url.path.endswith(f"/blobs/{CONFIG}"):
-        return httpx.Response(200, content=CONFIG_BODY, request=request)
+        return httpx2.Response(200, content=CONFIG_BODY, request=request)
     raise AssertionError(request.url)
 
 
 def _client(handler=_response, resolver=lambda _: PUBLIC_IP) -> RegistryClient:
     return RegistryClient(
-        client=httpx.Client(transport=httpx.MockTransport(handler), trust_env=False),
+        client=httpx2.Client(transport=httpx2.MockTransport(handler), trust_env=False),
         resolver=resolver,
     )
 
@@ -145,15 +145,15 @@ def test_resolves_digest_index_arm64_and_only_reads_config_metadata() -> None:
 
 
 def test_artifact_sizes_are_observed_from_independent_remote_metadata() -> None:
-    def handler(request: httpx.Request) -> httpx.Response:
+    def handler(request: httpx2.Request) -> httpx2.Response:
         if request.method == "HEAD":
-            return httpx.Response(
+            return httpx2.Response(
                 200, headers={"Content-Length": "123"}, request=request
             )
         if request.url.host == "huggingface.co":
             assert request.url.params["blobs"] == "true"
             assert request.headers["Accept-Encoding"] == "identity"
-            return httpx.Response(
+            return httpx2.Response(
                 200,
                 json={
                     "siblings": [
@@ -168,7 +168,7 @@ def test_artifact_sizes_are_observed_from_independent_remote_metadata() -> None:
                 request=request,
             )
         if request.url.path.endswith(f"/manifests/{ARTIFACT_DIGEST}"):
-            return httpx.Response(
+            return httpx2.Response(
                 200,
                 content=ARTIFACT_BODY,
                 headers={"Docker-Content-Digest": ARTIFACT_DIGEST},
@@ -223,8 +223,8 @@ def test_rejects_mutable_tag_missing_arm64_and_digest_mismatch() -> None:
     ).encode()
     missing_digest = "sha256:" + hashlib.sha256(missing_body).hexdigest()
 
-    def missing(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(
+    def missing(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(
             200,
             content=missing_body,
             headers={"Docker-Content-Digest": missing_digest},
@@ -234,8 +234,8 @@ def test_rejects_mutable_tag_missing_arm64_and_digest_mismatch() -> None:
     with pytest.raises(RegistryProblem, match="ARM64"):
         _client(missing).inspect(f"registry.example/org/image@{missing_digest}")
 
-    def mismatch(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(
+    def mismatch(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(
             200,
             json={},
             headers={"Docker-Content-Digest": "sha256:" + "f" * 64},
@@ -247,8 +247,8 @@ def test_rejects_mutable_tag_missing_arm64_and_digest_mismatch() -> None:
 
 
 def test_rejects_private_redirect_dns_rebinding_oversize_and_rate_limit() -> None:
-    def redirect(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(
+    def redirect(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(
             307,
             headers={"Location": "https://169.254.169.254/latest/meta-data"},
             request=request,
@@ -263,21 +263,21 @@ def test_rejects_private_redirect_dns_rebinding_oversize_and_rate_limit() -> Non
             f"registry.example/org/image@{DIGEST}"
         )
 
-    def oversized(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(200, content=b"x" * 1_048_577, request=request)
+    def oversized(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(200, content=b"x" * 1_048_577, request=request)
 
     with pytest.raises(RegistryProblem, match="oversized"):
         _client(oversized).inspect(f"registry.example/org/image@{DIGEST}")
 
-    def rate_limited(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(429, headers={"Retry-After": "17"}, request=request)
+    def rate_limited(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(429, headers={"Retry-After": "17"}, request=request)
 
     with pytest.raises(RegistryTemporaryProblem) as error:
         _client(rate_limited).inspect(f"registry.example/org/image@{DIGEST}")
     assert error.value.retry_after_seconds == 17
 
-    def timeout(request: httpx.Request) -> httpx.Response:
-        raise httpx.ReadTimeout("timed out", request=request)
+    def timeout(request: httpx2.Request) -> httpx2.Response:
+        raise httpx2.ReadTimeout("timed out", request=request)
 
     with pytest.raises(RegistryTemporaryProblem, match="timed out"):
         _client(timeout).inspect(f"registry.example/org/image@{DIGEST}")
@@ -336,7 +336,7 @@ def test_request_transport_pins_tcp_while_preserving_tls_hostname(
     server = threading.Thread(target=serve)
     server.start()
     client_context = ssl.create_default_context(cafile=str(certificate))
-    monkeypatch.setattr(httpx, "create_ssl_context", lambda **_kwargs: client_context)
+    monkeypatch.setattr(httpx2, "create_ssl_context", lambda **_kwargs: client_context)
     monkeypatch.setattr(
         registry_module, "_public_addresses", lambda values: tuple(values)
     )
@@ -368,8 +368,8 @@ def test_oci_artifact_rejects_negative_and_boolean_descriptor_sizes(
     ).encode()
     digest = "sha256:" + hashlib.sha256(body).hexdigest()
 
-    def handler(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(
+    def handler(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(
             200,
             content=body,
             headers={"Docker-Content-Digest": digest},
@@ -389,15 +389,15 @@ def test_oci_artifact_rejects_negative_and_boolean_descriptor_sizes(
 def test_bearer_auth_is_public_bounded_and_does_not_accept_basic_credentials() -> None:
     token = "registry-token"
 
-    def handler(request: httpx.Request) -> httpx.Response:
+    def handler(request: httpx2.Request) -> httpx2.Response:
         if request.url.host == "auth.example":
             assert request.url.params["scope"] == "repository:org/image:pull"
-            return httpx.Response(
+            return httpx2.Response(
                 200, json={"token": token, "expires_in": 300}, request=request
             )
         if request.headers.get("Authorization") == f"Bearer {token}":
             return _response(request)
-        return httpx.Response(
+        return httpx2.Response(
             401,
             headers={
                 "WWW-Authenticate": 'Bearer realm="https://auth.example/token",service="registry.example",scope="repository:org/image:pull"'
@@ -410,8 +410,8 @@ def test_bearer_auth_is_public_bounded_and_does_not_accept_basic_credentials() -
         == CHILD
     )
 
-    def basic(request: httpx.Request) -> httpx.Response:
-        return httpx.Response(
+    def basic(request: httpx2.Request) -> httpx2.Response:
+        return httpx2.Response(
             401, headers={"WWW-Authenticate": 'Basic realm="registry"'}, request=request
         )
 

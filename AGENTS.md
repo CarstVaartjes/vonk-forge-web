@@ -48,7 +48,7 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
 
 ## Toolchain and gates
 
-Python is **3.14** and Node is **24.21.0**. `api/` and `worker/` are members of
+Python is **3.14** and Node is **26.10.0**. `api/` and `worker/` are members of
 one `uv` workspace; the workspace lock is authoritative.
 
 ```bash

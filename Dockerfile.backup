@@ -2,8 +2,8 @@
 FROM ghcr.io/astral-sh/uv:0.12.19@sha256:04d046b13e60d6bcec73cbc5e1cad25d680dea90c8573340950a0ac2d1aef424 AS uv
 
 # Build on the runtime image so the virtualenv targets exactly the interpreter it
-# ships with; uv publishes no bookworm image after 0.9, only its static binary.
-FROM python:3.14.7-slim-bookworm@sha256:82bc3c539b8813ada9d68c63b40158fa002f7f33de9bf3312a3dfdc0620dff56 AS build
+# ships with; only uv's static binary is copied in, not its bundled Python.
+FROM python:3.14.7-slim-trixie@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d AS build
 COPY --from=uv /uv /usr/local/bin/uv
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never
@@ -18,9 +18,9 @@ COPY worker/pyproject.toml worker/pyproject.toml
 COPY api/src api/src
 RUN --mount=type=cache,target=/root/.cache/uv uv sync --frozen --no-dev --no-editable --project api
 
-FROM python:3.14.7-slim-bookworm@sha256:82bc3c539b8813ada9d68c63b40158fa002f7f33de9bf3312a3dfdc0620dff56 AS python-runtime
+FROM python:3.14.7-slim-trixie@sha256:51dafde81dbdb6ebde285137a295cf18a47ca95234fe388a343719cb97305b3d AS python-runtime
 
-FROM postgres:18.6-bookworm@sha256:3725f4e2499eef5134592b3b4ab79a543ed7f8e533b05b5b637af926630f6650
+FROM postgres:18.6-trixie@sha256:5a5a84b19854a9ffaa54082c166ff4ec27473a361e496e5ea167f298f2da9722
 LABEL org.opencontainers.image.title="Vonk Forge encrypted database operations" \
       org.opencontainers.image.source="https://github.com/CarstVaartjes/vonk-forge-web"
 RUN apt-get update \
