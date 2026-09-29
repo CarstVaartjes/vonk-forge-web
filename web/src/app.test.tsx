@@ -1,10 +1,29 @@
 import { render, screen, within } from "@testing-library/react";
-import { afterEach } from "vitest";
+import { afterEach, beforeEach, vi } from "vitest";
 
 import { App } from "./app";
 
 
-afterEach(() => window.history.replaceState({}, "", "/"));
+// The footer reads the verified release manifest the Pages build writes.
+beforeEach(() => {
+  vi.stubGlobal("fetch", vi.fn(async (url: string) => {
+    if (url.endsWith("/catalog/release.json")) return { ok: true, json: async () => ({ repository: "CarstVaartjes/vonk-forge-recipes", tag: "v2.0.0", contract_version: "2.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: "f".repeat(40) }) };
+    return { ok: false, status: 404 };
+  }));
+});
+
+afterEach(() => {
+  window.history.replaceState({}, "", "/");
+  vi.unstubAllGlobals();
+});
+
+
+test("shows the recipe library version and when it was last updated", async () => {
+  render(<App />);
+  const footer = screen.getByRole("contentinfo");
+  expect(await within(footer).findByRole("link", { name: "v2.0.0" })).toHaveAttribute("href", "https://github.com/CarstVaartjes/vonk-forge-recipes/releases/tag/v2.0.0");
+  expect(within(footer).getByText(/Updated Sep 28, 2026/)).toBeVisible();
+});
 
 
 test("defines the product and puts installation first", () => {

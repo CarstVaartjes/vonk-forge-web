@@ -31,10 +31,9 @@ function model(number: number, publisher = "publisher"): ModelSummary {
       model_slug: `model-${number}`,
       model_title: `Model ${number}`,
       variant: "bf16",
-      access: { visibility: "public", gated: false, authentication: "none" },
+      requires_token: false,
       tags: [],
-      capabilities: [{ name: number % 2 ? "ocr" : "chat", support: "supported", evidence_status: "declared" }],
-      capability_evidence: "declared",
+      capabilities: [number % 2 ? "ocr" : "chat"],
       recipe_slugs: number % 2 ? [`${publisher}/recipe-${number}`] : [],
     }],
   };

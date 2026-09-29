@@ -13,12 +13,11 @@ const recipe: RecipeSummary = {
   slug: "qwen-fast",
   title: "Qwen Fast",
   official: true,
-  revision_number: 3,
   revision_id: "revision-qwen-3",
   content_sha256: "a".repeat(64),
   published_at: "2026-08-07T10:00:00Z",
   runtime: { adapter: "vllm", entrypoint: ["vllm", "serve", "/models"] },
-  build: { context: { sha256: "b".repeat(64), expected_bytes: 2048 }, dockerfile: "Dockerfile" },
+  build: { dockerfile: "Dockerfile" },
   workload: { family: "qwen", capabilities: ["openai.chat"] },
   deployment_profiles: [{ name: "solo", node_count: 1 }],
   capacity: {

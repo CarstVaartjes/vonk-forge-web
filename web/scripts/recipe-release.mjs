@@ -19,6 +19,9 @@ export const RECIPE_REPOSITORY = "CarstVaartjes/vonk-forge-recipes";
 export const RECIPE_REPOSITORY_ID = "1336002555";
 export const SIGNER_WORKFLOW = `${RECIPE_REPOSITORY}/.github/workflows/publish.yml`;
 export const SIGNER_REF = "refs/heads/main";
+// The recipe/model contract major this site renders. The library's release tag
+// is the contract version; recipe updates replace that release's assets in place.
+export const SUPPORTED_CONTRACT_MAJOR = 2;
 
 const TAG = /^v\d+\.\d+\.\d+$/;
 const DIGEST = /^[0-9a-f]{64}$/;
@@ -63,12 +66,38 @@ export async function verifyWithGh(checksumsPath, bundlePath) {
   return results[0].verificationResult.signature.certificate;
 }
 
-export async function resolveLatestTag(fetchImpl = fetch, token = process.env.GH_TOKEN) {
-  const response = await fetchImpl(`https://api.github.com/repos/${RECIPE_REPOSITORY}/releases/latest`, {
-    headers: { Accept: "application/vnd.github+json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-  });
-  if (!response.ok) fail(`latest release lookup returned ${response.status}`);
-  return (await response.json()).tag_name;
+function semver(tag) {
+  const match = typeof tag === "string" ? tag.match(/^v(\d+)\.(\d+)\.(\d+)$/) : null;
+  return match ? match.slice(1).map(Number) : null;
+}
+
+// Pick the newest non-draft release whose tag major is the supported contract major.
+export function selectReleaseTag(releases, major = SUPPORTED_CONTRACT_MAJOR) {
+  let best = null;
+  for (const release of Array.isArray(releases) ? releases : []) {
+    const version = semver(release?.tag_name);
+    if (release?.draft || !version || version[0] !== major) continue;
+    if (!best || version[1] > best.version[1] || (version[1] === best.version[1] && version[2] > best.version[2])) {
+      best = { tag: release.tag_name, version };
+    }
+  }
+  if (!best) fail(`no published release for contract major ${major}`);
+  return best.tag;
+}
+
+export async function resolveReleaseTag(fetchImpl = fetch, token = process.env.GH_TOKEN) {
+  const releases = [];
+  for (let page = 1; ; page += 1) {
+    const response = await fetchImpl(`https://api.github.com/repos/${RECIPE_REPOSITORY}/releases?per_page=100&page=${page}`, {
+      headers: { Accept: "application/vnd.github+json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+    });
+    if (!response.ok) fail(`release listing returned ${response.status}`);
+    const batch = await response.json();
+    if (!Array.isArray(batch)) fail("release listing is not a list");
+    releases.push(...batch);
+    if (batch.length < 100) break;
+  }
+  return selectReleaseTag(releases);
 }
 
 export function downloadAsset(fetchImpl = fetch) {
@@ -86,6 +115,7 @@ export function downloadAsset(fetchImpl = fetch) {
  */
 export async function publishRecipeRelease({ tag, outDir, download, verifySignature = verifyWithGh }) {
   if (typeof tag !== "string" || !TAG.test(tag)) fail(`invalid release tag ${JSON.stringify(tag)}`);
+  if (semver(tag)[0] !== SUPPORTED_CONTRACT_MAJOR) fail(`release ${tag} is not for contract major ${SUPPORTED_CONTRACT_MAJOR}`);
   const parent = path.dirname(path.resolve(outDir));
   await mkdir(parent, { recursive: true });
   const staging = await mkdtemp(path.join(parent, ".catalog-staging-"));
@@ -107,6 +137,8 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
     if (sha256(indexBytes) !== digests.get("catalog-index.json")) fail("catalog-index.json does not match SHA256SUMS");
     const index = JSON.parse(indexBytes.toString("utf8"));
     if (index.kind !== "recipe-library-index" || index.schema_version !== 2) fail("unsupported catalog index");
+    if (semver(`v${index.contract_version}`)?.[0] !== SUPPORTED_CONTRACT_MAJOR) fail(`unsupported contract version ${JSON.stringify(index.contract_version)}`);
+    if (typeof index.updated_at !== "string" || Number.isNaN(Date.parse(index.updated_at))) fail("index has no updated_at");
     if (index.repository !== RECIPE_REPOSITORY) fail(`index names repository ${index.repository}`);
     if (index.source_commit !== signedCommit) fail("index source_commit differs from the signed commit");
     const prefix = index.package_contract?.path_prefix;
@@ -124,6 +156,8 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
     await writeFile(path.join(staging, "release.json"), `${JSON.stringify({
       repository: RECIPE_REPOSITORY,
       tag,
+      contract_version: index.contract_version,
+      updated_at: index.updated_at,
       source_commit: signedCommit,
       sha256sums_sha256: sha256(checksums),
       catalog_index_sha256: digests.get("catalog-index.json"),
@@ -140,7 +174,7 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
 async function main() {
   const webRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
   const outDir = path.join(webRoot, "public", "catalog");
-  const tag = process.env.VONK_RECIPE_RELEASE || await resolveLatestTag();
+  const tag = process.env.VONK_RECIPE_RELEASE || await resolveReleaseTag();
   await publishRecipeRelease({ tag, outDir, download: downloadAsset() });
   console.log(`Verified ${RECIPE_REPOSITORY} ${tag} and wrote ${path.relative(process.cwd(), outDir)}`);
 }

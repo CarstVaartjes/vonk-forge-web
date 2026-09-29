@@ -712,6 +712,8 @@ a {
 }
 
 .site-footer p { margin: 0; }
+.site-footer .library-version { margin-top: 0.4rem; }
+.site-footer .library-version a { color: var(--muted); }
 .site-footer strong { color: var(--muted); }
 .site-footer nav { flex-wrap: wrap; gap: 1.25rem; }
 
@@ -1714,9 +1716,6 @@ a {
 .model-version-heading { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
 .model-version h3 { margin: 0.35rem 0; color: var(--ink); font-size: clamp(1.2rem, 2vw, 1.65rem); line-height: 1.1; }
 .model-version code { color: var(--faint); font-size: 0.67rem; overflow-wrap: anywhere; }
-.model-availability { flex: 0 0 auto; padding: 0.3rem 0.5rem; border: 1px solid var(--line-bright); border-radius: 0.25rem; color: var(--muted); font-size: 0.66rem; font-weight: 750; }
-.model-availability.availability-withdrawn, .model-availability.availability-superseded { border-color: rgb(255 113 94 / 45%); color: var(--red); }
-.model-availability.availability-unknown { border-color: var(--line-bright); color: var(--faint); }
 .models-page .button.primary, .model-detail-page .button.primary { border-color: var(--green); color: var(--night); background: var(--green); }
 .models-page .button.primary:hover, .model-detail-page .button.primary:hover { border-color: var(--green-soft); background: var(--green-soft); }
 .public-contract-explainer { margin: 0 0 3rem; border: 1px solid var(--line); border-radius: 0.65rem; background: linear-gradient(145deg, rgb(255 122 26 / 6%), transparent 38%), var(--panel); }
@@ -1798,8 +1797,6 @@ a {
 .model-capability-facts { display: flex; flex-wrap: wrap; gap: 0.4rem; padding: 0; margin: 0; list-style: none; }
 .model-capability-facts li { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.25rem 0.45rem; border: 1px solid var(--line-bright); border-radius: 0.25rem; }
 .model-capability-facts li strong { color: var(--ink); }
-.model-capability-facts li small { color: var(--faint); }
-.capability-supported { color: var(--green-soft); }.capability-unsupported { color: var(--red); }.capability-unknown { color: var(--faint); }
 .model-unknown { margin: 0; color: var(--faint); }.model-unknown span { display: inline-grid; width: 1.1rem; height: 1.1rem; margin-right: 0.3rem; place-items: center; border: 1px solid var(--line-bright); border-radius: 50%; }
 .model-license { margin: 1rem 0 0; color: var(--faint); font-size: 0.68rem; }
 

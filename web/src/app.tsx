@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+
+import { getLibraryRelease, type LibraryRelease } from "./api/client";
 import { ArchitecturePage } from "./pages/architecture";
 import { ControlPage } from "./pages/control";
 import { HomePage } from "./pages/home";
@@ -30,6 +33,28 @@ function CurrentPage() {
     return <PublishingGuidePage />;
   }
   return <main className="status-panel"><h1>Not found</h1><p>This spark has not been forged.</p></main>;
+}
+
+function updatedLabel(value: string): string {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" }).format(date);
+}
+
+// The recipe library version this site serves (its release tag, which is the
+// contract version) and when its recipes last changed.
+function LibraryVersion() {
+  const [release, setRelease] = useState<LibraryRelease | null>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    getLibraryRelease(controller.signal).then(setRelease).catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+  if (!release) return null;
+  return (
+    <p className="library-version">
+      Recipe library <a href={`https://github.com/CarstVaartjes/vonk-forge-recipes/releases/tag/${release.version}`}>{release.version}</a> · Updated {updatedLabel(release.updated_at)}
+    </p>
+  );
 }
 
 function NavigationLink({ href, children, primary = false }: { href: string; children: string; primary?: boolean }) {
@@ -69,7 +94,10 @@ export function App() {
           <CurrentPage />
         </div>
         <footer className="site-footer">
-          <p><strong>Vonk Forge</strong> · Open-source local control for NVIDIA DGX Spark.</p>
+          <div>
+            <p><strong>Vonk Forge</strong> · Open-source local control for NVIDIA DGX Spark.</p>
+            <LibraryVersion />
+          </div>
           <nav aria-label="Footer navigation">
             <a href="/install">Install</a>
             <a href="/architecture">How it works</a>

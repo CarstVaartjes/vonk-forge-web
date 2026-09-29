@@ -230,7 +230,7 @@ export function RecipesPage({ fixedPublisher }: { fixedPublisher?: string } = {}
               const facts = metadata(recipe);
               const counts = recipe.capacity?.profile_node_counts ?? [];
               return <tr key={`${recipe.publisher}/${recipe.slug}`}>
-                <td className="catalog-table-recipe"><h2><a href={`/recipes/${recipe.publisher}/${recipe.slug}`}>{recipe.title}</a></h2><span>{recipe.publisher}/{recipe.slug}</span><span>{recipe.version ? `v${recipe.version}` : `rev ${recipe.revision_number}`} · {recipe.content_sha256.slice(0, 10)}…</span></td>
+                <td className="catalog-table-recipe"><h2><a href={`/recipes/${recipe.publisher}/${recipe.slug}`}>{recipe.title}</a></h2><span>{recipe.publisher}/{recipe.slug}</span><span>{recipe.version ? `v${recipe.version}` : "unversioned"} · {recipe.content_sha256.slice(0, 10)}…</span></td>
                 <td><strong>{modelFamilyTitle(recipe)}</strong></td>
                 <td className="catalog-table-model"><strong>{facts.model_version_title}</strong><span>{facts.model_version_publisher}/{facts.model_version_slug}</span></td>
                 <td>{facts.quantizations.length ? facts.quantizations.join(" · ") : "—"}</td>

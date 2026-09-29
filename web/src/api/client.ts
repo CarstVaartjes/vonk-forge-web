@@ -1,4 +1,4 @@
-import { getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog } from "./static-catalog";
+import { getStaticLibraryRelease, getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog } from "./static-catalog";
 
 
 export interface RecipeSummary {
@@ -6,13 +6,12 @@ export interface RecipeSummary {
   slug: string;
   title: string;
   official: boolean;
-  revision_number: number;
   revision_id: string;
   content_sha256: string;
   published_at: string;
   version?: string;
   runtime: { adapter?: string; entrypoint?: string[] };
-  build?: { context?: { sha256?: string; expected_bytes?: number }; dockerfile?: string };
+  build?: { dockerfile?: string };
   artifacts?: Array<{
     kind?: string;
     repository?: string;
@@ -21,7 +20,6 @@ export interface RecipeSummary {
     installed_bytes?: number;
   }>;
   provenance?: {
-    source_kind?: string;
     source_reference?: string | null;
     attribution?: string[];
   };
@@ -72,7 +70,6 @@ export interface RecipeSummary {
 
 export interface RecipeDetail extends RecipeSummary {
   latest_revision: {
-    revision_number: number;
     content_sha256: string;
     document: Record<string, unknown>;
   };
@@ -88,18 +85,14 @@ export interface ModelVersionSummary {
   model_slug: string;
   model_title: string;
   variant?: string;
-  access?: { visibility?: string; gated?: boolean; authentication?: string };
+  requires_token?: boolean;
   source_repository?: string;
   source_revision?: string;
-  format?: { container?: string; precision?: string; quantization?: string };
-  parameters?: { total?: number | null; active?: number | null };
-  limits?: { context_tokens?: number | null; resolution_pixels?: number | null; frames?: number | null; sample_rate_hz?: number | null };
+  format?: { precision?: string; quantization?: string };
   sizes?: { download_bytes?: number; installed_bytes?: number };
-  license?: { spdx?: string; url?: string; attribution?: string[]; operator_acceptance_required?: boolean };
-  availability?: "active" | "withdrawn" | "superseded";
+  license?: { spdx?: string; url?: string; attribution?: string[] };
   tags: string[];
-  capabilities: Array<{ name: string; support: "supported" | "unsupported" | "unknown"; evidence_status: "declared" | "tested" | "contradicted" | "unknown"; evidence_digest?: string | null }>;
-  capability_evidence: "declared" | "unknown";
+  capabilities: string[];
   recipe_slugs: string[];
 }
 
@@ -113,6 +106,11 @@ export interface ModelSummary {
   revision_id: string;
   versions: ModelVersionSummary[];
   recipe_count: number;
+}
+
+export interface LibraryRelease {
+  version: string;
+  updated_at: string;
 }
 
 export interface ModelPage {
@@ -137,4 +135,8 @@ export function listModels(signal?: AbortSignal): Promise<ModelPage> {
 
 export function getModel(publisher: string, slug: string, signal?: AbortSignal): Promise<ModelSummary> {
   return getStaticModel(RECIPE_LIBRARY_INDEX_URL, publisher, slug, signal);
+}
+
+export function getLibraryRelease(signal?: AbortSignal): Promise<LibraryRelease> {
+  return getStaticLibraryRelease(RECIPE_LIBRARY_INDEX_URL, signal);
 }
