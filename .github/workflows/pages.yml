@@ -1,5 +1,9 @@
 name: Deploy frontend to Cloudflare Pages
 
+# One workflow per main commit: CI runs first (ci.yml) and the deploy needs it.
+# Scheduled runs skip CI: the code has not changed since the last main push
+# that passed it, and the deploy job re-verifies the recipe release itself.
+# Manual dispatches run CI, so a hand-started deploy is also gated.
 on:
   workflow_dispatch:
   push:
@@ -18,7 +22,22 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Called workflow: its security job uploads SARIF, so the caller must grant
+  # security-events: write or every run fails at startup.
+  ci:
+    if: ${{ github.event_name != 'schedule' }}
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/ci.yml
+
   deploy:
+    needs: [ci]
+    # Fan-in: deploy after CI passed, or when CI was skipped (schedule).
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') }}
+    permissions:
+      contents: read
+      deployments: write
     runs-on: ubuntu-24.04
     environment: production
     steps:

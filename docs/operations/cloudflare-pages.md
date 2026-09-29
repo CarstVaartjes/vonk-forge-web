@@ -64,8 +64,11 @@ and incoming data in the dashboard.
 
 ## Releases
 
-`pages.yml` runs on every push to `main`, on manual dispatch, and hourly (at
-minute 17). It:
+`pages.yml` is the only workflow that runs on a push to `main`; it also runs
+on manual dispatch and hourly (at minute 17). Push and dispatch runs first call
+`ci.yml` and the deploy job waits for it (pull requests run `ci.yml` directly).
+Scheduled runs skip CI, since the code has not changed since the last main
+push that passed it; they only poll for a new recipe release. The deploy job:
 
 1. installs the locked frontend dependencies;
 2. runs `web/scripts/recipe-release.mjs`, which lists the
