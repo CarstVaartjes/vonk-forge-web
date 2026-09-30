@@ -41,7 +41,7 @@ export interface RecipeSummary {
   };
   import?: { uri: string; instruction: string };
   source?: { recipe_url?: string; bundle_url?: string };
-  package?: { url: string; sha256: string; bytes: number; media_type: string };
+  package?: { url: string; member: string; sha256: string; bytes: number; media_type: string };
   catalog?: {
     description: string;
     tags: string[];

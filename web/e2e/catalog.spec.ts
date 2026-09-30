@@ -287,8 +287,8 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   await expect(page.getByRole("link", { name: "Inspect recipe source" })).toHaveAttribute(
     "href", `https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${sourceCommit}/recipes/qwen-fast.json`,
   );
-  await expect(page.getByRole("link", { name: "Download package" })).toHaveAttribute(
-    "href", `https://github.com/CarstVaartjes/vonk-forge-recipes/releases/download/${releaseTag}/vonk-forge-qwen-fast.tar.gz`,
+  await expect(page.getByRole("link", { name: "Download recipe library" })).toHaveAttribute(
+    "href", `https://github.com/CarstVaartjes/vonk-forge-recipes/releases/download/${releaseTag}/recipe-library.tar`,
   );
 });
 
