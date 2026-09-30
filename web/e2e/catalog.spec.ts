@@ -287,9 +287,13 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   await expect(page.getByRole("link", { name: "Inspect recipe source" })).toHaveAttribute(
     "href", `https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${sourceCommit}/recipes/qwen-fast.json`,
   );
-  await expect(page.getByRole("link", { name: "Download recipe library" })).toHaveAttribute(
-    "href", `https://github.com/CarstVaartjes/vonk-forge-recipes/releases/download/${releaseTag}/recipe-library.tar`,
+  await expect(page.getByRole("link", { name: "View source", exact: true })).toHaveAttribute(
+    "href", `https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${sourceCommit}/recipes/qwen-fast.json`,
   );
+  await expect(page.getByRole("link", { name: "View adapter source" })).toHaveAttribute(
+    "href", `https://github.com/CarstVaartjes/vonk-forge-recipes/tree/${sourceCommit}/adapters/qwen`,
+  );
+  await expect(page.getByRole("link", { name: /Download recipe library|Download package/ })).toHaveCount(0);
 });
 
 

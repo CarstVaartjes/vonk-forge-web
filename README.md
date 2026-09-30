@@ -82,9 +82,10 @@ not a unique flat regular file, verifies `SHA256SUMS`
 against its Sigstore attestation from the library's `publish.yml` on `main`,
 checks every bundle file and the index against `SHA256SUMS`, and writes
 `web/public/catalog/` (`catalog-index.json`, `release.json`, `SHA256SUMS` and its
-bundle). The browser reads only those same-origin files. Package download links
-point at the verified release's `recipe-library.tar` on GitHub (the package is one
-member of it; packages are not copied to Pages because some exceed its 25 MiB per-file limit).
+bundle). The browser reads only those same-origin files. The site offers no package
+download (packages are not copied to Pages: some exceed its 25 MiB per-file limit); recipe
+pages link "View source" (and "View adapter source") to the recipe files in the library
+repository, pinned to the verified release's source commit.
 
 The library's release tag is its contract version (for example `v2.0.0`).
 Recipe changes do not create a new release: the library updates that release's

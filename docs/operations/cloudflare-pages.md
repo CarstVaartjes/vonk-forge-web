@@ -114,11 +114,12 @@ repository, so polling is the deliberate choice; dispatch `pages.yml` manually
 to publish an update immediately. Pull requests run CI only; they do not
 publish production.
 
-Package download links go to the verified release's `recipe-library.tar` at
-`github.com/CarstVaartjes/vonk-forge-recipes/releases/download/<tag>/`, a plain
-browser navigation that needs no CORS; the release holds no individual package
-assets, and each package is a member of that tar. Packages are not copied into
-the Pages deployment because some exceed Cloudflare Pages' 25 MiB per-file limit.
+The site has no per-recipe package download. Recipe pages link "View source"
+(and "View adapter source" when the recipe declares a build context) to
+`github.com/CarstVaartjes/vonk-forge-recipes/blob/<source_commit>/...`, pinned to
+the verified release's signed source commit. Packages are not copied into the
+Pages deployment because some exceed Cloudflare Pages' 25 MiB per-file limit;
+the Controller fetches packages itself.
 
 The `_headers` and `_redirects` files under `web/public` provide the security
 headers (the Content Security Policy's `connect-src` allows only this origin and

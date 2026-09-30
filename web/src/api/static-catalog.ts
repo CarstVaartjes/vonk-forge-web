@@ -41,7 +41,6 @@ interface CatalogReference {
 }
 
 const cachedIndexes = new Map<string, Promise<LibraryIndex>>();
-const releaseTags = new WeakMap<LibraryIndex, string>();
 
 function record(value: unknown): JsonRecord {
   return typeof value === "object" && value !== null ? value as JsonRecord : {};
@@ -378,9 +377,6 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
   const packageName = item.package.path.startsWith(index.package_contract.path_prefix)
     ? item.package.path.slice(index.package_contract.path_prefix.length)
     : item.package.path;
-  // A package is a member of the signed recipe-library.tar, the release's only
-  // asset. Its digest is checked against the attested SHA256SUMS by the Pages build.
-  const packageUrl = `https://github.com/${index.repository}/releases/download/${releaseTags.get(index)}/recipe-library.tar`;
   const contextPath = text(context.path);
 
   return {
@@ -433,7 +429,6 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
       bundle_url: contextPath ? `https://github.com/${index.repository}/tree/${index.source_commit}/${contextPath}` : undefined,
     },
     package: {
-      url: packageUrl,
       member: packageName,
       sha256: item.package.sha256,
       bytes: item.package.expected_bytes,
@@ -501,7 +496,6 @@ async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryInde
     throw new Error("Recipe library returned an index that does not match its release");
   }
   const index = body as LibraryIndex;
-  releaseTags.set(index, release.tag);
   return index;
 }
 
