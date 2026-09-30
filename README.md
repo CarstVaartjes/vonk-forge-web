@@ -75,9 +75,12 @@ asset of a signed GitHub release. Browsers cannot fetch release assets
 cross-origin, so the Pages build copies it:
 [`web/scripts/recipe-release.mjs`](web/scripts/recipe-release.mjs) downloads the
 newest release whose tag major matches the supported recipe contract major (or
-the tag in `VONK_RECIPE_RELEASE`), verifies `SHA256SUMS`
+the tag in `VONK_RECIPE_RELEASE`). It downloads only that release's single
+`recipe-library.tar` asset (an uncompressed tar of flat files: `SHA256SUMS`, its
+Sigstore bundle and every file `SHA256SUMS` lists), refuses any member that is
+not a unique flat regular file, verifies `SHA256SUMS`
 against its Sigstore attestation from the library's `publish.yml` on `main`,
-checks the index and every package digest against `SHA256SUMS`, and writes
+checks every bundle file and the index against `SHA256SUMS`, and writes
 `web/public/catalog/` (`catalog-index.json`, `release.json`, `SHA256SUMS` and its
 bundle). The browser reads only those same-origin files. Package download links
 point at the verified release's assets on GitHub.
