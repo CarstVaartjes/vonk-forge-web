@@ -378,9 +378,9 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
   const packageName = item.package.path.startsWith(index.package_contract.path_prefix)
     ? item.package.path.slice(index.package_contract.path_prefix.length)
     : item.package.path;
-  // Packages are downloaded from the signed release asset, whose SHA-256 the
-  // Pages build checked against the attested SHA256SUMS.
-  const packageUrl = `https://github.com/${index.repository}/releases/download/${releaseTags.get(index)}/${encodeURIComponent(packageName)}`;
+  // A package is a member of the signed recipe-library.tar, the release's only
+  // asset. Its digest is checked against the attested SHA256SUMS by the Pages build.
+  const packageUrl = `https://github.com/${index.repository}/releases/download/${releaseTags.get(index)}/recipe-library.tar`;
   const contextPath = text(context.path);
 
   return {
@@ -434,6 +434,7 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
     },
     package: {
       url: packageUrl,
+      member: packageName,
       sha256: item.package.sha256,
       bytes: item.package.expected_bytes,
       media_type: item.package.media_type,

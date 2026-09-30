@@ -88,7 +88,7 @@ describe("static recipe library adapter", () => {
       listStaticModels(indexUrl),
     ]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(recipe.package?.url).toBe("https://github.com/CarstVaartjes/vonk-forge-recipes/releases/download/v2.0.0/vonk-forge-qwen-fast.tar.gz");
+    expect(recipe.package?.url).toBe("https://github.com/CarstVaartjes/vonk-forge-recipes/releases/download/v2.0.0/recipe-library.tar");
     expect(models.items[0]?.recipe_count).toBe(2);
   });
 
@@ -155,7 +155,7 @@ describe("static recipe library adapter", () => {
     expect(recipe.import?.instruction).toBe("Use this exact recipe in your local Controller.");
     expect(recipe.source?.recipe_url).toBe(`https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${"f".repeat(40)}/recipes/qwen-fast.json`);
     expect(recipe.source?.bundle_url).toBe(`https://github.com/CarstVaartjes/vonk-forge-recipes/tree/${"f".repeat(40)}/adapters/qwen`);
-    expect(recipe.package).toMatchObject({ url: "https://github.com/CarstVaartjes/vonk-forge-recipes/releases/download/v2.0.0/vonk-forge-qwen-fast.tar.gz", sha256: "1".repeat(64), bytes: 123 });
+    expect(recipe.package).toMatchObject({ url: "https://github.com/CarstVaartjes/vonk-forge-recipes/releases/download/v2.0.0/recipe-library.tar", sha256: "1".repeat(64), bytes: 123 });
     expect(recipe.latest_revision.document).toMatchObject({ identity: { slug: "qwen-fast" } });
   });
 
