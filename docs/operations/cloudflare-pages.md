@@ -74,12 +74,15 @@ push that passed it; they only poll for a new recipe release. The deploy job:
 2. runs `web/scripts/recipe-release.mjs`, which lists the
    [`vonk-forge-recipes`](https://github.com/CarstVaartjes/vonk-forge-recipes)
    releases, downloads the newest non-draft release whose tag major equals
-   the supported contract major (`SUPPORTED_CONTRACT_MAJOR`), verifies `SHA256SUMS` with `gh attestation verify` against the
+   the supported contract major (`SUPPORTED_CONTRACT_MAJOR`), downloads its one
+   `recipe-library.tar` asset (retrying transient failures; the tar holds
+   `SHA256SUMS`, its Sigstore bundle and every listed file), verifies `SHA256SUMS` with `gh attestation verify` against the
    Sigstore bundle (signer workflow
    `CarstVaartjes/vonk-forge-recipes/.github/workflows/publish.yml`, source ref
    `refs/heads/main`, repository ID `1336002555`, GitHub-hosted runner, and a
-   source commit equal to the index's `source_commit`), checks
-   `catalog-index.json` and every package digest the index names against
+   source commit equal to the index's `source_commit`), requires the tar to
+   hold exactly the signed set and every member to match its `SHA256SUMS`
+   digest, checks the package digests the index names against
    `SHA256SUMS`, requires the index's `contract_version` to have that major,
    and writes `web/public/catalog/` (its `release.json` records the tag,
    `contract_version` and `updated_at`);
@@ -93,9 +96,9 @@ the previously deployed site keeps serving the last verified catalog. The job
 uses only the workflow's `GITHUB_TOKEN`; no extra secret is involved.
 
 The library updates its release in place (same tag, new assets) when recipes
-change, so the verified `release.json` changes and the next run redeploys. A
-run that catches the assets mid-replacement fails verification and the next
-run heals it.
+change, so the verified `release.json` changes and the next run redeploys. The
+bundle is a single asset, so a run never sees a half-updated set; a run that
+catches the bundle mid-replacement retries, then fails and the next run heals.
 
 To pin a release instead of following the newest one, set the `production`
 environment (or repository) variable `VONK_RECIPE_RELEASE` to an exact tag such
