@@ -73,14 +73,19 @@ push that passed it; they only poll for a new recipe release. The deploy job:
 1. installs the locked frontend dependencies;
 2. runs `web/scripts/recipe-release.mjs`, which lists the
    [`vonk-forge-recipes`](https://github.com/CarstVaartjes/vonk-forge-recipes)
-   releases, downloads the newest non-draft release whose tag major equals
-   the supported contract major (`SUPPORTED_CONTRACT_MAJOR`), verifies `SHA256SUMS` with `gh attestation verify` against the
+   releases and picks the newest non-draft release whose tag major equals
+   the supported contract major (`SUPPORTED_CONTRACT_MAJOR`). It downloads only
+   that release's `recipe-library.tar` (one uncompressed tar holding
+   `SHA256SUMS`, `SHA256SUMS.sigstore.json` and every file `SHA256SUMS` lists,
+   as flat names), rejects any member that is not a unique flat regular file
+   (no paths, links, directories or duplicates), verifies `SHA256SUMS` with
+   `gh attestation verify` against the
    Sigstore bundle (signer workflow
    `CarstVaartjes/vonk-forge-recipes/.github/workflows/publish.yml`, source ref
    `refs/heads/main`, repository ID `1336002555`, GitHub-hosted runner, and a
-   source commit equal to the index's `source_commit`), checks
-   `catalog-index.json` and every package digest the index names against
-   `SHA256SUMS`, requires the index's `contract_version` to have that major,
+   source commit equal to the index's `source_commit`), checks every file in
+   the tar against `SHA256SUMS` (all listed files present, nothing unsigned
+   extra) and the index's package digests, requires the index's `contract_version` to have that major,
    and writes `web/public/catalog/` (its `release.json` records the tag,
    `contract_version` and `updated_at`);
 3. builds `web/dist` and uploads it as the production Pages deployment with
@@ -93,9 +98,10 @@ the previously deployed site keeps serving the last verified catalog. The job
 uses only the workflow's `GITHUB_TOKEN`; no extra secret is involved.
 
 The library updates its release in place (same tag, new assets) when recipes
-change, so the verified `release.json` changes and the next run redeploys. A
-run that catches the assets mid-replacement fails verification and the next
-run heals it.
+change, so the verified `release.json` changes and the next run redeploys. The
+signed files travel in the one `recipe-library.tar` asset, so a run never sees a
+half-updated set; if it catches the tar briefly absent while it is replaced, the
+download fails and the next run heals it.
 
 To pin a release instead of following the newest one, set the `production`
 environment (or repository) variable `VONK_RECIPE_RELEASE` to an exact tag such

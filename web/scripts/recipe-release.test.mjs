@@ -5,7 +5,29 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
-import { parseChecksums, publishRecipeRelease, selectReleaseTag } from "./recipe-release.mjs";
+import { parseChecksums, publishRecipeRelease, readBundle, selectReleaseTag } from "./recipe-release.mjs";
+
+// A minimal ustar writer, enough to build bundles the way the recipe library does.
+function tarMember(name, payload, { type = "0", prefix = "" } = {}) {
+  const header = Buffer.alloc(512);
+  header.write(name, 0, "latin1");
+  header.write("0000644\0", 100);
+  header.write("0000000\0", 108);
+  header.write("0000000\0", 116);
+  header.write(`${payload.length.toString(8).padStart(11, "0")}\0`, 124);
+  header.write("00000000000\0", 136);
+  header.write("        ", 148);
+  header.write(type, 156);
+  header.write("ustar\0" + "00", 257, "latin1");
+  header.write(prefix, 345, "latin1");
+  const sum = header.reduce((total, byte) => total + byte, 0);
+  header.write(`${sum.toString(8).padStart(6, "0")}\0 `, 148);
+  return Buffer.concat([header, payload, Buffer.alloc((512 - (payload.length % 512)) % 512)]);
+}
+const tar = (members, options) => Buffer.concat([
+  ...members.map(([name, payload, extra]) => tarMember(name, payload, extra ?? options)),
+  Buffer.alloc(1024),
+]);
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const commit = "a".repeat(40);
@@ -61,14 +83,13 @@ beforeEach(async () => {
 
 afterEach(() => rm(root, { recursive: true, force: true }));
 
-function publish(assets, { certificate = signedCertificate, verifySignature, releaseTag = tag } = {}) {
+function publish(assets, { certificate = signedCertificate, verifySignature, releaseTag = tag, bundle } = {}) {
   return publishRecipeRelease({
     tag: releaseTag,
     outDir,
-    download: async (requestedTag, name) => {
+    download: async (requestedTag, destination) => {
       expect(requestedTag).toBe(releaseTag);
-      if (!(name in assets)) throw new Error(`missing asset ${name}`);
-      return assets[name];
+      await writeFile(destination, bundle ?? tar(Object.entries(assets)));
     },
     verifySignature: verifySignature ?? (async (checksumsPath) => {
       // Stands in for `gh attestation verify`, which must be handed the downloaded SHA256SUMS.
@@ -128,6 +149,51 @@ describe("recipe release publication", () => {
     const assets = fixtureRelease({ index: { recipes: [{ package: { path: "packages/unsigned.tar.gz", sha256: "c".repeat(64) } }] } });
     await expect(publish(assets)).rejects.toThrow("unsigned.tar.gz is not signed");
     await expectPreviousCatalogKept();
+  });
+
+  test("rejects a listed file whose bytes differ from SHA256SUMS", async () => {
+    const assets = { ...fixtureRelease(), "qwen-fast-single.tar.gz": Buffer.from("tampered") };
+    await expect(publish(assets)).rejects.toThrow("qwen-fast-single.tar.gz does not match SHA256SUMS");
+    await expectPreviousCatalogKept();
+  });
+
+  test("rejects a bundle that lacks a listed file or carries an unsigned one", async () => {
+    const { "qwen-fast-single.tar.gz": _removed, ...without } = fixtureRelease();
+    await expect(publish(without)).rejects.toThrow("missing from recipe-library.tar");
+    await expect(publish({ ...fixtureRelease(), "extra.txt": Buffer.from("x") })).rejects.toThrow("not signed by SHA256SUMS");
+    const { "SHA256SUMS.sigstore.json": _bundle, ...unsigned } = fixtureRelease();
+    await expect(publish(unsigned)).rejects.toThrow("lacks SHA256SUMS");
+    await expectPreviousCatalogKept();
+  });
+
+  test.each([
+    ["a path traversal name", () => tar([["../evil", Buffer.from("x")]])],
+    ["a nested name", () => tar([["dir/file", Buffer.from("x")]])],
+    ["a symlink", () => tar([["link", Buffer.alloc(0)]], { type: "2" })],
+    ["a directory", () => tar([["dir", Buffer.alloc(0)]], { type: "5" })],
+    ["a ustar prefix", () => tar([["file", Buffer.from("x")]], { prefix: "dir" })],
+    ["a duplicate member", () => tar([["file", Buffer.from("x")], ["file", Buffer.from("y")]])],
+    ["a PAX header", () => tar([["pax", Buffer.from("x")]], { type: "x" })],
+  ])("refuses a bundle with %s", async (_name, build) => {
+    await expect(publish(fixtureRelease(), { bundle: build() })).rejects.toThrow("flat regular file");
+    await expectPreviousCatalogKept();
+  });
+
+  test("refuses a truncated or corrupt bundle", async () => {
+    const good = tar(Object.entries(fixtureRelease()));
+    await expect(publish(fixtureRelease(), { bundle: good.subarray(0, good.length - 1500) })).rejects.toThrow();
+    const corrupt = Buffer.from(good);
+    corrupt[10] ^= 0xff;
+    await expect(publish(fixtureRelease(), { bundle: corrupt })).rejects.toThrow("corrupt member header");
+    await expectPreviousCatalogKept();
+  });
+
+  test("reads only what it extracts and never writes member names as paths", async () => {
+    const file = path.join(root, "bundle.tar");
+    await writeFile(file, tar([["a.json", Buffer.from("{}")]]));
+    const members = await readBundle(file, new Set());
+    expect(members.get("a.json")).toMatchObject({ size: 2, bytes: null });
+    expect((await readdir(root)).sort()).toEqual(["bundle.tar", "public"]);
   });
 
   test("rejects a package path outside the release assets", async () => {
