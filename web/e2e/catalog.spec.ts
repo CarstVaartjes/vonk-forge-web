@@ -272,6 +272,8 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
 test("facets remain in the URL and exact trust facts survive navigation", async ({ page }) => {
   await page.goto("/recipes?sparks=2&abliterated=false&capability=chat");
   await expect(page.getByLabel("Filter by required Sparks")).toHaveValue("2");
+  await expect(page.getByRole("group", { name: "How many Sparks do you have?" }).getByRole("button", { name: /2 Sparks/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("group", { name: "Engine" }).getByRole("button", { name: /vLLM/ })).toBeVisible();
   await expect(page.getByLabel("Filter by abliterated")).toHaveValue("false");
   await expect(page.getByLabel("Filter by capability")).toContainText("1 selected");
   await expect(page.getByLabel("Filter by model family")).toBeVisible();

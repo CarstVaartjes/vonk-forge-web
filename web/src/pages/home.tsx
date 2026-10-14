@@ -141,8 +141,8 @@ function CatalogFacts() {
   const sparks = sparkRange(counts.spark_counts);
   return (
     <>
-      <li><StateDot tone="source" /> {number.format(counts.recipes)} recipes</li>
-      <li>{number.format(counts.models)} models</li>
+      <li><StateDot tone="source" /> <a href="/recipes">{number.format(counts.recipes)} recipes</a></li>
+      <li><a href="/models">{number.format(counts.models)} models</a></li>
       <li>{number.format(counts.families)} model families</li>
       {sparks ? <li>{sparks}</li> : null}
     </>

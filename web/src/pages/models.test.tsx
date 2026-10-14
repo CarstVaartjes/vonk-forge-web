@@ -17,7 +17,8 @@ function model(number: number, publisher = "publisher"): ModelSummary {
     slug: `model-${number}`,
     title: `Model ${number}`,
     description: "Published model",
-    family: "family",
+    family: number % 2 ? "Qwen" : "GLM",
+    runs: number % 2 ? { spark_counts: [1], engines: ["vllm"], creators: ["eugr"] } : { spark_counts: [2, 4], engines: ["sglang"], creators: [] },
     tags: [],
     revision_id: String(number).padStart(64, "0"),
     recipe_count: number % 2,
@@ -71,6 +72,30 @@ describe("public model browse", () => {
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(window.location.search).toBe("?page=2");
     await waitFor(() => expect(screen.getByText("Model 13")).toBeVisible());
+  });
+
+  test("starts from the visitor's setup: Spark count, family and engine narrow the list", async () => {
+    render(<ModelsPage />);
+    await waitFor(() => expect(screen.getByText("13 of 13 models")).toBeVisible());
+    expect(screen.getByRole("group", { name: "How many Sparks do you have?" })).toBeVisible();
+    const oneSpark = screen.getByRole("button", { name: "1 Spark: 7 models" });
+    expect(oneSpark).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByRole("button", { name: "2 Sparks: 6 models" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "3 Sparks: 0 models" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "4 or more: 6 models" })).toBeVisible();
+    fireEvent.click(oneSpark);
+    expect(window.location.search).toBe("?sparks=1");
+    expect(screen.getByText("7 of 13 models")).toBeVisible();
+    expect(oneSpark).toHaveAttribute("aria-pressed", "true");
+    const families = screen.getByRole("group", { name: "Model family" });
+    expect(within(families).getByRole("button", { name: "Qwen: 7" })).toBeVisible();
+    expect(within(families).getByRole("button", { name: "GLM: 0" })).toBeDisabled();
+    fireEvent.click(within(screen.getByRole("group", { name: "Engine" })).getByRole("button", { name: "vLLM: 7" }));
+    expect(window.location.search).toBe("?engine=vllm&sparks=1");
+    expect(screen.getAllByText("1 Spark").length).toBeGreaterThan(1);
+    expect(screen.getAllByText("vLLM").length).toBeGreaterThan(1);
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(window.location.search).toBe("");
   });
 
   test("offers recovery when the immutable index fails", async () => {

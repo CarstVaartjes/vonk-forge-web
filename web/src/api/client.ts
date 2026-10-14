@@ -38,6 +38,8 @@ export interface RecipeSummary {
     model_version_publisher: string;
     model_version_slug: string;
     model_version_title: string;
+    // The lineage title from the model document (Qwen, GLM, DeepSeek Flash).
+    model_family: string;
     source_owner: string | null;
     source_repository: string | null;
     alignment: "standard" | "abliterated" | "derisked" | "other-modified" | "unspecified";
@@ -77,12 +79,22 @@ export interface ModelVersionSummary {
   recipe_slugs: string[];
 }
 
+// What a model's public recipes cover: the Spark counts they are written for,
+// the engines that run them, and who authored them. Empty when it has no recipe.
+export interface ModelRuns {
+  spark_counts: number[];
+  engines: string[];
+  creators: string[];
+}
+
 export interface ModelSummary {
   publisher: string;
   slug: string;
   title: string;
   description: string;
+  // The lineage title (Qwen, GLM, DeepSeek Flash), falling back to its slug.
   family?: string;
+  runs: ModelRuns;
   tags: string[];
   revision_id: string;
   versions: ModelVersionSummary[];
