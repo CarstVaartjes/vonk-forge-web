@@ -1,4 +1,4 @@
-import type { LibraryRelease, ModelPage, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
+import type { LibraryCatalogCounts, LibraryRelease, ModelPage, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
 
 
 type JsonRecord = Record<string, unknown>;
@@ -448,6 +448,24 @@ interface ReleaseManifest {
   contract_version: string;
   updated_at: string;
   source_commit: string;
+  catalog?: unknown;
+}
+
+function count(value: unknown): number | null {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
+}
+
+// Counts are optional in the manifest; a malformed block is dropped rather than
+// rendered as zeros.
+function catalogCounts(value: unknown): LibraryCatalogCounts | undefined {
+  if (value === undefined) return undefined;
+  const counts = record(value);
+  const recipes = count(counts.recipes);
+  const models = count(counts.models);
+  const families = count(counts.families);
+  const sparkCounts = Array.isArray(counts.spark_counts) ? counts.spark_counts.map(count) : null;
+  if (recipes === null || models === null || families === null || !sparkCounts || sparkCounts.some((item) => item === null || item === 0)) return undefined;
+  return { recipes, models, families, spark_counts: sparkCounts as number[] };
 }
 
 function contractMajor(version: unknown): number | null {
@@ -472,7 +490,8 @@ function libraryRelease(value: unknown): LibraryRelease {
   if (typeof release.tag !== "string" || !/^v\d+\.\d+\.\d+$/.test(release.tag) || typeof release.updated_at !== "string") {
     throw new Error("Recipe library returned an unsupported release manifest");
   }
-  return { version: release.tag, updated_at: release.updated_at };
+  const counts = catalogCounts(release.catalog);
+  return counts ? { version: release.tag, updated_at: release.updated_at, catalog: counts } : { version: release.tag, updated_at: release.updated_at };
 }
 
 async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {

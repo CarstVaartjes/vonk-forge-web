@@ -2,18 +2,18 @@
 name: "Vonk Forge"
 description: "An operator-owned local workbench for one Spark or a fleet."
 colors:
-  forge-ivory: "#f3efe6"
+  forge-ivory: "#f2efe8"
   ash-muted: "#aaa396"
   ash-faint: "#958e80"
-  workbench-black: "#0c0b09"
-  iron-panel: "#12110e"
-  raised-iron: "#191712"
-  rule-dark: "#302d26"
-  rule-bright: "#49443a"
-  action-green: "#8ad52a"
-  ready-green: "#b8e978"
-  source-ember: "#ff7a1a"
-  source-ember-soft: "#ff9e57"
+  workbench-black: "#0a0b0a"
+  iron-panel: "#111311"
+  raised-iron: "#181a17"
+  rule-dark: "#2c2f2a"
+  rule-bright: "#454940"
+  action-green: "#76b900"
+  ready-green: "#a3d93a"
+  spark-gold: "#d9b56f"
+  spark-gold-soft: "#eacf9a"
   danger-red: "#ff715e"
 typography:
   display:
@@ -100,24 +100,24 @@ components:
 
 **Creative North Star: "The Local Workbench"**
 
-Vonk Forge should feel like one legible workbench for operator-owned infrastructure: a near-black field, high-contrast ivory information, fine rules, and compact system readouts. The atmosphere is technical and controlled without becoming theatrical. Density comes from real relationships and operational facts, while generous section intervals keep the system understandable.
+Vonk Forge should feel like one legible workbench for operator-owned infrastructure, built from the material of the hardware it runs: the DGX Spark's graphite near-black field and champagne-gold chassis, NVIDIA green for action, high-contrast ivory information, fine rules, and compact system readouts. The atmosphere is technical and controlled without becoming theatrical. Density comes from real relationships and operational facts, while generous section intervals keep the system understandable.
 
-The visual grammar makes ownership visible. Green marks actions, applied state, and infrastructure that is ready inside the operator's boundary. Orange is a deliberately narrow exception for public source and forge heat. Depth is restrained so hierarchy comes primarily from type, alignment, tonal surfaces, and precise borders.
+The visual grammar makes ownership visible. NVIDIA green marks actions, applied state, and infrastructure that is ready inside the operator's boundary. Spark gold is a deliberately narrow exception for public source, library facts, and the hardware's own material. Depth is restrained so hierarchy comes primarily from type, alignment, tonal surfaces, and precise borders.
 
 Legacy eyebrows and kickers, thick side-tab borders, generic Unicode icons, and Space Grotesk are not part of this system even if older selectors or screens still contain them. Onest Variable is the self-hosted family and the source of typographic truth.
 
 **Key Characteristics:**
 
-- Near-black workbench surfaces with warm ivory type.
+- DGX Spark graphite near-black surfaces with warm ivory type.
 - Bold, tightly set Onest headings and plain-spoken supporting copy.
-- Green for action, private readiness, and confirmed local state.
-- Orange only for public source and forge heat.
+- NVIDIA green for action, private readiness, and confirmed local state.
+- Spark champagne gold only for public source, library facts, and hardware material.
 - Fine one-pixel rules, mostly square containers, and restrained depth.
 - Real operational structure instead of decorative infrastructure imagery.
 
 ## Colors
 
-The palette is a warm industrial dark system with one functional green voice and one tightly bounded ember exception.
+The palette is taken from the DGX Spark itself: a graphite dark system with NVIDIA green as the one functional action voice and the chassis champagne gold as one tightly bounded public-source exception. Light surfaces were considered and rejected: the controller screenshots are dark interfaces and the gold accent reads as premium on graphite and muddy on white.
 
 ### Primary
 
@@ -126,8 +126,8 @@ The palette is a warm industrial dark system with one functional green voice and
 
 ### Secondary
 
-- **Source Ember** (`source-ember`): Marks public-source provenance and moments of forge heat; it is not a second call-to-action color.
-- **Soft Ember** (`source-ember-soft`): Provides readable source labels and restrained heat highlights against the workbench ground.
+- **Spark Gold** (`spark-gold`): The DGX Spark chassis colour. Marks public-source provenance, library counts, the brand mark, and moments of forge heat; it is not a second call-to-action color.
+- **Soft Spark Gold** (`spark-gold-soft`): Provides readable source labels and restrained gold highlights against the workbench ground.
 
 ### Neutral
 
@@ -143,7 +143,7 @@ The palette is a warm industrial dark system with one functional green voice and
 
 ### Named Rules
 
-**The Ownership Color Rule.** Green means the action or state belongs to the operator's local system. Orange means public source or forge heat. Do not swap these roles or let both compete in one control.
+**The Ownership Color Rule.** Green means the action or state belongs to the operator's local system. Spark gold means public source, library facts, or the hardware itself. Do not swap these roles or let both compete in one control.
 
 **The Ivory Hierarchy Rule.** Keep large type warm ivory; create supporting hierarchy by moving through ash tones rather than lowering opacity unpredictably.
 
@@ -186,7 +186,7 @@ The system is flat by default. Tonal changes and crisp one-pixel boundaries carr
 ### Shadow Vocabulary
 
 - **Evidence Lift** (`0 2.2rem 5rem rgb(0 0 0 / 38%)`): Grounds a large controller or system preview above the workbench.
-- **Action Heat** (`0 0.85rem 2.5rem rgb(84 135 18 / 18%)`): A quiet green lift under the principal local action.
+- **Action Heat** (`0 0.85rem 2.5rem rgb(76 120 0 / 18%)`): A quiet green lift under the principal local action.
 
 ### Named Rules
 
@@ -214,7 +214,7 @@ Components feel firm, precise, and ready for real operation.
 ### Chips
 
 - **Style:** Status is a small green dot plus plain text or a compact outlined label, not a decorative pill.
-- **State:** Ready and applied use green; source provenance uses ember; status text must always accompany color.
+- **State:** Ready and applied use green; source provenance uses Spark gold; status text must always accompany color.
 
 ### Cards / Containers
 
@@ -236,13 +236,21 @@ A command strip is a square, one-pixel green-bounded surface. Its environment la
 
 The controller preview is the signature evidence component: a tight rectangular window, explicit local-authority label, one connected internal grid, green applied/connected states, and restrained Evidence Lift. It must look like a plausible operator surface, not dashboard decoration.
 
+### Promise Grid
+
+The home page opens its argument with four promises in one connected grid: know what fits your setup, stay current without the chase, run the mix you need, click it or script it. Each cell is a numbered mono index, a title, plain-spoken body copy, and a footer strip carrying the exact `vonkctl` command that does the same job, so the agent-friendly path is visible from the first screen. Cells share one-pixel rules; nothing floats.
+
+### Agent Session
+
+The terminal counterpart of the controller preview: the same tight rectangular frame and Evidence Lift, a mono label, muted comment lines, and Ready Green commands behind a Spark gold prompt. It shows real `vonkctl` invocations only, never invented output.
+
 ## Do's and Don'ts
 
 ### Do:
 
 - **Do** use Onest Variable for all display and body hierarchy.
 - **Do** make local actions and ready private state green, with a text label alongside any status dot.
-- **Do** use orange only to identify public source or controlled forge heat.
+- **Do** use Spark gold only to identify public source, library facts, or controlled forge heat.
 - **Do** join related cards with shared one-pixel rules and consistent alignment.
 - **Do** preserve 320px usability, visible focus, and reduced-motion behavior.
 - **Do** show real operational structures, commands, ownership labels, and states.
@@ -253,5 +261,5 @@ The controller preview is the signature evidence component: a tight rectangular 
 - **Don't** place legacy eyebrows or kickers above primary definitions.
 - **Don't** reintroduce Space Grotesk; Onest Variable is canonical.
 - **Don't** use thick side-tab borders, generic Unicode icons, or ornamental pills.
-- **Don't** turn orange into a general action color or let it compete with green.
+- **Don't** turn gold into a general action color or let it compete with green.
 - **Don't** apply large radii and shadows to every surface; the workbench is flat and precise.

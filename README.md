@@ -21,6 +21,10 @@ in `vonk-forge`; they contain no live fleet data.
 
 ## What visitors should understand
 
+0. **What it does for them:** shows which models fit their Sparks, keeps up
+   with new models and recipe revisions, runs the mix they need, and works in
+   a few clicks or through the agent-friendly `vonkctl` CLI. The home page
+   states these four promises first, each with the `vonkctl` command behind it.
 1. **What it is:** one local control plane for one or many NVIDIA DGX Sparks.
 2. **Where it runs:** any local computer with Docker Compose, including a
    laptop, NAS, or server.
@@ -82,7 +86,10 @@ not a unique flat regular file, verifies `SHA256SUMS`
 against its Sigstore attestation from the library's `publish.yml` on `main`,
 checks every bundle file and the index against `SHA256SUMS`, and writes
 `web/public/catalog/` (`catalog-index.json`, `release.json`, `SHA256SUMS` and its
-bundle). The browser reads only those same-origin files. The site offers no package
+bundle). `release.json` also carries `catalog` counts (recipes, distinct
+models and model families, and the Spark counts recipes are written for) that
+the build derives from the verified index; the home page shows them beside the
+product definition and shows nothing when they are absent. The browser reads only those same-origin files. The site offers no package
 download (packages are not copied to Pages: some exceed its 25 MiB per-file limit); recipe
 pages link "View source" (and "View adapter source") to the recipe files in the library
 repository, pinned to the verified release's source commit.

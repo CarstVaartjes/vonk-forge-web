@@ -108,9 +108,19 @@ export interface ModelSummary {
   recipe_count: number;
 }
 
+export interface LibraryCatalogCounts {
+  recipes: number;
+  models: number;
+  families: number;
+  spark_counts: number[];
+}
+
 export interface LibraryRelease {
   version: string;
   updated_at: string;
+  // Library size facts the Pages build counted from the verified index; absent
+  // when the manifest predates them, in which case the site shows no counts.
+  catalog?: LibraryCatalogCounts;
 }
 
 export interface ModelPage {

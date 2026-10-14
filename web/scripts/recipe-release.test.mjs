@@ -118,6 +118,30 @@ describe("recipe release publication", () => {
       source_commit: commit,
       sha256sums_sha256: sha256(assets.SHA256SUMS),
       catalog_index_sha256: sha256(assets["catalog-index.json"]),
+      catalog: { recipes: 1, models: 0, families: 0, spark_counts: [] },
+    });
+  });
+
+  test("counts the library's recipes, models, families and Spark counts into the manifest", async () => {
+    const model = (publisher, slug, family) => ({
+      content_sha256: "a".repeat(64),
+      document: { kind: "model", identity: { publisher, slug: `${slug}-nvfp4`, model: { publisher, slug }, family: { publisher, slug: family } } },
+    });
+    const packageBytes = Buffer.from("fixture package");
+    const recipe = (nodeCount) => ({
+      package: { path: "packages/qwen-fast-single.tar.gz", sha256: sha256(packageBytes) },
+      document: { kind: "recipe", topology: { node_count: nodeCount } },
+    });
+    const assets = fixtureRelease({ index: {
+      catalog_entities: [model("qwen", "qwen-fast", "qwen"), model("qwen", "qwen-fast", "qwen"), model("qwen", "qwen-vision", "qwen"), model("meta", "llama", "llama")],
+      recipes: [recipe(2), recipe(1), recipe(2), recipe(8)],
+    } });
+    await publish(assets);
+    expect(JSON.parse(await readFile(path.join(outDir, "release.json"), "utf8")).catalog).toEqual({
+      recipes: 4,
+      models: 3,
+      families: 2,
+      spark_counts: [1, 2, 8],
     });
   });
 

@@ -30,14 +30,56 @@ test("defines the product and puts installation first", () => {
   render(<App />);
 
   expect(
-    screen.getByRole("heading", { name: /frontier ai\.\s*your sparks\.\s*one click\./i }),
+    screen.getByRole("heading", { name: /models that fit\s*your sparks\.\s*kept current\.\s*one click\./i }),
   ).toBeVisible();
-  expect(screen.getByText(/Run state-of-the-art models locally on your Sparks with one private Controller/i)).toBeVisible();
+  expect(screen.getByText(/checks every model and recipe against the Sparks you actually have/i)).toBeVisible();
   expect(screen.getAllByRole("link", { name: "Set up your Controller" })[0]).toHaveAttribute("href", "/install");
+  expect(screen.getByRole("link", { name: "See the agent-friendly CLI" })).toHaveAttribute("href", "/control#local-cli");
   expect(screen.queryByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).not.toBeInTheDocument();
   expect(screen.getByText(/choose a model and recipe for your first run/i)).toBeVisible();
   expect(screen.getByText("The real Web Controller")).toBeVisible();
   expect(screen.getByAltText(/Vonk Forge Library showing model and recipe lists/i)).toBeVisible();
+});
+
+
+test("states the four promises with the vonkctl command behind each", () => {
+  render(<App />);
+
+  const promises = screen.getByRole("heading", { name: "What Vonk Forge does for you." }).closest("section");
+  expect(promises).not.toBeNull();
+  const section = within(promises as HTMLElement);
+  const expected: Array<[string, string]> = [
+    ["Know what fits your setup.", "vonkctl recipe library --fits-fleet"],
+    ["Stay current without the chase.", "vonkctl recipe update --all"],
+    ["Run the mix you need.", "vonkctl --profile 2 profile load"],
+    ["Click it, or script it.", 'vonkctl run "Qwen Code" --yes --json'],
+  ];
+  for (const [title, command] of expected) {
+    expect(section.getByRole("heading", { name: title })).toBeVisible();
+    expect(section.getByText(command)).toBeVisible();
+  }
+  expect(section.getByText(/syncs the signed library every 15 minutes/i)).toBeVisible();
+  expect(screen.getByText("vonkctl --profile 2 profile load --yes --json")).toBeVisible();
+});
+
+
+test("shows library counts only when the verified manifest carries them", async () => {
+  const facts = () => within(screen.getByRole("list", { name: "Product facts" }));
+  const view = render(<App />);
+  expect(await screen.findByRole("link", { name: "v2.0.0" })).toBeVisible();
+  expect(facts().queryByText(/recipes$/)).not.toBeInTheDocument();
+  expect(facts().getByText("Open source · MIT")).toBeVisible();
+  view.unmount();
+
+  vi.mocked(fetch).mockImplementation(async (url: string | URL | Request) => {
+    if (String(url).endsWith("/catalog/release.json")) return { ok: true, json: async () => ({ repository: "CarstVaartjes/vonk-forge-recipes", tag: "v2.0.0", contract_version: "2.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: "f".repeat(40), catalog: { recipes: 1234, models: 226, families: 46, spark_counts: [1, 2, 3, 4, 8] } }) } as Response;
+    return { ok: false, status: 404 } as Response;
+  });
+  render(<App />);
+  expect(await facts().findByText("1,234 recipes")).toBeVisible();
+  expect(facts().getByText("226 models")).toBeVisible();
+  expect(facts().getByText("46 model families")).toBeVisible();
+  expect(facts().getByText("1 to 8 Sparks per recipe")).toBeVisible();
 });
 
 
