@@ -257,6 +257,7 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
       source_commit: signedCommit,
       sha256sums_sha256: sha256(checksums),
       catalog_index_sha256: digests.get("catalog-index.json"),
+      catalog: catalogCounts(index),
     }, null, 2)}\n`);
     await chmod(staging, 0o755);
     await rm(outDir, { recursive: true, force: true });
@@ -265,6 +266,35 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
     await rm(staging, { recursive: true, force: true });
     throw error;
   }
+}
+
+// Library size facts the site shows beside the verified release: current
+// recipes, distinct logical models and model families, and the Spark counts
+// recipes are written for. Counted from the verified index so the browser never
+// has to load the whole index for the home page.
+function catalogCounts(index) {
+  const entities = Array.isArray(index.catalog_entities) ? index.catalog_entities : [];
+  const models = new Set();
+  const families = new Set();
+  for (const entity of entities) {
+    const document = entity?.document;
+    if (document?.kind !== "model") continue;
+    const model = document.identity?.model;
+    const family = document.identity?.family;
+    if (typeof model?.publisher === "string" && typeof model?.slug === "string") models.add(`${model.publisher}/${model.slug}`);
+    if (typeof family?.slug === "string" && family.slug) families.add(family.slug);
+  }
+  const sparkCounts = new Set();
+  for (const recipe of index.recipes) {
+    const count = recipe?.document?.topology?.node_count;
+    if (Number.isInteger(count) && count > 0) sparkCounts.add(count);
+  }
+  return {
+    recipes: index.recipes.length,
+    models: models.size,
+    families: families.size,
+    spark_counts: [...sparkCounts].sort((left, right) => left - right),
+  };
 }
 
 async function main() {

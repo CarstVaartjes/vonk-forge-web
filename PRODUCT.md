@@ -12,7 +12,7 @@ Web. This repository is the public Vonk Forge website, recipe catalog, publishin
 
 ## Product Purpose
 
-Make Vonk Forge immediately understandable and give a new operator a safe, credible path from evaluation to their first local installation. The site should explain what the system is, show what operating it feels like, and expose the exact installer and trust boundaries without implying a hosted control plane.
+Make Vonk Forge immediately understandable and give a new operator a safe, credible path from evaluation to their first local installation. The first screen must make four things instantly clear: Vonk Forge tells you which models fit the Sparks you have, keeps up with the continuous stream of model and recipe updates for you, makes it easy to run the mix of models you need, and works in a few clicks or through an agent-friendly `vonkctl` CLI. The site should then show what operating it feels like and expose the exact installer and trust boundaries without implying a hosted control plane.
 
 ## Positioning
 
@@ -33,7 +33,7 @@ A macOS or Linux workstation retrieves the signed installer. That same laptop—
 
 ## Brand Commitments
 
-- Keep the established dark forge visual world: near-black surfaces, warm ivory type, disciplined NVIDIA-adjacent green, and restrained orange heat accents.
+- Keep the established dark forge visual world, tuned to the DGX Spark hardware: graphite near-black surfaces, warm ivory type, NVIDIA green for actions and local readiness, and the Spark chassis champagne gold reserved for public source and material accents.
 - Sound precise, capable, and plain-spoken. Prefer concrete system behavior over infrastructure theater.
 - “Open source,” “local,” and “operator owned” are product facts, not decoration.
 

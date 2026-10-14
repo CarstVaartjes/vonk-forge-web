@@ -21,6 +21,10 @@ in `vonk-forge`; they contain no live fleet data.
 
 ## What visitors should understand
 
+0. **What it does for them:** shows which models fit their Sparks, keeps up
+   with new models and recipe revisions, runs the mix they need, and works in
+   a few clicks or through the agent-friendly `vonkctl` CLI. The home page
+   states these four promises first, each with the `vonkctl` command behind it.
 1. **What it is:** one local control plane for one or many NVIDIA DGX Sparks.
 2. **Where it runs:** any local computer with Docker Compose, including a
    laptop, NAS, or server.
@@ -48,10 +52,10 @@ origins and in node-local caches.
 
 | Route | Job |
 | --- | --- |
-| `/` | Define the product, show the real interface, and lead to installation |
-| `/install` | Explain the signed controller and Spark installation path |
+| `/` | State the four promises (fit, currency, the mix you need, clicks or CLI), show the real interface, and lead to installation |
+| `/install` | Explain the signed controller and Spark installation path, in lab or secure remote mode |
 | `/architecture` | Show public, controller, network, identity, and runtime boundaries |
-| `/control` | Tour the private Web Controller and equivalent `vonkctl` path |
+| `/control` | Tour the private Web Controller and the agent-friendly `vonkctl` path |
 | `/models` | Browse public models and the recipes that run them |
 | `/recipes` | Filter public immutable recipes by runtime, topology, and publisher |
 | `/publish` | Point recipe authors to the reviewed GitHub workflow |
@@ -82,7 +86,10 @@ not a unique flat regular file, verifies `SHA256SUMS`
 against its Sigstore attestation from the library's `publish.yml` on `main`,
 checks every bundle file and the index against `SHA256SUMS`, and writes
 `web/public/catalog/` (`catalog-index.json`, `release.json`, `SHA256SUMS` and its
-bundle). The browser reads only those same-origin files. The site offers no package
+bundle). `release.json` also carries `catalog` counts (recipes, distinct
+models and model families, and the Spark counts recipes are written for) that
+the build derives from the verified index; the home page shows them beside the
+product definition and shows nothing when they are absent. The browser reads only those same-origin files. The site offers no package
 download (packages are not copied to Pages: some exceed its 25 MiB per-file limit); recipe
 pages link "View source" (and "View adapter source") to the recipe files in the library
 repository, pinned to the verified release's source commit.

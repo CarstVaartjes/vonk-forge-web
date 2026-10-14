@@ -77,7 +77,7 @@ test.beforeEach(async ({ page }) => {
   await page.route((url) => !["127.0.0.1", "localhost"].includes(url.hostname), (route) => route.abort());
   await page.route("**/catalog/catalog-index.json", (route) => route.fulfill({ json: catalogIndex }));
   await page.route("**/catalog/release.json", (route) =>
-    route.fulfill({ json: { repository: "CarstVaartjes/vonk-forge-recipes", tag: releaseTag, contract_version: "2.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: sourceCommit } }),
+    route.fulfill({ json: { repository: "CarstVaartjes/vonk-forge-recipes", tag: releaseTag, contract_version: "2.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: sourceCommit, catalog: { recipes: 1, models: 1, families: 1, spark_counts: [2] } } }),
   );
 });
 
@@ -85,8 +85,17 @@ test.beforeEach(async ({ page }) => {
 test("platform story stays navigable and bounded", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: /Frontier AI\.\s*Your Sparks\.\s*One click\./i })).toBeVisible();
-  await expect(page.getByText(/Run state-of-the-art models locally on your Sparks with one private Controller/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Models that fit\s*your Sparks\.\s*Kept current\.\s*One click\./i })).toBeVisible();
+  await expect(page.getByText(/checks every model and recipe against the Sparks you actually have/i)).toBeVisible();
+  const facts = page.getByRole("list", { name: "Product facts" });
+  await expect(facts.getByText("1 recipes")).toBeVisible();
+  await expect(facts.getByText("1 models")).toBeVisible();
+  await expect(facts.getByText("2 Sparks per recipe")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Know what fits your setup." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Stay current without the chase." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Run the mix you need." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Click it, or script it." })).toBeVisible();
+  await expect(page.getByText("vonkctl recipe library --fits-fleet --json")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Catalog + verified releases", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Vonk Forge controller", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "DGX Spark fleet", exact: true })).toBeVisible();
@@ -148,7 +157,7 @@ test("minimum supported viewport does not overflow", async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { name: /Frontier AI\.\s*Your Sparks\.\s*One click\./i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /Models that fit\s*your Sparks\.\s*Kept current\.\s*One click\./i })).toBeVisible();
     const horizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );
@@ -202,6 +211,7 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
   await expect(page.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Prepare the controller" })).toBeVisible();
   await expect(page.getByText(/this laptop for a lab/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Lab on your LAN, or secure remote." })).toBeVisible();
   const preflightHeading = page.getByRole("heading", { name: "Complete private HTTPS setup first." });
   const controllerCommand = page.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh");
   await expect(preflightHeading).toBeVisible();
@@ -238,10 +248,11 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
   );
 
   await page.goto("/control");
-  await expect(page.getByRole("heading", { name: "Choose browser or terminal." })).toBeVisible();
-  await expect(page.getByText(/uv tool install 'git\+https:\/\/github\.com\/CarstVaartjes\/vonk-forge\.git@main'/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Click it, or script it." })).toBeVisible();
+  await expect(page.getByText(/curl -fsSL https:\/\/install\.vonkforge\.ai\/vonkctl \| sh/)).toBeVisible();
   await expect(page.getByText(/browser password is not a CLI credential/i)).toBeVisible();
-  await expect(page.getByText(/vonkctl models list/)).toBeVisible();
+  await expect(page.getByText(/vonkctl recipe library --fits-fleet --json/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Written for agents" })).toBeVisible();
   await expect(page.getByText(/recipe repository syncs automatically/i)).toBeVisible();
   await expect(page.getByText(/vonkctl library public preview/i)).toHaveCount(0);
 

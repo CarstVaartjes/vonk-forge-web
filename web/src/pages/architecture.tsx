@@ -14,9 +14,10 @@ export function ArchitecturePage() {
         <h1 id="architecture-title"><span>One control plane.</span><span>One to many Sparks.</span></h1>
         <p>
           Find a model by what it can do, then choose a recipe for its engine,
-          settings, and number of Sparks. Your local Controller prepares verified
-          model files and runtime images on a laptop, NAS, or local server, then
-          distributes the selected assets and placement needed to run the workload.
+          settings, and number of Sparks. Your local Controller tells you which
+          recipes fit the Sparks you have, prepares verified model files and
+          runtime images on a laptop, NAS, or local server, then distributes the
+          selected assets and placement needed to run the workload.
         </p>
       </section>
 
@@ -45,8 +46,8 @@ export function ArchitecturePage() {
 
           <article className="architecture-zone zone-control">
             <div className="zone-heading"><span>Operator owned</span><h3>Local controller</h3></div>
-            <p>Prepares and caches verified model files and runtime images on your NAS, then keeps progress, updates, recovery, and profiles in one place.</p>
-            <ul><li>Policy + durable state</li><li>Progress + recovery</li><li>Placement + route authority</li></ul>
+            <p>Checks every recipe against the live capacity of your Sparks and syncs the signed recipe library every 15 minutes. Prepares and caches verified model files and runtime images on your NAS, then keeps progress, updates, recovery, and profiles in one place.</p>
+            <ul><li>Fit checks + library sync</li><li>Policy + durable state</li><li>Placement + route authority</li></ul>
           </article>
 
           <div className="architecture-flow flow-management" aria-hidden="true"><span>outbound agent mTLS</span></div>
