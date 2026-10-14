@@ -52,10 +52,10 @@ origins and in node-local caches.
 
 | Route | Job |
 | --- | --- |
-| `/` | Define the product, show the real interface, and lead to installation |
-| `/install` | Explain the signed controller and Spark installation path |
+| `/` | State the four promises (fit, currency, the mix you need, clicks or CLI), show the real interface, and lead to installation |
+| `/install` | Explain the signed controller and Spark installation path, in lab or secure remote mode |
 | `/architecture` | Show public, controller, network, identity, and runtime boundaries |
-| `/control` | Tour the private Web Controller and equivalent `vonkctl` path |
+| `/control` | Tour the private Web Controller and the agent-friendly `vonkctl` path |
 | `/models` | Browse public models and the recipes that run them |
 | `/recipes` | Filter public immutable recipes by runtime, topology, and publisher |
 | `/publish` | Point recipe authors to the reviewed GitHub workflow |

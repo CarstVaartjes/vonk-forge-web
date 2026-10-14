@@ -191,7 +191,7 @@ export function RecipesPage({ fixedPublisher }: { fixedPublisher?: string } = {}
     <main className="catalog-page">
       <header className="page-intro catalog-intro">
         <h1>{fixedPublisher ? `${fixedPublisher} recipes` : "Find the right recipe."}</h1>
-        <p>Compare immutable catalog facts, then open a recipe for its install contract. Local installation state stays inside your Controller.</p>
+        <p>Compare immutable catalog facts, then open a recipe for its install contract. Your Controller shows this same library filtered to what fits your Sparks; local installation state stays there.</p>
       </header>
 
       {error ? <div className="status-panel error catalog-error" role="alert"><h2>Recipes are temporarily out of reach.</h2><p>{error} Retry the public index, or inspect the version-controlled library directly.</p><div className="hero-actions"><button className="button primary" type="button" onClick={() => setRetry((value) => value + 1)}>Try again</button><a className="button" href="https://github.com/CarstVaartjes/vonk-forge-recipes">Open recipe library</a></div></div> : null}

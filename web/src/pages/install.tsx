@@ -40,14 +40,33 @@ export function InstallPage() {
         </div>
       </section>
 
+      <section className="install-modes" aria-labelledby="install-modes-title">
+        <div className="section-heading compact"><p className="eyebrow">Two install modes</p><h2 id="install-modes-title">Lab on your LAN, or secure remote.</h2></div>
+        <div className="install-mode-grid">
+          <article>
+            <span className="path-number">lab</span>
+            <h3>Lab mode</h3>
+            <p>LAN only, no Tailscale. Answer <code>lab</code> at the install mode prompt, give the controller host&apos;s reserved LAN address, and the installer generates the local CA, passwords, and keys. Skip the Tailscale preflight below and open <code>https://vonk-forge.local:8443</code>.</p>
+            <a className="text-link" href="https://github.com/CarstVaartjes/vonk-forge/blob/main/docs/QUICKSTART.md">Lab quickstart <span aria-hidden="true">↗</span></a>
+          </article>
+          <article>
+            <span className="path-number">default</span>
+            <h3>Secure remote</h3>
+            <p>Private HTTPS over your Tailscale tailnet, reachable from any authorized device. Complete the four preflight checks below before running the installer.</p>
+            <a className="text-link" href="#tailscale-preflight">Tailscale preflight <span aria-hidden="true">↓</span></a>
+          </article>
+        </div>
+      </section>
+
       <section id="tailscale-preflight" className="tailscale-preflight" aria-labelledby="tailscale-preflight-title">
         <header>
           <div>
             <h2 id="tailscale-preflight-title">Complete private HTTPS setup first.</h2>
             <p>
-              Do not run the controller installer until these four Tailscale
-              checks are complete. The installer repeats the checklist before it
-              asks for OAuth credentials, but it cannot inspect your admin console.
+              For Secure remote, do not run the controller installer until these
+              four Tailscale checks are complete. The installer repeats the
+              checklist before it asks for OAuth credentials, but it cannot inspect
+              your admin console. Lab mode skips this section.
             </p>
           </div>
           <a className="button secondary" href={`${tailscaleRunbook}#fresh-install-preflight`}>
@@ -162,7 +181,7 @@ curl --fail --show-error --silent \\
             <span className="path-number">02</span>
             <p className="eyebrow">Local and scriptable</p>
             <h3><code>vonkctl</code> CLI</h3>
-            <p>Install on Python 3.14+, connect with an HTTPS origin and private administrator token file, then use the same lists, filters, previews, and operations.</p>
+            <p>One signed installer, a token file downloaded from the Web Controller, then the same lists, fit checks, reviews, and operations as JSON for scripts and AI agents.</p>
             <a className="button secondary" href="/control#local-cli">CLI install + usage <span aria-hidden="true">→</span></a>
           </article>
         </div>
@@ -176,8 +195,8 @@ curl --fail --show-error --silent \\
           or create one from the CLI. Then run the generated Spark command on the
           node you are enrolling.
         </p>
-        <CommandBlock label="CLI alternative for creating the grant">{`vonkctl fleet enroll
-vonkctl fleet enroll --apply`}</CommandBlock>
+        <CommandBlock label="CLI alternative for creating the grant">{`vonkctl fleet enroll Atlas --output atlas-grant.json
+vonkctl fleet enrollment status GRANT_UUID`}</CommandBlock>
         <CommandBlock label="Spark terminal">curl -fsSL https://install.vonkforge.ai/spark | VONK_CONTROLLER_ADDRESS=192.168.1.231 sh</CommandBlock>
         <ol className="install-steps fleet-steps">
           <li><span>01</span><div><h3>Use the controller&apos;s stable LAN address</h3><p>Replace <code>192.168.1.231</code> with the address reserved for your laptop, NAS, or other controller host. The controller hostnames remain in place for TLS while the installer creates the local mapping.</p></div></li>
@@ -189,7 +208,7 @@ vonkctl fleet enroll --apply`}</CommandBlock>
           <article><div><span>1</span><h3>One Spark</h3></div><p>Use a single-node recipe profile and enter only the fabric values that actually exist.</p></article>
           <article><div><span>N</span><h3>Many Sparks</h3></div><p>Repeat the signed installer per node; multi-node recipes select compatible ranks and declared fabric.</p></article>
         </div>
-        <p className="fleet-note">Running the Spark installer again on an installed node performs an in-place agent upgrade. A certificate replacement uses Fleet re-enrollment in the browser or <code>vonkctl fleet re-enroll [SPARK_ID] --apply</code>.</p>
+        <p className="fleet-note">Running the Spark installer again on an installed node performs an in-place agent upgrade. A certificate replacement uses Fleet re-enrollment in the browser or <code>vonkctl fleet re-enroll Atlas --output atlas-replacement.json --yes</code>.</p>
       </section>
 
       <section className="secret-boundary" aria-labelledby="secrets-title">

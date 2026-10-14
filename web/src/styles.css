@@ -3077,3 +3077,112 @@ a {
     gap: 0.3rem;
   }
 }
+
+/* Install modes: lab on the LAN or secure remote, side by side before the Tailscale preflight. */
+.install-modes {
+  padding: clamp(2.5rem, 5vw, 4rem) 0 0;
+}
+
+.install-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 1.5rem;
+  border: 1px solid var(--line);
+  background: var(--line);
+}
+
+.install-mode-grid article {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: var(--panel);
+}
+
+.install-mode-grid h3 {
+  margin: 0.5rem 0 0;
+  font-size: 1.35rem;
+}
+
+.install-mode-grid p {
+  flex: 1 1 auto;
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.65;
+}
+
+.install-mode-grid code {
+  color: var(--green-soft);
+  overflow-wrap: anywhere;
+}
+
+/* The CLI's contract for scripts and agents, stated once beside the commands. */
+.agent-contract {
+  margin-top: 2.5rem;
+  padding: 1.5rem;
+  border: 1px solid #4a6b14;
+  background: #0c0e0b;
+}
+
+.agent-contract h3 {
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+}
+
+.agent-contract ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agent-contract li {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.agent-contract strong {
+  color: var(--ink);
+  font-size: 0.86rem;
+}
+
+.agent-contract strong code {
+  color: var(--green-soft);
+}
+
+.agent-contract span {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.6;
+}
+
+.agent-contract span code {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .install-mode-grid,
+  .agent-contract ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Inline code in CLI prose (URLs, env names) wraps instead of widening the column at 320 px. */
+.cli-section p code,
+.credential-warning code,
+.agent-contract code {
+  overflow-wrap: anywhere;
+}
+
+.install-mode-grid .path-number {
+  color: var(--gold-soft);
+  font: 700 0.68rem/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}

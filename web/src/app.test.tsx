@@ -228,16 +228,36 @@ test("documents two equivalent control paths and complete CLI setup", () => {
   window.history.replaceState({}, "", "/control");
   render(<App />);
 
-  expect(screen.getByRole("heading", { name: "Choose browser or terminal." })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Click it, or script it." })).toBeVisible();
   expect(screen.getAllByRole("heading", { name: "Web Controller" })).toHaveLength(2);
   expect(screen.getAllByRole("heading", { name: "Local CLI" })).toHaveLength(2);
-  expect(screen.getByText(/uv tool install 'git\+https:\/\/github\.com\/CarstVaartjes\/vonk-forge\.git@main'/)).toBeVisible();
+  expect(screen.getByText(/curl -fsSL https:\/\/install\.vonkforge\.ai\/vonkctl \| sh/)).toBeVisible();
+  expect(screen.queryByText(/uv tool install 'git\+https/)).not.toBeInTheDocument();
   expect(screen.getByText(/VONK_CONTROL_TOKEN_FILE/)).toBeVisible();
+  expect(screen.getByText(/vonkctl --check-connection --json/)).toBeVisible();
   expect(screen.getByText(/browser password is not a CLI credential/i)).toBeVisible();
-  expect(screen.getByText(/vonkctl models discover/)).toBeVisible();
+  expect(screen.getByText(/vonkctl recipe library --fits-fleet --json/)).toBeVisible();
+  expect(screen.getByText(/vonkctl --profile 2 profile load --review --json/)).toBeVisible();
   expect(screen.getByText(/recipe repository syncs automatically/i)).toBeVisible();
-  expect(screen.queryByText(/vonkctl library public preview/)).not.toBeInTheDocument();
-  expect(screen.getByText(/uv tool upgrade vonk-cluster-profiles/)).toBeVisible();
+  expect(screen.queryByText(/vonkctl models (list|discover)/)).not.toBeInTheDocument();
+  expect(screen.getByText(/vonkctl update --apply/)).toBeVisible();
+  expect(screen.getByText(/uv tool uninstall vonk-cluster-profiles/)).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Written for agents" })).toBeVisible();
+  expect(screen.getByText(/closed pipe/)).toBeVisible();
+});
+
+
+test("offers lab and secure remote install modes with current enrollment commands", () => {
+  window.history.replaceState({}, "", "/install");
+  render(<App />);
+
+  expect(screen.getByRole("heading", { name: "Lab on your LAN, or secure remote." })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Lab mode" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Secure remote" })).toBeVisible();
+  expect(screen.getByText(/Lab mode skips this section/)).toBeVisible();
+  expect(screen.getByRole("link", { name: /Lab quickstart/ })).toHaveAttribute("href", "https://github.com/CarstVaartjes/vonk-forge/blob/main/docs/QUICKSTART.md");
+  expect(screen.getByText(/vonkctl fleet enroll Atlas --output atlas-grant\.json/)).toBeVisible();
+  expect(screen.queryByText(/fleet enroll --apply/)).not.toBeInTheDocument();
 });
 
 

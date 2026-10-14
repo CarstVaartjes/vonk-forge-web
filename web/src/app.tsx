@@ -95,7 +95,7 @@ export function App() {
         </div>
         <footer className="site-footer">
           <div>
-            <p><strong>Vonk Forge</strong> · Open-source local control for NVIDIA DGX Spark.</p>
+            <p><strong>Vonk Forge</strong> · Models that fit your Sparks, kept current. Open-source local control for NVIDIA DGX Spark.</p>
             <LibraryVersion />
           </div>
           <nav aria-label="Footer navigation">

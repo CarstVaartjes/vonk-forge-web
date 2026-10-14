@@ -211,6 +211,7 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
   await expect(page.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Prepare the controller" })).toBeVisible();
   await expect(page.getByText(/this laptop for a lab/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Lab on your LAN, or secure remote." })).toBeVisible();
   const preflightHeading = page.getByRole("heading", { name: "Complete private HTTPS setup first." });
   const controllerCommand = page.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh");
   await expect(preflightHeading).toBeVisible();
@@ -247,10 +248,11 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
   );
 
   await page.goto("/control");
-  await expect(page.getByRole("heading", { name: "Choose browser or terminal." })).toBeVisible();
-  await expect(page.getByText(/uv tool install 'git\+https:\/\/github\.com\/CarstVaartjes\/vonk-forge\.git@main'/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Click it, or script it." })).toBeVisible();
+  await expect(page.getByText(/curl -fsSL https:\/\/install\.vonkforge\.ai\/vonkctl \| sh/)).toBeVisible();
   await expect(page.getByText(/browser password is not a CLI credential/i)).toBeVisible();
-  await expect(page.getByText(/vonkctl models list/)).toBeVisible();
+  await expect(page.getByText(/vonkctl recipe library --fits-fleet --json/)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Written for agents" })).toBeVisible();
   await expect(page.getByText(/recipe repository syncs automatically/i)).toBeVisible();
   await expect(page.getByText(/vonkctl library public preview/i)).toHaveCount(0);
 
