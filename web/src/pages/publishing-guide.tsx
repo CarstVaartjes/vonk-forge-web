@@ -42,7 +42,7 @@ export function PublishingGuidePage() {
             inputs, review, and publication stay in the recipe repository.
           </p>
         </div>
-        <a className="text-link" href={`${recipeLibrary}/pulls`}>Review recipe changes →</a>
+        <a className="text-link" href={`${recipeLibrary}/pulls`}>Review recipe changes on GitHub</a>
       </section>
     </main>
   );

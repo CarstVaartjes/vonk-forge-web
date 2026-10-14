@@ -17,7 +17,6 @@ export function ControlPage() {
   return (
     <main className="guide-page control-page">
       <section className="guide-hero" aria-labelledby="control-title">
-        <p className="eyebrow">One Controller · two ways to drive</p>
         <h1 id="control-title">Click it, or script it.</h1>
         <p>
           The Web Controller and the local <code>vonkctl</code> CLI operate the same
@@ -35,7 +34,6 @@ export function ControlPage() {
       <section className="control-overview" aria-labelledby="choose-control-title">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Same authority, different interface</p>
             <h2 id="choose-control-title">Use the path that fits the job.</h2>
           </div>
           <p>
@@ -47,34 +45,34 @@ export function ControlPage() {
         <div className="control-path-grid">
           <article>
             <span className="path-number">01</span>
-            <p className="eyebrow">Recommended for first use</p>
             <h3>Web Controller</h3>
+            <span className="guide-meta">Recommended for first use</span>
             <p>A guided interface with visual progress, search, filters, and clear next steps.</p>
             <ul>
               <li>Sign in with the controller&apos;s admin login</li>
               <li>Best for setup, exploration, and visual monitoring</li>
               <li>Runs only on your private controller URL</li>
             </ul>
-            <a className="text-link" href="#web-controller">Use the Web Controller <span aria-hidden="true">↓</span></a>
+            <a className="text-link" href="#web-controller">Use the Web Controller</a>
           </article>
           <article>
             <span className="path-number">02</span>
-            <p className="eyebrow">For operators, scripts, and AI agents</p>
             <h3>Local CLI</h3>
+            <span className="guide-meta">For operators, scripts, and AI agents</span>
             <p>The same lists and choices in a terminal, with JSON output, read-only reviews, and meaningful exit codes.</p>
             <ul>
               <li>Installed by the signed installer; <code>uv</code> manages Python 3.14</li>
               <li>Best for repeatable work, automation, and agent tool use</li>
               <li>Authenticates with a downloaded token file, never a pasted token</li>
             </ul>
-            <a className="text-link" href="#local-cli">Install the CLI <span aria-hidden="true">↓</span></a>
+            <a className="text-link" href="#local-cli">Install the CLI</a>
           </article>
         </div>
       </section>
 
       <section id="web-controller" className="control-guide" aria-labelledby="web-controller-title">
         <header>
-          <div><p className="eyebrow">Control path 01</p><h2 id="web-controller-title">Web Controller</h2></div>
+          <div><h2 id="web-controller-title">Web Controller</h2><span className="guide-meta">Control path 01</span></div>
           <span>Browser</span>
         </header>
         <p className="lane-intro">
@@ -95,7 +93,7 @@ export function ControlPage() {
 
       <section id="local-cli" className="control-guide cli-guide" aria-labelledby="local-cli-title">
         <header>
-          <div><p className="eyebrow">Control path 02</p><h2 id="local-cli-title">Local CLI</h2></div>
+          <div><h2 id="local-cli-title">Local CLI</h2><span className="guide-meta">Control path 02</span></div>
           <code>vonkctl</code>
         </header>
         <p className="lane-intro">
@@ -194,14 +192,14 @@ uv tool uninstall vonk-cluster-profiles`}</CommandBlock>
         </div>
 
         <div className="runbook-links">
-          <a href={`${repository}/blob/main/docs/runbooks/vonkctl.md`}>Complete CLI command reference <span aria-hidden="true">↗</span></a>
-          <a href={`${repository}/tree/main`}>Source and release history <span aria-hidden="true">↗</span></a>
+          <a href={`${repository}/blob/main/docs/runbooks/vonkctl.md`}>Complete CLI command reference on GitHub</a>
+          <a href={`${repository}/tree/main`}>Source and release history on GitHub</a>
         </div>
       </section>
 
       <section className="guide-cta" aria-labelledby="control-next-title">
-        <div><p className="eyebrow">Start at the beginning</p><h2 id="control-next-title">Install the Forge, then choose either path.</h2></div>
-        <a className="button primary" href="/install">Open the install guide <span aria-hidden="true">→</span></a>
+        <div><h2 id="control-next-title">Install the Forge, then choose either path.</h2></div>
+        <a className="button primary" href="/install">Open the install guide</a>
       </section>
     </main>
   );
