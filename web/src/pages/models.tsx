@@ -34,6 +34,24 @@ function versionLabel(value: string): string {
   return /^[0-9a-f]{32,64}$/i.test(value) ? `${value.slice(0, 8)}…` : value;
 }
 
+// One version reads as itself; several read as a count, and the detail page
+// lists each. A version that repeats the model's own name ("SkinTokens /
+// TokenRig" under SkinTokens) reads as what it adds, and one that adds
+// nothing reads as the count.
+function versionsLabel(model: ModelSummary): string {
+  if (model.versions.length !== 1) return `${model.versions.length} versions`;
+  const version = model.versions[0]!.version;
+  const own = version.toLowerCase().startsWith(model.title.toLowerCase())
+    ? version.slice(model.title.length).replace(/^[\s/|·:,-]+/u, "").trim()
+    : version;
+  return own ? versionLabel(own) : "1 version";
+}
+
+// One aligned fact cell; long values keep one line and show in full on hover.
+function RowFact({ label, value }: { label: string; value: string }) {
+  return <span><small>{label}</small><span title={value}>{value}</span></span>;
+}
+
 function compactRevision(value: string): string {
   return /^[0-9a-f]{40,64}$/i.test(value) ? `${value.slice(0, 8)}…` : value;
 }
@@ -228,7 +246,7 @@ export function ModelsPage() {
     {error ? <div className="status-panel error" role="alert"><h2>Models are temporarily unavailable.</h2><p>The public model index could not be loaded. Try again when the catalog source is reachable.</p><button className="button" type="button" onClick={() => { setModels(null); setAttempt((value) => value + 1); }}>Retry</button></div> : null}
     {!models && !error ? <div className="status-panel" role="status">Loading immutable model index…</div> : null}
     {models && filtered.length === 0 ? <div className="status-panel"><h2>No matching models.</h2><p>Try a broader family, publisher, or capability.</p><button className="button" type="button" onClick={clearFilters}>Show all models</button></div> : null}
-    {models && visible.length ? <ul className="model-list" aria-label="Models">{visible.map((model) => { const capabilities = modelCapabilities(model); const version = model.versions[0]; const key = `${model.publisher}/${model.slug}`; return <li key={key}><a className="model-row" href={`/models/${model.publisher}/${model.slug}`}><span className="model-row-main"><strong>{model.title}</strong><span className="model-meta">{model.family ? `Family · ${model.family}` : "Model"}</span><code>{model.publisher}/{model.slug}</code></span><span className="model-row-facts">{version ? <><span><small>Version</small>{versionLabel(version.version)}</span><span><small>Runs on</small>{model.runs.spark_counts.length ? model.runs.spark_counts.map((count) => `${count} Spark${count === 1 ? "" : "s"}`).join(" · ") : "No public recipe"}</span><span><small>Engines</small>{model.runs.engines.length ? model.runs.engines.map(engineLabel).join(" · ") : "—"}</span><span><small>Access</small>{accessLabel(version)}</span></> : null}</span><span className="model-row-capabilities" aria-label="Declared capabilities">{capabilities.slice(0, 3).map((capability) => <span key={capability}>{filterLabel(capability)}</span>)}{!capabilities.length ? <span>No capabilities declared</span> : null}</span><span className="model-row-action"><span>{model.recipe_count} {model.recipe_count === 1 ? "recipe" : "recipes"}</span><span className="button primary">View versions</span></span></a></li>; })}</ul> : null}
+    {models && visible.length ? <ul className="model-list" aria-label="Models">{visible.map((model) => { const capabilities = modelCapabilities(model); const key = `${model.publisher}/${model.slug}`; return <li key={key}><a className="model-row" href={`/models/${model.publisher}/${model.slug}`}><span className="model-row-main"><strong>{model.title}</strong>{model.family && model.family !== model.title ? <span className="model-meta">Family · {model.family}</span> : null}<code>{model.publisher}/{model.slug}</code></span><span className="model-row-facts"><RowFact label="Runs on" value={model.runs.spark_counts.length ? model.runs.spark_counts.map((count) => `${count} Spark${count === 1 ? "" : "s"}`).join(" · ") : "No public recipe"} /><RowFact label="Engines" value={model.runs.engines.length ? model.runs.engines.map(engineLabel).join(" · ") : "—"} /><RowFact label={model.versions.length === 1 ? "Version" : "Versions"} value={versionsLabel(model)} /></span><span className="model-row-capabilities" aria-label="Declared capabilities">{model.versions.some((item) => item.requires_token) ? <span className="model-row-token">Token required</span> : null}{capabilities.slice(0, 3).map((capability) => <span key={capability}>{filterLabel(capability)}</span>)}{!capabilities.length ? <span>No capabilities declared</span> : null}</span><span className="model-row-action"><span>{model.recipe_count} {model.recipe_count === 1 ? "recipe" : "recipes"}</span><span className="button primary">View versions</span></span></a></li>; })}</ul> : null}
     {models && filtered.length > PAGE_SIZE ? <nav className="model-pagination" aria-label="Model pages"><button className="button" type="button" disabled={page <= 1} onClick={() => updateFilters({ page: page - 1 })}>Previous</button><span aria-live="polite">Page {page} of {pageCount}</span><button className="button" type="button" disabled={page >= pageCount} onClick={() => updateFilters({ page: page + 1 })}>Next</button></nav> : null}
   </main>;
 }

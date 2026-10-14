@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { getStaticLibraryRelease, getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog, resetStaticCatalogCacheForTests } from "./static-catalog";
+import { displayTitle, getStaticLibraryRelease, getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog, resetStaticCatalogCacheForTests } from "./static-catalog";
 
 
 const index = {
@@ -207,6 +207,18 @@ describe("static recipe library adapter", () => {
     serve(adversarialIndex);
     const recipe = await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast");
     expect(recipe.catalog).toMatchObject({ model_title: "Qwen Fast", model_version_title: "Qwen Fast NVFP4", capabilities: ["chat", "reasoning"] });
+  });
+
+  test("drops a dangling separator from a catalog title and keeps real names whole", async () => {
+    expect(displayTitle("SkinTokens /")).toBe("SkinTokens");
+    expect(displayTitle("GLM 5.3 Flash - ")).toBe("GLM 5.3 Flash");
+    expect(displayTitle("Qwen3.8 27B-A3B")).toBe("Qwen3.8 27B-A3B");
+    expect(displayTitle("  ", "fallback")).toBe("fallback");
+    expect(displayTitle(undefined, "slug")).toBe("slug");
+    const odd = { ...index, catalog_entities: index.catalog_entities.map((entity) => ({ ...entity, document: { ...entity.document, identity: { ...entity.document.identity, model: { ...entity.document.identity.model, title: "Qwen Fast /" } } } })) };
+    vi.mocked(fetch).mockImplementation(async (input) => new Response(JSON.stringify(String(input).endsWith("release.json") ? release : odd), { status: 200 }));
+    const page = await listStaticModels(indexUrl);
+    expect(page.items[0]!.title).toBe("Qwen Fast");
   });
 
   test("rejects an index for another contract major", async () => {

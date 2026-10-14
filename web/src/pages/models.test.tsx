@@ -48,8 +48,16 @@ describe("public model browse", () => {
     await waitFor(() => expect(screen.getByText("13 of 13 models")).toBeVisible());
     expect(document.querySelectorAll(".model-list > li")).toHaveLength(12);
     expect(within(screen.getByRole("list", { name: "Models" })).getAllByRole("listitem")).toHaveLength(12);
-    expect(screen.getAllByText("Version").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("Public access").length).toBeGreaterThan(0);
+    // Facts line up in the same three columns on every row; access is only
+    // mentioned when a token is required, and a lone version reads as itself.
+    for (const row of document.querySelectorAll(".model-row-facts")) {
+      expect(Array.from(row.querySelectorAll("small"), (cell) => cell.textContent)).toEqual(["Runs on", "Engines", "Version"]);
+    }
+    expect(screen.queryByText("Public access")).not.toBeInTheDocument();
+    expect(screen.queryByText("Token required")).not.toBeInTheDocument();
+    expect(screen.getAllByText("1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Family · Qwen").length).toBeGreaterThan(0);
+
     expect(screen.queryByText("Published model")).not.toBeInTheDocument();
     expect(screen.queryByText(/000000000000/)).not.toBeInTheDocument();
     expect(screen.getAllByRole("link", { name: /View versions/ })[0]).toHaveAttribute("href", "/models/publisher/model-1");
@@ -72,6 +80,19 @@ describe("public model browse", () => {
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(window.location.search).toBe("?page=2");
     await waitFor(() => expect(screen.getByText("Model 13")).toBeVisible());
+  });
+
+  test("a lone version reads as what it adds to the model's name, or as a count", async () => {
+    listModels.mockResolvedValue({ items: [
+      { ...model(1), title: "SkinTokens", versions: [{ ...model(1).versions[0]!, version: "SkinTokens / TokenRig" }] },
+      { ...model(2), title: "Pixal3D", versions: [{ ...model(2).versions[0]!, version: "Pixal3D" }] },
+      { ...model(3), versions: [model(3).versions[0]!, { ...model(3).versions[0]!, slug: "model-3-v2", version: "2" }] },
+    ] });
+    render(<ModelsPage />);
+    await waitFor(() => expect(screen.getByText("3 of 3 models")).toBeVisible());
+    expect(screen.getByText("TokenRig")).toBeVisible();
+    expect(screen.getByText("1 version")).toBeVisible();
+    expect(screen.getByText("2 versions")).toBeVisible();
   });
 
   test("starts from the visitor's setup: Spark count, family and engine narrow the list", async () => {
