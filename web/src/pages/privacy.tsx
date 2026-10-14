@@ -2,7 +2,6 @@ export function PrivacyPage() {
   return (
     <main className="guide-page privacy-page">
       <section className="guide-hero" aria-labelledby="privacy-title">
-        <p className="eyebrow">Privacy and site statistics</p>
         <h1 id="privacy-title">Useful numbers. No visitor profiles.</h1>
         <p>
           This public website uses Cloudflare Web Analytics to understand which
@@ -13,7 +12,6 @@ export function PrivacyPage() {
 
       <section className="privacy-content" aria-labelledby="analytics-title">
         <div>
-          <p className="eyebrow">What we measure</p>
           <h2 id="analytics-title">Traffic and performance, in aggregate.</h2>
         </div>
         <div className="privacy-details">

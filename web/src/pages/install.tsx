@@ -16,7 +16,6 @@ export function InstallPage() {
   return (
     <main className="guide-page install-page">
       <section className="guide-hero" aria-labelledby="install-title">
-        <p className="eyebrow">Fresh installation</p>
         <h1 id="install-title">Install Vonk Forge</h1>
         <p>
           Prepare the controller project on a macOS or Linux workstation, run it
@@ -31,7 +30,6 @@ export function InstallPage() {
       </section>
 
       <section className="install-prerequisites" aria-labelledby="prerequisites-title">
-        <p className="eyebrow">Before you begin</p>
         <h2 id="prerequisites-title">Three systems. Clean boundaries.</h2>
         <div className="three-up">
           <article><span>01</span><h3>Installer workstation</h3><p>A macOS or Linux shell with <code>curl</code>. It can also be the controller host; Docker is only required there when it will run the Compose project.</p></article>
@@ -41,19 +39,19 @@ export function InstallPage() {
       </section>
 
       <section className="install-modes" aria-labelledby="install-modes-title">
-        <div className="section-heading compact"><p className="eyebrow">Two install modes</p><h2 id="install-modes-title">Lab on your LAN, or secure remote.</h2></div>
+        <div className="section-heading compact"><h2 id="install-modes-title">Lab on your LAN, or secure remote.</h2></div>
         <div className="install-mode-grid">
           <article>
             <span className="path-number">lab</span>
             <h3>Lab mode</h3>
             <p>LAN only, no Tailscale. Answer <code>lab</code> at the install mode prompt, give the controller host&apos;s reserved LAN address, and the installer generates the local CA, passwords, and keys. Skip the Tailscale preflight below and open <code>https://vonk-forge.local:8443</code>.</p>
-            <a className="text-link" href="https://github.com/CarstVaartjes/vonk-forge/blob/main/docs/QUICKSTART.md">Lab quickstart <span aria-hidden="true">↗</span></a>
+            <a className="text-link" href="https://github.com/CarstVaartjes/vonk-forge/blob/main/docs/QUICKSTART.md">Lab quickstart on GitHub</a>
           </article>
           <article>
             <span className="path-number">default</span>
             <h3>Secure remote</h3>
             <p>Private HTTPS over your Tailscale tailnet, reachable from any authorized device. Complete the four preflight checks below before running the installer.</p>
-            <a className="text-link" href="#tailscale-preflight">Tailscale preflight <span aria-hidden="true">↓</span></a>
+            <a className="text-link" href="#tailscale-preflight">Go to the Tailscale preflight</a>
           </article>
         </div>
       </section>
@@ -70,7 +68,7 @@ export function InstallPage() {
             </p>
           </div>
           <a className="button secondary" href={`${tailscaleRunbook}#fresh-install-preflight`}>
-            Open the exact preflight <span aria-hidden="true">↗</span>
+            Open the exact preflight on GitHub
           </a>
         </header>
         <ol className="preflight-checks">
@@ -105,7 +103,7 @@ export function InstallPage() {
       </section>
 
       <section id="controller" className="install-lane development-lane" aria-labelledby="controller-title">
-        <header><div><p className="eyebrow">Step 1 · Workstation</p><h2 id="controller-title">Prepare the controller</h2></div><span>Signed installer</span></header>
+        <header><div><h2 id="controller-title">Prepare the controller</h2><span className="guide-meta">Step 1 · Workstation</span></div><span>Signed installer</span></header>
         <p className="lane-intro">
           Run the interactive installer on your workstation. It downloads and
           verifies the current immutable release before producing a small,
@@ -160,11 +158,11 @@ curl --fail --show-error --silent \\
           <div><strong>HTTPS returns 421</strong><span>Use <code>vonk-forge.&lt;TAILNET_DNS_SUFFIX&gt;.ts.net</code> as the control hostname.</span></div>
           <div><strong>Name does not resolve</strong><span>Check MagicDNS, the copied suffix, Service definition, and client connection—never add a hosts-file workaround.</span></div>
         </div>
-        <a className="text-link verification-runbook" href={tailscaleRunbook}>Open the complete Tailscale setup, recovery, and diagnostics runbook <span aria-hidden="true">↗</span></a>
+        <a className="text-link verification-runbook" href={tailscaleRunbook}>Open the complete Tailscale setup, recovery, and diagnostics runbook on GitHub</a>
       </section>
 
       <section id="control" className="install-lane control-install" aria-labelledby="install-control-title">
-        <header><div><p className="eyebrow">Step 2 · Operator access</p><h2 id="install-control-title">Choose a control path</h2></div><span>Use either or both</span></header>
+        <header><div><h2 id="install-control-title">Choose a control path</h2><span className="guide-meta">Step 2 · Operator access</span></div><span>Use either or both</span></header>
         <p className="lane-intro">
           There is one local controller and two complete ways to operate it.
           Both use the same Fleet, Library, Activity, authentication, and persisted state.
@@ -172,24 +170,24 @@ curl --fail --show-error --silent \\
         <div className="control-path-grid compact-paths">
           <article>
             <span className="path-number">01</span>
-            <p className="eyebrow">Visual and guided</p>
             <h3>Web Controller</h3>
+            <span className="guide-meta">Visual and guided</span>
             <p>Open the controller&apos;s private HTTPS URL, sign in with the administrator account, and use the Fleet, Library, and Activity pages.</p>
-            <a className="button secondary" href="/control#web-controller">Web instructions <span aria-hidden="true">→</span></a>
+            <a className="button secondary" href="/control#web-controller">Web instructions</a>
           </article>
           <article>
             <span className="path-number">02</span>
-            <p className="eyebrow">Local and scriptable</p>
             <h3><code>vonkctl</code> CLI</h3>
+            <span className="guide-meta">Local and scriptable</span>
             <p>One signed installer, a token file downloaded from the Web Controller, then the same lists, fit checks, reviews, and operations as JSON for scripts and AI agents.</p>
-            <a className="button secondary" href="/control#local-cli">CLI install + usage <span aria-hidden="true">→</span></a>
+            <a className="button secondary" href="/control#local-cli">CLI install + usage</a>
           </article>
         </div>
         <p className="fleet-note">The public <code>vonkforge.ai</code> site is documentation and catalog. Your Web Controller lives at the private HTTPS address of your own local controller.</p>
       </section>
 
       <section id="fleet" className="fleet-install" aria-labelledby="fleet-title">
-        <div className="section-heading compact"><p className="eyebrow">Step 3 · Spark fleet</p><h2 id="fleet-title">Enroll one Spark or many.</h2></div>
+        <div className="section-heading compact"><h2 id="fleet-title">Enroll one Spark or many.</h2><span className="guide-meta">Step 3 · Spark fleet</span></div>
         <p className="lane-intro">
           Create a one-use enrollment grant in the Web Controller&apos;s Fleet page,
           or create one from the CLI. Then run the generated Spark command on the
@@ -212,7 +210,7 @@ vonkctl fleet enrollment status GRANT_UUID`}</CommandBlock>
       </section>
 
       <section className="secret-boundary" aria-labelledby="secrets-title">
-        <div><p className="eyebrow">Authority boundary</p><h2 id="secrets-title">Private controller. Outbound agents.</h2></div>
+        <div><h2 id="secrets-title">Private controller. Outbound agents.</h2><span className="guide-meta">Authority boundary</span></div>
         <ul>
           <li><strong>Public website</strong><span>Documentation, installers, and catalog only; it is not an administrative surface.</span></li>
           <li><strong>Local controller</strong><span>Runs on your chosen Docker Compose host and owns PostgreSQL state, service identity, policy, and private runtime secrets.</span></li>
@@ -222,9 +220,9 @@ vonkctl fleet enrollment status GRANT_UUID`}</CommandBlock>
       </section>
 
       <div className="runbook-links install-runbooks">
-        <a href={`${repository}/README.md`}>Canonical installation README <span aria-hidden="true">↗</span></a>
-        <a href={tailscaleRunbook}>Canonical Tailscale runbook <span aria-hidden="true">↗</span></a>
-        <a href={`${repository}/docs/runbooks/vonkctl.md`}>Complete CLI reference <span aria-hidden="true">↗</span></a>
+        <a href={`${repository}/README.md`}>Canonical installation README on GitHub</a>
+        <a href={tailscaleRunbook}>Canonical Tailscale runbook on GitHub</a>
+        <a href={`${repository}/docs/runbooks/vonkctl.md`}>Complete CLI reference on GitHub</a>
       </div>
     </main>
   );

@@ -10,7 +10,6 @@ export function ArchitecturePage() {
   return (
     <main className="guide-page architecture-page">
       <section className="guide-hero" aria-labelledby="architecture-title">
-        <p className="eyebrow">System architecture · 1…N nodes</p>
         <h1 id="architecture-title"><span>One control plane.</span><span>One to many Sparks.</span></h1>
         <p>
           Find a model by what it can do, then choose a recipe for its engine,
@@ -24,7 +23,7 @@ export function ArchitecturePage() {
       <section className="architecture-section" aria-labelledby="placement-title">
         <div className="section-kicker">
           <span>01</span>
-          <div><p className="eyebrow">Placement</p><h2 id="placement-title">What runs where</h2></div>
+          <div><h2 id="placement-title">What runs where</h2></div>
         </div>
 
         <figure className="architecture-canvas" aria-labelledby="placement-title">
@@ -74,7 +73,7 @@ export function ArchitecturePage() {
       <section className="architecture-section" aria-labelledby="scale-title">
         <div className="section-kicker">
           <span>02</span>
-          <div><p className="eyebrow">Fleet shape</p><h2 id="scale-title">Scale changes placement, not trust.</h2></div>
+          <div><h2 id="scale-title">Scale changes placement, not trust.</h2></div>
         </div>
         <div className="scale-grid">
           <article><span className="scale-count">1</span><h3>Single Spark</h3><p>One agent, one local cache, and no direct-fabric CIDR. Single-node recipes run without a peer network.</p></article>
@@ -86,7 +85,7 @@ export function ArchitecturePage() {
       <section className="architecture-section runtime-contract" aria-labelledby="contract-title">
         <div className="section-kicker">
           <span>03</span>
-          <div><p className="eyebrow">Control ↔ runtime</p><h2 id="contract-title">One contract. Any reviewed runtime.</h2></div>
+          <div><h2 id="contract-title">One contract. Any reviewed runtime.</h2></div>
         </div>
         <p className="contract-intro">
           The controller describes the exact outcome. The runtime decides how to
@@ -124,7 +123,7 @@ export function ArchitecturePage() {
         <div className="contract-handoff">
           <article className="contract-socket" aria-labelledby="socket-title">
             <header>
-              <div><p className="eyebrow">The stable socket</p><h3 id="socket-title">vonk.runtime.v1</h3></div>
+              <h3 id="socket-title">vonk.runtime.v1</h3>
               <span>Linux · ARM64</span>
             </header>
             <div className="contract-fields">
@@ -148,7 +147,6 @@ export function ArchitecturePage() {
           </article>
 
           <aside className="contract-example" aria-labelledby="mia-change-title">
-            <p className="eyebrow">A real change</p>
             <h3 id="mia-change-title">MIA adds a thinking budget</h3>
             <p>
               MIA changes how reasoning tokens are handled inside its reviewed
@@ -157,7 +155,6 @@ export function ArchitecturePage() {
             </p>
             <div className="change-result">
               <span>Recipe source + digest change</span>
-              <i aria-hidden="true">→</i>
               <strong>No control-plane change</strong>
             </div>
             <p className="change-note">Rebuild and verify the immutable runtime; keep placement and authority untouched.</p>
@@ -173,7 +170,7 @@ export function ArchitecturePage() {
       <section className="architecture-section trust-boundaries" aria-labelledby="trust-title">
         <div className="section-kicker">
           <span>04</span>
-          <div><p className="eyebrow">Trust boundaries</p><h2 id="trust-title">Authority stays narrow.</h2></div>
+          <div><h2 id="trust-title">Authority stays narrow.</h2></div>
         </div>
         <div className="trust-boundary-grid">
           <article><h3>Catalog ≠ controller</h3><p>The public website cannot deploy, stop, or inspect your private workloads.</p></article>
@@ -184,8 +181,8 @@ export function ArchitecturePage() {
       </section>
 
       <section className="guide-cta">
-        <div><p className="eyebrow">Build your topology</p><h2>Start with one. Add Sparks when a recipe needs them.</h2></div>
-        <a className="button primary" href="/install">Open the install guide <span aria-hidden="true">→</span></a>
+        <div><h2>Start with one. Add Sparks when a recipe needs them.</h2></div>
+        <a className="button primary" href="/install">Open the install guide</a>
       </section>
     </main>
   );

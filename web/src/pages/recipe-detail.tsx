@@ -37,8 +37,8 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
       <meta itemProp="name" content={recipe.title} />
       <meta itemProp="version" content={`sha256:${recipe.content_sha256}`} />
       <meta itemProp="applicationCategory" content="AIApplication" />
-      <p className="eyebrow">{recipe.official ? "Official recipe" : "Community recipe"}</p>
       <h1>{recipe.title}</h1>
+      <p className="model-meta">{recipe.official ? "Official recipe" : "Community recipe"}</p>
       <p className="recipe-path">{recipe.publisher}/{recipe.slug}{recipe.version ? ` · version ${recipe.version}` : ""}{recipe.published_at ? ` · released ${recipe.published_at}` : ""}</p>
       {recipe.moderation_warning ? <div className="warning" role="alert">{recipe.moderation_warning}</div> : null}
       <section className="boundary"><h2>Trust, precisely stated</h2><ul className="trust-list"><li>Recipe fields: publisher declared</li><li>Source: {recipe.facts?.source_bundle_observed ? "canonical bundle verified by Vonk" : "source validation unavailable"}</li><li>Runtime test: {recipe.facts?.publisher_tested ? "publisher-submitted test accepted" : "no accepted publisher test"}</li><li>Vonk-certified execution: no</li></ul></section>
