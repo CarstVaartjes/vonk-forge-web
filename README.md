@@ -57,7 +57,7 @@ origins and in node-local caches.
 | `/architecture` | Show public, controller, network, identity, and runtime boundaries |
 | `/control` | Tour the private Web Controller and the agent-friendly `vonkctl` path |
 | `/models` | Browse public models and the recipes that run them |
-| `/recipes` | Filter public immutable recipes by runtime, topology, and publisher |
+| `/recipes` | Filter public immutable recipes by model, quantization, runtime, Spark count, creator, readiness, capability, and size |
 | `/publish` | Point recipe authors to the reviewed GitHub workflow |
 | `/privacy` | Disclose aggregate, cookie-free website analytics |
 

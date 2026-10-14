@@ -6,7 +6,6 @@ import { ControlPage } from "./pages/control";
 import { HomePage } from "./pages/home";
 import { InstallPage } from "./pages/install";
 import { PrivacyPage } from "./pages/privacy";
-import { PublisherPage } from "./pages/publisher";
 import { PublishingGuidePage } from "./pages/publishing-guide";
 import { RecipeDetailPage } from "./pages/recipe-detail";
 import { RecipesPage } from "./pages/recipes";
@@ -26,9 +25,6 @@ function CurrentPage() {
   }
   if (parts[0] === "models" && parts.length === 1) return <ModelsPage />;
   if (parts[0] === "models" && parts.length === 3) return <ModelDetailPage publisher={parts[1] ?? ""} slug={parts[2] ?? ""} />;
-  if (parts[0] === "publishers" && parts.length === 2) {
-    return <PublisherPage publisher={parts[1] ?? ""} />;
-  }
   if (parts[0] === "publish") {
     return <PublishingGuidePage />;
   }

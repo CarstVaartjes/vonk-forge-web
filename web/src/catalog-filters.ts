@@ -26,14 +26,14 @@ export const READINESS_OPTIONS = [
   { value: "not-executable", label: "Not executable" },
   { value: "not-declared", label: "Readiness not declared" },
 ] as const;
-export type BooleanFilter = "" | "true" | "false";
+type BooleanFilter = "" | "true" | "false";
 export type SparkFilter = "" | "1" | "2" | "3" | "4+";
 export type UpdatedFilter = "" | "7" | "30" | "90" | "365";
 export type RecipeSort = "catalog" | "recipe" | "modelFamily" | "model" | "quantization" | "runtime" | "abliterated" | "sparks" | "creator" | "updated" | "readiness" | "capability" | "qualification" | "repository" | "download" | "disk" | "memory";
 export type SortDirection = "asc" | "desc";
 export type FilterFacet = "modelFamily" | "model" | "abliterated" | "sourceOwner" | "repository" | "sparks" | "runtime" | "quantization" | "updated" | "qualification" | "readiness" | "capability" | "download" | "disk" | "memory";
 
-export interface CatalogFilters {
+interface CatalogFilters {
   query: string;
   modelFamily: string;
   model: string;
@@ -113,38 +113,8 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
   };
 }
 
-export function metadata(recipe: RecipeSummary): NonNullable<RecipeSummary["catalog"]> {
-  if (recipe.catalog) return recipe.catalog;
-  const rawCapabilities = recipe.workload.capabilities ?? [];
-  const capabilities = CAPABILITY_OPTIONS.flatMap(({ value }) => rawCapabilities.some((item) => item === value || item.endsWith(`.${value}`)) ? [value] : []);
-  const nodes = recipe.capacity?.profile_node_counts?.[0] ?? recipe.deployment_profiles?.[0]?.node_count ?? 1;
-  return {
-    description: "",
-    tags: rawCapabilities,
-    model_publisher: recipe.publisher,
-    model_slug: recipe.workload.family ?? recipe.slug,
-    model_title: recipe.workload.family ?? recipe.title,
-    model_version_publisher: recipe.publisher,
-    model_version_slug: recipe.workload.family ?? recipe.slug,
-    model_version_title: recipe.workload.family ?? recipe.title,
-    source_owner: null,
-    source_repository: null,
-    alignment: "unspecified",
-    capabilities,
-    qualification: "candidate",
-    execution_readiness: "not-declared",
-    runtime_distribution: recipe.runtime.adapter ?? "unknown",
-    precision: null,
-    quantizations: [],
-    topology_name: recipe.deployment_profiles?.[0]?.name ?? "",
-    topology_mode: nodes === 1 ? "single" : "distributed",
-    node_count: nodes,
-    expected_download_bytes: (recipe.artifacts ?? []).reduce((total, artifact) => total + (artifact.download_bytes ?? 0), 0),
-  };
-}
-
 export function modelFamilyTitle(recipe: RecipeSummary): string {
-  const title = metadata(recipe).model_title
+  const title = recipe.catalog.model_title
     .replace(/\s+[0-9a-f]{8}$/i, "")
     .replace(/^NVIDIA\s+/i, "");
   const variant = /\s+(?:NVFP4|BF16|FP16|FP8|FP4|INT8|INT4|EXL3|AQLM|AWQ|GPTQ|GGUF|TorchAO|DFlash\d*|Abliterated)(?:\s|$)/i.exec(title);
@@ -153,7 +123,7 @@ export function modelFamilyTitle(recipe: RecipeSummary): string {
 
 function sparksMatch(recipe: RecipeSummary, sparks: SparkFilter): boolean {
   if (!sparks) return true;
-  const nodes = metadata(recipe).node_count;
+  const nodes = recipe.catalog.node_count;
   return sparks === "4+" ? nodes >= 4 : nodes === Number(sparks);
 }
 
@@ -163,12 +133,12 @@ function exactSizeMatches(value: number | undefined, filter: string): boolean {
 }
 
 export function modelVersionKey(recipe: RecipeSummary): string {
-  const facts = metadata(recipe);
+  const facts = recipe.catalog;
   return `${facts.model_version_publisher}/${facts.model_version_slug}`;
 }
 
 export function recipeIsAbliterated(recipe: RecipeSummary): boolean {
-  return metadata(recipe).alignment === "abliterated";
+  return recipe.catalog.alignment === "abliterated";
 }
 
 export function updatedMatches(recipe: RecipeSummary, updated: UpdatedFilter, now = new Date()): boolean {
@@ -180,7 +150,7 @@ export function updatedMatches(recipe: RecipeSummary, updated: UpdatedFilter, no
 }
 
 export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, omitted?: FilterFacet): boolean {
-  const facts = metadata(recipe);
+  const facts = recipe.catalog;
   const normalized = filters.query.trim().toLocaleLowerCase();
   const queryMatches = !normalized || [
     recipe.title,
@@ -218,7 +188,7 @@ export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, om
 
 export function sortRecipes(recipes: RecipeSummary[], sort: RecipeSort, direction: SortDirection = sort === "catalog" ? "desc" : "asc"): RecipeSummary[] {
   const value = (recipe: RecipeSummary): string | number => {
-    const facts = metadata(recipe);
+    const facts = recipe.catalog;
     if (sort === "recipe") return recipe.title;
     if (sort === "modelFamily") return modelFamilyTitle(recipe);
     if (sort === "model") return facts.model_version_title;

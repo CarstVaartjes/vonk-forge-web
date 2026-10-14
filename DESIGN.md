@@ -104,7 +104,7 @@ Vonk Forge should feel like one legible workbench for operator-owned infrastruct
 
 The visual grammar makes ownership visible. NVIDIA green marks actions, applied state, and infrastructure that is ready inside the operator's boundary. Spark gold is a deliberately narrow exception for public source, library facts, and the hardware's own material. Depth is restrained so hierarchy comes primarily from type, alignment, tonal surfaces, and precise borders.
 
-Legacy eyebrows and kickers, thick side-tab borders, generic Unicode icons, and Space Grotesk are not part of this system even if older selectors or screens still contain them. Onest Variable is the self-hosted family and the source of typographic truth.
+Eyebrows and kickers, thick side-tab borders, generic Unicode icons, and Space Grotesk are not part of this system. Onest Variable is the self-hosted family and the source of typographic truth.
 
 **Key Characteristics:**
 
@@ -194,7 +194,7 @@ The system is flat by default. Tonal changes and crisp one-pixel boundaries carr
 
 ## Shapes
 
-The form language is rectilinear and precise. Connected content regions use square corners; embedded controller views use a barely softened tight corner (`tight`), and ordinary controls use a compact functional radius (`control`). Larger surface rounding (`surface`) belongs to legacy pages and should not spread into new workbench structures. Circular geometry is reserved for status dots and the established forge mark.
+The form language is rectilinear and precise. Connected content regions use square corners; embedded controller views use a barely softened tight corner (`tight`), and ordinary controls use a compact functional radius (`control`). Larger surface rounding (`surface`) does not belong on workbench structures. Circular geometry is reserved for status dots and the established forge mark.
 
 Borders are one pixel. Do not create thick side tabs, decorative rails, or oversized pills as substitutes for hierarchy. Clipping should reinforce a contained tool surface, not add ornamental silhouettes.
 
@@ -258,7 +258,7 @@ The terminal counterpart of the controller preview: the same tight rectangular f
 ### Don't:
 
 - **Don't** make a recipe catalog, recipe grid, or generic feature mosaic the default visual identity.
-- **Don't** place legacy eyebrows or kickers above primary definitions.
+- **Don't** place eyebrows or kickers above primary definitions.
 - **Don't** reintroduce Space Grotesk; Onest Variable is canonical.
 - **Don't** use thick side-tab borders, generic Unicode icons, or ornamental pills.
 - **Don't** turn gold into a general action color or let it compete with green.

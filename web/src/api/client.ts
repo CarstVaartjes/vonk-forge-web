@@ -6,25 +6,16 @@ export interface RecipeSummary {
   slug: string;
   title: string;
   official: boolean;
-  revision_id: string;
   content_sha256: string;
   published_at: string;
   version?: string;
-  runtime: { adapter?: string; entrypoint?: string[] };
+  runtime: { adapter?: string };
   build?: { dockerfile?: string };
   artifacts?: Array<{
-    kind?: string;
     repository?: string;
     revision?: string;
     download_bytes?: number;
-    installed_bytes?: number;
   }>;
-  provenance?: {
-    source_reference?: string | null;
-    attribution?: string[];
-  };
-  workload: { family?: string; capabilities?: string[] };
-  deployment_profiles?: Array<{ name?: string; node_count?: number }>;
   capacity?: {
     profile_node_counts?: number[];
     maximum_installed_bytes_per_node?: number;
@@ -32,17 +23,13 @@ export interface RecipeSummary {
   };
   moderation_warning?: string | null;
   facts?: {
-    declared: boolean;
     source_bundle_observed: boolean;
     publisher_tested: boolean;
-    publisher_tested_label: string;
-    vonk_verified: boolean;
-    last_validation: string | null;
   };
   import?: { uri: string; instruction: string };
   source?: { recipe_url?: string; bundle_url?: string };
   package?: { member: string; sha256: string; bytes: number; media_type: string };
-  catalog?: {
+  catalog: {
     description: string;
     tags: string[];
     model_publisher: string;
@@ -51,7 +38,6 @@ export interface RecipeSummary {
     model_version_publisher: string;
     model_version_slug: string;
     model_version_title: string;
-    model_version_content_sha256?: string | null;
     source_owner: string | null;
     source_repository: string | null;
     alignment: "standard" | "abliterated" | "derisked" | "other-modified" | "unspecified";
@@ -61,8 +47,6 @@ export interface RecipeSummary {
     runtime_distribution: string;
     precision: string | null;
     quantizations: string[];
-    topology_name: string;
-    topology_mode: string;
     node_count: number;
     expected_download_bytes: number;
   };
@@ -81,17 +65,14 @@ export interface ModelVersionSummary {
   title: string;
   version: string;
   revision_id: string;
-  model_publisher: string;
   model_slug: string;
-  model_title: string;
   variant?: string;
   requires_token?: boolean;
   source_repository?: string;
   source_revision?: string;
   format?: { precision?: string; quantization?: string };
   sizes?: { download_bytes?: number; installed_bytes?: number };
-  license?: { spdx?: string; url?: string; attribution?: string[] };
-  tags: string[];
+  license?: { spdx?: string; url?: string };
   capabilities: string[];
   recipe_slugs: string[];
 }
@@ -129,7 +110,7 @@ export interface ModelPage {
 
 // The public catalog is the index of the signed recipe-library release that the
 // Pages build verified and copied to this site (web/scripts/recipe-release.mjs).
-export const RECIPE_LIBRARY_INDEX_URL = "/catalog/catalog-index.json";
+const RECIPE_LIBRARY_INDEX_URL = "/catalog/catalog-index.json";
 
 export function loadRecipeCatalog(signal?: AbortSignal): Promise<RecipeSummary[]> {
   return listStaticRecipeCatalog(RECIPE_LIBRARY_INDEX_URL, signal);
