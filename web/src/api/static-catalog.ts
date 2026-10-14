@@ -57,6 +57,13 @@ function text(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value : fallback;
 }
 
+// A display title with a dangling separator ("SkinTokens /") is a catalog
+// typo, not information; the page shows the name without it.
+export function displayTitle(value: unknown, fallback = ""): string {
+  const trimmed = text(value).replace(/[\s/|·:,-]+$/u, "").trim();
+  return trimmed || fallback;
+}
+
 function number(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
@@ -162,15 +169,15 @@ function modelMetadata(document: JsonRecord, index: LibraryIndex): { publisher: 
   const versionIdentity = entityIdentity(version ?? {});
   const logical = modelIdentity(version ?? {});
   const family = modelFamily(version ?? {});
-  const versionTitle = text(record(version?.metadata).title, text(versionIdentity.slug, "unknown"));
+  const versionTitle = displayTitle(record(version?.metadata).title, text(versionIdentity.slug, "unknown"));
   const versionPublisher = text(versionIdentity.publisher, "unknown");
   const versionSlug = text(versionIdentity.slug, "unknown");
   const slug = text(logical.slug, versionSlug);
   return {
     publisher: text(logical.publisher, versionPublisher),
     slug,
-    title: text(logical.title, slug),
-    family: text(family.title) || text(family.slug) || text(logical.title, slug),
+    title: displayTitle(logical.title, slug),
+    family: displayTitle(family.title) || text(family.slug) || displayTitle(logical.title, slug),
     versionPublisher,
     versionSlug,
     versionTitle,
@@ -245,7 +252,7 @@ function mapModelVersion(
   return {
     publisher: identity.publisher,
     slug: identity.slug,
-    title: text(metadata.title, identity.slug),
+    title: displayTitle(metadata.title, identity.slug),
     version: text(record(document.identity).version, identity.slug),
     revision_id: text(entity.content_sha256, "unknown"),
     model_slug: text(logicalModel.slug),
@@ -299,9 +306,9 @@ function mapModels(index: LibraryIndex): ModelSummary[] {
     return {
       publisher: text(identity.publisher),
       slug: text(identity.slug),
-      title: text(identity.title, text(identity.slug)),
+      title: displayTitle(identity.title, text(identity.slug)),
       description: text(record(first.document.metadata).description),
-      family: text(family.title) || text(family.slug) || undefined,
+      family: displayTitle(family.title) || text(family.slug) || undefined,
       runs: modelRuns(versionRows, recipes),
       tags: array(record(first.document.metadata).tags).map((value) => text(value).toLowerCase()).filter(Boolean),
       revision_id: text(first.content_sha256, "unknown"),
