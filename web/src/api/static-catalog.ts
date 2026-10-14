@@ -1,4 +1,4 @@
-import type { LibraryCatalogCounts, LibraryRelease, ModelPage, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
+import type { LibraryCatalogCounts, LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
 
 
 import { CAPABILITY_OPTIONS } from "../catalog-filters";
@@ -155,12 +155,13 @@ function canonicalSource(sourceReference: string): { owner: string; repository: 
   }
 }
 
-function modelMetadata(document: JsonRecord, index: LibraryIndex): { publisher: string; slug: string; title: string; versionPublisher: string; versionSlug: string; versionTitle: string } {
+function modelMetadata(document: JsonRecord, index: LibraryIndex): { publisher: string; slug: string; title: string; family: string; versionPublisher: string; versionSlug: string; versionTitle: string } {
   const selected = recipeModelSelections(document)[0];
   const versionEntity = index.catalog_entities.find((entity) => selected && sameReference(selected.model, entity));
   const version = versionEntity?.document;
   const versionIdentity = entityIdentity(version ?? {});
   const logical = modelIdentity(version ?? {});
+  const family = modelFamily(version ?? {});
   const versionTitle = text(record(version?.metadata).title, text(versionIdentity.slug, "unknown"));
   const versionPublisher = text(versionIdentity.publisher, "unknown");
   const versionSlug = text(versionIdentity.slug, "unknown");
@@ -169,6 +170,7 @@ function modelMetadata(document: JsonRecord, index: LibraryIndex): { publisher: 
     publisher: text(logical.publisher, versionPublisher),
     slug,
     title: text(logical.title, slug),
+    family: text(family.title) || text(family.slug) || text(logical.title, slug),
     versionPublisher,
     versionSlug,
     versionTitle,
@@ -268,6 +270,17 @@ function recipeModelSelections(document: JsonRecord): JsonRecord[] {
   return array(document.models).map(record);
 }
 
+function modelRuns(versions: ModelVersionSummary[], recipes: RecipeSummary[]): ModelRuns {
+  const slugs = new Set(versions.flatMap((version) => version.recipe_slugs));
+  const own = recipes.filter((recipe) => slugs.has(`${recipe.publisher}/${recipe.slug}`));
+  const unique = (values: Array<string | null>): string[] => Array.from(new Set(values.filter((value): value is string => Boolean(value)))).sort();
+  return {
+    spark_counts: Array.from(new Set(own.map((recipe) => recipe.catalog.node_count))).sort((left, right) => left - right),
+    engines: unique(own.map((recipe) => recipe.catalog.runtime_distribution)),
+    creators: unique(own.map((recipe) => recipe.catalog.source_owner)),
+  };
+}
+
 function mapModels(index: LibraryIndex): ModelSummary[] {
   const entities = index.catalog_entities;
   const recipes = index.recipes.map((item) => mapRecipe(item, index));
@@ -288,7 +301,8 @@ function mapModels(index: LibraryIndex): ModelSummary[] {
       slug: text(identity.slug),
       title: text(identity.title, text(identity.slug)),
       description: text(record(first.document.metadata).description),
-      family: text(family.slug) || undefined,
+      family: text(family.title) || text(family.slug) || undefined,
+      runs: modelRuns(versionRows, recipes),
       tags: array(record(first.document.metadata).tags).map((value) => text(value).toLowerCase()).filter(Boolean),
       revision_id: text(first.content_sha256, "unknown"),
       versions: versionRows,
@@ -322,6 +336,7 @@ function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: Re
     model_version_publisher: model.versionPublisher,
     model_version_slug: model.versionSlug,
     model_version_title: model.versionTitle,
+    model_family: model.family,
     source_owner: source?.owner ?? null,
     source_repository: source?.repository ?? null,
     alignment,

@@ -28,6 +28,37 @@ export const READINESS_OPTIONS = [
 ] as const;
 type BooleanFilter = "" | "true" | "false";
 export type SparkFilter = "" | "1" | "2" | "3" | "4+";
+
+// The Spark-count choices a visitor starts from. "4+" covers four- and
+// eight-Spark recipes; the library has no other counts.
+export const SPARK_OPTIONS: ReadonlyArray<{ value: Exclude<SparkFilter, "">; numeral: string; label: string }> = [
+  { value: "1", numeral: "1", label: "1 Spark" },
+  { value: "2", numeral: "2", label: "2 Sparks" },
+  { value: "3", numeral: "3", label: "3 Sparks" },
+  { value: "4+", numeral: "4+", label: "4 or more" },
+];
+
+export function nodeCountMatches(nodes: number, sparks: SparkFilter): boolean {
+  if (!sparks) return true;
+  return sparks === "4+" ? nodes >= 4 : nodes === Number(sparks);
+}
+
+const ENGINE_LABELS: Record<string, string> = {
+  vllm: "vLLM",
+  sglang: "SGLang",
+  "tensorrt-llm": "TensorRT-LLM",
+  "llama-cpp": "llama.cpp",
+  tensorfold: "TensorFold",
+  ds4: "ds4",
+  diffusers: "Diffusers",
+  comfyui: "ComfyUI",
+  "pytorch-pipeline": "PyTorch pipeline",
+  exllamav3: "ExLlamaV3",
+};
+
+export function engineLabel(value: string): string {
+  return ENGINE_LABELS[value] ?? humanize(value);
+}
 export type UpdatedFilter = "" | "7" | "30" | "90" | "365";
 export type RecipeSort = "catalog" | "recipe" | "modelFamily" | "model" | "quantization" | "runtime" | "abliterated" | "sparks" | "creator" | "updated" | "readiness" | "capability" | "qualification" | "repository" | "download" | "disk" | "memory";
 export type SortDirection = "asc" | "desc";
@@ -114,6 +145,7 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
 }
 
 export function modelFamilyTitle(recipe: RecipeSummary): string {
+  if (recipe.catalog.model_family) return recipe.catalog.model_family;
   const title = recipe.catalog.model_title
     .replace(/\s+[0-9a-f]{8}$/i, "")
     .replace(/^NVIDIA\s+/i, "");
@@ -121,10 +153,13 @@ export function modelFamilyTitle(recipe: RecipeSummary): string {
   return (variant ? title.slice(0, variant.index) : title).trim();
 }
 
+// GitHub owners differ only by case between recipes ("NVIDIA", "nvidia"); one creator.
+export function sameCreator(left: string | null | undefined, right: string | null | undefined): boolean {
+  return Boolean(left && right) && String(left).toLowerCase() === String(right).toLowerCase();
+}
+
 function sparksMatch(recipe: RecipeSummary, sparks: SparkFilter): boolean {
-  if (!sparks) return true;
-  const nodes = recipe.catalog.node_count;
-  return sparks === "4+" ? nodes >= 4 : nodes === Number(sparks);
+  return nodeCountMatches(recipe.catalog.node_count, sparks);
 }
 
 function exactSizeMatches(value: number | undefined, filter: string): boolean {
@@ -172,7 +207,7 @@ export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, om
     && (omitted === "modelFamily" || !filters.modelFamily || modelFamilyTitle(recipe) === filters.modelFamily)
     && (omitted === "model" || !filters.model || modelVersionKey(recipe) === filters.model)
     && (omitted === "abliterated" || !filters.abliterated || recipeIsAbliterated(recipe) === (filters.abliterated === "true"))
-    && (omitted === "sourceOwner" || !filters.sourceOwner || facts.source_owner === filters.sourceOwner)
+    && (omitted === "sourceOwner" || !filters.sourceOwner || sameCreator(facts.source_owner, filters.sourceOwner))
     && (omitted === "repository" || !filters.repository || facts.source_repository === filters.repository)
     && (omitted === "sparks" || sparksMatch(recipe, filters.sparks))
     && (omitted === "runtime" || !filters.runtime || facts.runtime_distribution === filters.runtime)

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import type { RecipeSummary } from "../api/client";
 import { RecipesPage } from "./recipes";
@@ -33,6 +33,7 @@ const recipe: RecipeSummary = {
     model_version_publisher: "vonk",
     model_version_slug: "qwen",
     model_version_title: "qwen",
+    model_family: "Qwen",
     source_owner: null,
     source_repository: null,
     alignment: "unspecified",
@@ -85,6 +86,24 @@ test("keeps Controller-parity filters in the URL and applies them locally", asyn
   expect(screen.getByText(/status appear only in/i)).toBeVisible();
   expect(screen.queryByRole("button", { name: "Cards" })).not.toBeInTheDocument();
   expect(screen.queryByLabelText("Sort recipes")).not.toBeInTheDocument();
+});
+
+test("starts from the visitor's Sparks and engine, in the same URL facets as the columns", async () => {
+  window.history.replaceState(null, "", "/recipes");
+  render(<RecipesPage />);
+  await screen.findByRole("heading", { name: "Qwen Fast" });
+  const oneSpark = screen.getByRole("button", { name: "1 Spark: 1 recipes" });
+  expect(screen.getByRole("button", { name: "2 Sparks: 0 recipes" })).toBeDisabled();
+  fireEvent.click(oneSpark);
+  await waitFor(() => expect(window.location.search).toBe("?sparks=1"));
+  expect(screen.getByLabelText("Filter by required Sparks")).toHaveValue("1");
+  expect(oneSpark).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(within(screen.getByRole("group", { name: "Engine" })).getByRole("button", { name: "vLLM: 1" }));
+  await waitFor(() => expect(window.location.search).toContain("runtime=vllm"));
+  expect(screen.getByLabelText("Filter by runtime")).toHaveValue("vllm");
+  expect(screen.getByRole("columnheader", { name: /^Sparks/ })).toBeVisible();
+  const headers = [...document.querySelectorAll(".catalog-column-heading > span:first-child")].map((label) => label.textContent?.trim());
+  expect(headers.slice(0, 5)).toEqual(["Recipe", "Sparks", "Engine", "Memory / Spark", "Disk / Spark"]);
 });
 
 test("sorts the list from any column and preserves the selected direction", async () => {

@@ -22,6 +22,7 @@ function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["cata
       model_version_publisher: "models",
       model_version_slug: `${slug}-v1`,
       model_version_title: `${slug} v1`,
+      model_family: overrides.model_family ?? slug,
       source_owner: "owner",
       source_repository: "https://github.com/owner/repo",
       alignment: "standard",
