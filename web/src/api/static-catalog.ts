@@ -1,6 +1,9 @@
 import type { LibraryCatalogCounts, LibraryRelease, ModelPage, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
 
 
+import { CAPABILITY_OPTIONS } from "../catalog-filters";
+
+
 type JsonRecord = Record<string, unknown>;
 
 // The recipe/model contract major this site renders (web/scripts/recipe-release.mjs
@@ -91,11 +94,7 @@ function runtimeAdapter(document: JsonRecord): string {
   return engine || "custom";
 }
 
-const PUBLIC_CAPABILITIES = [
-  "chat", "text-generation", "text-understanding", "reasoning", "tool-use", "code-generation", "ocr",
-  "image-generation", "image-understanding", "image-editing", "video-generation", "video-understanding",
-  "audio-generation", "audio-understanding", "embeddings", "3d-generation",
-] as const;
+const PUBLIC_CAPABILITIES = CAPABILITY_OPTIONS.map((option) => option.value);
 
 function tags(document: JsonRecord): string[] {
   return array(record(document.metadata).tags).map((value) => text(value).toLowerCase()).filter(Boolean);
@@ -156,7 +155,7 @@ function canonicalSource(sourceReference: string): { owner: string; repository: 
   }
 }
 
-function modelMetadata(document: JsonRecord, index: LibraryIndex): { publisher: string; slug: string; title: string; versionPublisher: string; versionSlug: string; versionTitle: string; versionRevisionId: string } {
+function modelMetadata(document: JsonRecord, index: LibraryIndex): { publisher: string; slug: string; title: string; versionPublisher: string; versionSlug: string; versionTitle: string } {
   const selected = recipeModelSelections(document)[0];
   const versionEntity = index.catalog_entities.find((entity) => selected && sameReference(selected.model, entity));
   const version = versionEntity?.document;
@@ -173,7 +172,6 @@ function modelMetadata(document: JsonRecord, index: LibraryIndex): { publisher: 
     versionPublisher,
     versionSlug,
     versionTitle,
-    versionRevisionId: text(versionEntity?.content_sha256),
   };
 }
 
@@ -248,17 +246,14 @@ function mapModelVersion(
     title: text(metadata.title, identity.slug),
     version: text(record(document.identity).version, identity.slug),
     revision_id: text(entity.content_sha256, "unknown"),
-    model_publisher: text(logicalModel.publisher),
     model_slug: text(logicalModel.slug),
-    model_title: text(logicalModel.title, text(logicalModel.slug)),
     variant: text(record(document.identity).variant) || undefined,
     requires_token: typeof document.requires_token === "boolean" ? document.requires_token : undefined,
     source_repository: text(source.repository) || undefined,
     source_revision: text(source.revision) || undefined,
     format: { precision: text(format.precision) || undefined, quantization: text(format.quantization) || undefined },
     sizes: { download_bytes: modelSize(document, true), installed_bytes: modelSize(document, false) },
-    license: { spdx: text(license.spdx) || undefined, url: text(license.url) || undefined, attribution: array(license.attribution).map((value) => text(value)).filter(Boolean) },
-    tags: array(metadata.tags).map((value) => text(value).toLowerCase()).filter(Boolean),
+    license: { spdx: text(license.spdx) || undefined, url: text(license.url) || undefined },
     capabilities: declaredCapabilities(document),
     recipe_slugs: recipeSlugs,
   };
@@ -327,7 +322,6 @@ function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: Re
     model_version_publisher: model.versionPublisher,
     model_version_slug: model.versionSlug,
     model_version_title: model.versionTitle,
-    model_version_content_sha256: model.versionRevisionId || null,
     source_owner: source?.owner ?? null,
     source_repository: source?.repository ?? null,
     alignment,
@@ -337,8 +331,6 @@ function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: Re
     runtime_distribution: text(runtime.engine, "unknown"),
     precision,
     quantizations,
-    topology_name: text(topology.name),
-    topology_mode: number(topology.node_count) > 1 ? "distributed" : "single",
     node_count: Math.max(1, number(topology.node_count)),
     expected_download_bytes: (artifacts ?? []).reduce((total, artifact) => total + (artifact.download_bytes ?? 0), 0),
   };
@@ -364,14 +356,11 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
     return entity ? modelFiles(entity.document)
       .filter((file) => selectedFiles.has(text(file.id)))
       .map((file) => ({
-        kind: "model-file",
         repository: text(source.repository),
         revision: text(source.revision),
         download_bytes: number(file.size_bytes),
-        installed_bytes: number(file.size_bytes),
       })) : [];
   });
-  const provenance = record(document.provenance);
   const version = text(release.version);
   const sourceUrl = `https://github.com/${index.repository}/blob/${index.source_commit}/${item.source_path}`;
   const packageName = item.package.path.startsWith(index.package_contract.path_prefix)
@@ -384,27 +373,14 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
     slug,
     title: text(metadata.title, slug),
     official: publisher === "vonk-forge",
-    revision_id: item.content_sha256,
     content_sha256: item.content_sha256,
     published_at: text(release.released_at),
     version: version || undefined,
-    runtime: {
-      adapter: runtimeAdapter(document),
-      entrypoint: array(record(document.runtime).entrypoint).map((value) => text(value)).filter(Boolean),
-    },
+    runtime: { adapter: runtimeAdapter(document) },
     build: {
       dockerfile: text(build.dockerfile),
     },
     artifacts,
-    provenance: {
-      source_reference: text(provenance.source_reference) || null,
-      attribution: array(provenance.attribution).map((value) => text(value)).filter(Boolean),
-    },
-    workload: {
-      family: modelMetadata(document, index).slug || publisher,
-      capabilities: publicMetadata(document, index, artifacts).capabilities,
-    },
-    deployment_profiles: [{ name: text(topology.name, nodeCount === 1 ? "single" : `${nodeCount}-node`), node_count: nodeCount }],
     capacity: {
       profile_node_counts: [nodeCount],
       maximum_installed_bytes_per_node: resources.disk || undefined,
@@ -412,13 +388,9 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
     },
     moderation_warning: null,
     facts: {
-      declared: true,
       // The build context ships inside the package the Pages build verified.
       source_bundle_observed: Boolean(contextPath),
       publisher_tested: false,
-      publisher_tested_label: "No accepted publisher test report",
-      vonk_verified: false,
-      last_validation: null,
     },
     import: {
       uri: `vonk://catalog/${publisher}/${slug}@sha256:${item.content_sha256}`,

@@ -10,11 +10,9 @@ function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["cata
     slug,
     title: slug,
     official: true,
-    revision_id: slug,
     content_sha256: slug.padEnd(64, "0").slice(0, 64),
     published_at: new Date().toISOString().slice(0, 10),
     runtime: { adapter: "vllm" },
-    workload: { family: slug, capabilities: [] },
     catalog: {
       description: "",
       tags: [],
@@ -33,8 +31,6 @@ function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["cata
       runtime_distribution: "vllm-0-27-1",
       precision: "NVFP4",
       quantizations: ["NVFP4"],
-      topology_name: "solo",
-      topology_mode: "single",
       node_count: 1,
       expected_download_bytes: 100,
       ...overrides,
@@ -51,8 +47,8 @@ describe("public catalog Controller-parity filters", () => {
   });
 
   test("requires every selected capability and combines model, readiness, and Spark facets", () => {
-    const both = recipe("both", { capabilities: ["chat", "reasoning"], node_count: 4, topology_mode: "distributed" });
-    const chat = recipe("chat", { capabilities: ["chat"], node_count: 4, topology_mode: "distributed" });
+    const both = recipe("both", { capabilities: ["chat", "reasoning"], node_count: 4 });
+    const chat = recipe("chat", { capabilities: ["chat"], node_count: 4 });
     const filters = { ...EMPTY_FILTERS, model: "models/both-v1", quantization: "NVFP4", updated: "30" as const, sparks: "4+" as const, readiness: "executable" as const, capabilities: ["chat", "reasoning"] };
     expect(recipeMatches(both, filters)).toBe(true);
     expect(recipeMatches(chat, filters)).toBe(false);
