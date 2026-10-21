@@ -1,5 +1,8 @@
 // @vitest-environment node
 import { fileURLToPath } from "node:url";
+import { spawnSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { describe, expect, test } from "vitest";
 import { checkSingleSources, trackedSources } from "./single-source-values.mjs";
 
@@ -25,6 +28,12 @@ describe("single source values", () => {
     ["workflow.yml", 'node-version: "99.1.0"'],
     ["Dockerfile", "FROM node:24.1.0"],
     ["scripts/install", "NODE_VERSION=24.1.0"],
+    ["scripts/install.mjs", 'const nodeVersion = "24.1.0"'],
+    ["tools/.nvmrc", "24.1.0"],
+    ["package.json", '{"engines":{"node":"24.1.0"}}'],
+    ["workflow.yml", "node-version: ${{ matrix.node }}"],
+    [".tool-versions", "nodejs 24.1.0"],
+    ["guide.md", "```sh\nfnm install 24.1.0\n```"],
     ["guide.md", '```sh\nnpm install node@24.1.0\n```'],
     ["AGENTS.md", "Node is **24.1.0**"],
   ])("rejects stale and new Node selections in %s", (file, source) => {
@@ -37,6 +46,27 @@ describe("single source values", () => {
   test("changing the owner needs no consumer changes; unrelated versions pass", () => {
     for (const version of ["26.1.0", "99.2.3"]) {
       expect(checkSingleSources(new Map([[".node-version", version], ["workflow.yml", workflow], ["package.json", '{"version":"24.1.0"}']]), [nodeOwner])).toEqual([]);
+    }
+  });
+
+  test("the local runtime check follows a changed version owner", () => {
+    const base = path.join(root, ".tmp");
+    mkdirSync(base, { recursive: true });
+    const fixture = mkdtempSync(path.join(base, "node-owner-"));
+    try {
+      mkdirSync(path.join(fixture, "web/scripts"), { recursive: true });
+      const checker = path.join(fixture, "web/scripts/check-node-version.mjs");
+      writeFileSync(checker, readFileSync(path.join(root, "web/scripts/check-node-version.mjs")));
+      writeFileSync(path.join(fixture, ".node-version"), process.versions.node);
+      expect(spawnSync(process.execPath, [checker]).status).toBe(0);
+      const changed = process.versions.node.split(".").map(Number);
+      changed[2]++;
+      writeFileSync(path.join(fixture, ".node-version"), changed.join("."));
+      const rejected = spawnSync(process.execPath, [checker], { encoding: "utf8" });
+      expect(rejected.status).toBe(1);
+      expect(rejected.stderr).toContain(`Node ${changed.join(".")} is required by .node-version`);
+    } finally {
+      rmSync(fixture, { recursive: true, force: true });
     }
   });
 

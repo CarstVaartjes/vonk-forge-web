@@ -1,0 +1,17 @@
+[
+  {
+    "id": "toolchain.node",
+    "kind": "node-version",
+    "owner": { "file": ".node-version", "selector": "semver" },
+    "derive": "read .node-version; workflows use node-version-file and local installs run check-node-version.mjs",
+    "consumers": [
+      { "file": ".github/workflows/ci.yml", "selector": "setup-node" },
+      { "file": ".github/workflows/pages.yml", "selector": "setup-node" },
+      { "file": "web/scripts/check-node-version.mjs", "selector": "runtime-check" },
+      { "file": "web/package.json", "selector": "preinstall" }
+    ],
+    "adversarial": [
+      { "file": "web/scripts/single-source-values.test.mjs", "region": "node-selection" }
+    ]
+  }
+]

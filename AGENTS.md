@@ -49,7 +49,11 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
 
 ## Toolchain and gates
 
-Node is **26.10.0**; `web/package-lock.json` is authoritative.
+`.node-version` owns the Node version used by workflows and local tooling;
+select it before installing dependencies. `web/package-lock.json` is authoritative
+for dependencies. The single-source guard runs with the unit tests and reads
+owner-adjacent `*.single-source.json` registrations; register each repaired class
+there, with no baseline allowance.
 
 ```bash
 npm --prefix web ci

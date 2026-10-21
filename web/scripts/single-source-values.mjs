@@ -28,10 +28,10 @@ function checkNode(files, entry, report) {
     report(entry.owner.file, 1, "missing or invalid semver owner");
   }
   // Match the selection context, not the current version: stale/new pins fail too.
-  const selection = /(?:node-version\s*:|\bNODE_VERSION\s*[:=]|\bnode(?:js)?_version\s*[:=]|\bnode@|\bFROM\s+node:|\bNode(?:\.js)?(?:\s+is)?\s+\**[v~^]?)([\s"'`]*[v~^]?\d+(?:\.\d+){0,2}(?:\.x)?)/gi;
+  const selection = /(?:node-version\s*:|\bnode(?:js)?_?version\s*[:=]|(?<![\w-])node@|\bFROM\s+node:|\b(?:nvm|fnm)\s+(?:install|use)\s+|\bnodejs\s+|\bNode(?:\.js)?(?:\s+is)?\s+\**[v~^]?)([\s"'`]*[v~^]?\d+(?:\.\d+){0,2}(?:\.x)?)/gi;
   for (const [file, source] of files) {
     if (file === entry.owner.file) continue;
-    if ([".nvmrc", ".node-version", "web/.node-version", "web/.nvmrc"].includes(file)) {
+    if ([".nvmrc", ".node-version"].includes(path.posix.basename(file))) {
       report(file, 1, "independent Node version file");
     }
     if (file.endsWith("package.json")) {
@@ -51,7 +51,8 @@ function checkNode(files, entry, report) {
       }
       if (region) continue;
       for (const match of line.matchAll(selection)) report(file, offset + 1, `handwritten Node selection ${match[0].trim()}`);
-      if (/node-version-file\s*:/.test(line) && !new RegExp(`node-version-file:\\s*["']?${entry.owner.file.replaceAll(".", "\\.")}["']?\\s*$`).test(line)) {
+      if (/\.ya?ml$/.test(file) && /^\s*node-version\s*:/.test(line)) report(file, offset + 1, "setup-node must use the version file, including for matrix builds");
+      if (/\.ya?ml$/.test(file) && /^\s*node-version-file\s*:/.test(line) && !new RegExp(`node-version-file:\\s*["']?${entry.owner.file.replaceAll(".", "\\.")}["']?\\s*$`).test(line)) {
         report(file, offset + 1, `version file must be ${entry.owner.file}`);
       }
     }
@@ -76,6 +77,10 @@ function checkNode(files, entry, report) {
         }
       });
       if (!readsOwner) report(consumer.file, 1, "runtime check must read the owner");
+    } else if (consumer.selector === "preinstall") {
+      const checker = entry.consumers.find((item) => item.selector === "runtime-check");
+      const relative = checker && path.posix.relative(path.posix.dirname(consumer.file), checker.file);
+      if (JSON.parse(source || "{}").scripts?.preinstall !== `node ${relative}`) report(consumer.file, 1, "preinstall must run the owner-reading runtime check");
     } else report(consumer.file, 1, `unknown consumer selector ${consumer.selector}`);
   }
 }
@@ -91,6 +96,9 @@ function checkMemory(files, entry, report) {
       const field = ts.isPropertyAccessExpression(node) ? node.name.text
         : ts.isElementAccessExpression(node) && ts.isStringLiteral(node.argumentExpression) ? node.argumentExpression.text : undefined;
       if (field !== "peak_bytes" && field !== "reserve_bytes") return;
+      // Constructing fixture/input data is not an independent policy reader.
+      if (ts.isBinaryExpression(node.parent) && node.parent.left === node
+        && node.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken) return;
       const line = ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1;
       let scope = node.parent;
       while (scope && !ts.isFunctionDeclaration(scope)) scope = scope.parent;
