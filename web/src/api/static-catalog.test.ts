@@ -129,7 +129,7 @@ describe("static recipe library adapter", () => {
       title: "Qwen Fast NVFP4",
       version: "2.1.0",
       runtime: { adapter: "vllm" },
-      capacity: { profile_node_counts: [1], maximum_installed_bytes_per_node: 20, maximum_runtime_memory_bytes_per_node: 48 },
+      capacity: { profile_node_counts: [1], maximum_installed_bytes_per_node: 20, maximum_runtime_memory_bytes_per_node: 40 },
       catalog: {
         model_publisher: "qwen",
         model_slug: "qwen-fast",
@@ -147,6 +147,22 @@ describe("static recipe library adapter", () => {
         quantizations: ["NVFP4"],
       },
     });
+  });
+
+  test.each([0, 8, 800])("projects peak memory per node without adding informational reserve %i", async (reserve) => {
+    const fixture = structuredClone(index);
+    const topology = fixture.recipes[0]!.document.topology;
+    const primary = topology.roles[0]!;
+    primary.resources.memory.reserve_bytes = reserve;
+    // A smaller role with a larger reserve must not become the maximum.
+    topology.roles = [primary, { resources: { ...primary.resources, memory: { peak_bytes: 30, reserve_bytes: reserve * 2 } } }];
+    topology.node_count = 2;
+    serve(fixture);
+
+    const recipes = await listStaticRecipeCatalog(indexUrl);
+    const detail = await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast");
+    expect(recipes[0]!.capacity?.maximum_runtime_memory_bytes_per_node).toBe(40);
+    expect(detail.capacity?.maximum_runtime_memory_bytes_per_node).toBe(40);
   });
 
   test("provides immutable detail, import, and source links without an API", async () => {

@@ -77,7 +77,9 @@ function nodeResources(document: JsonRecord): { disk: number; memory: number } {
       const disk = record(resources.disk);
       const memory = record(resources.memory);
       const diskBytes = Object.values(disk).reduce<number>((total, value) => total + number(value), 0);
-      const runtimeBytes = number(memory.peak_bytes) + number(memory.reserve_bytes);
+      // Controller resource planning defines reserve_bytes as informational:
+      // peak_bytes already describes the complete runtime memory requirement.
+      const runtimeBytes = number(memory.peak_bytes);
       return {
         disk: Math.max(maximum.disk, diskBytes),
         memory: Math.max(maximum.memory, runtimeBytes),
