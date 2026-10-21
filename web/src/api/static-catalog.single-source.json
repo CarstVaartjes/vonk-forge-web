@@ -1,0 +1,15 @@
+[
+  {
+    "id": "catalog.runtime-memory",
+    "kind": "memory-projection",
+    "owner": { "file": "web/src/api/static-catalog.ts", "selector": "nodeResources" },
+    "derive": "project peak_bytes only; reserve_bytes is informational in the Controller contract",
+    "source": {
+      "repository": "CarstVaartjes/vonk-forge",
+      "revision": "cee017ae806f0ac4c0842a3652f8ef7ee57388b8",
+      "file": "control/src/vonk_control/resource_planning/types.py",
+      "selector": "reserve_bytes",
+      "lines": [33, 35]
+    }
+  }
+]
