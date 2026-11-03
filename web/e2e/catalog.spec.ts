@@ -53,6 +53,7 @@ const catalogIndex = {
       recipe_content_sha256: recipeDigest,
       sha256: "1".repeat(64),
     },
+    qualification: { status: "Working", changed: [], required_sparks: 2 },
     release: { version: "2.1.0", released_at: "2026-08-07" },
     document: {
       kind: "recipe",

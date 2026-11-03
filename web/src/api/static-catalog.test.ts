@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
+import { QUALIFICATION_STATUSES } from "../qualification-status";
 import { displayTitle, getStaticLibraryRelease, getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog, resetStaticCatalogCacheForTests } from "./static-catalog";
 
 
@@ -22,6 +23,7 @@ const index = {
     {
       content_sha256: "a".repeat(64),
       source_path: "recipes/qwen-fast.json",
+      qualification: { status: "Working", changed: [], required_sparks: 1 },
       package: { expected_bytes: 123, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", minimum_consumer_schema: 2, path: "packages/vonk-forge-qwen-fast.tar.gz", recipe_content_sha256: "a".repeat(64), sha256: "1".repeat(64) },
       release: { version: "2.1.0", released_at: "2026-08-28" },
       document: {
@@ -44,6 +46,7 @@ const index = {
     {
       content_sha256: "d".repeat(64),
       source_path: "recipes/glm-dual.json",
+      qualification: { status: "Not yet verified", changed: [], reason: "needs more Sparks", required_sparks: 2 },
       package: { expected_bytes: 321, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", minimum_consumer_schema: 2, path: "packages/community-glm-dual.tar.gz", recipe_content_sha256: "d".repeat(64), sha256: "2".repeat(64) },
       release: { version: "1.0.0", released_at: "2026-08-27" },
       document: {
@@ -141,7 +144,7 @@ describe("static recipe library adapter", () => {
         source_repository: "https://huggingface.co/Qwen/Qwen",
         alignment: "standard",
         capabilities: ["chat", "reasoning"],
-        qualification: "candidate",
+        qualification: "Working",
         execution_readiness: "executable",
         precision: "nvfp4",
         quantizations: ["NVFP4"],
@@ -163,6 +166,29 @@ describe("static recipe library adapter", () => {
     const detail = await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast");
     expect(recipes[0]!.capacity?.maximum_runtime_memory_bytes_per_node).toBe(40);
     expect(detail.capacity?.maximum_runtime_memory_bytes_per_node).toBe(40);
+  });
+
+  test.each(QUALIFICATION_STATUSES)("renders the published status %s exactly, ignoring tags", async (status) => {
+    const fixture = structuredClone(index);
+    // Tags that used to drive the status must have no effect now.
+    fixture.recipes[0]!.document.metadata.tags = ["accepted", "executable"];
+    fixture.recipes[0]!.qualification = { status, changed: [], reason: "never tested", required_sparks: 1 } as never;
+    serve(fixture);
+
+    const summary = (await listStaticRecipeCatalog(indexUrl)).find((recipe) => recipe.slug === "qwen-fast")!;
+    const detail = await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast");
+    for (const recipe of [summary, detail]) {
+      expect(recipe.catalog.qualification).toBe(status);
+      expect(recipe.catalog.qualification_reason).toBe("never tested");
+      expect(recipe.facts).toEqual({ source_bundle_observed: true });
+    }
+  });
+
+  test.each([undefined, { status: "candidate" }, { status: "Untested" }, { status: "" }])("rejects an index entry with qualification %j", async (qualification) => {
+    const fixture = structuredClone(index);
+    fixture.recipes[0]!.qualification = qualification as never;
+    serve(fixture);
+    await expect(listStaticRecipeCatalog(indexUrl)).rejects.toThrow("published qualification status");
   });
 
   test("provides immutable detail, import, and source links without an API", async () => {

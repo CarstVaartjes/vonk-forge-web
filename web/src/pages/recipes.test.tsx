@@ -23,7 +23,7 @@ const recipe: RecipeSummary = {
     maximum_runtime_memory_bytes_per_node: 48 * 1024 ** 3,
   },
   moderation_warning: null,
-  facts: { source_bundle_observed: true, publisher_tested: true },
+  facts: { source_bundle_observed: true },
   catalog: {
     description: "",
     tags: ["openai.chat"],
@@ -38,7 +38,8 @@ const recipe: RecipeSummary = {
     source_repository: null,
     alignment: "unspecified",
     capabilities: ["chat"],
-    qualification: "candidate",
+    qualification: "Not yet verified",
+    qualification_reason: "never tested",
     execution_readiness: "not-declared",
     runtime_distribution: "vllm",
     precision: null,
@@ -61,7 +62,8 @@ test("shows sizing, immutable identity, and evidence provenance", async () => {
   expect(screen.getByRole("cell", { name: "20 GiB" })).toBeVisible();
   expect(screen.getByRole("cell", { name: "48 GiB" })).toBeVisible();
   expect(screen.getByText(/Source verified/)).toBeVisible();
-  expect(screen.getByText(/Publisher-tested/)).toBeVisible();
+  expect(screen.getByText(/Not yet verified/, { selector: ".badge" })).toBeVisible();
+  expect(screen.getByText(/never tested/)).toBeVisible();
   expect(screen.getByText(/not a Vonk endorsement/i)).toBeVisible();
   expect(screen.getByText(/aaaaaaaaaa…/)).toBeVisible();
   expect(screen.getAllByRole("columnheader")).toHaveLength(16);

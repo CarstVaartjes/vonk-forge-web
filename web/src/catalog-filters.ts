@@ -1,4 +1,5 @@
 import type { RecipeSummary } from "./api/client";
+import { isQualificationStatus, type QualificationStatus } from "./qualification-status";
 
 
 export const CAPABILITY_OPTIONS = [
@@ -75,7 +76,7 @@ interface CatalogFilters {
   runtime: string;
   quantization: string;
   updated: UpdatedFilter;
-  qualification: "" | "candidate" | "cataloged";
+  qualification: "" | QualificationStatus;
   readiness: "" | "executable" | "integration-required" | "not-executable" | "not-declared";
   download: string;
   disk: string;
@@ -109,7 +110,7 @@ export const EMPTY_FILTERS: CatalogFilters = {
 const VALID_SPARKS = new Set<string>(["1", "2", "3", "4+"]);
 const VALID_SORTS = new Set<string>(["catalog", "recipe", "modelFamily", "model", "quantization", "runtime", "abliterated", "sparks", "creator", "updated", "readiness", "capability", "qualification", "repository", "download", "disk", "memory"]);
 const VALID_DIRECTIONS = new Set<string>(["asc", "desc"]);
-const VALID_QUALIFICATION = new Set<string>(["candidate", "cataloged"]);
+
 const VALID_READINESS = new Set<string>(READINESS_OPTIONS.map((option) => option.value));
 const VALID_CAPABILITIES = new Set<string>(CAPABILITY_OPTIONS.map((option) => option.value));
 const VALID_UPDATED = new Set<string>(["7", "30", "90", "365"]);
@@ -133,7 +134,7 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
     runtime: parameters.get("runtime") ?? "",
     quantization: parameters.get("quantization") ?? "",
     updated: VALID_UPDATED.has(parameters.get("updated") ?? "") ? parameters.get("updated") as UpdatedFilter : "",
-    qualification: VALID_QUALIFICATION.has(qualification) ? qualification as CatalogFilters["qualification"] : "",
+    qualification: isQualificationStatus(qualification) ? qualification : "",
     readiness: VALID_READINESS.has(readiness) ? readiness as CatalogFilters["readiness"] : "",
     download: parameters.get("download") ?? "",
     disk: parameters.get("disk") ?? "",
