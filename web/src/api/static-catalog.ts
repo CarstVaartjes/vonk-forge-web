@@ -31,7 +31,7 @@ interface LibraryIndex {
   schema_version: number;
   kind: "recipe-library-index";
   source_commit: string;
-  package_contract: { media_type: string; path_prefix: string; schema_version: 2 };
+  package_contract: { media_type: string; path_prefix: string; schema_version: number };
 }
 
 interface LibraryEntity {
@@ -513,7 +513,7 @@ async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryInde
       && typeof identity.publisher === "string"
       && typeof identity.slug === "string";
   });
-  if (body.schema_version !== 2 || contractMajor(body.contract_version) !== SUPPORTED_CONTRACT_MAJOR || typeof body.updated_at !== "string" || body.kind !== "recipe-library-index" || typeof body.repository !== "string" || typeof body.source_commit !== "string" || !validEntities || !Array.isArray(body.recipes) || !body.package_contract || body.package_contract.schema_version !== 2 || typeof body.package_contract.media_type !== "string" || typeof body.package_contract.path_prefix !== "string") {
+  if (body.schema_version !== contract.index_schema_version || contractMajor(body.contract_version) !== SUPPORTED_CONTRACT_MAJOR || typeof body.updated_at !== "string" || body.kind !== "recipe-library-index" || typeof body.repository !== "string" || typeof body.source_commit !== "string" || !validEntities || !Array.isArray(body.recipes) || !body.package_contract || body.package_contract.schema_version !== contract.package_schema_version || typeof body.package_contract.media_type !== "string" || typeof body.package_contract.path_prefix !== "string") {
     throw new Error("Recipe library returned an unsupported catalog index");
   }
   if (typeof release.tag !== "string" || !/^v\d+\.\d+\.\d+$/.test(release.tag) || release.repository !== body.repository || release.source_commit !== body.source_commit) {

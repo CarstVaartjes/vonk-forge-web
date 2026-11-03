@@ -149,12 +149,41 @@ function checkPublishedConstant(files, entry, report) {
   }
 }
 
+function checkContractVersions(files, entry, report) {
+  let owner;
+  try { owner = JSON.parse(files.get(entry.owner.file) ?? ""); } catch { owner = undefined; }
+  for (const key of ["major", "index_schema_version", "package_schema_version"]) {
+    if (!Number.isInteger(owner?.[key])) report(entry.owner.file, 1, `owner must hold an integer ${key}`);
+  }
+  const numeric = (node) => node && ts.isNumericLiteral(node);
+  const comparison = new Set([ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken]);
+  for (const [file, text] of files) {
+    if (file === entry.owner.file || !/^web\/(?:src|scripts)\/.*\.(?:[cm]?js|tsx?)$/.test(file) || /\.test\.[cm]?[jt]sx?$/.test(file)) continue;
+    const ast = syntax(file, text);
+    visit(ast, (node) => {
+      const line = ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1;
+      // A named contract major/version initialised with a number.
+      if ((ts.isVariableDeclaration(node) || ts.isPropertyAssignment(node) || ts.isPropertyDeclaration(node)) && numeric(node.initializer)
+        && /contract.?(?:major|version)|(?:index|package).?schema.?version/i.test(node.name.getText(ast))) {
+        report(file, line, `${node.name.getText(ast)} must be read from ${entry.owner.file}`);
+      }
+      // schema_version / major compared against a number.
+      if (ts.isBinaryExpression(node) && comparison.has(node.operatorToken.kind)) {
+        for (const [side, other] of [[node.left, node.right], [node.right, node.left]]) {
+          const name = ts.isPropertyAccessExpression(side) ? side.name.text : ts.isElementAccessExpression(side) && ts.isStringLiteral(side.argumentExpression) ? side.argumentExpression.text : "";
+          if (numeric(other) && /^(?:schema_version|major)$/.test(name)) report(file, line, `${name} compared with a literal; read it from ${entry.owner.file}`);
+        }
+      }
+    });
+  }
+}
+
 export function checkSingleSources(files, entries = registrations(files)) {
   const errors = [];
   const ids = new Set();
   const owners = new Set();
   const classes = new Set();
-  const kinds = { "node-version": checkNode, "memory-projection": checkMemory, "published-constant": checkPublishedConstant };
+  const kinds = { "node-version": checkNode, "memory-projection": checkMemory, "published-constant": checkPublishedConstant, "contract-versions": checkContractVersions };
   for (const entry of entries) {
     const owner = `${entry.owner?.file}#${entry.owner?.selector}`;
     const report = (file, line, detail) => errors.push(`${entry.id}: ${file}:${line}: ${detail}; owner ${owner}; ${entry.derive}`);

@@ -105,7 +105,7 @@ download fails and the next run heals it.
 
 To pin a release instead of following the newest one, set the `production`
 environment (or repository) variable `VONK_RECIPE_RELEASE` to an exact tag such
-as `v2.0.0` and dispatch the workflow; clear it to follow the newest release
+as `v3.0.0` and dispatch the workflow; clear it to follow the newest release
 again.
 
 Recipe updates arrive through the hourly schedule. `vonk-forge-recipes`
