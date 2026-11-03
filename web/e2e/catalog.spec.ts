@@ -296,7 +296,7 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   await page.getByRole("link", { name: "Qwen Fast" }).click();
   await expect(page.getByRole("heading", { name: "Trust, precisely stated" })).toBeVisible();
   await expect(page.getByText("Source: canonical bundle verified by Vonk")).toBeVisible();
-  await expect(page.getByText("Runtime test: no accepted publisher test")).toBeVisible();
+  await expect(page.getByText("Hardware qualification: Working")).toBeVisible();
   await expect(page.locator("code").filter({ hasText: recipeImportUri })).toBeVisible();
   await expect(page.getByRole("link", { name: "Inspect recipe source" })).toHaveAttribute(
     "href", `https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${sourceCommit}/recipes/qwen-fast.json`,

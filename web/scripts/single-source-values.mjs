@@ -133,12 +133,19 @@ function checkPublishedConstant(files, entry, report) {
     report(entry.owner.file, 1, `expected exported string constant ${entry.owner.selector}`);
     return;
   }
-  const literal = JSON.stringify(declared[1]);
+  const value = declared[1];
   for (const [file, text] of files) {
     if (file === entry.owner.file || !/^web\/src\/.*\.(?:tsx?)$/.test(file) || /\.test\.tsx?$/.test(file)) continue;
-    for (const [offset, line] of text.split("\n").entries()) {
-      if (line.includes(literal)) report(file, offset + 1, `import ${entry.owner.selector} instead of writing ${literal}`);
-    }
+    const ast = syntax(file, text);
+    visit(ast, (node) => {
+      // String, template (with or without substitutions) and JSX text forms.
+      const written = ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateHead(node)
+        || ts.isTemplateMiddle(node) || ts.isTemplateTail(node) ? node.text
+        : ts.isJsxText(node) ? node.text.trim() : undefined;
+      if (written !== value) return;
+      const line = ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1;
+      report(file, line, `import ${entry.owner.selector} instead of writing ${JSON.stringify(value)}`);
+    });
   }
 }
 
