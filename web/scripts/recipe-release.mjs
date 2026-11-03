@@ -15,7 +15,7 @@
 // unverified data.
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { createWriteStream } from "node:fs";
+import { createWriteStream, readFileSync } from "node:fs";
 import { chmod, mkdir, mkdtemp, open, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,7 +29,7 @@ export const SIGNER_WORKFLOW = `${RECIPE_REPOSITORY}/.github/workflows/publish.y
 export const SIGNER_REF = "refs/heads/main";
 // The recipe/model contract major this site renders. The library's release tag
 // is the contract version; recipe updates replace that release's assets in place.
-export const SUPPORTED_CONTRACT_MAJOR = 2;
+export const SUPPORTED_CONTRACT_MAJOR = JSON.parse(readFileSync(new URL("../src/contract-major.json", import.meta.url), "utf8")).major;
 
 const TAG = /^v\d+\.\d+\.\d+$/;
 const DIGEST = /^[0-9a-f]{64}$/;

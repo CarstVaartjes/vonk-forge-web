@@ -31,7 +31,7 @@ const tar = (members, options) => Buffer.concat([
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const commit = "a".repeat(40);
-const tag = "v2.1.0";
+const tag = "v3.0.0";
 const updatedAt = "2026-09-28T20:04:06Z";
 
 // A fixture release shaped like vonk-forge-recipes publish.yml output.
@@ -40,7 +40,7 @@ function fixtureRelease({ index: indexOverride = {}, checksums: checksumsOverrid
   const index = {
     kind: "recipe-library-index",
     schema_version: 2,
-    contract_version: "2.1.0",
+    contract_version: "3.0.0",
     updated_at: updatedAt,
     repository: "CarstVaartjes/vonk-forge-recipes",
     source_commit: commit,
@@ -113,7 +113,7 @@ describe("recipe release publication", () => {
     expect(JSON.parse(await readFile(path.join(outDir, "release.json"), "utf8"))).toEqual({
       repository: "CarstVaartjes/vonk-forge-recipes",
       tag,
-      contract_version: "2.1.0",
+      contract_version: "3.0.0",
       updated_at: updatedAt,
       source_commit: commit,
       sha256sums_sha256: sha256(assets.SHA256SUMS),
@@ -232,21 +232,21 @@ describe("recipe release publication", () => {
   });
 
   test("rejects a release or index for another contract major", async () => {
-    await expect(publish(fixtureRelease(), { releaseTag: "v3.0.0" })).rejects.toThrow("contract major 2");
-    await expect(publish(fixtureRelease({ index: { contract_version: "3.0.0" } }))).rejects.toThrow("unsupported contract version");
+    await expect(publish(fixtureRelease(), { releaseTag: "v2.8.1" })).rejects.toThrow("contract major 3");
+    await expect(publish(fixtureRelease({ index: { contract_version: "2.8.1" } }))).rejects.toThrow("unsupported contract version");
     await expectPreviousCatalogKept();
   });
 
   test("follows the newest non-draft release within the supported contract major", () => {
     const releases = [
-      { tag_name: "v3.0.0", draft: false },
-      { tag_name: "v2.10.0", draft: true },
-      { tag_name: "v2.2.0", draft: false },
-      { tag_name: "v2.10.1-rc", draft: false },
-      { tag_name: "v2.9.3", draft: false },
-      { tag_name: "v1.9.0", draft: false },
+      { tag_name: "v4.0.0", draft: false },
+      { tag_name: "v3.10.0", draft: true },
+      { tag_name: "v3.2.0", draft: false },
+      { tag_name: "v3.10.1-rc", draft: false },
+      { tag_name: "v3.9.3", draft: false },
+      { tag_name: "v2.8.1", draft: false },
     ];
-    expect(selectReleaseTag(releases)).toBe("v2.9.3");
+    expect(selectReleaseTag(releases)).toBe("v3.9.3");
     expect(() => selectReleaseTag([{ tag_name: "v1.0.0", draft: false }])).toThrow("no published release");
   });
 
