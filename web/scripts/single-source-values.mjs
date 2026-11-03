@@ -160,7 +160,15 @@ function checkContractVersions(files, entry, report) {
     ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken,
     ts.SyntaxKind.LessThanToken, ts.SyntaxKind.LessThanEqualsToken, ts.SyntaxKind.GreaterThanToken, ts.SyntaxKind.GreaterThanEqualsToken,
   ]);
-  const versionName = /contract|major|schema.?version|semver\(/i;
+  // Match the leaf name only: property name, callee name, or the indexed object.
+  const versionName = /^semver$|(?:major|contract_?version|schema_?version)$/i;
+  const leaf = (expression) => {
+    if (ts.isParenthesizedExpression(expression) || ts.isNonNullExpression(expression) || ts.isAsExpression(expression)) return leaf(expression.expression);
+    if (ts.isPropertyAccessExpression(expression)) return expression.name.text;
+    if (ts.isCallExpression(expression)) return leaf(expression.expression);
+    if (ts.isElementAccessExpression(expression)) return ts.isStringLiteralLike(expression.argumentExpression) ? expression.argumentExpression.text : leaf(expression.expression);
+    return ts.isIdentifier(expression) ? expression.text : "";
+  };
   for (const [file, text] of files) {
     if (file === entry.owner.file || !/^web\/(?:src|scripts)\/.*\.(?:[cm]?js|tsx?)$/.test(file) || /\.test\.[cm]?[jt]sx?$/.test(file)) continue;
     const ast = syntax(file, text);
@@ -169,19 +177,19 @@ function checkContractVersions(files, entry, report) {
       const flag = (what) => report(file, line, `${what}; read it from ${entry.owner.file}`);
       // A named contract major/version (or MAJOR) initialised with a number.
       if ((ts.isVariableDeclaration(node) || ts.isPropertyAssignment(node) || ts.isPropertyDeclaration(node)) && numeric(node.initializer)
-        && /contract.?(?:major|version)|schema.?version|(?:^|_)major$/i.test(node.name.getText(ast))) flag(`${node.name.getText(ast)} initialised with a literal`);
+        && versionName.test(node.name.getText(ast))) flag(`${node.name.getText(ast)} initialised with a literal`);
       // A type literal such as `schema_version: 2`.
       if (ts.isPropertySignature(node) && node.type && ts.isLiteralTypeNode(node.type) && numeric(node.type.literal)
         && /^(?:schema_version|major)$/.test(node.name.getText(ast))) flag(`${node.name.getText(ast)} typed as a literal`);
       // Equality or relational comparison of a version-like expression with a number.
       if (ts.isBinaryExpression(node) && comparison.has(node.operatorToken.kind)) {
         for (const [side, other] of [[node.left, node.right], [node.right, node.left]]) {
-          if (numeric(other) && versionName.test(side.getText(ast))) flag(`${side.getText(ast)} compared with a literal`);
+          if (numeric(other) && versionName.test(leaf(side))) flag(`${side.getText(ast)} compared with a literal`);
         }
       }
-      if (ts.isCaseClause(node) && numeric(node.expression) && versionName.test(node.parent.parent.expression.getText(ast))) flag("version switch on a literal case");
+      if (ts.isCaseClause(node) && numeric(node.expression) && versionName.test(leaf(node.parent.parent.expression))) flag("version switch on a literal case");
       // A tag regex that fixes a major, such as /^v3\./.
-      if (ts.isRegularExpressionLiteral(node) && /^\/\^?v\d/.test(node.text)) flag(`tag regex ${node.text} fixes a major`);
+      if (ts.isRegularExpressionLiteral(node) && /^\/\^v\d/.test(node.text)) flag(`tag regex ${node.text} fixes a major`);
     });
   }
 }

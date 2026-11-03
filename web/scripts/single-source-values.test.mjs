@@ -156,6 +156,21 @@ describe("single source values", () => {
       expect(check(source, "web/scripts/x.mjs")).toContain("web/scripts/x.mjs:1:");
     });
 
+    test.each([
+      "if (contracts.length === 0) {}",
+      "if (majorItems.length > 0) {}",
+      "if (contract.recipes.length > 10) {}",
+      "if (page.contractRows.length < 50) {}",
+      "if (contractCount >= 1) {}",
+      "if (Object.keys(body.package_contract).length > 0) {}",
+      "if (semver(tag).length !== 3) {}",
+      "switch (contracts.length) { case 0: break; }",
+      "const pattern = /v2/; const other = /^v\\d+\\.\\d+/;",
+      "const majorCount = 3;",
+    ])("allows unrelated numbers: %s", (source) => {
+      expect(check(source)).toBe("");
+    });
+
     test("allows reads from the owner, test files and unrelated numbers", () => {
       expect(check("const SUPPORTED_CONTRACT_MAJOR = contract.major; if (body.schema_version !== contract.index_schema_version) {} const retries = 3;")).toBe("");
       expect(check("const SUPPORTED_CONTRACT_MAJOR = 3;", "web/src/x.test.ts")).toBe("");
