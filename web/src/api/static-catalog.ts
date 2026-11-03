@@ -2,7 +2,7 @@ import type { LibraryCatalogCounts, LibraryRelease, ModelPage, ModelRuns, ModelS
 
 
 import { CAPABILITY_OPTIONS } from "../catalog-filters";
-import { isQualificationStatus, type QualificationStatus } from "../qualification-status";
+import { STATUS_UNAVAILABLE } from "../qualification-status";
 
 
 type JsonRecord = Record<string, unknown>;
@@ -121,12 +121,12 @@ function publicCapabilities(document: JsonRecord): string[] {
   return PUBLIC_CAPABILITIES.filter((value) => values.has(value));
 }
 
-// The recipe library publishes the status per recipe; an entry without one is
-// an index this adapter does not understand, never a defaulted status.
-function publishedQualification(item: LibraryRecipe): { status: QualificationStatus; reason: string | null } {
+// Shown as published. An entry without a readable status degrades only that
+// entry; the rest of the catalog keeps rendering.
+function publishedQualification(item: LibraryRecipe): { status: string; reason: string | null } {
   const published = record(item.qualification);
-  if (!isQualificationStatus(published.status)) throw new Error("Recipe library returned a recipe without a published qualification status");
-  return { status: published.status, reason: text(published.reason) || null };
+  const status = typeof published.status === "string" ? published.status.trim() : "";
+  return { status: status || STATUS_UNAVAILABLE, reason: text(published.reason) || null };
 }
 
 function executionReadiness(recipeTags: string[]): "executable" | "integration-required" | "not-executable" | "not-declared" {

@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { QUALIFICATION_STATUSES } from "../qualification-status";
 import { displayTitle, getStaticLibraryRelease, getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog, resetStaticCatalogCacheForTests } from "./static-catalog";
 
 
@@ -168,7 +167,7 @@ describe("static recipe library adapter", () => {
     expect(detail.capacity?.maximum_runtime_memory_bytes_per_node).toBe(40);
   });
 
-  test.each(QUALIFICATION_STATUSES)("renders the published status %s exactly, ignoring tags", async (status) => {
+  test.each(["Working", "Re-check: worked before", "Fix to verify", "Failed: recipe", "Not yet verified", "A status added later"])("renders the published status %s as written, ignoring tags", async (status) => {
     const fixture = structuredClone(index);
     // Tags that used to drive the status must have no effect now.
     fixture.recipes[0]!.document.metadata.tags = ["accepted", "executable"];
@@ -184,11 +183,28 @@ describe("static recipe library adapter", () => {
     }
   });
 
-  test.each([undefined, { status: "candidate" }, { status: "Untested" }, { status: "" }])("rejects an index entry with qualification %j", async (qualification) => {
+  test("an entry with a missing or non-string status degrades only that entry", async () => {
     const fixture = structuredClone(index);
-    fixture.recipes[0]!.qualification = qualification as never;
+    fixture.recipes[0]!.qualification = undefined as never;
     serve(fixture);
-    await expect(listStaticRecipeCatalog(indexUrl)).rejects.toThrow("published qualification status");
+
+    const recipes = await listStaticRecipeCatalog(indexUrl);
+    expect(recipes.map((recipe) => recipe.catalog.qualification)).toEqual(["Status unavailable", "Not yet verified"]);
+    fixture.recipes[0]!.qualification = { status: 7, required_sparks: 1 } as never;
+    resetStaticCatalogCacheForTests();
+    serve(fixture);
+    expect((await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast")).catalog.qualification).toBe("Status unavailable");
+    expect((await listStaticModels(indexUrl)).items).toHaveLength(1);
+  });
+
+  test("an unknown status on one entry leaves the others and the Models page rendering", async () => {
+    const fixture = structuredClone(index);
+    fixture.recipes[0]!.qualification = { status: "Testing later", changed: [], required_sparks: 1 } as never;
+    serve(fixture);
+
+    const recipes = await listStaticRecipeCatalog(indexUrl);
+    expect(recipes.map((recipe) => recipe.catalog.qualification)).toEqual(["Testing later", "Not yet verified"]);
+    expect((await listStaticModels(indexUrl)).items).toHaveLength(1);
   });
 
   test("provides immutable detail, import, and source links without an API", async () => {

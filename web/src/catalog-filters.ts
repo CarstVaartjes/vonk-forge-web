@@ -1,5 +1,4 @@
 import type { RecipeSummary } from "./api/client";
-import { isQualificationStatus, type QualificationStatus } from "./qualification-status";
 
 
 export const CAPABILITY_OPTIONS = [
@@ -76,7 +75,7 @@ interface CatalogFilters {
   runtime: string;
   quantization: string;
   updated: UpdatedFilter;
-  qualification: "" | QualificationStatus;
+  qualification: string;
   readiness: "" | "executable" | "integration-required" | "not-executable" | "not-declared";
   download: string;
   disk: string;
@@ -134,7 +133,7 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
     runtime: parameters.get("runtime") ?? "",
     quantization: parameters.get("quantization") ?? "",
     updated: VALID_UPDATED.has(parameters.get("updated") ?? "") ? parameters.get("updated") as UpdatedFilter : "",
-    qualification: isQualificationStatus(qualification) ? qualification : "",
+    qualification,
     readiness: VALID_READINESS.has(readiness) ? readiness as CatalogFilters["readiness"] : "",
     download: parameters.get("download") ?? "",
     disk: parameters.get("disk") ?? "",

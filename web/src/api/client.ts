@@ -1,4 +1,3 @@
-import type { QualificationStatus } from "../qualification-status";
 import { getStaticLibraryRelease, getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog } from "./static-catalog";
 
 
@@ -45,7 +44,7 @@ export interface RecipeSummary {
     alignment: "standard" | "abliterated" | "derisked" | "other-modified" | "unspecified";
     capabilities: string[];
     // Published by the recipe library, shown as written.
-    qualification: QualificationStatus;
+    qualification: string;
     qualification_reason: string | null;
     execution_readiness: "executable" | "integration-required" | "not-executable" | "not-declared";
     runtime_distribution: string;
