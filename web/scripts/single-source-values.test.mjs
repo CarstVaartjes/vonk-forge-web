@@ -99,4 +99,35 @@ describe("single source values", () => {
     files.set("other.ts", source);
     expect(checkSingleSources(files, [memoryOwner]).join()).toContain("independent memory projection");
   });
+
+  describe("published constants", () => {
+    const entry = {
+      id: "catalog.working-status", kind: "published-constant", owner: { file: "web/src/status.ts", selector: "WORKING_STATUS" },
+      derive: "import WORKING_STATUS",
+      source: { repository: "o/r", revision: "a".repeat(40), file: "schema.json", selector: "properties.status.enum[0]" },
+    };
+    const owner = 'export const WORKING_STATUS = "Working";';
+    const check = (extra, registered = entry) => checkSingleSources(new Map([["web/src/status.ts", owner], ...extra]), [registered]).join("\n");
+
+    test.each([
+      ["double quotes", 'const a = "Working";', "web/src/x.tsx"],
+      ["single quotes", "const a = 'Working';", "web/src/x.ts"],
+      ["template literal", "const a = `Working`;", "web/src/x.ts"],
+      ["template head", "const a = `Working ${b}`.length; const c = `${b}Working`;", "web/src/x.ts"],
+      ["JSX text", "const a = <span>Working</span>;", "web/src/x.tsx"],
+      ["JSX attribute", 'const a = <span title="Working" />;', "web/src/x.tsx"],
+    ])("rejects a written literal: %s", (_name, source, file) => {
+      const errors = check([[file, source]]);
+      expect(errors).toContain(`${file}:`);
+      expect(errors).toContain("import WORKING_STATUS instead of writing");
+    });
+
+    test("allows imports, test files and longer text", () => {
+      expect(check([["web/src/x.tsx", 'import { WORKING_STATUS } from "./status"; const a = <b>Working on it</b>;'], ["web/src/x.test.tsx", 'const a = "Working";']])).toBe("");
+    });
+
+    test.each(["", "abc123", "A".repeat(40)])("rejects a missing or short source revision %j", (revision) => {
+      expect(check([], { ...entry, source: { ...entry.source, revision } })).toContain("published constant needs a pinned source");
+    });
+  });
 });

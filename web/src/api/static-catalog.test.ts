@@ -22,6 +22,7 @@ const index = {
     {
       content_sha256: "a".repeat(64),
       source_path: "recipes/qwen-fast.json",
+      qualification: { status: "Working", changed: [], required_sparks: 1 },
       package: { expected_bytes: 123, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", minimum_consumer_schema: 2, path: "packages/vonk-forge-qwen-fast.tar.gz", recipe_content_sha256: "a".repeat(64), sha256: "1".repeat(64) },
       release: { version: "2.1.0", released_at: "2026-08-28" },
       document: {
@@ -44,6 +45,7 @@ const index = {
     {
       content_sha256: "d".repeat(64),
       source_path: "recipes/glm-dual.json",
+      qualification: { status: "Not yet verified", changed: [], reason: "needs more Sparks", required_sparks: 2 },
       package: { expected_bytes: 321, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", minimum_consumer_schema: 2, path: "packages/community-glm-dual.tar.gz", recipe_content_sha256: "d".repeat(64), sha256: "2".repeat(64) },
       release: { version: "1.0.0", released_at: "2026-08-27" },
       document: {
@@ -141,7 +143,7 @@ describe("static recipe library adapter", () => {
         source_repository: "https://huggingface.co/Qwen/Qwen",
         alignment: "standard",
         capabilities: ["chat", "reasoning"],
-        qualification: "candidate",
+        qualification: "Working",
         execution_readiness: "executable",
         precision: "nvfp4",
         quantizations: ["NVFP4"],
@@ -163,6 +165,46 @@ describe("static recipe library adapter", () => {
     const detail = await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast");
     expect(recipes[0]!.capacity?.maximum_runtime_memory_bytes_per_node).toBe(40);
     expect(detail.capacity?.maximum_runtime_memory_bytes_per_node).toBe(40);
+  });
+
+  test.each(["Working", "Re-check: worked before", "Fix to verify", "Failed: recipe", "Not yet verified", "A status added later"])("renders the published status %s as written, ignoring tags", async (status) => {
+    const fixture = structuredClone(index);
+    // Tags that used to drive the status must have no effect now.
+    fixture.recipes[0]!.document.metadata.tags = ["accepted", "executable"];
+    fixture.recipes[0]!.qualification = { status, changed: [], reason: "never tested", required_sparks: 1 } as never;
+    serve(fixture);
+
+    const summary = (await listStaticRecipeCatalog(indexUrl)).find((recipe) => recipe.slug === "qwen-fast")!;
+    const detail = await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast");
+    for (const recipe of [summary, detail]) {
+      expect(recipe.catalog.qualification).toBe(status);
+      expect(recipe.catalog.qualification_reason).toBe("never tested");
+      expect(recipe.facts).toEqual({ source_bundle_observed: true });
+    }
+  });
+
+  test("an entry with a missing or non-string status degrades only that entry", async () => {
+    const fixture = structuredClone(index);
+    fixture.recipes[0]!.qualification = undefined as never;
+    serve(fixture);
+
+    const recipes = await listStaticRecipeCatalog(indexUrl);
+    expect(recipes.map((recipe) => recipe.catalog.qualification)).toEqual(["Status unavailable", "Not yet verified"]);
+    fixture.recipes[0]!.qualification = { status: 7, required_sparks: 1 } as never;
+    resetStaticCatalogCacheForTests();
+    serve(fixture);
+    expect((await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast")).catalog.qualification).toBe("Status unavailable");
+    expect((await listStaticModels(indexUrl)).items).toHaveLength(1);
+  });
+
+  test("an unknown status on one entry leaves the others and the Models page rendering", async () => {
+    const fixture = structuredClone(index);
+    fixture.recipes[0]!.qualification = { status: "Testing later", changed: [], required_sparks: 1 } as never;
+    serve(fixture);
+
+    const recipes = await listStaticRecipeCatalog(indexUrl);
+    expect(recipes.map((recipe) => recipe.catalog.qualification)).toEqual(["Testing later", "Not yet verified"]);
+    expect((await listStaticModels(indexUrl)).items).toHaveLength(1);
   });
 
   test("provides immutable detail, import, and source links without an API", async () => {

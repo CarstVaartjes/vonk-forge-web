@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { loadRecipeCatalog, type RecipeSummary } from "../api/client";
+import { WORKING_STATUS } from "../qualification-status";
 import { FacetStrip, SparkPicker } from "../catalog-setup";
 import {
   CAPABILITY_OPTIONS,
@@ -174,6 +175,7 @@ export function RecipesPage() {
     return Array.from(spellings.values()).map((forms) => [...forms.entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))[0]![0]).sort((left, right) => left.localeCompare(right, undefined, { sensitivity: "base" }));
   }, [available]);
   const repositories = useMemo(() => Array.from(new Set(available.flatMap((recipe) => recipe.catalog.source_repository ? [recipe.catalog.source_repository as string] : []))).sort(), [available]);
+  const qualifications = useMemo(() => Array.from(new Set(available.map((recipe) => recipe.catalog.qualification))).sort(), [available]);
   const runtimes = useMemo(() => Array.from(new Set(available.map((recipe) => recipe.catalog.runtime_distribution))).sort(), [available]);
   const quantizations = useMemo(() => Array.from(new Set(available.flatMap((recipe) => recipe.catalog.quantizations))).sort(), [available]);
   const downloads = useMemo(() => distinctSizes(available.map((recipe) => recipe.catalog.expected_download_bytes)), [available]);
@@ -194,7 +196,7 @@ export function RecipesPage() {
   if (filters.updated) addApplied("updated", `Updated: last ${filters.updated} days`, "updated");
   if (filters.readiness) addApplied("readiness", `Readiness: ${READINESS_OPTIONS.find((option) => option.value === filters.readiness)?.label ?? filters.readiness}`, "readiness");
   for (const capability of filters.capabilities) applied.push({ key: `capability:${capability}`, label: `Capability: ${capabilityLabel(capability)}`, remove: () => toggleCapability(capability) });
-  if (filters.qualification) addApplied("qualification", `Qualification: ${filters.qualification === "cataloged" ? "Accepted" : "Candidate"}`, "qualification");
+  if (filters.qualification) addApplied("qualification", `Qualification: ${filters.qualification}`, "qualification");
   if (filters.repository) addApplied("repository", `Repository: ${sourceLabel(filters.repository)}`, "repository");
   if (filters.runtime) addApplied("runtime", `Runtime: ${humanize(filters.runtime)}`, "runtime");
   if (filters.download) addApplied("download", `Download: ${filters.download === "unknown" ? "Not declared" : bytes(Number(filters.download))}`, "download");
@@ -258,7 +260,7 @@ export function RecipesPage() {
               <ColumnHeader label="Updated" sort="catalog" filtered={Boolean(filters.updated)} {...columnProps}><select aria-label="Filter by updated date" value={filters.updated} onChange={(event) => update("updated", event.target.value)}><option value="">Any</option>{(["7", "30", "90", "365"] as UpdatedFilter[]).map((value) => <option key={value} value={value} disabled={count("updated", (recipe) => updatedMatches(recipe, value)) === 0}>Last {value} days</option>)}</select></ColumnHeader>
               <ColumnHeader label="Readiness" sort="readiness" filtered={Boolean(filters.readiness)} {...columnProps}><select aria-label="Filter by execution readiness" value={filters.readiness} onChange={(event) => update("readiness", event.target.value)}><option value="">Any</option>{READINESS_OPTIONS.map((option) => <option key={option.value} value={option.value} disabled={count("readiness", (recipe) => recipe.catalog.execution_readiness === option.value) === 0}>{option.label}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Capabilities" sort="capability" filtered={filters.capabilities.length > 0} {...columnProps}><select aria-label="Filter by capability" value="" onChange={(event) => toggleCapability(event.target.value)}><option value="">{filters.capabilities.length ? `${filters.capabilities.length} selected · add…` : "Any capability"}</option>{CAPABILITY_OPTIONS.map((option) => <option key={option.value} value={option.value} disabled={capabilityCount(option.value) === 0 && !filters.capabilities.includes(option.value)}>{filters.capabilities.includes(option.value) ? `Remove ${option.label}` : option.label}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Qualification" sort="qualification" filtered={Boolean(filters.qualification)} {...columnProps}><select aria-label="Filter by qualification" value={filters.qualification} onChange={(event) => update("qualification", event.target.value)}><option value="">Any</option><option value="cataloged" disabled={count("qualification", (recipe) => recipe.catalog.qualification === "cataloged") === 0}>Accepted</option><option value="candidate" disabled={count("qualification", (recipe) => recipe.catalog.qualification === "candidate") === 0}>Candidate</option></select></ColumnHeader>
+              <ColumnHeader label="Qualification" sort="qualification" filtered={Boolean(filters.qualification)} {...columnProps}><select aria-label="Filter by qualification" value={filters.qualification} onChange={(event) => update("qualification", event.target.value)}><option value="">Any</option>{qualifications.map((status) => <option key={status} value={status} disabled={count("qualification", (recipe) => recipe.catalog.qualification === status) === 0}>{status}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Repository" sort="repository" filtered={Boolean(filters.repository)} {...columnProps}><select aria-label="Filter by original repository" value={filters.repository} onChange={(event) => update("repository", event.target.value)}><option value="">All</option>{repositories.map((value) => <option key={value} value={value} disabled={count("repository", (recipe) => recipe.catalog.source_repository === value) === 0}>{sourceLabel(value)}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Download" sort="download" filtered={Boolean(filters.download)} {...columnProps}><select aria-label="Filter by download size" value={filters.download} onChange={(event) => update("download", event.target.value)}><option value="">Any</option>{downloads.map((value) => <option key={sizeKey(value)} value={sizeKey(value)}>{bytes(value)}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Abliterated" sort="abliterated" filtered={Boolean(filters.abliterated)} {...columnProps}><select aria-label="Filter by abliterated" value={filters.abliterated} onChange={(event) => update("abliterated", event.target.value)}><option value="">Any</option><option value="true" disabled={count("abliterated", recipeIsAbliterated) === 0}>True</option><option value="false" disabled={count("abliterated", (recipe) => !recipeIsAbliterated(recipe)) === 0}>False</option></select></ColumnHeader>
@@ -279,7 +281,7 @@ export function RecipesPage() {
                 <td className="catalog-table-date">{updatedLabel(recipe.published_at)}</td>
                 <td><span className={`catalog-readiness readiness-${facts.execution_readiness}`}>{READINESS_OPTIONS.find((option) => option.value === facts.execution_readiness)?.label ?? humanize(facts.execution_readiness)}</span></td>
                 <td>{facts.capabilities.length ? facts.capabilities.map(capabilityLabel).join(" · ") : "—"}</td>
-                <td><span className={`badge ${facts.qualification === "cataloged" ? "accepted" : "candidate"}`}>{facts.qualification === "cataloged" ? "Accepted" : "Candidate"}</span><span className="catalog-table-substatus">{recipe.facts?.source_bundle_observed ? "Source verified" : "Source pending"} · {recipe.facts?.publisher_tested ? "Publisher-tested" : "No accepted test report"}</span></td>
+                <td><span className={`badge ${facts.qualification === WORKING_STATUS ? "accepted" : "candidate"}`}>{facts.qualification}</span><span className="catalog-table-substatus">{recipe.facts?.source_bundle_observed ? "Source verified" : "Source pending"}{facts.qualification_reason ? ` · ${facts.qualification_reason}` : ""}</span></td>
                 <td>{facts.source_repository ? <a className="catalog-source-link" href={facts.source_repository}>{sourceLabel(facts.source_repository)}</a> : "—"}</td>
                 <td className="catalog-table-number">{bytes(facts.expected_download_bytes)}</td>
                 <td>{recipeIsAbliterated(recipe) ? "True" : "False"}</td>

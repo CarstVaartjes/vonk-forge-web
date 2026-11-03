@@ -1,0 +1,14 @@
+[
+  {
+    "id": "catalog.working-status",
+    "kind": "published-constant",
+    "owner": { "file": "web/src/qualification-status.ts", "selector": "WORKING_STATUS" },
+    "derive": "import WORKING_STATUS; never write the published status literal elsewhere",
+    "source": {
+      "repository": "CarstVaartjes/vonk-forge-recipes",
+      "revision": "46c5eeb22d40af06e53ada7ab206216caa784e94",
+      "file": "contracts/src/vonk_forge_contracts/schema/published-qualification-status-v1.schema.json",
+      "selector": "properties.status.enum[0]"
+    }
+  }
+]

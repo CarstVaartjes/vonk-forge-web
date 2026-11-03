@@ -2,6 +2,7 @@ import type { LibraryCatalogCounts, LibraryRelease, ModelPage, ModelRuns, ModelS
 
 
 import { CAPABILITY_OPTIONS } from "../catalog-filters";
+import { STATUS_UNAVAILABLE } from "../qualification-status";
 
 
 type JsonRecord = Record<string, unknown>;
@@ -14,6 +15,7 @@ interface LibraryRecipe {
   content_sha256: string;
   document: JsonRecord;
   package: { expected_bytes: number; media_type: string; minimum_consumer_schema: number; path: string; recipe_content_sha256: string; sha256: string };
+  qualification?: JsonRecord;
   release?: JsonRecord;
   source_path: string;
 }
@@ -119,8 +121,12 @@ function publicCapabilities(document: JsonRecord): string[] {
   return PUBLIC_CAPABILITIES.filter((value) => values.has(value));
 }
 
-function qualification(recipeTags: string[]): "candidate" | "cataloged" {
-  return recipeTags.includes("accepted") && !recipeTags.includes("candidate") ? "cataloged" : "candidate";
+// Shown as published. An entry without a readable status degrades only that
+// entry; the rest of the catalog keeps rendering.
+function publishedQualification(item: LibraryRecipe): { status: string; reason: string | null } {
+  const published = record(item.qualification);
+  const status = typeof published.status === "string" ? published.status.trim() : "";
+  return { status: status || STATUS_UNAVAILABLE, reason: text(published.reason) || null };
 }
 
 function executionReadiness(recipeTags: string[]): "executable" | "integration-required" | "not-executable" | "not-declared" {
@@ -320,7 +326,8 @@ function mapModels(index: LibraryIndex): ModelSummary[] {
   }).sort((left, right) => left.title.localeCompare(right.title));
 }
 
-function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: RecipeSummary["artifacts"]): NonNullable<RecipeSummary["catalog"]> {
+function publicMetadata(item: LibraryRecipe, document: JsonRecord, index: LibraryIndex, artifacts: RecipeSummary["artifacts"]): NonNullable<RecipeSummary["catalog"]> {
+  const published = publishedQualification(item);
   const recipeTags = tags(document);
   const metadata = record(document.metadata);
   const runtime = record(document.runtime);
@@ -350,7 +357,8 @@ function publicMetadata(document: JsonRecord, index: LibraryIndex, artifacts: Re
     source_repository: source?.repository ?? null,
     alignment,
     capabilities: modelEntity ? publicCapabilities(modelEntity.document) : [],
-    qualification: qualification(recipeTags),
+    qualification: published.status,
+    qualification_reason: published.reason,
     execution_readiness: executionReadiness(recipeTags),
     runtime_distribution: text(runtime.engine, "unknown"),
     precision,
@@ -414,7 +422,6 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
     facts: {
       // The build context ships inside the package the Pages build verified.
       source_bundle_observed: Boolean(contextPath),
-      publisher_tested: false,
     },
     import: {
       uri: `vonk://catalog/${publisher}/${slug}@sha256:${item.content_sha256}`,
@@ -430,7 +437,7 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
       bytes: item.package.expected_bytes,
       media_type: item.package.media_type,
     },
-    catalog: publicMetadata(document, index, artifacts),
+    catalog: publicMetadata(item, document, index, artifacts),
     latest_revision: {
       content_sha256: item.content_sha256,
       document,

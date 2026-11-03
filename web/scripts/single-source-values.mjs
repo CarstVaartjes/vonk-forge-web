@@ -122,12 +122,39 @@ function checkMemory(files, entry, report) {
   if (projections !== 1) report(entry.owner.file, 1, "expected exactly one peak_bytes projection in the owner");
 }
 
+function checkPublishedConstant(files, entry, report) {
+  const source = entry.source ?? {};
+  if (!/^[0-9a-f]{40}$/.test(source.revision ?? "") || !source.repository || !source.file || !source.selector) {
+    report(entry.owner.file, 1, "published constant needs a pinned source repository, 40-char revision, file and selector");
+  }
+  const owner = files.get(entry.owner.file) ?? "";
+  const declared = owner.match(new RegExp(`export const ${entry.owner.selector} = "([^"\\n]+)";`));
+  if (!declared) {
+    report(entry.owner.file, 1, `expected exported string constant ${entry.owner.selector}`);
+    return;
+  }
+  const value = declared[1];
+  for (const [file, text] of files) {
+    if (file === entry.owner.file || !/^web\/src\/.*\.(?:tsx?)$/.test(file) || /\.test\.tsx?$/.test(file)) continue;
+    const ast = syntax(file, text);
+    visit(ast, (node) => {
+      // String, template (with or without substitutions) and JSX text forms.
+      const written = ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateHead(node)
+        || ts.isTemplateMiddle(node) || ts.isTemplateTail(node) ? node.text
+        : ts.isJsxText(node) ? node.text.trim() : undefined;
+      if (written !== value) return;
+      const line = ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1;
+      report(file, line, `import ${entry.owner.selector} instead of writing ${JSON.stringify(value)}`);
+    });
+  }
+}
+
 export function checkSingleSources(files, entries = registrations(files)) {
   const errors = [];
   const ids = new Set();
   const owners = new Set();
   const classes = new Set();
-  const kinds = { "node-version": checkNode, "memory-projection": checkMemory };
+  const kinds = { "node-version": checkNode, "memory-projection": checkMemory, "published-constant": checkPublishedConstant };
   for (const entry of entries) {
     const owner = `${entry.owner?.file}#${entry.owner?.selector}`;
     const report = (file, line, detail) => errors.push(`${entry.id}: ${file}:${line}: ${detail}; owner ${owner}; ${entry.derive}`);
