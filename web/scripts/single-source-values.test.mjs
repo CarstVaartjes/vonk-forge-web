@@ -143,7 +143,14 @@ describe("single source values", () => {
       "if (body.schema_version !== 2) throw new Error();",
       "if (2 === index.schema_version) throw new Error();",
       'if (index["schema_version"] != 2) throw new Error();',
-      "if (semver(tag).major !== 3) throw new Error();",
+      "if (semver(tag)[0] !== 3) fail();",
+      "if (semver(`v${index.contract_version}`)?.[0] !== 3) fail();",
+      "if (contractMajor(body.contract_version) !== 3) fail();",
+      "interface A { package_contract: { media_type: string; schema_version: 2 } }",
+      "const MAJOR = 3;",
+      "if (body.schema_version > 2) fail();",
+      "switch (index.schema_version) { case 2: break; }",
+      "const TAG = /^v3\\./;",
     ])("rejects a second copy: %s", (source) => {
       expect(check(source)).toContain("web/src/x.ts:1:");
       expect(check(source, "web/scripts/x.mjs")).toContain("web/scripts/x.mjs:1:");

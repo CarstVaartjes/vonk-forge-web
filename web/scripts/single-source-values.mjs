@@ -156,24 +156,32 @@ function checkContractVersions(files, entry, report) {
     if (!Number.isInteger(owner?.[key])) report(entry.owner.file, 1, `owner must hold an integer ${key}`);
   }
   const numeric = (node) => node && ts.isNumericLiteral(node);
-  const comparison = new Set([ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken]);
+  const comparison = new Set([
+    ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken,
+    ts.SyntaxKind.LessThanToken, ts.SyntaxKind.LessThanEqualsToken, ts.SyntaxKind.GreaterThanToken, ts.SyntaxKind.GreaterThanEqualsToken,
+  ]);
+  const versionName = /contract|major|schema.?version|semver\(/i;
   for (const [file, text] of files) {
     if (file === entry.owner.file || !/^web\/(?:src|scripts)\/.*\.(?:[cm]?js|tsx?)$/.test(file) || /\.test\.[cm]?[jt]sx?$/.test(file)) continue;
     const ast = syntax(file, text);
     visit(ast, (node) => {
       const line = ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1;
-      // A named contract major/version initialised with a number.
+      const flag = (what) => report(file, line, `${what}; read it from ${entry.owner.file}`);
+      // A named contract major/version (or MAJOR) initialised with a number.
       if ((ts.isVariableDeclaration(node) || ts.isPropertyAssignment(node) || ts.isPropertyDeclaration(node)) && numeric(node.initializer)
-        && /contract.?(?:major|version)|(?:index|package).?schema.?version/i.test(node.name.getText(ast))) {
-        report(file, line, `${node.name.getText(ast)} must be read from ${entry.owner.file}`);
-      }
-      // schema_version / major compared against a number.
+        && /contract.?(?:major|version)|schema.?version|(?:^|_)major$/i.test(node.name.getText(ast))) flag(`${node.name.getText(ast)} initialised with a literal`);
+      // A type literal such as `schema_version: 2`.
+      if (ts.isPropertySignature(node) && node.type && ts.isLiteralTypeNode(node.type) && numeric(node.type.literal)
+        && /^(?:schema_version|major)$/.test(node.name.getText(ast))) flag(`${node.name.getText(ast)} typed as a literal`);
+      // Equality or relational comparison of a version-like expression with a number.
       if (ts.isBinaryExpression(node) && comparison.has(node.operatorToken.kind)) {
         for (const [side, other] of [[node.left, node.right], [node.right, node.left]]) {
-          const name = ts.isPropertyAccessExpression(side) ? side.name.text : ts.isElementAccessExpression(side) && ts.isStringLiteral(side.argumentExpression) ? side.argumentExpression.text : "";
-          if (numeric(other) && /^(?:schema_version|major)$/.test(name)) report(file, line, `${name} compared with a literal; read it from ${entry.owner.file}`);
+          if (numeric(other) && versionName.test(side.getText(ast))) flag(`${side.getText(ast)} compared with a literal`);
         }
       }
+      if (ts.isCaseClause(node) && numeric(node.expression) && versionName.test(node.parent.parent.expression.getText(ast))) flag("version switch on a literal case");
+      // A tag regex that fixes a major, such as /^v3\./.
+      if (ts.isRegularExpressionLiteral(node) && /^\/\^?v\d/.test(node.text)) flag(`tag regex ${node.text} fixes a major`);
     });
   }
 }
