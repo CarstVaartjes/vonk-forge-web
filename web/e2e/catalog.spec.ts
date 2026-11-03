@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 
-const releaseTag = "v2.0.0";
+const releaseTag = "v3.0.0";
 const sourceCommit = "f".repeat(40);
 const recipeDigest = "a".repeat(64);
 const modelDigest = "3".repeat(64);
@@ -12,7 +12,7 @@ const recipeImportUri = `vonk://catalog/vonk-forge/qwen-fast@sha256:${recipeDige
 // static build is exercised end to end without reaching GitHub.
 const catalogIndex = {
   schema_version: 2,
-  contract_version: "2.0.0",
+  contract_version: "3.0.0",
   updated_at: "2026-09-28T20:04:06Z",
   kind: "recipe-library-index",
   repository: "CarstVaartjes/vonk-forge-recipes",
@@ -29,18 +29,18 @@ const catalogIndex = {
       identity: {
         publisher: "qwen",
         slug: "qwen-fast-nvfp4",
-        family: { publisher: "qwen", slug: "qwen", title: "Qwen" },
-        model: { publisher: "qwen", slug: "qwen-fast", title: "Qwen Fast" },
+        family: { publisher: "qwen", slug: "qwen" },
+        model: { publisher: "qwen", slug: "qwen-fast" },
         version: "1.0",
         variant: "nvfp4",
       },
-      metadata: { title: "Qwen Fast NVFP4", description: "Fast language model", tags: ["language"] },
       source: { repository: "https://huggingface.co/Qwen/Qwen-Fast", revision: "c".repeat(40) },
       requires_token: false,
       format: { precision: "nvfp4", quantization: "nvfp4" },
       files: [{ id: "weights", path: "weights.safetensors", sha256: "b".repeat(64), size_bytes: 20_000_000_000, roles: ["weights"] }],
       capabilities: ["chat", "reasoning"],
     },
+    display: { kind: "model-display", family_title: "Qwen", model_title: "Qwen Fast", description: "Fast language model", tags: ["language"] },
   }],
   recipes: [{
     content_sha256: recipeDigest,
@@ -54,11 +54,11 @@ const catalogIndex = {
       sha256: "1".repeat(64),
     },
     qualification: { status: "Working", changed: [], required_sparks: 2 },
+    display: { kind: "recipe-display", title: "Qwen Fast", description: "Fast language model", tags: ["candidate", "executable", "chat", "nvfp4"], alignment: "standard" },
     release: { version: "2.1.0", released_at: "2026-08-07" },
     document: {
       kind: "recipe",
       identity: { publisher: "vonk-forge", slug: "qwen-fast" },
-      metadata: { title: "Qwen Fast", description: "Fast language model", tags: ["candidate", "executable", "chat", "nvfp4"], alignment: "standard" },
       models: [{ id: "primary", model: { kind: "model", publisher: "qwen", slug: "qwen-fast-nvfp4", content_sha256: modelDigest }, files: [{ id: "weights", file_id: "weights", roles: ["entrypoint"], mount: { target: "/models" } }] }],
       runtime: { engine: "vllm", entrypoint: ["vllm", "serve", "/models"] },
       execution: { build: { context: { path: "adapters/qwen" }, dockerfile: "Dockerfile" } },
@@ -78,7 +78,7 @@ test.beforeEach(async ({ page }) => {
   await page.route((url) => !["127.0.0.1", "localhost"].includes(url.hostname), (route) => route.abort());
   await page.route("**/catalog/catalog-index.json", (route) => route.fulfill({ json: catalogIndex }));
   await page.route("**/catalog/release.json", (route) =>
-    route.fulfill({ json: { repository: "CarstVaartjes/vonk-forge-recipes", tag: releaseTag, contract_version: "2.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: sourceCommit, catalog: { recipes: 1, models: 1, families: 1, spark_counts: [2] } } }),
+    route.fulfill({ json: { repository: "CarstVaartjes/vonk-forge-recipes", tag: releaseTag, contract_version: "3.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: sourceCommit, catalog: { recipes: 1, models: 1, families: 1, spark_counts: [2] } } }),
   );
 });
 

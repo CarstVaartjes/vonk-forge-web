@@ -94,7 +94,7 @@ download (packages are not copied to Pages: some exceed its 25 MiB per-file limi
 pages link "View source" (and "View adapter source") to the recipe files in the library
 repository, pinned to the verified release's source commit.
 
-The library's release tag is its contract version (for example `v2.0.0`).
+The library's release tag is its contract version (for example `v3.0.0`).
 Recipe changes do not create a new release: the library updates that release's
 assets in place and records `updated_at` in the index, which the site shows
 beside the library version. Publishing a recipe is a pull request against the

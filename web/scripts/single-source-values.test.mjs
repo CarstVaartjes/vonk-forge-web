@@ -130,4 +130,54 @@ describe("single source values", () => {
       expect(check([], { ...entry, source: { ...entry.source, revision } })).toContain("published constant needs a pinned source");
     });
   });
+
+  describe("contract versions", () => {
+    const entry = { id: "catalog.contract-versions", kind: "contract-versions", owner: { file: "web/src/contract-major.json", selector: "major" }, derive: "read the owner" };
+    const owner = '{ "major": 3, "index_schema_version": 2, "package_schema_version": 2 }';
+    const check = (source, file = "web/src/x.ts", ownerText = owner) => checkSingleSources(new Map([["web/src/contract-major.json", ownerText], [file, source]]), [entry]).join("\n");
+
+    test.each([
+      "const SUPPORTED_CONTRACT_MAJOR = 3;",
+      "export const SUPPORTED_CONTRACT_MAJOR = 3;",
+      "const config = { contractMajor: 3 };",
+      "if (body.schema_version !== 2) throw new Error();",
+      "if (2 === index.schema_version) throw new Error();",
+      'if (index["schema_version"] != 2) throw new Error();',
+      "if (semver(tag)[0] !== 3) fail();",
+      "if (semver(`v${index.contract_version}`)?.[0] !== 3) fail();",
+      "if (contractMajor(body.contract_version) !== 3) fail();",
+      "interface A { package_contract: { media_type: string; schema_version: 2 } }",
+      "const MAJOR = 3;",
+      "if (body.schema_version > 2) fail();",
+      "switch (index.schema_version) { case 2: break; }",
+      "const TAG = /^v3\\./;",
+    ])("rejects a second copy: %s", (source) => {
+      expect(check(source)).toContain("web/src/x.ts:1:");
+      expect(check(source, "web/scripts/x.mjs")).toContain("web/scripts/x.mjs:1:");
+    });
+
+    test.each([
+      "if (contracts.length === 0) {}",
+      "if (majorItems.length > 0) {}",
+      "if (contract.recipes.length > 10) {}",
+      "if (page.contractRows.length < 50) {}",
+      "if (contractCount >= 1) {}",
+      "if (Object.keys(body.package_contract).length > 0) {}",
+      "if (semver(tag).length !== 3) {}",
+      "switch (contracts.length) { case 0: break; }",
+      "const pattern = /v2/; const other = /^v\\d+\\.\\d+/;",
+      "const majorCount = 3;",
+    ])("allows unrelated numbers: %s", (source) => {
+      expect(check(source)).toBe("");
+    });
+
+    test("allows reads from the owner, test files and unrelated numbers", () => {
+      expect(check("const SUPPORTED_CONTRACT_MAJOR = contract.major; if (body.schema_version !== contract.index_schema_version) {} const retries = 3;")).toBe("");
+      expect(check("const SUPPORTED_CONTRACT_MAJOR = 3;", "web/src/x.test.ts")).toBe("");
+    });
+
+    test("requires integer owner keys", () => {
+      expect(check("", "web/src/x.ts", '{ "major": "3" }')).toContain("owner must hold an integer");
+    });
+  });
 });

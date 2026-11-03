@@ -1,6 +1,7 @@
 import type { LibraryCatalogCounts, LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
 
 
+import contract from "../contract-major.json";
 import { CAPABILITY_OPTIONS } from "../catalog-filters";
 import { STATUS_UNAVAILABLE } from "../qualification-status";
 
@@ -9,10 +10,11 @@ type JsonRecord = Record<string, unknown>;
 
 // The recipe/model contract major this site renders (web/scripts/recipe-release.mjs
 // selects the matching library release).
-const SUPPORTED_CONTRACT_MAJOR = 2;
+const SUPPORTED_CONTRACT_MAJOR = contract.major;
 
 interface LibraryRecipe {
   content_sha256: string;
+  display?: JsonRecord;
   document: JsonRecord;
   package: { expected_bytes: number; media_type: string; minimum_consumer_schema: number; path: string; recipe_content_sha256: string; sha256: string };
   qualification?: JsonRecord;
@@ -29,11 +31,12 @@ interface LibraryIndex {
   schema_version: number;
   kind: "recipe-library-index";
   source_commit: string;
-  package_contract: { media_type: string; path_prefix: string; schema_version: 2 };
+  package_contract: { media_type: string; path_prefix: string; schema_version: number };
 }
 
 interface LibraryEntity {
   content_sha256?: string;
+  display?: JsonRecord;
   document: JsonRecord;
   source_path?: string;
 }
@@ -107,8 +110,8 @@ function runtimeAdapter(document: JsonRecord): string {
 
 const PUBLIC_CAPABILITIES = CAPABILITY_OPTIONS.map((option) => option.value);
 
-function tags(document: JsonRecord): string[] {
-  return array(record(document.metadata).tags).map((value) => text(value).toLowerCase()).filter(Boolean);
+function tags(display: JsonRecord): string[] {
+  return array(display.tags).map((value) => text(value).toLowerCase()).filter(Boolean);
 }
 
 // A model declares the capabilities it supports as a plain list of names.
@@ -176,16 +179,16 @@ function modelMetadata(document: JsonRecord, index: LibraryIndex): { publisher: 
   const version = versionEntity?.document;
   const versionIdentity = entityIdentity(version ?? {});
   const logical = modelIdentity(version ?? {});
-  const family = modelFamily(version ?? {});
-  const versionTitle = displayTitle(record(version?.metadata).title, text(versionIdentity.slug, "unknown"));
+  const display = record(versionEntity?.display);
+  const versionTitle = text(versionIdentity.slug, "unknown");
   const versionPublisher = text(versionIdentity.publisher, "unknown");
   const versionSlug = text(versionIdentity.slug, "unknown");
   const slug = text(logical.slug, versionSlug);
   return {
     publisher: text(logical.publisher, versionPublisher),
     slug,
-    title: displayTitle(logical.title, slug),
-    family: displayTitle(family.title) || text(family.slug) || displayTitle(logical.title, slug),
+    title: displayTitle(display.model_title, slug),
+    family: displayTitle(display.family_title) || text(modelFamily(version ?? {}).slug) || displayTitle(display.model_title, slug),
     versionPublisher,
     versionSlug,
     versionTitle,
@@ -249,7 +252,6 @@ function mapModelVersion(
   const document = entity.document;
   const identity = entityIdentity(document);
   const logicalModel = modelIdentity(document);
-  const metadata = record(document.metadata);
   const source = record(document.source);
   const format = record(document.format);
   const license = record(document.license);
@@ -260,7 +262,7 @@ function mapModelVersion(
   return {
     publisher: identity.publisher,
     slug: identity.slug,
-    title: displayTitle(metadata.title, identity.slug),
+    title: identity.slug,
     version: text(record(document.identity).version, identity.slug),
     revision_id: text(entity.content_sha256, "unknown"),
     model_slug: text(logicalModel.slug),
@@ -309,16 +311,16 @@ function mapModels(index: LibraryIndex): ModelSummary[] {
   return Array.from(groups.values()).map((variants) => {
     const first = variants[0]!;
     const identity = modelIdentity(first.document);
-    const family = modelFamily(first.document);
+    const display = record(first.display);
     const versionRows = variants.map((version) => mapModelVersion(version, recipes)).sort((left, right) => left.title.localeCompare(right.title));
     return {
       publisher: text(identity.publisher),
       slug: text(identity.slug),
-      title: displayTitle(identity.title, text(identity.slug)),
-      description: text(record(first.document.metadata).description),
-      family: displayTitle(family.title) || text(family.slug) || undefined,
+      title: displayTitle(display.model_title, text(identity.slug)),
+      description: text(display.description),
+      family: displayTitle(display.family_title) || text(modelFamily(first.document).slug) || undefined,
       runs: modelRuns(versionRows, recipes),
-      tags: array(record(first.document.metadata).tags).map((value) => text(value).toLowerCase()).filter(Boolean),
+      tags: array(display.tags).map((value) => text(value).toLowerCase()).filter(Boolean),
       revision_id: text(first.content_sha256, "unknown"),
       versions: versionRows,
       recipe_count: new Set(versionRows.flatMap((version) => version.recipe_slugs)).size,
@@ -328,14 +330,14 @@ function mapModels(index: LibraryIndex): ModelSummary[] {
 
 function publicMetadata(item: LibraryRecipe, document: JsonRecord, index: LibraryIndex, artifacts: RecipeSummary["artifacts"]): NonNullable<RecipeSummary["catalog"]> {
   const published = publishedQualification(item);
-  const recipeTags = tags(document);
-  const metadata = record(document.metadata);
+  const display = record(item.display);
+  const recipeTags = tags(display);
   const runtime = record(document.runtime);
   const topology = record(document.topology);
   const provenance = record(document.provenance);
   const model = modelMetadata(document, index);
   const source = canonicalSource(text(provenance.source_reference));
-  const alignmentValue = text(metadata.alignment, "unspecified");
+  const alignmentValue = text(display.alignment, "unspecified");
   const alignment = ["standard", "abliterated", "derisked", "other-modified", "unspecified"].includes(alignmentValue) ? alignmentValue as NonNullable<RecipeSummary["catalog"]>["alignment"] : "unspecified";
   const selected = recipeModelSelections(document)[0];
   const modelEntity = index.catalog_entities.find((entity) => selected && sameReference(selected.model, entity));
@@ -344,7 +346,7 @@ function publicMetadata(item: LibraryRecipe, document: JsonRecord, index: Librar
   const quantizations = quantization ? [quantization.toUpperCase()] : [];
   const precision = text(format.precision) || null;
   return {
-    description: text(metadata.description),
+    description: text(display.description),
     tags: recipeTags,
     model_publisher: model.publisher,
     model_slug: model.slug,
@@ -371,7 +373,7 @@ function publicMetadata(item: LibraryRecipe, document: JsonRecord, index: Librar
 function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
   const document = record(item.document);
   const identity = record(document.identity);
-  const metadata = record(document.metadata);
+  const display = record(item.display);
   const execution = record(document.execution);
   const build = record(execution.build);
   const context = record(build.context);
@@ -403,7 +405,7 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
   return {
     publisher,
     slug,
-    title: text(metadata.title, slug),
+    title: text(display.title, slug),
     official: publisher === "vonk-forge",
     content_sha256: item.content_sha256,
     published_at: text(release.released_at),
@@ -511,7 +513,7 @@ async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryInde
       && typeof identity.publisher === "string"
       && typeof identity.slug === "string";
   });
-  if (body.schema_version !== 2 || contractMajor(body.contract_version) !== SUPPORTED_CONTRACT_MAJOR || typeof body.updated_at !== "string" || body.kind !== "recipe-library-index" || typeof body.repository !== "string" || typeof body.source_commit !== "string" || !validEntities || !Array.isArray(body.recipes) || !body.package_contract || body.package_contract.schema_version !== 2 || typeof body.package_contract.media_type !== "string" || typeof body.package_contract.path_prefix !== "string") {
+  if (body.schema_version !== contract.index_schema_version || contractMajor(body.contract_version) !== SUPPORTED_CONTRACT_MAJOR || typeof body.updated_at !== "string" || body.kind !== "recipe-library-index" || typeof body.repository !== "string" || typeof body.source_commit !== "string" || !validEntities || !Array.isArray(body.recipes) || !body.package_contract || body.package_contract.schema_version !== contract.package_schema_version || typeof body.package_contract.media_type !== "string" || typeof body.package_contract.path_prefix !== "string") {
     throw new Error("Recipe library returned an unsupported catalog index");
   }
   if (typeof release.tag !== "string" || !/^v\d+\.\d+\.\d+$/.test(release.tag) || release.repository !== body.repository || release.source_commit !== body.source_commit) {

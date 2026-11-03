@@ -6,7 +6,7 @@
     "derive": "import WORKING_STATUS; never write the published status literal elsewhere",
     "source": {
       "repository": "CarstVaartjes/vonk-forge-recipes",
-      "revision": "46c5eeb22d40af06e53ada7ab206216caa784e94",
+      "revision": "65353dc316f7e46d8dc2f4a085e3bc4839ac2853",
       "file": "contracts/src/vonk_forge_contracts/schema/published-qualification-status-v1.schema.json",
       "selector": "properties.status.enum[0]"
     }

@@ -74,7 +74,7 @@ push that passed it; they only poll for a new recipe release. The deploy job:
 2. runs `web/scripts/recipe-release.mjs`, which lists the
    [`vonk-forge-recipes`](https://github.com/CarstVaartjes/vonk-forge-recipes)
    releases and picks the newest non-draft release whose tag major equals
-   the supported contract major (`SUPPORTED_CONTRACT_MAJOR`). It downloads only
+   the supported contract major (`web/src/contract-major.json`). It downloads only
    that release's `recipe-library.tar` (one uncompressed tar holding
    `SHA256SUMS`, `SHA256SUMS.sigstore.json` and every file `SHA256SUMS` lists,
    as flat names), rejects any member that is not a unique flat regular file
@@ -105,7 +105,7 @@ download fails and the next run heals it.
 
 To pin a release instead of following the newest one, set the `production`
 environment (or repository) variable `VONK_RECIPE_RELEASE` to an exact tag such
-as `v2.0.0` and dispatch the workflow; clear it to follow the newest release
+as `v3.0.0` and dispatch the workflow; clear it to follow the newest release
 again.
 
 Recipe updates arrive through the hourly schedule. `vonk-forge-recipes`
