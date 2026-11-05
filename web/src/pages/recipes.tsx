@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { loadRecipeCatalog, type RecipeSummary } from "../api/client";
+import { modelTypeLabel } from "../model-types";
 import { WORKING_STATUS } from "../qualification-status";
 import { FacetStrip, SparkPicker } from "../catalog-setup";
 import {
@@ -187,6 +188,7 @@ export function RecipesPage() {
   const applied: ActiveFilter[] = [];
   const addApplied = (key: string, label: string, parameter: string) => applied.push({ key, label, remove: () => update(parameter, "") });
   if (filters.query) addApplied("query", `Search: ${filters.query}`, "q");
+  if (filters.type) addApplied("type", `Type: ${modelTypeLabel(filters.type)}`, "type");
   if (filters.modelFamily) addApplied("modelFamily", `Model family: ${filters.modelFamily}`, "model_family");
   if (filters.model) addApplied("model", `Model: ${models.find(([value]) => value === filters.model)?.[1] ?? filters.model}`, "model");
   if (filters.quantization) addApplied("quantization", `Format: ${filters.quantization}`, "quantization");

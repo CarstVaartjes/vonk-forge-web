@@ -45,6 +45,8 @@ describe("public catalog Controller-parity filters", () => {
     const filters = filtersFromParameters(new URLSearchParams("model_family=GLM+5.3+Flash&model=models%2Fboth-v1&abliterated=true&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&capability=chat&capability=reasoning&capability=chat&download=100&disk=unknown&memory=200&sort=download&direction=desc"));
     expect(filters).toMatchObject({ modelFamily: "GLM 5.3 Flash", model: "models/both-v1", abliterated: "true", sourceOwner: "owner", quantization: "NVFP4", updated: "30", sparks: "4+", capabilities: ["chat", "reasoning"], download: "100", disk: "unknown", memory: "200", sort: "download", direction: "desc" });
     expect(filtersFromParameters(new URLSearchParams("abliterated=unknown&sort=bogus")).abliterated).toBe("");
+    expect(filtersFromParameters(new URLSearchParams("type=code")).type).toBe("code");
+    expect(filtersFromParameters(new URLSearchParams("type=everything")).type).toBe("");
     expect(filtersFromParameters(new URLSearchParams("capability=video-generation&capability=ocr&capability=video")).capabilities).toEqual(["video-generation", "ocr"]);
   });
 
@@ -54,6 +56,15 @@ describe("public catalog Controller-parity filters", () => {
     const filters = { ...EMPTY_FILTERS, model: "models/both-v1", quantization: "NVFP4", updated: "30" as const, sparks: "4+" as const, readiness: "executable" as const, capabilities: ["chat", "reasoning"] };
     expect(recipeMatches(both, filters)).toBe(true);
     expect(recipeMatches(chat, filters)).toBe(false);
+  });
+
+  test("a type matches a recipe with any of its capabilities", () => {
+    const vision = recipe("vision", { capabilities: ["chat", "image-understanding"] });
+    const chat = recipe("chat", { capabilities: ["chat"] });
+    expect(recipeMatches(vision, { ...EMPTY_FILTERS, type: "vision" })).toBe(true);
+    expect(recipeMatches(chat, { ...EMPTY_FILTERS, type: "vision" })).toBe(false);
+    expect(recipeMatches(vision, { ...EMPTY_FILTERS, type: "language" })).toBe(true);
+    expect(recipeMatches(chat, { ...EMPTY_FILTERS, type: "vision" }, "type")).toBe(true);
   });
 
   test("keeps standard and abliterated variants independently selectable", () => {

@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 
-import { getLibraryRelease, type LibraryCatalogCounts } from "../api/client";
+import { listModels, loadRecipeCatalog, type RecipeSummary } from "../api/client";
+import { deriveCatalogStats, isVerified, type CatalogStats } from "../catalog-stats";
+import { MODEL_TYPES } from "../model-types";
+import { WORKING_STATUS } from "../qualification-status";
+import { RollingNumber } from "../rolling-number";
 
 
 // The four jobs Vonk Forge does for a Spark owner. Each ends with the exact
@@ -120,68 +124,218 @@ function ProductShot({
 
 const number = new Intl.NumberFormat("en");
 
-function sparkRange(counts: number[]): string | null {
-  if (counts.length === 0) return null;
-  const low = counts[0]!;
-  const high = counts[counts.length - 1]!;
-  return low === high ? `${low} Spark${low === 1 ? "" : "s"} per recipe` : `${low} to ${high} Sparks per recipe`;
-}
+type CatalogState = { status: "loading" } | { status: "error" } | { status: "ready"; stats: CatalogStats };
 
-// Library size facts from the verified release manifest the Pages build wrote.
-// Nothing is shown until the manifest arrives; a missing or malformed manifest
-// shows nothing rather than placeholder numbers.
-function CatalogFacts() {
-  const [counts, setCounts] = useState<LibraryCatalogCounts | null>(null);
+// Everything live on this page comes from the two lists the single catalog
+// adapter returns for the verified library this build wrote to /catalog. A
+// failed read is an error state, never zeros.
+function useCatalogStats(): [CatalogState, () => void] {
+  const [state, setState] = useState<CatalogState>({ status: "loading" });
+  const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    getLibraryRelease(controller.signal).then((release) => setCounts(release.catalog ?? null)).catch(() => undefined);
+    Promise.all([loadRecipeCatalog(controller.signal), listModels(controller.signal)])
+      .then(([recipes, models]) => setState({ status: "ready", stats: deriveCatalogStats(recipes, models.items) }))
+      .catch(() => { if (!controller.signal.aborted) setState({ status: "error" }); });
     return () => controller.abort();
-  }, []);
-  if (!counts) return null;
-  const sparks = sparkRange(counts.spark_counts);
+  }, [attempt]);
+  return [state, () => { setState({ status: "loading" }); setAttempt((value) => value + 1); }];
+}
+
+function joinNames(names: string[]): string {
+  if (names.length <= 1) return names.join("");
+  return `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
+}
+
+function Hero({ state }: { state: CatalogState }) {
+  const stats = state.status === "ready" ? state.stats : null;
+  const top = stats ? stats.topCreators.slice(0, 3).map((creator) => creator.name) : [];
+  return (
+    <section className="home-hero" aria-labelledby="home-title">
+      <div className="home-hero-copy">
+        {stats ? (
+          <h1 id="home-title">
+            <span className="hero-stat"><RollingNumber value={stats.verified} /> recipes verified on DGX Spark.</span>
+            <span className="hero-stat"><RollingNumber value={stats.families} /> model families.</span>
+            <span className="hero-stat"><RollingNumber value={stats.creators} /> creators.</span>
+          </h1>
+        ) : (
+          <h1 id="home-title"><span>Models that fit</span><span>your Sparks.</span><span>Kept current.</span></h1>
+        )}
+        <p className="home-definition">
+          Run the community&apos;s best Spark setups{top.length ? <>, from {joinNames(top)} and more,</> : null} on
+          your own hardware. Secure by default, no hassle, and always up to date
+          with the newest recipes and models.
+        </p>
+        <div className="hero-actions">
+          <a className="button primary" href="/install">Install</a>
+          <a className="button secondary" href={`/recipes?qualification=${WORKING_STATUS}`}>Browse what runs</a>
+        </div>
+        <ul className="home-facts" aria-label="Product facts">
+          <li><StateDot /> Runs on infrastructure you own</li>
+          <li>Web + CLI</li>
+          <li>Open source · MIT</li>
+        </ul>
+      </div>
+      <ProductShot
+        src="/product/controller-library.webp"
+        alt="Vonk Forge Library showing model and recipe lists from illustrative fixture data"
+        title="The real Web Controller"
+        body="Fixture-backed product screen · no live fleet data"
+        eager
+      />
+    </section>
+  );
+}
+
+// Each benefit states something the system does, and the page that documents it.
+const benefits = [
+  {
+    title: "Secure",
+    body: "Installers and recipe releases are signed, and the Controller verifies them before it uses them. Runtime images are pinned by digest. It all runs on hardware you own: your secrets, fleet state and workloads stay on your network, and this site never receives them.",
+    href: "/architecture",
+    link: "How the boundary works",
+  },
+  {
+    title: "No hassle",
+    body: "One Controller on a laptop, a NAS or a local server, and a guided install. It checks each recipe against the live capacity of your Sparks, offers only placements that fit, and caches verified model files and images on your NAS.",
+    href: "/install",
+    link: "See the install steps",
+  },
+  {
+    title: "Always current",
+    body: "Recipes follow their creators' newest releases, and one only shows as Working after it passed hardware checks on a DGX Spark. Your Controller syncs the signed library every 15 minutes, and vonkctl recipe update --all refreshes your cached recipes.",
+    href: "/control#local-cli",
+    link: "Update from the CLI",
+  },
+];
+
+function BenefitTrio() {
+  return (
+    <section className="benefit-section" aria-labelledby="benefit-title">
+      <h2 id="benefit-title" className="visually-hidden">Why run Vonk Forge</h2>
+      <ul className="benefit-grid">
+        {benefits.map((benefit) => (
+          <li key={benefit.title}>
+            <h3>{benefit.title}</h3>
+            <p>{benefit.body}</p>
+            <a className="text-link" href={benefit.href}>{benefit.link}</a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function TypeTiles({ stats }: { stats: CatalogStats }) {
+  return (
+    <section className="type-section" aria-labelledby="type-title">
+      <div className="home-section-heading">
+        <h2 id="type-title">What can you run?</h2>
+        <p>Pick a kind of model. Each count is recipes that passed hardware checks on a DGX Spark.</p>
+      </div>
+      <ul className="type-grid">
+        {MODEL_TYPES.map((type) => {
+          const verified = stats.typeCounts[type.id];
+          const href = verified > 0 ? `/recipes?type=${type.id}&qualification=${WORKING_STATUS}` : `/recipes?type=${type.id}`;
+          return (
+            <li key={type.id}>
+              <a href={href}>
+                <strong>{type.tile}</strong>
+                <span className="type-count">{verified > 0 ? <><b>{number.format(verified)}</b> verified</> : "None verified yet"}</span>
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
+}
+
+function CreatorStrip({ stats }: { stats: CatalogStats }) {
+  const creators = stats.topCreators.slice(0, 10);
+  return (
+    <section className="creator-section" aria-labelledby="creator-title">
+      <div className="home-section-heading">
+        <h2 id="creator-title">Built by the people who run these models.</h2>
+        <p>Every recipe credits the creator it comes from. These have the most recipes verified on a DGX Spark.</p>
+      </div>
+      <ul className="creator-strip">
+        {creators.map((creator) => (
+          <li key={creator.name.toLowerCase()}>
+            <a href={`/recipes?creator=${encodeURIComponent(creator.name)}&qualification=${WORKING_STATUS}`}>
+              <strong>{creator.name}</strong>
+              <span>{number.format(creator.verified)} verified</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function releaseLabel(recipe: RecipeSummary): string {
+  const date = new Date(recipe.published_at.length === 10 ? `${recipe.published_at}T00:00:00Z` : recipe.published_at);
+  return Number.isNaN(date.getTime()) ? recipe.published_at : new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" }).format(date);
+}
+
+function NewRow({ stats }: { stats: CatalogStats }) {
+  if (stats.newest.length === 0) return null;
+  return (
+    <section className="new-section" aria-labelledby="new-title">
+      <div className="home-section-heading">
+        <h2 id="new-title">{stats.newestThisWeek ? "New this week." : "Latest releases."}</h2>
+        <p>
+          {stats.newestThisWeek
+            ? `${number.format(stats.newThisWeek)} ${stats.newThisWeek === 1 ? "recipe was" : "recipes were"} released in the last seven days.`
+            : "Nothing was released in the last seven days. These are the newest recipes."}
+          {" "}Each shows its verification status as the library published it.
+        </p>
+      </div>
+      <ul className="new-list">
+        {stats.newest.map((recipe) => (
+          <li key={`${recipe.publisher}/${recipe.slug}`}>
+            <a href={`/recipes/${recipe.publisher}/${recipe.slug}`}>
+              <strong>{recipe.title}</strong>
+              <span>{recipe.catalog.source_owner ?? recipe.publisher} · {releaseLabel(recipe)}</span>
+              <span className="new-status"><StateDot tone={isVerified(recipe) ? "ready" : "source"} /> {recipe.catalog.qualification}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+      {stats.newestThisWeek ? <a className="text-link" href="/recipes?updated=7">See all {number.format(stats.newThisWeek)} new recipes</a> : null}
+    </section>
+  );
+}
+
+function CatalogSections({ state, retry }: { state: CatalogState; retry: () => void }) {
+  if (state.status === "loading") return <div className="status-panel" role="status">Reading the verified recipe library…</div>;
+  if (state.status === "error") {
+    return (
+      <div className="status-panel error" role="alert">
+        <h2>The recipe library could not be read.</h2>
+        <p>The live numbers are not shown rather than guessed. Try again, or open the catalog directly.</p>
+        <button className="button" type="button" onClick={retry}>Retry</button>
+      </div>
+    );
+  }
   return (
     <>
-      <li><StateDot tone="source" /> <a href="/recipes">{number.format(counts.recipes)} recipes</a></li>
-      <li><a href="/models">{number.format(counts.models)} models</a></li>
-      <li>{number.format(counts.families)} model families</li>
-      {sparks ? <li>{sparks}</li> : null}
+      <TypeTiles stats={state.stats} />
+      <CreatorStrip stats={state.stats} />
+      <NewRow stats={state.stats} />
     </>
   );
 }
 
 
 export function HomePage() {
+  const [state, retry] = useCatalogStats();
   return (
     <main className="home-page">
-      <section className="home-hero" aria-labelledby="home-title">
-        <div className="home-hero-copy">
-          <h1 id="home-title"><span>Models that fit</span><span>your Sparks.</span><span>Kept current.</span><span>One click.</span></h1>
-          <p className="home-definition">
-            Vonk Forge is the open-source Controller for NVIDIA DGX Spark. It
-            checks every model and recipe against the Sparks you actually have,
-            keeps up with new models and recipe revisions for you, and runs the
-            mix you need in a few clicks or one <code>vonkctl</code> command your
-            agents can drive.
-          </p>
-          <div className="hero-actions">
-            <a className="button primary" href="/install">Set up your Controller</a>
-            <a className="button secondary" href="/control#local-cli">See the agent-friendly CLI</a>
-          </div>
-          <ul className="home-facts" aria-label="Product facts">
-            <CatalogFacts />
-            <li><StateDot /> Runs on infrastructure you own</li>
-            <li>Web + CLI</li>
-            <li>Open source · MIT</li>
-          </ul>
-        </div>
-        <ProductShot
-          src="/product/controller-library.webp"
-          alt="Vonk Forge Library showing model and recipe lists from illustrative fixture data"
-          title="The real Web Controller"
-          body="Fixture-backed product screen · no live fleet data"
-          eager
-        />
-      </section>
+      <Hero state={state} />
+      <BenefitTrio />
+      <CatalogSections state={state} retry={retry} />
 
       <section className="promise-section" aria-labelledby="promise-title">
         <div className="home-section-heading">

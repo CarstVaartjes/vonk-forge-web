@@ -86,10 +86,10 @@ not a unique flat regular file, verifies `SHA256SUMS`
 against its Sigstore attestation from the library's `publish.yml` on `main`,
 checks every bundle file and the index against `SHA256SUMS`, and writes
 `web/public/catalog/` (`catalog-index.json`, `release.json`, `SHA256SUMS` and its
-bundle). `release.json` also carries `catalog` counts (recipes, distinct
-models and model families, and the Spark counts recipes are written for) that
-the build derives from the verified index; the home page shows them beside the
-product definition and shows nothing when they are absent. The browser reads only those same-origin files. The site offers no package
+bundle). The home page numbers (verified recipes, model families, creators, the
+counts per model type, the top creators and the newest recipes) are derived in the browser
+from that same index through the catalog adapter (`web/src/catalog-stats.ts`); there is no
+second reader and no hard-coded count. The browser reads only those same-origin files. The site offers no package
 download (packages are not copied to Pages: some exceed its 25 MiB per-file limit); recipe
 pages link "View source" (and "View adapter source") to the recipe files in the library
 repository, pinned to the verified release's source commit.
