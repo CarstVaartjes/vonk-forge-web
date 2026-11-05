@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { listModels, loadRecipeCatalog, type RecipeSummary } from "../api/client";
 import { deriveCatalogStats, isVerified, type CatalogStats } from "../catalog-stats";
 import { MODEL_TYPES } from "../model-types";
-import { WORKING_STATUS } from "../qualification-status";
 import { RollingNumber } from "../rolling-number";
 
 
@@ -169,7 +168,7 @@ function Hero({ state }: { state: CatalogState }) {
         </p>
         <div className="hero-actions">
           <a className="button primary" href="/install">Install</a>
-          <a className="button secondary" href={`/recipes?qualification=${WORKING_STATUS}`}>Browse what runs</a>
+          <a className="button secondary" href="/recipes">Browse what runs</a>
         </div>
         <ul className="home-facts" aria-label="Product facts">
           <li><StateDot /> Runs on infrastructure you own</li>
@@ -232,12 +231,12 @@ function TypeTiles({ stats }: { stats: CatalogStats }) {
     <section className="type-section" aria-labelledby="type-title">
       <div className="home-section-heading">
         <h2 id="type-title">What can you run?</h2>
-        <p>Pick a kind of model. Each count is recipes that passed hardware checks on a DGX Spark.</p>
+        <p>Pick a kind of model. Each count is recipes that passed hardware checks on a DGX Spark, and the catalog opens on that type with "Verified on Spark" on.</p>
       </div>
       <ul className="type-grid">
         {MODEL_TYPES.map((type) => {
           const verified = stats.typeCounts[type.id];
-          const href = verified > 0 ? `/recipes?type=${type.id}&qualification=${WORKING_STATUS}` : `/recipes?type=${type.id}`;
+          const href = verified > 0 ? `/recipes?type=${type.id}` : `/recipes?type=${type.id}&verified=0`;
           return (
             <li key={type.id}>
               <a href={href}>
@@ -263,7 +262,7 @@ function CreatorStrip({ stats }: { stats: CatalogStats }) {
       <ul className="creator-strip">
         {creators.map((creator) => (
           <li key={creator.name.toLowerCase()}>
-            <a href={`/recipes?creator=${encodeURIComponent(creator.name)}&qualification=${WORKING_STATUS}`}>
+            <a href={`/recipes?creator=${encodeURIComponent(creator.name)}`}>
               <strong>{creator.name}</strong>
               <span>{number.format(creator.verified)} verified</span>
             </a>

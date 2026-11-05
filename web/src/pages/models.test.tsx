@@ -12,13 +12,15 @@ vi.mock("../api/client", () => ({
 }));
 
 function model(number: number, publisher = "publisher"): ModelSummary {
+  const runs = number % 2 ? { spark_counts: [1], engines: ["vllm"], creators: ["eugr"] } : { spark_counts: [2, 4], engines: ["sglang"], creators: [] };
   return {
     publisher,
     slug: `model-${number}`,
     title: `Model ${number}`,
     description: "Published model",
     family: number % 2 ? "Qwen" : "GLM",
-    runs: number % 2 ? { spark_counts: [1], engines: ["vllm"], creators: ["eugr"] } : { spark_counts: [2, 4], engines: ["sglang"], creators: [] },
+    runs,
+    verified_runs: runs,
     tags: [],
     revision_id: String(number).padStart(64, "0"),
     recipe_count: number % 2,
@@ -137,5 +139,48 @@ describe("public model browse", () => {
     const sourceCode = screen.getByLabelText(`Source revision ${sourceRevision}`);
     expect(sourceCode).toHaveTextContent("aaaaaaaa…");
     expect(sourceCode).toHaveAttribute("title", sourceRevision);
+  });
+});
+
+describe("type-first model filtering", () => {
+  const verifiedRuns = { spark_counts: [1], engines: ["vllm"], creators: ["NVIDIA"] };
+  const none = { spark_counts: [], engines: [], creators: [] };
+  function typed(slug: string, capabilities: string[], verified: boolean): ModelSummary {
+    const base = model(1);
+    return { ...base, slug, title: slug, runs: verifiedRuns, verified_runs: verified ? verifiedRuns : none, versions: [{ ...base.versions[0]!, slug: `${slug}-v1`, capabilities, format: { quantization: "nvfp4" } }] };
+  }
+
+  beforeEach(() => {
+    window.history.replaceState({}, "", "/models");
+    listModels.mockResolvedValue({ items: [typed("coder", ["code-generation"], true), typed("painter", ["image-generation"], true), typed("untested-coder", ["code-generation"], false)] });
+  });
+
+  test("type chips come first, count with the other filters applied, and live in the URL", async () => {
+    render(<ModelsPage />);
+    const types = await screen.findByRole("group", { name: "Model type" });
+    expect(within(types).getByRole("button", { name: "All: 2 models" })).toBeVisible();
+    expect(within(types).getByRole("button", { name: "Code: 1 models" })).toBeVisible();
+    fireEvent.click(within(types).getByRole("button", { name: "Code: 1 models" }));
+    await waitFor(() => expect(window.location.search).toBe("?type=code"));
+    expect(screen.getByText("1 of 3 models")).toBeVisible();
+    expect(screen.getByRole("link", { name: /coder/ })).toBeVisible();
+    expect(screen.queryByRole("link", { name: /painter/ })).not.toBeInTheDocument();
+  });
+
+  test("Verified on Spark is on by default and turning it off shows models without a verified recipe", async () => {
+    render(<ModelsPage />);
+    await screen.findByRole("group", { name: "Model type" });
+    expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).toBeChecked();
+    expect(screen.queryByRole("link", { name: /untested-coder/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Verified on Spark/ }));
+    await waitFor(() => expect(window.location.search).toBe("?verified=0"));
+    expect(screen.getByRole("link", { name: /untested-coder/ })).toBeVisible();
+  });
+
+  test("refines by creator and quantization after the type", async () => {
+    window.history.replaceState({}, "", "/models?type=code&creator=nvidia&quantization=NVFP4");
+    render(<ModelsPage />);
+    expect(await screen.findByRole("link", { name: /coder/ })).toBeVisible();
+    expect(within(screen.getByRole("group", { name: "Creator" })).getByRole("button", { name: "NVIDIA: 1" })).toBeVisible();
   });
 });

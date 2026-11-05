@@ -3161,3 +3161,38 @@ a {
 }
 
 .new-list li { flex-basis: 17rem; }
+
+/* Type-first filtering: the first choice on both catalog pages. */
+.catalog-type { display: grid; gap: 0.9rem; margin: 2rem 0 1.5rem; }
+.catalog-type h2 { margin: 0; font-size: 1.15rem; letter-spacing: -0.03em; }
+
+.type-tabs { display: flex; flex-wrap: wrap; gap: 1px; border: 1px solid var(--line); background: var(--line); }
+
+.type-tabs button {
+  display: inline-flex;
+  flex: 1 1 6rem;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0.6rem 0.9rem;
+  border: 0;
+  border-radius: 0;
+  color: var(--ink);
+  background: var(--panel);
+  font: 700 1rem/1.2 inherit;
+  cursor: pointer;
+}
+
+.type-tabs button small { color: var(--muted); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
+.type-tabs button:hover:not(:disabled) { background: var(--panel-raised); }
+.type-tabs button[aria-pressed="true"] { color: var(--night); background: var(--green); }
+.type-tabs button[aria-pressed="true"] small { color: var(--night); }
+.type-tabs button:disabled { color: var(--faint); cursor: not-allowed; }
+.type-tabs button:focus-visible { outline: 2px solid var(--green-soft); outline-offset: -4px; }
+.type-tabs button[aria-pressed="true"]:focus-visible { outline-color: var(--night); }
+
+.verified-toggle { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.7rem; margin: 0 0 1.25rem; cursor: pointer; }
+.verified-toggle input { width: 1.15rem; height: 1.15rem; margin: 0; }
+.verified-toggle span { font-weight: 700; }
+.verified-toggle small { color: var(--muted); font-size: 0.82rem; }

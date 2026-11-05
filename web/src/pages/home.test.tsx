@@ -18,7 +18,7 @@ function recipe(slug: string, owner: string, status: string, capabilities: strin
   };
 }
 
-const model = (slug: string, family: string): ModelSummary => ({ publisher: "p", slug, title: slug, description: "", family, runs: { spark_counts: [], engines: [], creators: [] }, tags: [], revision_id: "r", versions: [], recipe_count: 0 });
+const model = (slug: string, family: string): ModelSummary => ({ publisher: "p", slug, title: slug, description: "", family, runs: { spark_counts: [], engines: [], creators: [] }, verified_runs: { spark_counts: [], engines: [], creators: [] }, tags: [], revision_id: "r", versions: [], recipe_count: 0 });
 
 beforeEach(() => {
   loadRecipeCatalog.mockReset();
@@ -37,9 +37,9 @@ describe("home page", () => {
     expect(title.textContent).toBe("2 recipes verified on DGX Spark.2 model families.2 creators.");
     expect(screen.getByText(/from NVIDIA and more/)).toBeVisible();
     const tiles = within(screen.getByRole("region", { name: "What can you run?" }));
-    expect(tiles.getByRole("link", { name: /Language & chat\s*1 verified/ })).toHaveAttribute("href", "/recipes?type=language&qualification=Working");
+    expect(tiles.getByRole("link", { name: /Language & chat\s*1 verified/ })).toHaveAttribute("href", "/recipes?type=language");
     expect(tiles.getByRole("link", { name: /Code\s*1 verified/ })).toBeVisible();
-    expect(tiles.getByRole("link", { name: /3D\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=3d");
+    expect(tiles.getByRole("link", { name: /3D\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=3d&verified=0");
   });
 
   test("shows no numbers and an alert when the catalog cannot be read", async () => {

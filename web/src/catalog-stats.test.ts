@@ -40,7 +40,7 @@ function recipe(slug: string, options: { owner?: string | null; status?: string;
 }
 
 function model(slug: string, family: string | undefined): ModelSummary {
-  return { publisher: "p", slug, title: slug, description: "", family, runs: { spark_counts: [], engines: [], creators: [] }, tags: [], revision_id: "r", versions: [], recipe_count: 0 };
+  return { publisher: "p", slug, title: slug, description: "", family, runs: { spark_counts: [], engines: [], creators: [] }, verified_runs: { spark_counts: [], engines: [], creators: [] }, tags: [], revision_id: "r", versions: [], recipe_count: 0 };
 }
 
 const now = new Date("2026-11-06T12:00:00Z");

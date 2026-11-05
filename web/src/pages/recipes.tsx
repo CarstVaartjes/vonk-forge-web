@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { loadRecipeCatalog, type RecipeSummary } from "../api/client";
-import { modelTypeLabel } from "../model-types";
+import { MODEL_TYPES, hasModelType, modelTypeLabel } from "../model-types";
 import { WORKING_STATUS } from "../qualification-status";
-import { FacetStrip, SparkPicker } from "../catalog-setup";
+import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
 import {
   CAPABILITY_OPTIONS,
   READINESS_OPTIONS,
@@ -136,6 +136,14 @@ export function RecipesPage() {
     replace(next);
   }
 
+  function setVerified(on: boolean) {
+    const next = new URLSearchParams(parameters);
+    next.delete("qualification");
+    if (on) next.delete("verified"); else next.set("verified", "0");
+    next.delete("cursor");
+    replace(next);
+  }
+
   function count(facet: FilterFacet, predicate: (recipe: RecipeSummary) => boolean): number {
     return available.filter((recipe) => recipeMatches(recipe, filters, facet) && predicate(recipe)).length;
   }
@@ -183,6 +191,7 @@ export function RecipesPage() {
   const disks = useMemo(() => distinctSizes(available.map((recipe) => recipe.capacity?.maximum_installed_bytes_per_node)), [available]);
   const memories = useMemo(() => distinctSizes(available.map((recipe) => recipe.capacity?.maximum_runtime_memory_bytes_per_node)), [available]);
 
+  const typeCounts = Object.fromEntries(MODEL_TYPES.map((type) => [type.id, count("type", (recipe) => hasModelType(recipe.catalog.capabilities, type.id))])) as Record<(typeof MODEL_TYPES)[number]["id"], number>;
   const sparkCounts = Object.fromEntries([...SPARK_OPTIONS.map((option) => option.value), ""].map((value) => [value, count("sparks", (recipe) => nodeCountMatches(recipe.catalog.node_count, value as typeof filters.sparks))])) as Record<typeof filters.sparks, number>;
 
   const applied: ActiveFilter[] = [];
@@ -216,11 +225,19 @@ export function RecipesPage() {
       </header>
 
       {catalog ? (
+        <section className="catalog-type" aria-labelledby="recipe-type-title">
+          <h2 id="recipe-type-title">What kind of model?</h2>
+          <TypeTabs value={filters.type} noun="recipes" counts={typeCounts} total={count("type", () => true)} onChange={(value) => update("type", value)} />
+        </section>
+      ) : null}
+
+      {catalog ? (
         <section className="catalog-setup" aria-labelledby="recipe-setup-title">
           <div className="catalog-setup-heading">
-            <h2 id="recipe-setup-title">Start from your setup.</h2>
+            <h2 id="recipe-setup-title">Then narrow it to your setup.</h2>
             <p>Pick what you have. The list narrows to recipes with a complete placement for it; your Controller makes the same check against the live capacity of your Sparks.</p>
           </div>
+          <VerifiedToggle checked={filters.verified} onChange={setVerified} />
           <SparkPicker
             value={filters.sparks}
             noun="recipes"
@@ -231,6 +248,7 @@ export function RecipesPage() {
             <FacetStrip label="Model family" value={filters.modelFamily} onChange={updateModelFamily} options={modelFamilies.map((value) => ({ value, label: value, count: count("modelFamily", (recipe) => modelFamilyTitle(recipe) === value) }))} />
             <FacetStrip label="Engine" value={filters.runtime} onChange={(value) => update("runtime", value)} options={runtimes.map((value) => ({ value, label: engineLabel(value), count: count("runtime", (recipe) => recipe.catalog.runtime_distribution === value) }))} />
             <FacetStrip label="Creator" value={filters.sourceOwner} onChange={(value) => update("creator", value)} options={sourceOwners.map((value) => ({ value, label: value, count: count("sourceOwner", (recipe) => sameCreator(recipe.catalog.source_owner, value)) }))} />
+            <FacetStrip label="Quantization" value={filters.quantization} onChange={(value) => update("quantization", value)} options={quantizations.map((value) => ({ value, label: value, count: count("quantization", (recipe) => recipe.catalog.quantizations.includes(value)) }))} />
           </div>
         </section>
       ) : null}

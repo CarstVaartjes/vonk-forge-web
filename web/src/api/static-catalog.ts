@@ -3,7 +3,7 @@ import type { LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSu
 
 import contract from "../contract-major.json";
 import { CAPABILITY_OPTIONS } from "../catalog-filters";
-import { STATUS_UNAVAILABLE } from "../qualification-status";
+import { STATUS_UNAVAILABLE, WORKING_STATUS } from "../qualification-status";
 
 
 type JsonRecord = Record<string, unknown>;
@@ -289,13 +289,22 @@ function recipeModelSelections(document: JsonRecord): JsonRecord[] {
 
 function modelRuns(versions: ModelVersionSummary[], recipes: RecipeSummary[]): ModelRuns {
   const slugs = new Set(versions.flatMap((version) => version.recipe_slugs));
-  const own = recipes.filter((recipe) => slugs.has(`${recipe.publisher}/${recipe.slug}`));
+  return runsOf(recipes.filter((recipe) => slugs.has(`${recipe.publisher}/${recipe.slug}`)));
+}
+
+function runsOf(own: RecipeSummary[]): ModelRuns {
   const unique = (values: Array<string | null>): string[] => Array.from(new Set(values.filter((value): value is string => Boolean(value)))).sort();
   return {
     spark_counts: Array.from(new Set(own.map((recipe) => recipe.catalog.node_count))).sort((left, right) => left - right),
     engines: unique(own.map((recipe) => recipe.catalog.runtime_distribution)),
     creators: unique(own.map((recipe) => recipe.catalog.source_owner)),
   };
+}
+
+// The same facts restricted to recipes that passed hardware checks on a Spark.
+function verifiedModelRuns(versions: ModelVersionSummary[], recipes: RecipeSummary[]): ModelRuns {
+  const slugs = new Set(versions.flatMap((version) => version.recipe_slugs));
+  return runsOf(recipes.filter((recipe) => slugs.has(`${recipe.publisher}/${recipe.slug}`) && recipe.catalog.qualification === WORKING_STATUS));
 }
 
 function mapModels(index: LibraryIndex): ModelSummary[] {
@@ -320,6 +329,7 @@ function mapModels(index: LibraryIndex): ModelSummary[] {
       description: text(display.description),
       family: displayTitle(display.family_title) || text(modelFamily(first.document).slug) || undefined,
       runs: modelRuns(versionRows, recipes),
+      verified_runs: verifiedModelRuns(versionRows, recipes),
       tags: array(display.tags).map((value) => text(value).toLowerCase()).filter(Boolean),
       revision_id: text(first.content_sha256, "unknown"),
       versions: versionRows,

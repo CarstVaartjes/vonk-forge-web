@@ -96,6 +96,8 @@ export interface ModelSummary {
   // The lineage title (Qwen, GLM, DeepSeek Flash), falling back to its slug.
   family?: string;
   runs: ModelRuns;
+  // The same facts for recipes that passed hardware checks on a DGX Spark.
+  verified_runs: ModelRuns;
   tags: string[];
   revision_id: string;
   versions: ModelVersionSummary[];
