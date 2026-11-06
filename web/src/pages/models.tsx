@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { getModel, listModels, type ModelSummary, type ModelVersionSummary } from "../api/client";
 import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
-import { CAPABILITY_OPTIONS, SPARK_OPTIONS, engineLabel, nodeCountMatches, sameCreator, type SparkFilter } from "../catalog-filters";
+import { CAPABILITY_OPTIONS, SPARK_OPTIONS, engineLabel, nodeCountMatches, type SparkFilter } from "../catalog-filters";
 import { MODEL_TYPES, hasModelType, isModelTypeId, type ModelTypeId } from "../model-types";
 
 const PAGE_SIZE = 12;
@@ -157,7 +157,7 @@ function VersionRow({ version }: { version: ModelVersionSummary }) {
   </article>;
 }
 
-type SetupFacet = "sparks" | "family" | "engine" | "creator" | "quantization";
+type SetupFacet = "sparks" | "family" | "engine";
 type ModelFilters = ReturnType<typeof initialFilters>;
 
 // With "Verified on Spark" on, a model's runs are those of its verified recipes only.
@@ -169,19 +169,13 @@ function runsOn(model: ModelSummary, filters: ModelFilters, sparks: SparkFilter)
   return !sparks || runsOf(model, filters).spark_counts.some((count) => nodeCountMatches(count, sparks));
 }
 
-function modelQuantizations(model: ModelSummary): string[] {
-  return Array.from(new Set(model.versions.flatMap((version) => version.format?.quantization ? [version.format.quantization.toUpperCase()] : [])));
-}
-
 // The setup facets (Spark count, family, engine), with one left open for its own counts.
 function setupMatches(model: ModelSummary, filters: ModelFilters, omit: SetupFacet | null): boolean {
   const runs = runsOf(model, filters);
   return (!filters.verified || model.verified_runs.spark_counts.length > 0)
     && (omit === "sparks" || runsOn(model, filters, filters.sparks))
     && (omit === "family" || !filters.family || (model.family ?? "Model") === filters.family)
-    && (omit === "engine" || !filters.engine || runs.engines.includes(filters.engine))
-    && (omit === "creator" || !filters.creator || runs.creators.some((creator) => sameCreator(creator, filters.creator)))
-    && (omit === "quantization" || !filters.quantization || modelQuantizations(model).includes(filters.quantization));
+    && (omit === "engine" || !filters.engine || runs.engines.includes(filters.engine));
 }
 
 // The search-row filters, shared by the list and the setup counts.
@@ -197,7 +191,7 @@ function initialFilters() {
   const params = new URLSearchParams(window.location.search);
   const sparks = params.get("sparks") ?? "";
   const type = params.get("type") ?? "";
-  return { type: (isModelTypeId(type) ? type : "") as ModelTypeId | "", verified: params.get("verified") !== "0", creator: params.get("creator") ?? "", quantization: params.get("quantization") ?? "", query: params.get("q") ?? "", publisher: params.get("publisher") ?? "", capability: params.get("capability") ?? "", recipes: params.get("recipes") ?? "", family: params.get("family") ?? "", engine: params.get("engine") ?? "", sparks: (SPARK_OPTIONS.some((option) => option.value === sparks) ? sparks : "") as SparkFilter, sort: params.get("sort") ?? "name", page: Math.max(1, Number(params.get("page")) || 1) };
+  return { type: (isModelTypeId(type) ? type : "") as ModelTypeId | "", verified: params.get("verified") !== "0", query: params.get("q") ?? "", publisher: params.get("publisher") ?? "", capability: params.get("capability") ?? "", recipes: params.get("recipes") ?? "", family: params.get("family") ?? "", engine: params.get("engine") ?? "", sparks: (SPARK_OPTIONS.some((option) => option.value === sparks) ? sparks : "") as SparkFilter, sort: params.get("sort") ?? "name", page: Math.max(1, Number(params.get("page")) || 1) };
 }
 
 export function ModelsPage() {
@@ -223,9 +217,6 @@ export function ModelsPage() {
   const sparkCounts = Object.fromEntries([...SPARK_OPTIONS.map((option) => option.value), ""].map((value) => [value, facetCount("sparks", (model) => runsOn(model, filters, value as SparkFilter))])) as Record<SparkFilter, number>;
   const families = useMemo(() => Array.from(new Set((models ?? []).map((model) => model.family ?? "Model"))).sort(), [models]);
   const engines = useMemo(() => Array.from(new Set((models ?? []).flatMap((model) => model.runs.engines))).sort(), [models]);
-  // One creator per letter case ("NVIDIA", "nvidia"), under its first spelling.
-  const creators = useMemo(() => Array.from(new Map((models ?? []).flatMap((model) => model.runs.creators).map((name) => [name.toLowerCase(), name] as const)).values()).sort((left, right) => left.localeCompare(right, undefined, { sensitivity: "base" })), [models]);
-  const quantizations = useMemo(() => Array.from(new Set((models ?? []).flatMap(modelQuantizations))).sort(), [models]);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const page = Math.min(filters.page, pageCount);
   const visible = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -235,8 +226,6 @@ export function ModelsPage() {
     const params = new URLSearchParams();
     if (updated.type) params.set("type", updated.type);
     if (!updated.verified) params.set("verified", "0");
-    if (updated.creator) params.set("creator", updated.creator);
-    if (updated.quantization) params.set("quantization", updated.quantization);
     if (updated.query) params.set("q", updated.query);
     if (updated.publisher) params.set("publisher", updated.publisher);
     if (updated.capability) params.set("capability", updated.capability);
@@ -248,7 +237,7 @@ export function ModelsPage() {
     if (updated.page > 1) params.set("page", String(updated.page));
     window.history.replaceState({}, "", `/models${params.toString() ? `?${params}` : ""}`);
   }
-  function clearFilters() { updateFilters({ type: "", verified: true, creator: "", quantization: "", query: "", publisher: "", capability: "", recipes: "", family: "", engine: "", sparks: "", sort: "name" }); }
+  function clearFilters() { updateFilters({ type: "", verified: true, query: "", publisher: "", capability: "", recipes: "", family: "", engine: "", sparks: "", sort: "name" }); }
   useEffect(() => { document.title = "Models · Vonk Forge"; }, []);
   return <main className="models-page">
     <header className="page-intro models-intro"><div><h1>Models, with their exact versions.</h1></div><p>Start with a model, then inspect its exact versions and variants and the recipes that bind them. Details come from the published catalog; local cache and running state stay in your Controller.</p></header>
@@ -269,16 +258,14 @@ export function ModelsPage() {
         <div className="catalog-setup-facets">
           <FacetStrip label="Model family" value={filters.family} onChange={(value) => updateFilters({ family: value })} options={families.map((value) => ({ value, label: value, count: facetCount("family", (model) => (model.family ?? "Model") === value) }))} />
           <FacetStrip label="Engine" value={filters.engine} onChange={(value) => updateFilters({ engine: value })} options={engines.map((value) => ({ value, label: engineLabel(value), count: facetCount("engine", (model) => runsOf(model, filters).engines.includes(value)) }))} />
-          <FacetStrip label="Creator" value={filters.creator} onChange={(value) => updateFilters({ creator: value })} options={creators.map((value) => ({ value, label: value, count: facetCount("creator", (model) => runsOf(model, filters).creators.some((creator) => sameCreator(creator, value))) }))} />
-          <FacetStrip label="Quantization" value={filters.quantization} onChange={(value) => updateFilters({ quantization: value })} options={quantizations.map((value) => ({ value, label: value, count: facetCount("quantization", (model) => modelQuantizations(model).includes(value)) }))} />
         </div>
       </section>
     ) : null}
-    <section className="model-index-tools" aria-label="Model index controls"><label htmlFor="model-search">Find a model</label><input id="model-search" type="search" value={filters.query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder="Search model, family, publisher, or tag" /><label htmlFor="model-publisher">Publisher</label><select id="model-publisher" value={filters.publisher} onChange={(event) => updateFilters({ publisher: event.target.value })}><option value="">All publishers</option>{publishers.map((publisher) => <option key={publisher} value={publisher}>{publisher}</option>)}</select><label htmlFor="model-capability">Capability</label><select id="model-capability" value={filters.capability} onChange={(event) => updateFilters({ capability: event.target.value })}><option value="">All declared capabilities</option>{CAPABILITY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><label htmlFor="model-recipes">Recipe support</label><select id="model-recipes" value={filters.recipes} onChange={(event) => updateFilters({ recipes: event.target.value })}><option value="">All models</option><option value="recipes">Has public recipes</option><option value="none">No public recipes</option></select><label htmlFor="model-sort">Sort</label><select id="model-sort" value={filters.sort} onChange={(event) => updateFilters({ sort: event.target.value })}><option value="name">Name</option><option value="versions">Most versions</option><option value="recipes">Most recipes</option></select><span aria-live="polite">{models ? `${filtered.length} of ${models.length} models` : error ? "Model index unavailable" : "Loading models…"}</span>{(filters.type || !filters.verified || filters.creator || filters.quantization || filters.query || filters.publisher || filters.capability || filters.recipes || filters.family || filters.engine || filters.sparks || filters.sort !== "name") ? <button className="text-button" type="button" onClick={clearFilters}>Clear filters</button> : null}</section>
+    <section className="model-index-tools" aria-label="Model index controls"><label htmlFor="model-search">Find a model</label><input id="model-search" type="search" value={filters.query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder="Search model, family, publisher, or tag" /><label htmlFor="model-publisher">Publisher</label><select id="model-publisher" value={filters.publisher} onChange={(event) => updateFilters({ publisher: event.target.value })}><option value="">All publishers</option>{publishers.map((publisher) => <option key={publisher} value={publisher}>{publisher}</option>)}</select><label htmlFor="model-capability">Capability</label><select id="model-capability" value={filters.capability} onChange={(event) => updateFilters({ capability: event.target.value })}><option value="">All declared capabilities</option>{CAPABILITY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><label htmlFor="model-recipes">Recipe support</label><select id="model-recipes" value={filters.recipes} onChange={(event) => updateFilters({ recipes: event.target.value })}><option value="">All models</option><option value="recipes">Has public recipes</option><option value="none">No public recipes</option></select><label htmlFor="model-sort">Sort</label><select id="model-sort" value={filters.sort} onChange={(event) => updateFilters({ sort: event.target.value })}><option value="name">Name</option><option value="versions">Most versions</option><option value="recipes">Most recipes</option></select><span aria-live="polite">{models ? `${filtered.length} of ${models.length} models` : error ? "Model index unavailable" : "Loading models…"}</span>{(filters.type || !filters.verified || filters.query || filters.publisher || filters.capability || filters.recipes || filters.family || filters.engine || filters.sparks || filters.sort !== "name") ? <button className="text-button" type="button" onClick={clearFilters}>Clear filters</button> : null}</section>
     <PublicCatalogExplainer />
     {error ? <div className="status-panel error" role="alert"><h2>Models are temporarily unavailable.</h2><p>The public model index could not be loaded. Try again when the catalog source is reachable.</p><button className="button" type="button" onClick={() => { setModels(null); setAttempt((value) => value + 1); }}>Retry</button></div> : null}
     {!models && !error ? <div className="status-panel" role="status">Loading immutable model index…</div> : null}
-    {models && filtered.length === 0 ? <div className="status-panel"><h2>No matching models.</h2><p>Try a broader family, publisher, or capability.</p><button className="button" type="button" onClick={clearFilters}>Show all models</button></div> : null}
+    {models && filtered.length === 0 ? <div className="status-panel"><h2>No matching models.</h2><p>{filters.verified ? "Verified on Spark is on, so models without a recipe that passed hardware checks on a DGX Spark are hidden. " : ""}Try a broader family, publisher, or capability.</p>{filters.verified ? <button className="button" type="button" onClick={() => updateFilters({ verified: false })}>Include models not yet verified</button> : null}<button className="button" type="button" onClick={clearFilters}>Show all models</button></div> : null}
     {models && visible.length ? <ul className="model-list" aria-label="Models">{visible.map((model) => { const capabilities = modelCapabilities(model); const key = `${model.publisher}/${model.slug}`; return <li key={key}><a className="model-row" href={`/models/${model.publisher}/${model.slug}`}><span className="model-row-main"><strong>{model.title}</strong>{model.family && model.family !== model.title ? <span className="model-meta">Family · {model.family}</span> : null}<code>{model.publisher}/{model.slug}</code></span><span className="model-row-facts"><RowFact label="Runs on" value={model.runs.spark_counts.length ? model.runs.spark_counts.map((count) => `${count} Spark${count === 1 ? "" : "s"}`).join(" · ") : "No public recipe"} /><RowFact label="Engines" value={model.runs.engines.length ? model.runs.engines.map(engineLabel).join(" · ") : "—"} /><RowFact label={model.versions.length === 1 ? "Version" : "Versions"} value={versionsLabel(model)} /></span><span className="model-row-capabilities" aria-label="Declared capabilities">{model.versions.some((item) => item.requires_token) ? <span className="model-row-token">Token required</span> : null}{capabilities.slice(0, 3).map((capability) => <span key={capability}>{filterLabel(capability)}</span>)}{!capabilities.length ? <span>No capabilities declared</span> : null}</span><span className="model-row-action"><span>{model.recipe_count} {model.recipe_count === 1 ? "recipe" : "recipes"}</span><span className="button primary">View versions</span></span></a></li>; })}</ul> : null}
     {models && filtered.length > PAGE_SIZE ? <nav className="model-pagination" aria-label="Model pages"><button className="button" type="button" disabled={page <= 1} onClick={() => updateFilters({ page: page - 1 })}>Previous</button><span aria-live="polite">Page {page} of {pageCount}</span><button className="button" type="button" disabled={page >= pageCount} onClick={() => updateFilters({ page: page + 1 })}>Next</button></nav> : null}
   </main>;

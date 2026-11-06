@@ -45,7 +45,7 @@ export function ArchitecturePage() {
 
           <article className="architecture-zone zone-control">
             <div className="zone-heading"><span>Operator owned</span><h3>Local controller</h3></div>
-            <p>Checks every recipe against the live capacity of your Sparks and syncs the signed recipe library every 15 minutes. Prepares and caches verified model files and runtime images on your NAS, then keeps progress, updates, recovery, and profiles in one place.</p>
+            <p>Checks every recipe against the live capacity of your Sparks and keeps the signed recipe library in sync on its own. Prepares and caches verified model files and runtime images on your NAS, then keeps progress, updates, recovery, and profiles in one place.</p>
             <ul><li>Fit checks + library sync</li><li>Policy + durable state</li><li>Placement + route authority</li></ul>
           </article>
 

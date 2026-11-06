@@ -86,10 +86,13 @@ not a unique flat regular file, verifies `SHA256SUMS`
 against its Sigstore attestation from the library's `publish.yml` on `main`,
 checks every bundle file and the index against `SHA256SUMS`, and writes
 `web/public/catalog/` (`catalog-index.json`, `release.json`, `SHA256SUMS` and its
-bundle). The home page numbers (verified recipes, model families, creators, the
-counts per model type, the top creators and the newest recipes) are derived in the browser
-from that same index through the catalog adapter (`web/src/catalog-stats.ts`); there is no
-second reader and no hard-coded count. The browser reads only those same-origin files. The site offers no package
+bundle), plus `catalog-summary.json` (about 3 KB): the home page numbers (verified
+recipes, model families and creators over verified recipes, verified recipes per model
+type, the top creators and the most recently updated recipes). The build derives it from
+the verified index with the same adapter, type mapping (`web/src/model-types.ts`) and
+derivation the pages use (`web/src/catalog-summary.ts`), validates it with the browser's own
+check, and fails if the index is refused or nothing in it is verified. The home page reads
+only that file, never the full index; there is no hard-coded count. The browser reads only those same-origin files. The site offers no package
 download (packages are not copied to Pages: some exceed its 25 MiB per-file limit); recipe
 pages link "View source" (and "View adapter source") to the recipe files in the library
 repository, pinned to the verified release's source commit.

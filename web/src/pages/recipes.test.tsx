@@ -165,4 +165,47 @@ describe("type-first filtering", () => {
     expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
     expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked();
   });
+
+  function variant(slug: string, owner: string, nodes: number, capabilities: string[]): RecipeSummary {
+    const base = verifiedCoder();
+    return { ...base, slug, title: slug, catalog: { ...base.catalog, model_family: slug, model_version_slug: slug, model_version_title: slug, source_owner: owner, node_count: nodes, capabilities } };
+  }
+
+  test("Sparks and Creator refinements change the type counts, and an empty type chip is aria-disabled", async () => {
+    loadRecipeCatalog.mockReset().mockResolvedValue([variant("coder", "eugr", 1, ["code-generation"]), variant("chatter", "NVIDIA", 2, ["chat"])]);
+    window.history.replaceState(null, "", "/recipes");
+    render(<RecipesPage />);
+    await screen.findByRole("heading", { name: "coder" });
+    const types = () => within(screen.getByRole("group", { name: "Model type" }));
+    expect(types().getByRole("button", { name: "Code: 1 recipes" })).not.toHaveAttribute("aria-disabled");
+    expect(types().getByRole("button", { name: "Language: 1 recipes" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "2 Sparks: 1 recipes" }));
+    await waitFor(() => expect(types().getByRole("button", { name: "Code: 0 recipes" })).toHaveAttribute("aria-disabled", "true"));
+    expect(types().getByRole("button", { name: "Language: 1 recipes" })).toBeVisible();
+    // An empty chip stays focusable but does nothing.
+    fireEvent.click(types().getByRole("button", { name: "Code: 0 recipes" }));
+    expect(window.location.search).toBe("?sparks=2");
+
+    fireEvent.click(screen.getByRole("button", { name: "Any count: 2 recipes" }));
+    await waitFor(() => expect(window.location.search).toBe(""));
+    fireEvent.click(within(screen.getByRole("group", { name: "Creator" })).getByRole("button", { name: "eugr: 1" }));
+    await waitFor(() => expect(types().getByRole("button", { name: "Language: 0 recipes" })).toHaveAttribute("aria-disabled", "true"));
+    expect(types().getByRole("button", { name: "Code: 1 recipes" })).toBeVisible();
+  });
+
+  test("the default Verified on Spark filter is an applied chip and is named in the empty state", async () => {
+    window.history.replaceState(null, "", "/recipes?type=vision");
+    render(<RecipesPage />);
+    const empty = await screen.findByText("No matching recipes.");
+    expect(empty.parentElement).toHaveTextContent(/Verified on Spark is on, so recipes that have not passed hardware checks/);
+    const applied = screen.getByLabelText("Applied filters");
+    expect(within(applied).getByRole("button", { name: /Verified on Spark/ })).toBeVisible();
+    expect(within(applied).getByRole("button", { name: /Type: Vision/ })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Include recipes not yet verified" }));
+    await waitFor(() => expect(window.location.search).toBe("?type=vision&verified=0"));
+    fireEvent.click(screen.getByRole("button", { name: /^Clear \d+ filter/ }));
+    await waitFor(() => expect(window.location.search).toBe("?verified=0"));
+    expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
+  });
 });

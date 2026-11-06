@@ -34,6 +34,32 @@ const commit = "a".repeat(40);
 const tag = "v3.0.0";
 const updatedAt = "2026-09-28T20:04:06Z";
 
+// One model and one verified recipe: the smallest catalog the site accepts.
+const modelDigest = "3".repeat(64);
+const fixtureModel = {
+  content_sha256: modelDigest,
+  document: {
+    kind: "model",
+    identity: { publisher: "qwen", slug: "qwen-fast-nvfp4", family: { publisher: "qwen", slug: "qwen" }, model: { publisher: "qwen", slug: "qwen-fast" } },
+    capabilities: ["chat", "code-generation"],
+  },
+  display: { family_title: "Qwen", model_title: "Qwen Fast" },
+};
+const fixtureRecipe = (packageBytes, overrides = {}) => ({
+  content_sha256: "a".repeat(64),
+  source_path: "recipes/qwen-fast.json",
+  package: { path: "packages/qwen-fast-single.tar.gz", sha256: sha256(packageBytes), expected_bytes: packageBytes.length, media_type: "x", minimum_consumer_schema: 2, recipe_content_sha256: "a".repeat(64) },
+  qualification: { status: "Working" },
+  display: { title: "Qwen Fast" },
+  release: { version: "1.0.0", released_at: "2026-09-01" },
+  document: {
+    identity: { publisher: "vonk-forge", slug: "qwen-fast" },
+    models: [{ model: { kind: "model", publisher: "qwen", slug: "qwen-fast-nvfp4", content_sha256: modelDigest } }],
+    provenance: { source_reference: "https://huggingface.co/Qwen/Qwen-Fast" },
+  },
+  ...overrides,
+});
+
 // A fixture release shaped like vonk-forge-recipes publish.yml output.
 function fixtureRelease({ index: indexOverride = {}, checksums: checksumsOverride } = {}) {
   const packageBytes = Buffer.from("fixture package");
@@ -45,8 +71,8 @@ function fixtureRelease({ index: indexOverride = {}, checksums: checksumsOverrid
     repository: "CarstVaartjes/vonk-forge-recipes",
     source_commit: commit,
     package_contract: { schema_version: 2, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", path_prefix: "packages/" },
-    catalog_entities: [],
-    recipes: [{ package: { path: "packages/qwen-fast-single.tar.gz", sha256: sha256(packageBytes) } }],
+    catalog_entities: [fixtureModel],
+    recipes: [fixtureRecipe(packageBytes)],
     ...indexOverride,
   };
   const indexBytes = Buffer.from(JSON.stringify(index));
@@ -119,6 +145,32 @@ describe("recipe release publication", () => {
       sha256sums_sha256: sha256(assets.SHA256SUMS),
       catalog_index_sha256: sha256(assets["catalog-index.json"]),
     });
+  });
+
+  test("derives the small home summary from the verified index, with the page code", async () => {
+    const assets = fixtureRelease();
+    await publish(assets);
+    const raw = await readFile(path.join(outDir, "catalog-summary.json"), "utf8");
+    expect(raw.length).toBeLessThan(20_000);
+    expect(JSON.parse(raw)).toMatchObject({
+      summary_version: 1,
+      release: tag,
+      catalog_index_sha256: sha256(assets["catalog-index.json"]),
+      verified: 1,
+      families: 1,
+      creators: 1,
+      topCreators: [{ name: "Qwen", verified: 1 }],
+      types: { language: 1, code: 1, vision: 0, image: 0, video: 0, audio: 0, "3d": 0 },
+      updatedByDate: { "2026-09-01": 1 },
+      newest: [{ publisher: "vonk-forge", slug: "qwen-fast", title: "Qwen Fast", creator: "Qwen", status: "Working", date: "2026-09-01" }],
+    });
+  });
+
+  test("fails closed, keeping the previous catalog, when nothing in the index is verified", async () => {
+    const packageBytes = Buffer.from("fixture package");
+    const assets = fixtureRelease({ index: { recipes: [fixtureRecipe(packageBytes, { qualification: { status: "Not yet verified" } })] } });
+    await expect(publish(assets)).rejects.toThrow("unsupported catalog summary");
+    await expectPreviousCatalogKept();
   });
 
   test("fails closed when the signature does not verify", async () => {

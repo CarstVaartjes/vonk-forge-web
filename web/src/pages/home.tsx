@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 
-import { listModels, loadRecipeCatalog, type RecipeSummary } from "../api/client";
-import { deriveCatalogStats, isVerified, type CatalogStats } from "../catalog-stats";
+import { getCatalogSummary } from "../api/client";
+import { updatedThisWeek, type CatalogSummary } from "../catalog-stats";
+import { isVerified } from "../qualification-status";
 import { MODEL_TYPES } from "../model-types";
 import { RollingNumber } from "../rolling-number";
 
@@ -17,7 +18,7 @@ const promises = [
   },
   {
     title: "Stay current without the chase.",
-    body: "New models, engines, and quantizations arrive faster than anyone can track by hand. The recipe library follows upstream releases and refreshes recipes in place. Your Controller syncs the signed library every 15 minutes and marks a running install stale when a newer revision exists. You decide when to update.",
+    body: "New models, engines, and quantizations arrive faster than anyone can track by hand. The recipe library follows upstream releases and refreshes recipes in place. Your Controller syncs the signed library on its own and marks a running install stale when a newer revision exists. You decide when to update.",
     command: "vonkctl recipe update --all",
   },
   {
@@ -123,18 +124,18 @@ function ProductShot({
 
 const number = new Intl.NumberFormat("en");
 
-type CatalogState = { status: "loading" } | { status: "error" } | { status: "ready"; stats: CatalogStats };
+type CatalogState = { status: "loading" } | { status: "error" } | { status: "ready"; summary: CatalogSummary };
 
-// Everything live on this page comes from the two lists the single catalog
-// adapter returns for the verified library this build wrote to /catalog. A
-// failed read is an error state, never zeros.
-function useCatalogStats(): [CatalogState, () => void] {
+// Everything live on this page comes from catalog-summary.json, the small file
+// the Pages build derived from the verified release (never the full index). A
+// missing or malformed file is an error state, never zeros.
+function useCatalogSummary(): [CatalogState, () => void] {
   const [state, setState] = useState<CatalogState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    Promise.all([loadRecipeCatalog(controller.signal), listModels(controller.signal)])
-      .then(([recipes, models]) => setState({ status: "ready", stats: deriveCatalogStats(recipes, models.items) }))
+    getCatalogSummary(controller.signal)
+      .then((summary) => setState({ status: "ready", summary }))
       .catch(() => { if (!controller.signal.aborted) setState({ status: "error" }); });
     return () => controller.abort();
   }, [attempt]);
@@ -146,30 +147,40 @@ function joinNames(names: string[]): string {
   return `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 }
 
+// The counts headline (the owner asked for it); the definition sentence stays
+// directly under it. All three counts are over recipes verified on a DGX Spark.
 function Hero({ state }: { state: CatalogState }) {
-  const stats = state.status === "ready" ? state.stats : null;
-  const top = stats ? stats.topCreators.slice(0, 3).map((creator) => creator.name) : [];
+  const summary = state.status === "ready" ? state.summary : null;
+  const top = summary ? summary.topCreators.slice(0, 3).map((creator) => creator.name) : [];
   return (
     <section className="home-hero" aria-labelledby="home-title">
       <div className="home-hero-copy">
-        {stats ? (
-          <h1 id="home-title">
-            <span className="hero-stat"><RollingNumber value={stats.verified} /> recipes verified on DGX Spark.</span>
-            <span className="hero-stat"><RollingNumber value={stats.families} /> model families.</span>
-            <span className="hero-stat"><RollingNumber value={stats.creators} /> creators.</span>
-          </h1>
+        {state.status === "error" ? (
+          <h1 id="home-title">Verified recipes for NVIDIA DGX Spark.</h1>
         ) : (
-          <h1 id="home-title"><span>Models that fit</span><span>your Sparks.</span><span>Kept current.</span></h1>
+          <h1 id="home-title" aria-busy={summary ? undefined : true}>
+            <span className="hero-stat"><RollingNumber value={summary?.verified ?? null} /> recipes verified on DGX Spark.</span>
+            <span className="hero-stat"><RollingNumber value={summary?.families ?? null} placeholderDigits={2} /> model families.</span>
+            <span className="hero-stat"><RollingNumber value={summary?.creators ?? null} placeholderDigits={2} /> creators.</span>
+          </h1>
         )}
         <p className="home-definition">
-          Run the community&apos;s best Spark setups{top.length ? <>, from {joinNames(top)} and more,</> : null} on
-          your own hardware. Secure by default, no hassle, and always up to date
-          with the newest recipes and models.
+          Vonk Forge is the open-source Controller for NVIDIA DGX Spark. It
+          checks every model and recipe against the Sparks you actually have,
+          keeps up with new models and recipe revisions for you, and runs the
+          mix you need in a few clicks or one <code>vonkctl</code> command your
+          agents can drive.
         </p>
+        {top.length ? (
+          <p className="home-creators">
+            Recipes from {joinNames(top)} and more, each shown with whether it passed hardware checks on a DGX Spark.
+          </p>
+        ) : null}
         <div className="hero-actions">
           <a className="button primary" href="/install">Install</a>
           <a className="button secondary" href="/recipes">Browse what runs</a>
         </div>
+        <p className="hero-cli"><a className="text-link" href="/control#local-cli">See the agent-friendly CLI</a></p>
         <ul className="home-facts" aria-label="Product facts">
           <li><StateDot /> Runs on infrastructure you own</li>
           <li>Web + CLI</li>
@@ -191,19 +202,19 @@ function Hero({ state }: { state: CatalogState }) {
 const benefits = [
   {
     title: "Secure",
-    body: "Installers and recipe releases are signed, and the Controller verifies them before it uses them. Runtime images are pinned by digest. It all runs on hardware you own: your secrets, fleet state and workloads stay on your network, and this site never receives them.",
+    body: "Installers verify release signatures and digests in their bootstrap step, and Spark packages come from a signed APT repository. Runtime images are pinned by digest. Everything runs on hardware you own: your secrets, fleet state and workloads stay on your network, and this site never receives them.",
     href: "/architecture",
     link: "How the boundary works",
   },
   {
     title: "No hassle",
-    body: "One Controller on a laptop, a NAS or a local server, and a guided install. It checks each recipe against the live capacity of your Sparks, offers only placements that fit, and caches verified model files and images on your NAS.",
+    body: "One Controller on a laptop, a NAS or a local server, and a guided install. For each recipe it shows whether it fits your Sparks and why, and it keeps verified model files and images in a Controller cache (laptop, NAS or server).",
     href: "/install",
     link: "See the install steps",
   },
   {
     title: "Always current",
-    body: "Recipes follow their creators' newest releases, and one only shows as Working after it passed hardware checks on a DGX Spark. Your Controller syncs the signed library every 15 minutes, and vonkctl recipe update --all refreshes your cached recipes.",
+    body: "Recipes follow their creators' newest releases, and one only shows as Working after it passed hardware checks on a DGX Spark. Your Controller syncs the signed recipe library on its own, and vonkctl recipe update --all refreshes your cached recipes.",
     href: "/control#local-cli",
     link: "Update from the CLI",
   },
@@ -226,7 +237,7 @@ function BenefitTrio() {
   );
 }
 
-function TypeTiles({ stats }: { stats: CatalogStats }) {
+function TypeTiles({ summary }: { summary: CatalogSummary }) {
   return (
     <section className="type-section" aria-labelledby="type-title">
       <div className="home-section-heading">
@@ -235,7 +246,7 @@ function TypeTiles({ stats }: { stats: CatalogStats }) {
       </div>
       <ul className="type-grid">
         {MODEL_TYPES.map((type) => {
-          const verified = stats.typeCounts[type.id];
+          const verified = summary.types[type.id];
           const href = verified > 0 ? `/recipes?type=${type.id}` : `/recipes?type=${type.id}&verified=0`;
           return (
             <li key={type.id}>
@@ -251,8 +262,7 @@ function TypeTiles({ stats }: { stats: CatalogStats }) {
   );
 }
 
-function CreatorStrip({ stats }: { stats: CatalogStats }) {
-  const creators = stats.topCreators.slice(0, 10);
+function CreatorStrip({ summary }: { summary: CatalogSummary }) {
   return (
     <section className="creator-section" aria-labelledby="creator-title">
       <div className="home-section-heading">
@@ -260,7 +270,7 @@ function CreatorStrip({ stats }: { stats: CatalogStats }) {
         <p>Every recipe credits the creator it comes from. These have the most recipes verified on a DGX Spark.</p>
       </div>
       <ul className="creator-strip">
-        {creators.map((creator) => (
+        {summary.topCreators.map((creator) => (
           <li key={creator.name.toLowerCase()}>
             <a href={`/recipes?creator=${encodeURIComponent(creator.name)}`}>
               <strong>{creator.name}</strong>
@@ -273,36 +283,41 @@ function CreatorStrip({ stats }: { stats: CatalogStats }) {
   );
 }
 
-function releaseLabel(recipe: RecipeSummary): string {
-  const date = new Date(recipe.published_at.length === 10 ? `${recipe.published_at}T00:00:00Z` : recipe.published_at);
-  return Number.isNaN(date.getTime()) ? recipe.published_at : new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" }).format(date);
+function releaseLabel(date: string): string {
+  const parsed = new Date(`${date}T00:00:00Z`);
+  return Number.isNaN(parsed.getTime()) ? date : new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" }).format(parsed);
 }
 
-function NewRow({ stats }: { stats: CatalogStats }) {
-  if (stats.newest.length === 0) return null;
+// The library moves a recipe's release date forward every time it refreshes the
+// recipe, so this row is what was updated, not what is new.
+function UpdatedRow({ summary }: { summary: CatalogSummary }) {
+  const week = updatedThisWeek(summary);
+  const recipes = (week.recipes.length ? week.recipes : summary.newest).slice(0, 6);
+  if (recipes.length === 0) return null;
+  const thisWeek = week.recipes.length > 0;
   return (
-    <section className="new-section" aria-labelledby="new-title">
+    <section className="new-section" aria-labelledby="updated-title">
       <div className="home-section-heading">
-        <h2 id="new-title">{stats.newestThisWeek ? "New this week." : "Latest releases."}</h2>
+        <h2 id="updated-title">{thisWeek ? "Updated this week." : "Latest updates."}</h2>
         <p>
-          {stats.newestThisWeek
-            ? `${number.format(stats.newThisWeek)} ${stats.newThisWeek === 1 ? "recipe was" : "recipes were"} released in the last seven days.`
-            : "Nothing was released in the last seven days. These are the newest recipes."}
+          {thisWeek
+            ? `${number.format(week.count)} ${week.count === 1 ? "recipe was" : "recipes were"} refreshed in the last seven days, to follow their creators' newest releases.`
+            : "Nothing was refreshed in the last seven days. These are the most recent updates."}
           {" "}Each shows its verification status as the library published it.
         </p>
       </div>
       <ul className="new-list">
-        {stats.newest.map((recipe) => (
+        {recipes.map((recipe) => (
           <li key={`${recipe.publisher}/${recipe.slug}`}>
             <a href={`/recipes/${recipe.publisher}/${recipe.slug}`}>
               <strong>{recipe.title}</strong>
-              <span>{recipe.catalog.source_owner ?? recipe.publisher} · {releaseLabel(recipe)}</span>
-              <span className="new-status"><StateDot tone={isVerified(recipe) ? "ready" : "source"} /> {recipe.catalog.qualification}</span>
+              <span>{recipe.creator ?? recipe.publisher} · updated {releaseLabel(recipe.date)}</span>
+              <span className="new-status"><StateDot tone={isVerified({ catalog: { qualification: recipe.status } }) ? "ready" : "source"} /> {recipe.status}</span>
             </a>
           </li>
         ))}
       </ul>
-      {stats.newestThisWeek ? <a className="text-link" href="/recipes?updated=7">See all {number.format(stats.newThisWeek)} new recipes</a> : null}
+      {thisWeek ? <a className="text-link" href="/recipes?updated=7&verified=0">See all {number.format(week.count)} updated recipes</a> : null}
     </section>
   );
 }
@@ -320,16 +335,16 @@ function CatalogSections({ state, retry }: { state: CatalogState; retry: () => v
   }
   return (
     <>
-      <TypeTiles stats={state.stats} />
-      <CreatorStrip stats={state.stats} />
-      <NewRow stats={state.stats} />
+      <TypeTiles summary={state.summary} />
+      <CreatorStrip summary={state.summary} />
+      <UpdatedRow summary={state.summary} />
     </>
   );
 }
 
 
 export function HomePage() {
-  const [state, retry] = useCatalogStats();
+  const [state, retry] = useCatalogSummary();
   return (
     <main className="home-page">
       <Hero state={state} />

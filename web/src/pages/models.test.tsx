@@ -176,11 +176,4 @@ describe("type-first model filtering", () => {
     await waitFor(() => expect(window.location.search).toBe("?verified=0"));
     expect(screen.getByRole("link", { name: /untested-coder/ })).toBeVisible();
   });
-
-  test("refines by creator and quantization after the type", async () => {
-    window.history.replaceState({}, "", "/models?type=code&creator=nvidia&quantization=NVFP4");
-    render(<ModelsPage />);
-    expect(await screen.findByRole("link", { name: /coder/ })).toBeVisible();
-    expect(within(screen.getByRole("group", { name: "Creator" })).getByRole("button", { name: "NVIDIA: 1" })).toBeVisible();
-  });
 });

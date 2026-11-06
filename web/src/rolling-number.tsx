@@ -6,30 +6,32 @@ const DIGITS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
 type Phase = "final" | "armed" | "playing";
 
-// A count that rolls up to its value, digit column by digit column. The first
-// render is the true number as plain text; the roll is presentation only and
-// plays once when the number scrolls into view. While it rolls, the moving
-// digits are aria-hidden and a visually hidden copy of the final number stands
-// in, so assistive technology reads the value once. Nothing animates under
-// prefers-reduced-motion or without IntersectionObserver.
-export function RollingNumber({ value }: { value: number }) {
+// A count that rolls up to its value, digit column by digit column, once, when
+// it scrolls into view. `value` is the real number from the first render: it is
+// plain text at rest, and the roll starts from blank columns (not zeros) of the
+// real digit count. While rolling, the moving digits are aria-hidden and a
+// visually hidden copy of the final number stands in, so assistive technology
+// reads the value once. Nothing animates under prefers-reduced-motion or
+// without IntersectionObserver. `null` is the not-yet-loaded placeholder: blank
+// columns, no text.
+export function RollingNumber({ value, placeholderDigits = 3 }: { value: number | null; placeholderDigits?: number }) {
   const root = useRef<HTMLSpanElement>(null);
   const [phase, setPhase] = useState<Phase>("final");
-  const characters = FORMAT.format(value).split("");
+  const characters = value === null ? Array.from({ length: placeholderDigits }, () => " ") : FORMAT.format(value).split("");
 
   useLayoutEffect(() => {
     const element = root.current;
     const reduced = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!element || reduced || typeof IntersectionObserver === "undefined") return;
+    if (value === null || !element || reduced || typeof IntersectionObserver === "undefined") return;
     setPhase("armed");
     let timer: number | undefined;
     const observer = new IntersectionObserver((entries) => {
       if (!entries.some((entry) => entry.isIntersecting)) return;
       observer.disconnect();
-      // Two frames: the zeroed state must paint before the transition starts.
+      // Two frames: the blank state must paint before the transition starts.
       requestAnimationFrame(() => requestAnimationFrame(() => {
         setPhase("playing");
-        timer = window.setTimeout(() => setPhase("final"), 1600);
+        timer = window.setTimeout(() => setPhase("final"), 1800);
       }));
     });
     observer.observe(element);
@@ -39,25 +41,26 @@ export function RollingNumber({ value }: { value: number }) {
     };
   }, [value]);
 
-  const rolling = phase !== "final";
+  const rolling = value !== null && phase !== "final";
   let column = 0;
   const digits = characters.map((character, position) => {
+    if (character === " ") return <span className="rolling-column" key={position} />;
     if (!/\d/.test(character)) return <span className="rolling-separator" key={position}>{character}</span>;
     const digit = Number(character);
-    // At rest a column is just its digit as text; while rolling it holds 0..digit.
+    // At rest a column is just its digit as text; while rolling it holds blank, 0..digit.
     if (!rolling) return <span className="rolling-column" key={position}>{digit}</span>;
-    const shown = phase === "playing" ? DIGITS.slice(0, digit + 1) : [0];
-    const style = { "--digit": phase === "playing" ? digit : 0, "--column": column++ } as React.CSSProperties;
+    const shown: Array<number | null> = phase === "playing" ? [null, ...DIGITS.slice(0, digit + 1)] : [null];
+    const style = { "--digit": phase === "playing" ? digit + 1 : 0, "--column": column++ } as React.CSSProperties;
     return (
       <span className="rolling-column" key={position} style={style}>
-        <span className="rolling-strip">{shown.map((value) => <span key={value}>{value}</span>)}</span>
+        <span className="rolling-strip">{shown.map((entry, index) => <span key={index}>{entry}</span>)}</span>
       </span>
     );
   });
   return (
     <span className="rolling-number" data-phase={phase} ref={root}>
       {rolling ? <span className="visually-hidden">{FORMAT.format(value)}</span> : null}
-      <span className="rolling-digits" aria-hidden={rolling ? "true" : undefined}>{digits}</span>
+      <span className="rolling-digits" aria-hidden={rolling || value === null ? "true" : undefined}>{digits}</span>
     </span>
   );
 }

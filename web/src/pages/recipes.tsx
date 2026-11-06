@@ -10,6 +10,7 @@ import {
   SPARK_OPTIONS,
   engineLabel,
   filtersFromParameters,
+  foldCreators,
   humanize,
   nodeCountMatches,
   modelFamilyTitle,
@@ -171,18 +172,7 @@ export function RecipesPage() {
     const titleCounts = [...identities.values()].reduce((counts, title) => counts.set(title, (counts.get(title) ?? 0) + 1), new Map<string, number>());
     return [...identities].map(([value, title]) => [value, titleCounts.get(title) === 1 ? title : `${title} · ${value}`] as const).sort((left, right) => left[1].localeCompare(right[1]));
   }, [available, filters.modelFamily]);
-  // One entry per creator regardless of letter case, shown with its most common spelling.
-  const sourceOwners = useMemo(() => {
-    const spellings = new Map<string, Map<string, number>>();
-    for (const recipe of available) {
-      const owner = recipe.catalog.source_owner;
-      if (!owner) continue;
-      const forms = spellings.get(owner.toLowerCase()) ?? new Map<string, number>();
-      forms.set(owner, (forms.get(owner) ?? 0) + 1);
-      spellings.set(owner.toLowerCase(), forms);
-    }
-    return Array.from(spellings.values()).map((forms) => [...forms.entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))[0]![0]).sort((left, right) => left.localeCompare(right, undefined, { sensitivity: "base" }));
-  }, [available]);
+  const sourceOwners = useMemo(() => foldCreators(available.map((recipe) => recipe.catalog.source_owner)).map((creator) => creator.name).sort((left, right) => left.localeCompare(right, undefined, { sensitivity: "base" })), [available]);
   const repositories = useMemo(() => Array.from(new Set(available.flatMap((recipe) => recipe.catalog.source_repository ? [recipe.catalog.source_repository as string] : []))).sort(), [available]);
   const qualifications = useMemo(() => Array.from(new Set(available.map((recipe) => recipe.catalog.qualification))).sort(), [available]);
   const runtimes = useMemo(() => Array.from(new Set(available.map((recipe) => recipe.catalog.runtime_distribution))).sort(), [available]);
@@ -196,6 +186,7 @@ export function RecipesPage() {
 
   const applied: ActiveFilter[] = [];
   const addApplied = (key: string, label: string, parameter: string) => applied.push({ key, label, remove: () => update(parameter, "") });
+  if (filters.verified) applied.push({ key: "verified", label: "Verified on Spark", remove: () => setVerified(false) });
   if (filters.query) addApplied("query", `Search: ${filters.query}`, "q");
   if (filters.type) addApplied("type", `Type: ${modelTypeLabel(filters.type)}`, "type");
   if (filters.modelFamily) addApplied("modelFamily", `Model family: ${filters.modelFamily}`, "model_family");
@@ -215,7 +206,8 @@ export function RecipesPage() {
   if (filters.memory) addApplied("memory", `Memory: ${filters.memory === "unknown" ? "Not declared" : bytes(Number(filters.memory))}`, "memory");
 
   const columnProps = { activeSort: filters.sort, direction: filters.direction, onSort: updateSort };
-  const clearAll = () => replace(new URLSearchParams());
+  // Clearing means showing everything, so the default Verified on Spark filter goes too.
+  const clearAll = () => replace(new URLSearchParams("verified=0"));
 
   return (
     <main className="catalog-page">
@@ -309,7 +301,7 @@ export function RecipesPage() {
             })}</tbody>
           </table>
         </div>
-        {filtered.length === 0 ? <div className="status-panel catalog-empty"><h2>No matching recipes.</h2><p>Clear one or more column filters to broaden the catalog.</p><button type="button" className="button" onClick={clearAll}>Clear filters</button></div> : null}
+        {filtered.length === 0 ? <div className="status-panel catalog-empty"><h2>No matching recipes.</h2><p>{filters.verified ? "Verified on Spark is on, so recipes that have not passed hardware checks on a DGX Spark are hidden. " : ""}Clear one or more filters to broaden the catalog.</p>{filters.verified ? <button type="button" className="button" onClick={() => setVerified(false)}>Include recipes not yet verified</button> : null}<button type="button" className="button" onClick={clearAll}>Clear filters</button></div> : null}
         {filtered.length > PAGE_SIZE ? <nav className="catalog-pagination" aria-label="Recipe pages"><button className="button" type="button" disabled={offset === 0} onClick={() => update("cursor", String(Math.max(0, offset - PAGE_SIZE)))}>Previous page</button><span>Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, filtered.length)} of {filtered.length}</span><button className="button" type="button" disabled={offset + PAGE_SIZE >= filtered.length} onClick={() => update("cursor", String(offset + PAGE_SIZE))}>Next page</button></nav> : null}
       </section> : null}
     </main>

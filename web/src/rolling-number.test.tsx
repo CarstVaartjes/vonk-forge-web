@@ -16,4 +16,11 @@ describe("rolling number", () => {
     expect(render(<RollingNumber value={0} />).container.textContent).toBe("0");
     expect(render(<RollingNumber value={7} />).container.textContent).toBe("7");
   });
+
+  test("the not-yet-loaded placeholder is blank and hidden from assistive technology", () => {
+    const { container } = render(<RollingNumber value={null} placeholderDigits={2} />);
+    expect(container.textContent).toBe("");
+    expect(container.querySelectorAll(".rolling-column")).toHaveLength(2);
+    expect(container.querySelector(".rolling-digits")).toHaveAttribute("aria-hidden", "true");
+  });
 });

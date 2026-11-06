@@ -1,50 +1,64 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
-import type { ModelPage, ModelSummary, RecipeSummary } from "../api/client";
+import { deriveCatalogStats } from "../catalog-stats";
+import type { RecipeSummary } from "../api/client";
 import { HomePage } from "./home";
 
-const { listModels, loadRecipeCatalog } = vi.hoisted(() => ({
-  listModels: vi.fn<() => Promise<ModelPage>>(),
-  loadRecipeCatalog: vi.fn<() => Promise<RecipeSummary[]>>(),
-}));
+const { getCatalogSummary, listModels, loadRecipeCatalog } = vi.hoisted(() => ({ getCatalogSummary: vi.fn(), listModels: vi.fn(), loadRecipeCatalog: vi.fn() }));
 
-vi.mock("../api/client", () => ({ listModels, loadRecipeCatalog }));
+vi.mock("../api/client", () => ({ getCatalogSummary, listModels, loadRecipeCatalog }));
 
-function recipe(slug: string, owner: string, status: string, capabilities: string[]): RecipeSummary {
+function recipe(slug: string, owner: string, status: string, capabilities: string[], family: string, updated = "2026-01-01"): RecipeSummary {
   return {
-    publisher: "vonk-forge", slug, title: slug, official: true, content_sha256: slug.padEnd(64, "0"), published_at: "2026-01-01", runtime: {},
-    catalog: { description: "", tags: [], model_publisher: "m", model_slug: slug, model_title: slug, model_version_publisher: "m", model_version_slug: slug, model_version_title: slug, model_family: slug, source_owner: owner, source_repository: null, alignment: "standard", capabilities, qualification: status, qualification_reason: null, execution_readiness: "executable", runtime_distribution: "vllm", precision: null, quantizations: [], node_count: 1, expected_download_bytes: 0 },
+    publisher: "vonk-forge", slug, title: slug, official: true, content_sha256: slug.padEnd(64, "0"), published_at: updated, runtime: {},
+    catalog: { description: "", tags: [], model_publisher: "m", model_slug: slug, model_title: slug, model_version_publisher: "m", model_version_slug: slug, model_version_title: slug, model_family: family, source_owner: owner, source_repository: null, alignment: "standard", capabilities, qualification: status, qualification_reason: null, execution_readiness: "executable", runtime_distribution: "vllm", precision: null, quantizations: [], node_count: 1, expected_download_bytes: 0 },
   };
 }
 
-const model = (slug: string, family: string): ModelSummary => ({ publisher: "p", slug, title: slug, description: "", family, runs: { spark_counts: [], engines: [], creators: [] }, verified_runs: { spark_counts: [], engines: [], creators: [] }, tags: [], revision_id: "r", versions: [], recipe_count: 0 });
+const today = new Date().toISOString().slice(0, 10);
+const summary = () => ({
+  summary_version: 1, release: "v3.1.0", catalog_index_sha256: "a".repeat(64),
+  ...deriveCatalogStats([
+    recipe("a", "NVIDIA", "Working", ["chat"], "Qwen", today), recipe("b", "nvidia", "Working", ["code-generation"], "GLM"),
+    recipe("d", "NVIDIA", "Not yet verified", ["chat"], "Hidden"), recipe("c", "eugr", "Not yet verified", ["chat"], "Hidden"),
+  ]),
+});
 
 beforeEach(() => {
+  getCatalogSummary.mockReset();
   loadRecipeCatalog.mockReset();
   listModels.mockReset();
 });
 
 describe("home page", () => {
-  test("the hero markup carries the true numbers derived from the catalog", async () => {
-    loadRecipeCatalog.mockResolvedValue([
-      recipe("a", "NVIDIA", "Working", ["chat"]), recipe("b", "nvidia", "Working", ["code-generation"]),
-      recipe("d", "NVIDIA", "Not yet verified", ["chat"]), recipe("c", "eugr", "Not yet verified", ["chat"]),
-    ]);
-    listModels.mockResolvedValue({ items: [model("x", "Qwen"), model("y", "GLM"), model("z", "qwen")] });
+  test("the hero carries the true numbers from the summary and never loads the catalog index", async () => {
+    getCatalogSummary.mockResolvedValue(summary());
     render(<HomePage />);
-    const title = await screen.findByRole("heading", { level: 1, name: /recipes verified on DGX Spark/ });
-    expect(title.textContent).toBe("2 recipes verified on DGX Spark.2 model families.2 creators.");
-    expect(screen.getByText(/from NVIDIA and more/)).toBeVisible();
+    const title = await screen.findByRole("heading", { level: 1, name: /2 recipes verified on DGX Spark/ });
+    expect(title.textContent).toBe("2 recipes verified on DGX Spark.2 model families.1 creators.");
+    expect(screen.getByText(/Vonk Forge is the open-source Controller for NVIDIA DGX Spark/)).toBeVisible();
+    expect(screen.getByText(/Recipes from nvidia and more/i)).toBeVisible();
+    expect(screen.getByRole("link", { name: "See the agent-friendly CLI" })).toHaveAttribute("href", "/control#local-cli");
+    expect(loadRecipeCatalog).not.toHaveBeenCalled();
+    expect(listModels).not.toHaveBeenCalled();
     const tiles = within(screen.getByRole("region", { name: "What can you run?" }));
     expect(tiles.getByRole("link", { name: /Language & chat\s*1 verified/ })).toHaveAttribute("href", "/recipes?type=language");
     expect(tiles.getByRole("link", { name: /Code\s*1 verified/ })).toBeVisible();
     expect(tiles.getByRole("link", { name: /3D\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=3d&verified=0");
   });
 
-  test("shows no numbers and an alert when the catalog cannot be read", async () => {
-    loadRecipeCatalog.mockRejectedValue(new Error("down"));
-    listModels.mockRejectedValue(new Error("down"));
+  test("calls the row updated, not new, and links the same count the catalog shows", async () => {
+    getCatalogSummary.mockResolvedValue(summary());
+    render(<HomePage />);
+    const row = await screen.findByRole("region", { name: "Updated this week." });
+    expect(within(row).getByText(/1 recipe was refreshed in the last seven days/)).toBeVisible();
+    expect(within(row).getByRole("link", { name: "See all 1 updated recipes" })).toHaveAttribute("href", "/recipes?updated=7&verified=0");
+    expect(screen.queryByText(/New this week/)).toBeNull();
+  });
+
+  test("shows no numbers and an alert when the summary is missing or malformed", async () => {
+    getCatalogSummary.mockRejectedValue(new Error("unsupported"));
     render(<HomePage />);
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("The recipe library could not be read."));
     expect(document.querySelector(".rolling-number")).toBeNull();

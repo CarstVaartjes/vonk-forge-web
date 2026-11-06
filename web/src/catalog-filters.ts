@@ -1,6 +1,7 @@
 import type { RecipeSummary } from "./api/client";
-import { WORKING_STATUS } from "./qualification-status";
-import { hasModelType, isModelTypeId, type ModelTypeId } from "./model-types";
+// Loaded under Node by the release build (via catalog-summary.ts): runtime imports use .ts.
+import { hasModelType, isModelTypeId, type ModelTypeId } from "./model-types.ts";
+import { isVerified } from "./qualification-status.ts";
 
 
 export const CAPABILITY_OPTIONS = [
@@ -167,6 +168,29 @@ export function sameCreator(left: string | null | undefined, right: string | nul
   return Boolean(left && right) && String(left).toLowerCase() === String(right).toLowerCase();
 }
 
+// One entry per creator regardless of letter case, named by its most common
+// spelling (ties: alphabetical), with how many of the given owners it covers.
+export function foldCreators(owners: ReadonlyArray<string | null | undefined>): Array<{ name: string; count: number }> {
+  const groups = new Map<string, Map<string, number>>();
+  for (const value of owners) {
+    const owner = value?.trim();
+    if (!owner) continue;
+    const spellings = groups.get(owner.toLowerCase()) ?? new Map<string, number>();
+    spellings.set(owner, (spellings.get(owner) ?? 0) + 1);
+    groups.set(owner.toLowerCase(), spellings);
+  }
+  return Array.from(groups.values()).map((spellings) => ({
+    name: [...spellings.entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))[0]![0],
+    count: [...spellings.values()].reduce((total, count) => total + count, 0),
+  }));
+}
+
+// A release date from the index as epoch milliseconds (NaN when unreadable).
+export function releaseTime(value: string | undefined): number {
+  if (!value) return Number.NaN;
+  return new Date(value.length === 10 ? `${value}T00:00:00Z` : value).getTime();
+}
+
 function sparksMatch(recipe: RecipeSummary, sparks: SparkFilter): boolean {
   return nodeCountMatches(recipe.catalog.node_count, sparks);
 }
@@ -187,10 +211,8 @@ export function recipeIsAbliterated(recipe: RecipeSummary): boolean {
 
 export function updatedMatches(recipe: RecipeSummary, updated: UpdatedFilter, now = new Date()): boolean {
   if (!updated) return true;
-  if (!recipe.published_at) return false;
-  const released = new Date(recipe.published_at.length === 10 ? `${recipe.published_at}T00:00:00Z` : recipe.published_at);
-  if (Number.isNaN(released.getTime())) return false;
-  return released.getTime() >= now.getTime() - Number(updated) * 86_400_000;
+  const released = releaseTime(recipe.published_at);
+  return !Number.isNaN(released) && released >= now.getTime() - Number(updated) * 86_400_000;
 }
 
 export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, omitted?: FilterFacet): boolean {
@@ -213,7 +235,7 @@ export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, om
     ...facts.tags,
   ].some((value) => value.toLocaleLowerCase().includes(normalized));
   return queryMatches
-    && (omitted === "verified" || !filters.verified || facts.qualification === WORKING_STATUS)
+    && (omitted === "verified" || !filters.verified || isVerified(recipe))
     && (omitted === "type" || !filters.type || hasModelType(facts.capabilities, filters.type))
     && (omitted === "modelFamily" || !filters.modelFamily || modelFamilyTitle(recipe) === filters.modelFamily)
     && (omitted === "model" || !filters.model || modelVersionKey(recipe) === filters.model)

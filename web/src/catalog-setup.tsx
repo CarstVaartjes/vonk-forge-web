@@ -121,8 +121,8 @@ export function TypeTabs({ value, counts, total, noun, onChange }: {
           type="button"
           aria-pressed={value === option.id}
           aria-label={`${option.label}: ${number.format(option.count)} ${noun}`}
-          disabled={option.count === 0 && value !== option.id}
-          onClick={() => onChange(option.id)}
+          aria-disabled={option.count === 0 && value !== option.id ? true : undefined}
+          onClick={() => { if (option.count > 0 || value === option.id) onChange(option.id); }}
         >
           {option.label}<small>{number.format(option.count)}</small>
         </button>

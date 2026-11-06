@@ -3162,6 +3162,9 @@ a {
 
 .new-list li { flex-basis: 17rem; }
 
+.home-creators { max-width: 39rem; margin: 1rem 0 0; color: var(--muted); font-size: 0.95rem; line-height: 1.6; }
+.hero-cli { margin: 1.1rem 0 0; }
+
 /* Type-first filtering: the first choice on both catalog pages. */
 .catalog-type { display: grid; gap: 0.9rem; margin: 2rem 0 1.5rem; }
 .catalog-type h2 { margin: 0; font-size: 1.15rem; letter-spacing: -0.03em; }
@@ -3180,15 +3183,18 @@ a {
   border-radius: 0;
   color: var(--ink);
   background: var(--panel);
-  font: 700 1rem/1.2 inherit;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.2;
   cursor: pointer;
 }
 
 .type-tabs button small { color: var(--muted); font-size: 0.78rem; font-variant-numeric: tabular-nums; }
-.type-tabs button:hover:not(:disabled) { background: var(--panel-raised); }
+.type-tabs button:hover:not([aria-disabled="true"]) { background: var(--panel-raised); }
 .type-tabs button[aria-pressed="true"] { color: var(--night); background: var(--green); }
 .type-tabs button[aria-pressed="true"] small { color: var(--night); }
-.type-tabs button:disabled { color: var(--faint); cursor: not-allowed; }
+.type-tabs button[aria-disabled="true"] { color: var(--faint); cursor: not-allowed; }
 .type-tabs button:focus-visible { outline: 2px solid var(--green-soft); outline-offset: -4px; }
 .type-tabs button[aria-pressed="true"]:focus-visible { outline-color: var(--night); }
 
