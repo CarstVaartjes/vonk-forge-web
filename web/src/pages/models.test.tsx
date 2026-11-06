@@ -81,7 +81,7 @@ describe("public model browse", () => {
     expect(window.location.search).toBe("?verified=0");
     await waitFor(() => expect(screen.getByText("13 of 13 models")).toBeVisible());
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(window.location.search).toBe("?page=2");
+    expect(window.location.search).toBe("?verified=0&page=2");
     await waitFor(() => expect(screen.getByText("Model 13")).toBeVisible());
   });
 
