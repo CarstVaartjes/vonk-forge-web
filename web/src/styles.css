@@ -3161,3 +3161,6 @@ a {
 }
 
 .new-list li { flex-basis: 17rem; }
+
+.home-creators { max-width: 39rem; margin: 1rem 0 0; color: var(--muted); font-size: 0.95rem; line-height: 1.6; }
+.hero-cli { margin: 1.1rem 0 0; }

@@ -30,9 +30,10 @@ test("defines the product and puts installation first", () => {
   render(<App />);
 
   expect(
-    screen.getByRole("heading", { name: /models that fit\s*your sparks\.\s*kept current\./i }),
+    screen.getByRole("heading", { name: /recipes verified on DGX Spark/i }),
   ).toBeVisible();
-  expect(screen.getByText(/Run the community's best Spark setups/i)).toBeVisible();
+  expect(screen.getByText(/Vonk Forge is the open-source Controller for NVIDIA DGX Spark/)).toBeVisible();
+  expect(screen.getByRole("link", { name: "See the agent-friendly CLI" })).toHaveAttribute("href", "/control#local-cli");
   expect(screen.getAllByRole("link", { name: "Install" })[0]).toHaveAttribute("href", "/install");
   expect(screen.getByRole("link", { name: "Browse what runs" })).toHaveAttribute("href", "/recipes?qualification=Working");
   expect(screen.getAllByRole("link", { name: "Set up your Controller" })[0]).toHaveAttribute("href", "/install");
@@ -59,7 +60,8 @@ test("states the four promises with the vonkctl command behind each", () => {
     expect(section.getByRole("heading", { name: title })).toBeVisible();
     expect(section.getByText(command)).toBeVisible();
   }
-  expect(section.getByText(/syncs the signed library every 15 minutes/i)).toBeVisible();
+  expect(section.getByText(/syncs the signed library on its own/i)).toBeVisible();
+  expect(document.body.textContent).not.toMatch(/15 minutes/);
   expect(screen.getByText("vonkctl --profile 2 profile load --yes --json")).toBeVisible();
 });
 

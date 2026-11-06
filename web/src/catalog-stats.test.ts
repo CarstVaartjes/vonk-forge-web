@@ -1,17 +1,17 @@
 import { describe, expect, test } from "vitest";
 
-import type { ModelSummary, RecipeSummary } from "./api/client";
-import { deriveCatalogStats } from "./catalog-stats";
+import type { RecipeSummary } from "./api/client";
+import { deriveCatalogStats, parseCatalogSummary, updatedThisWeek } from "./catalog-stats";
 
 
-function recipe(slug: string, options: { owner?: string | null; status?: string; capabilities?: string[]; released?: string } = {}): RecipeSummary {
+function recipe(slug: string, options: { owner?: string | null; status?: string; capabilities?: string[]; updated?: string; family?: string } = {}): RecipeSummary {
   return {
     publisher: "vonk-forge",
     slug,
     title: slug,
     official: true,
     content_sha256: slug.padEnd(64, "0"),
-    published_at: options.released ?? "2026-01-01",
+    published_at: options.updated ?? "2026-01-01",
     runtime: { adapter: "vllm" },
     catalog: {
       description: "",
@@ -22,7 +22,7 @@ function recipe(slug: string, options: { owner?: string | null; status?: string;
       model_version_publisher: "m",
       model_version_slug: slug,
       model_version_title: slug,
-      model_family: slug,
+      model_family: options.family ?? slug,
       source_owner: options.owner === undefined ? "owner" : options.owner,
       source_repository: null,
       alignment: "standard",
@@ -39,22 +39,20 @@ function recipe(slug: string, options: { owner?: string | null; status?: string;
   };
 }
 
-function model(slug: string, family: string | undefined): ModelSummary {
-  return { publisher: "p", slug, title: slug, description: "", family, runs: { spark_counts: [], engines: [], creators: [] }, tags: [], revision_id: "r", versions: [], recipe_count: 0 };
-}
-
 const now = new Date("2026-11-06T12:00:00Z");
 
 describe("home page numbers", () => {
-  test("counts verified recipes by the published status only", () => {
-    const stats = deriveCatalogStats([recipe("a"), recipe("b", { status: "Not yet verified" }), recipe("c", { status: "Fix to verify" }), recipe("d")], [], now);
-    expect(stats.recipes).toBe(4);
-    expect(stats.verified).toBe(2);
-  });
-
-  test("counts families case-insensitively and ignores models without one", () => {
-    const stats = deriveCatalogStats([], [model("a", "Qwen"), model("b", "qwen "), model("c", "GLM"), model("d", undefined)], now);
+  test("all three headline counts are over verified recipes only", () => {
+    const stats = deriveCatalogStats([
+      recipe("a", { family: "Qwen", owner: "NVIDIA" }),
+      recipe("b", { family: "qwen ", owner: "nvidia" }),
+      recipe("c", { family: "GLM", owner: "eugr" }),
+      recipe("unverified-family", { family: "Hidden", owner: "hidden", status: "Not yet verified" }),
+      recipe("fix", { family: "Also hidden", owner: "also-hidden", status: "Fix to verify" }),
+    ]);
+    expect(stats.verified).toBe(3);
     expect(stats.families).toBe(2);
+    expect(stats.creators).toBe(2);
   });
 
   test("folds creators that differ only by case and names them by their commonest spelling", () => {
@@ -62,17 +60,15 @@ describe("home page numbers", () => {
       recipe("a", { owner: "NVIDIA" }), recipe("b", { owner: "nvidia" }), recipe("c", { owner: "NVIDIA" }),
       recipe("d", { owner: "eugr" }), recipe("e", { owner: "eugr", status: "Not yet verified" }),
       recipe("f", { owner: null }),
-    ], [], now);
-    expect(stats.creators).toBe(2);
+    ]);
     expect(stats.topCreators).toEqual([{ name: "NVIDIA", verified: 3 }, { name: "eugr", verified: 1 }]);
   });
 
-  test("ranks creators by verified recipes, not all recipes, and leaves out those with none", () => {
+  test("ranks creators by verified recipes and leaves out those with none", () => {
     const stats = deriveCatalogStats([
       recipe("a", { owner: "many", status: "Not yet verified" }), recipe("b", { owner: "many", status: "Not yet verified" }),
       recipe("c", { owner: "few" }),
-    ], [], now);
-    expect(stats.creators).toBe(2);
+    ]);
     expect(stats.topCreators).toEqual([{ name: "few", verified: 1 }]);
   });
 
@@ -83,19 +79,48 @@ describe("home page numbers", () => {
       recipe("img", { capabilities: ["image-generation"] }),
       recipe("unverified-video", { capabilities: ["video-generation"], status: "Not yet verified" }),
       recipe("none", { capabilities: [] }),
-    ], [], now);
-    expect(stats.typeCounts).toEqual({ language: 2, code: 1, vision: 1, image: 1, video: 0, audio: 0, "3d": 0 });
+    ]);
+    expect(stats.types).toEqual({ language: 2, code: 1, vision: 1, image: 1, video: 0, audio: 0, "3d": 0 });
   });
 
-  test("lists the last seven days newest first, or the latest releases when there are none", () => {
-    const recent = deriveCatalogStats([recipe("old", { released: "2026-10-01" }), recipe("mid", { released: "2026-11-02" }), recipe("new", { released: "2026-11-05" })], [], now);
-    expect(recent.newestThisWeek).toBe(true);
-    expect(recent.newThisWeek).toBe(2);
-    expect(recent.newest.map((item) => item.slug)).toEqual(["new", "mid"]);
+  test("the update date is the recipe's published_at (released_at), and any status counts", () => {
+    const stats = deriveCatalogStats([
+      recipe("old", { updated: "2026-10-01" }),
+      recipe("fresh", { updated: "2026-11-05", status: "Not yet verified" }),
+      recipe("same-day", { updated: "2026-11-05T09:00:00Z" }),
+    ]);
+    expect(stats.updatedByDate).toEqual({ "2026-11-05": 2 });
+    expect(stats.newest.map((item) => [item.slug, item.date, item.status])).toEqual([["same-day", "2026-11-05", "Working"], ["fresh", "2026-11-05", "Not yet verified"], ["old", "2026-10-01", "Working"]]);
+  });
 
-    const quiet = deriveCatalogStats([recipe("old", { released: "2026-10-01" }), recipe("older", { released: "2026-09-01" })], [], now, 1);
-    expect(quiet.newestThisWeek).toBe(false);
-    expect(quiet.newThisWeek).toBe(0);
-    expect(quiet.newest.map((item) => item.slug)).toEqual(["old"]);
+  test("this week is judged on the visitor's clock from the summary's dates", () => {
+    const stats = deriveCatalogStats([recipe("old", { updated: "2026-10-01" }), recipe("mid", { updated: "2026-11-02" }), recipe("new", { updated: "2026-11-05" }), recipe("new2", { updated: "2026-11-05" })]);
+    const week = updatedThisWeek(stats, now);
+    expect(week.count).toBe(3);
+    expect(week.recipes.map((item) => item.slug)).toEqual(["new", "new2", "mid"]);
+    expect(updatedThisWeek(stats, new Date("2026-12-31T00:00:00Z"))).toEqual({ count: 0, recipes: [] });
+  });
+});
+
+describe("catalog summary file", () => {
+  const good = { summary_version: 1, release: "v3.1.0", catalog_index_sha256: "a".repeat(64), ...deriveCatalogStats([recipe("a", { updated: "2026-11-05" })]) };
+
+  test("accepts what the build writes", () => {
+    expect(parseCatalogSummary(JSON.parse(JSON.stringify(good)))).toMatchObject({ verified: 1, families: 1, creators: 1 });
+  });
+
+  test.each([
+    ["no object", null],
+    ["another version", { ...good, summary_version: 2 }],
+    ["zero verified", { ...good, verified: 0 }],
+    ["a missing count", { ...good, families: undefined }],
+    ["a fractional count", { ...good, creators: 1.5 }],
+    ["a missing type", { ...good, types: { language: 1 } }],
+    ["an unknown type", { ...good, types: { ...good.types, hologram: 1 } }],
+    ["a bad date", { ...good, updatedByDate: { yesterday: 1 } }],
+    ["no creators", { ...good, topCreators: [] }],
+    ["a malformed recipe row", { ...good, newest: [{ title: "x" }] }],
+  ])("refuses %s rather than rendering zeros", (_name, value) => {
+    expect(() => parseCatalogSummary(value)).toThrow("unsupported catalog summary");
   });
 });

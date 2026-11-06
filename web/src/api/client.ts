@@ -1,4 +1,5 @@
-import { getStaticLibraryRelease, getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog } from "./static-catalog";
+import type { CatalogSummary } from "../catalog-stats";
+import { getStaticCatalogSummary, getStaticLibraryRelease, getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog } from "./static-catalog";
 
 
 export interface RecipeSummary {
@@ -129,6 +130,10 @@ export function listModels(signal?: AbortSignal): Promise<ModelPage> {
 
 export function getModel(publisher: string, slug: string, signal?: AbortSignal): Promise<ModelSummary> {
   return getStaticModel(RECIPE_LIBRARY_INDEX_URL, publisher, slug, signal);
+}
+
+export function getCatalogSummary(signal?: AbortSignal): Promise<CatalogSummary> {
+  return getStaticCatalogSummary(RECIPE_LIBRARY_INDEX_URL, signal);
 }
 
 export function getLibraryRelease(signal?: AbortSignal): Promise<LibraryRelease> {

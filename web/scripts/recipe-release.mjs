@@ -23,6 +23,9 @@ import { Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { promisify } from "node:util";
 
+// The home-page summary is derived with the same TypeScript the pages use (Node strips the types).
+import { buildCatalogSummary } from "../src/catalog-summary.ts";
+
 export const RECIPE_REPOSITORY = "CarstVaartjes/vonk-forge-recipes";
 export const RECIPE_REPOSITORY_ID = "1336002555";
 export const SIGNER_WORKFLOW = `${RECIPE_REPOSITORY}/.github/workflows/publish.yml`;
@@ -249,8 +252,7 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
       }
     }
 
-    await writeFile(path.join(staging, "catalog-index.json"), indexBytes);
-    await writeFile(path.join(staging, "release.json"), `${JSON.stringify({
+    const manifest = {
       repository: RECIPE_REPOSITORY,
       tag,
       contract_version: index.contract_version,
@@ -258,7 +260,13 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
       source_commit: signedCommit,
       sha256sums_sha256: sha256(checksums),
       catalog_index_sha256: digests.get("catalog-index.json"),
-    }, null, 2)}\n`);
+    };
+    // The summary the home page reads instead of the full index. An index the
+    // adapter refuses, or one with nothing verified, fails the build here.
+    const summary = buildCatalogSummary(index, manifest);
+    await writeFile(path.join(staging, "catalog-index.json"), indexBytes);
+    await writeFile(path.join(staging, "release.json"), `${JSON.stringify(manifest, null, 2)}\n`);
+    await writeFile(path.join(staging, "catalog-summary.json"), `${JSON.stringify(summary)}\n`);
     await chmod(staging, 0o755);
     await rm(outDir, { recursive: true, force: true });
     await rename(staging, outDir);

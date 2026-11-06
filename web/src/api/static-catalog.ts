@@ -1,9 +1,12 @@
 import type { LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
 
 
-import contract from "../contract-major.json";
-import { CAPABILITY_OPTIONS } from "../catalog-filters";
-import { STATUS_UNAVAILABLE } from "../qualification-status";
+// The release build (web/scripts/recipe-release.mjs) loads this module under Node, so
+// its runtime imports carry explicit .ts extensions and the JSON import its attribute.
+import contract from "../contract-major.json" with { type: "json" };
+import { CAPABILITY_OPTIONS } from "../catalog-filters.ts";
+import { parseCatalogSummary, type CatalogSummary } from "../catalog-stats.ts";
+import { STATUS_UNAVAILABLE } from "../qualification-status.ts";
 
 
 type JsonRecord = Record<string, unknown>;
@@ -22,7 +25,7 @@ interface LibraryRecipe {
   source_path: string;
 }
 
-interface LibraryIndex {
+export interface LibraryIndex {
   catalog_entities: LibraryEntity[];
   contract_version: string;
   updated_at: string;
@@ -482,6 +485,13 @@ function libraryRelease(value: unknown): LibraryRelease {
 
 async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
   const [rawBody, rawRelease] = await Promise.all([readJson(url, signal), readJson(releaseUrl(url), signal)]);
+  return parseLibraryIndex(rawBody, rawRelease);
+}
+
+// Accepts an index only when it is the one this site understands and belongs to
+// the named release; anything else is refused rather than defaulted. The build
+// (which derives the home summary) and the browser both read through this.
+export function parseLibraryIndex(rawBody: unknown, rawRelease: unknown): LibraryIndex {
   const body = rawBody as Partial<LibraryIndex>;
   const release = record(rawRelease) as Partial<ReleaseManifest>;
   const entities = body.catalog_entities;
@@ -521,9 +531,19 @@ export async function getStaticLibraryRelease(url: string, signal?: AbortSignal)
   return libraryRelease(await readJson(releaseUrl(url), signal));
 }
 
-export async function listStaticRecipeCatalog(url: string, signal?: AbortSignal): Promise<RecipeSummary[]> {
-  const index = await loadIndex(url, signal);
+// The recipes of an accepted index, as the pages show them.
+export function recipesFromIndex(index: LibraryIndex): RecipeSummary[] {
   return index.recipes.map((item) => mapRecipe(item, index));
+}
+
+// The small summary the Pages build derived from the verified index
+// (catalog-summary.json beside release.json). The home page reads only this.
+export async function getStaticCatalogSummary(url: string, signal?: AbortSignal): Promise<CatalogSummary> {
+  return parseCatalogSummary(await readJson(new URL("catalog-summary.json", new URL(url, globalThis.location?.href)).toString(), signal));
+}
+
+export async function listStaticRecipeCatalog(url: string, signal?: AbortSignal): Promise<RecipeSummary[]> {
+  return recipesFromIndex(await loadIndex(url, signal));
 }
 
 export async function listStaticModels(url: string, signal?: AbortSignal): Promise<ModelPage> {

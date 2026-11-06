@@ -165,7 +165,7 @@ The palette is taken from the DGX Spark itself: a graphite dark system with NVID
 
 ### Named Rules
 
-**The Definition First Rule.** A large heading should state what the product or section is; do not precede it with an eyebrow, kicker, or category slogan.
+**The Definition First Rule.** A large heading should state what the product or section is; do not precede it with an eyebrow, kicker, or category slogan. One owner-directed exception: the home page headline is the live counts line ("N recipes verified on DGX Spark. M model families. K creators.", all three over verified recipes, set in Display with the numbers in Ready Green and rolling up once on first view). The definition sentence ("Vonk Forge is the open-source Controller for NVIDIA DGX Spark. …") stays directly under it, and the install and CLI paths stay in the first screen.
 
 **The One Family Rule.** Onest Variable owns both display and body roles. Do not reintroduce Space Grotesk or use a novelty display face to manufacture personality.
 
