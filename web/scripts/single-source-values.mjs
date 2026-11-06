@@ -1,12 +1,5 @@
-import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
 import path from "node:path";
 import ts from "typescript";
-
-export function trackedSources(root) {
-  return new Map(execFileSync("git", ["ls-files", "-z"], { cwd: root, encoding: "utf8" })
-    .split("\0").filter(Boolean).map((file) => [file, readFileSync(path.join(root, file), "utf8")]));
-}
 
 export function registrations(files) {
   return [...files].filter(([file]) => file.endsWith(".single-source.json"))
