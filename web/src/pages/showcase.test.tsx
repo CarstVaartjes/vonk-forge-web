@@ -20,7 +20,9 @@ function recipe(slug: string): RecipeSummary {
 }
 
 describe("example setup showcase", () => {
-  beforeEach(() => loadRecipeCatalog.mockReset().mockResolvedValue(slugs.map(recipe)));
+  beforeEach(() => {
+    loadRecipeCatalog.mockReset().mockResolvedValue(slugs.map(recipe));
+  });
 
   test("the light coder is always in the left column and shares the coder role", () => {
     for (const profile of SHOWCASE_PROFILES) {
@@ -58,7 +60,7 @@ describe("example setup showcase", () => {
   });
 
   test("a failed catalog load does not claim the recipes are absent", async () => {
-    loadRecipeCatalog.mockRejectedValue(new Error("index unreachable"));
+    loadRecipeCatalog.mockImplementation(() => Promise.reject(new Error("index unreachable")));
     render(<ShowcasePage />);
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("index unreachable"));
     expect(screen.queryByText("Not in the published catalog right now.")).not.toBeInTheDocument();
