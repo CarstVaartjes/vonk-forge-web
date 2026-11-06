@@ -305,9 +305,9 @@ function runsOf(own: RecipeSummary[]): ModelRuns {
 }
 
 // The same facts restricted to recipes that passed hardware checks on a Spark.
-function verifiedModelRuns(versions: ModelVersionSummary[], recipes: RecipeSummary[]): ModelRuns {
+function verifiedModelRecipes(versions: ModelVersionSummary[], recipes: RecipeSummary[]): RecipeSummary[] {
   const slugs = new Set(versions.flatMap((version) => version.recipe_slugs));
-  return runsOf(recipes.filter((recipe) => slugs.has(`${recipe.publisher}/${recipe.slug}`) && isVerified(recipe)));
+  return recipes.filter((recipe) => slugs.has(`${recipe.publisher}/${recipe.slug}`) && isVerified(recipe));
 }
 
 function mapModels(index: LibraryIndex): ModelSummary[] {
@@ -325,6 +325,7 @@ function mapModels(index: LibraryIndex): ModelSummary[] {
     const identity = modelIdentity(first.document);
     const display = record(first.display);
     const versionRows = variants.map((version) => mapModelVersion(version, recipes)).sort((left, right) => left.title.localeCompare(right.title));
+    const verifiedRecipes = verifiedModelRecipes(versionRows, recipes);
     return {
       publisher: text(identity.publisher),
       slug: text(identity.slug),
@@ -332,7 +333,8 @@ function mapModels(index: LibraryIndex): ModelSummary[] {
       description: text(display.description),
       family: displayTitle(display.family_title) || text(modelFamily(first.document).slug) || undefined,
       runs: modelRuns(versionRows, recipes),
-      verified_runs: verifiedModelRuns(versionRows, recipes),
+      verified_runs: runsOf(verifiedRecipes),
+      verified_recipe_count: verifiedRecipes.length,
       tags: array(display.tags).map((value) => text(value).toLowerCase()).filter(Boolean),
       revision_id: text(first.content_sha256, "unknown"),
       versions: versionRows,

@@ -98,16 +98,17 @@ const isCount = (value: unknown): value is number => typeof value === "number" &
 const isText = (value: unknown): value is string => typeof value === "string" && value.length > 0;
 
 // Accepts only a summary this site understands; a missing or malformed one is an
-// error, never zeros.
+// error, never zeros. A release with nothing verified is valid: the counts are
+// then genuinely zero and the home page shows no numbers for it.
 export function parseCatalogSummary(value: unknown): CatalogSummary {
   const fail = (): never => { throw new Error("Recipe library returned an unsupported catalog summary"); };
   if (!isRecord(value) || value.summary_version !== 1 || !isText(value.release) || !/^v\d+\.\d+\.\d+$/.test(value.release) || !isText(value.catalog_index_sha256)) return fail();
-  if (!isCount(value.verified) || value.verified === 0 || !isCount(value.families) || value.families === 0 || !isCount(value.creators) || value.creators === 0) return fail();
+  if (!isCount(value.verified) || !isCount(value.families) || !isCount(value.creators)) return fail();
   const types = value.types;
   if (!isRecord(types) || MODEL_TYPES.some((type) => !isCount(types[type.id])) || Object.keys(types).some((key) => !isModelTypeId(key))) return fail();
   const byDate = value.updatedByDate;
   if (!isRecord(byDate) || Object.entries(byDate).some(([date, count]) => !/^\d{4}-\d{2}-\d{2}$/.test(date) || !isCount(count))) return fail();
-  if (!Array.isArray(value.topCreators) || value.topCreators.length === 0 || value.topCreators.some((item) => !isRecord(item) || !isText(item.name) || !isCount(item.verified))) return fail();
+  if (!Array.isArray(value.topCreators) || value.topCreators.some((item) => !isRecord(item) || !isText(item.name) || !isCount(item.verified))) return fail();
   if (!Array.isArray(value.newest) || value.newest.some((item) => !isRecord(item) || !isText(item.publisher) || !isText(item.slug) || !isText(item.title) || !(item.creator === null || isText(item.creator)) || !isText(item.status) || !/^\d{4}-\d{2}-\d{2}$/.test(String(item.date)))) return fail();
   return value as unknown as CatalogSummary;
 }

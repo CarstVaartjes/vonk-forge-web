@@ -208,4 +208,17 @@ describe("type-first filtering", () => {
     await waitFor(() => expect(window.location.search).toBe("?verified=0"));
     expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
   });
+
+  test("Clear counts only what the visitor chose, and clearing also turns the default off", async () => {
+    window.history.replaceState(null, "", "/recipes");
+    render(<RecipesPage />);
+    await screen.findByRole("heading", { name: "Coder" });
+    expect(screen.getByLabelText("Applied filters")).toHaveTextContent("Verified on Spark");
+    expect(screen.queryByRole("button", { name: /^Clear \d+ filter/ })).not.toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "Code: 1 recipes" }));
+    const clear = await screen.findByRole("button", { name: "Clear 1 filter" });
+    fireEvent.click(clear);
+    await waitFor(() => expect(window.location.search).toBe("?verified=0"));
+    expect(screen.queryByRole("button", { name: /^Clear \d+ filter/ })).not.toBeInTheDocument();
+  });
 });

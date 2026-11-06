@@ -21,6 +21,7 @@ function model(number: number, publisher = "publisher"): ModelSummary {
     family: number % 2 ? "Qwen" : "GLM",
     runs,
     verified_runs: runs,
+    verified_recipe_count: number % 2,
     tags: [],
     revision_id: String(number).padStart(64, "0"),
     recipe_count: number % 2,
@@ -77,10 +78,10 @@ describe("public model browse", () => {
     expect(window.location.search).toBe("?capability=ocr");
     expect(screen.getByText("7 of 13 models")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(window.location.search).toBe("");
+    expect(window.location.search).toBe("?verified=0");
     await waitFor(() => expect(screen.getByText("13 of 13 models")).toBeVisible());
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(window.location.search).toBe("?page=2");
+    expect(window.location.search).toBe("?verified=0&page=2");
     await waitFor(() => expect(screen.getByText("Model 13")).toBeVisible());
   });
 
@@ -118,7 +119,7 @@ describe("public model browse", () => {
     expect(screen.getAllByText("1 Spark").length).toBeGreaterThan(1);
     expect(screen.getAllByText("vLLM").length).toBeGreaterThan(1);
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(window.location.search).toBe("");
+    expect(window.location.search).toBe("?verified=0");
   });
 
   test("offers recovery when the immutable index fails", async () => {
@@ -175,5 +176,40 @@ describe("type-first model filtering", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: /Verified on Spark/ }));
     await waitFor(() => expect(window.location.search).toBe("?verified=0"));
     expect(screen.getByRole("link", { name: /untested-coder/ })).toBeVisible();
+  });
+
+  test("with Verified on, the recipe count, support filter and Most recipes sort count verified recipes only", async () => {
+    const alpha = { ...typed("alpha", ["chat"], true), title: "Alpha", recipe_count: 5, verified_recipe_count: 1 };
+    const beta = { ...typed("beta", ["chat"], true), title: "Beta", recipe_count: 3, verified_recipe_count: 2 };
+    const gamma = { ...typed("gamma", ["chat"], true), title: "Gamma", recipe_count: 4, verified_recipe_count: 0 };
+    listModels.mockResolvedValue({ items: [alpha, beta, gamma] });
+    render(<ModelsPage />);
+    await screen.findByRole("group", { name: "Model type" });
+    fireEvent.change(screen.getByLabelText("Sort"), { target: { value: "recipes" } });
+    const rows = () => within(screen.getByRole("list", { name: "Models" })).getAllByRole("listitem").map((row) => row.textContent);
+    await waitFor(() => expect(rows()[0]).toContain("Beta"));
+    expect(rows()[0]).toContain("2 verified recipes");
+    expect(rows()[1]).toContain("1 verified recipe");
+    fireEvent.change(screen.getByLabelText("Recipe support"), { target: { value: "recipes" } });
+    await waitFor(() => expect(rows()).toHaveLength(2));
+    // "No public recipes" can only match with Verified off, so choosing it turns the default off.
+    fireEvent.change(screen.getByLabelText("Recipe support"), { target: { value: "none" } });
+    await waitFor(() => expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked());
+    expect(window.location.search).toBe("?verified=0&recipes=none&sort=recipes");
+    fireEvent.change(screen.getByLabelText("Recipe support"), { target: { value: "" } });
+    await waitFor(() => expect(rows()[0]).toContain("Alpha"));
+    expect(rows()[0]).toContain("5 recipes");
+  });
+
+  test("Clear filters has one rule: hidden while only the default applies, and it also turns the default off", async () => {
+    render(<ModelsPage />);
+    await screen.findByRole("group", { name: "Model type" });
+    expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument();
+    fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "Code: 1 models" }));
+    await waitFor(() => expect(window.location.search).toBe("?type=code"));
+    fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    await waitFor(() => expect(window.location.search).toBe("?verified=0"));
+    expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked();
+    expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument();
   });
 });

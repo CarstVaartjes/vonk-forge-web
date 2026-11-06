@@ -124,7 +124,8 @@ function ProductShot({
 
 const number = new Intl.NumberFormat("en");
 
-type CatalogState = { status: "loading" } | { status: "error" } | { status: "ready"; summary: CatalogSummary };
+// "empty" is a valid release with nothing verified yet: there are no numbers to show.
+type CatalogState = { status: "loading" } | { status: "error" } | { status: "empty" } | { status: "ready"; summary: CatalogSummary };
 
 // Everything live on this page comes from catalog-summary.json, the small file
 // the Pages build derived from the verified release (never the full index). A
@@ -135,7 +136,7 @@ function useCatalogSummary(): [CatalogState, () => void] {
   useEffect(() => {
     const controller = new AbortController();
     getCatalogSummary(controller.signal)
-      .then((summary) => setState({ status: "ready", summary }))
+      .then((summary) => setState(summary.verified === 0 ? { status: "empty" } : { status: "ready", summary }))
       .catch(() => { if (!controller.signal.aborted) setState({ status: "error" }); });
     return () => controller.abort();
   }, [attempt]);
@@ -155,8 +156,8 @@ function Hero({ state }: { state: CatalogState }) {
   return (
     <section className="home-hero" aria-labelledby="home-title">
       <div className="home-hero-copy">
-        {state.status === "error" ? (
-          <h1 id="home-title">Verified recipes for NVIDIA DGX Spark.</h1>
+        {state.status === "error" || state.status === "empty" ? (
+          <h1 id="home-title">Recipes for NVIDIA DGX Spark.</h1>
         ) : (
           <h1 id="home-title" aria-busy={summary ? undefined : true}>
             <span className="hero-stat"><RollingNumber value={summary?.verified ?? null} /> recipes verified on DGX Spark.</span>
@@ -323,6 +324,7 @@ function UpdatedRow({ summary }: { summary: CatalogSummary }) {
 }
 
 function CatalogSections({ state, retry }: { state: CatalogState; retry: () => void }) {
+  if (state.status === "empty") return <div className="status-panel" role="status">No recipe in this release has passed hardware checks on a DGX Spark yet, so there are no numbers to show. <a href="/recipes?verified=0">Browse every recipe</a></div>;
   if (state.status === "loading") return <div className="status-panel" role="status">Reading the verified recipe library…</div>;
   if (state.status === "error") {
     return (
