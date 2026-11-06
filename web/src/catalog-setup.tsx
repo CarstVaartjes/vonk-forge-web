@@ -1,5 +1,6 @@
 import type { SparkFilter } from "./catalog-filters";
 import { SPARK_OPTIONS } from "./catalog-filters";
+import { MODEL_TYPES, type ModelTypeId } from "./model-types";
 
 
 // The entry point of both catalog pages: say what you have, see what runs on
@@ -93,5 +94,50 @@ export function FacetStrip({ label, options, value, onChange, max = 10 }: {
         ) : null}
       </div>
     </div>
+  );
+}
+
+
+// The first choice on both catalog pages: what kind of model. A group of toggle
+// buttons (each a native button, so Tab and Enter/Space work); "All" clears it.
+// Counts come from the list with every other filter applied.
+export function TypeTabs({ value, counts, total, noun, onChange }: {
+  value: ModelTypeId | "";
+  counts: Record<ModelTypeId, number>;
+  total: number;
+  noun: string;
+  onChange: (value: ModelTypeId | "") => void;
+}) {
+  const number = new Intl.NumberFormat("en");
+  const options: Array<{ id: ModelTypeId | ""; label: string; count: number }> = [
+    { id: "", label: "All", count: total },
+    ...MODEL_TYPES.map((type) => ({ id: type.id, label: type.label, count: counts[type.id] })),
+  ];
+  return (
+    <div className="type-tabs" role="group" aria-label="Model type">
+      {options.map((option) => (
+        <button
+          key={option.id || "all"}
+          type="button"
+          aria-pressed={value === option.id}
+          aria-label={`${option.label}: ${number.format(option.count)} ${noun}`}
+          aria-disabled={option.count === 0 && value !== option.id ? true : undefined}
+          onClick={() => { if (option.count > 0 || value === option.id) onChange(option.id); }}
+        >
+          {option.label}<small>{number.format(option.count)}</small>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// "Verified on Spark": a recipe passed hardware checks on a DGX Spark. On by default.
+export function VerifiedToggle({ checked, onChange }: { checked: boolean; onChange: (checked: boolean) => void }) {
+  return (
+    <label className="verified-toggle">
+      <input type="checkbox" checked={checked} onChange={(event) => onChange(event.target.checked)} />
+      <span>Verified on Spark</span>
+      <small>Only recipes that passed hardware checks on a DGX Spark</small>
+    </label>
   );
 }

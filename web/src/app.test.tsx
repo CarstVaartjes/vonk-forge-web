@@ -35,7 +35,7 @@ test("defines the product and puts installation first", () => {
   expect(screen.getByText(/Vonk Forge is the open-source Controller for NVIDIA DGX Spark/)).toBeVisible();
   expect(screen.getByRole("link", { name: "See the agent-friendly CLI" })).toHaveAttribute("href", "/control#local-cli");
   expect(screen.getAllByRole("link", { name: "Install" })[0]).toHaveAttribute("href", "/install");
-  expect(screen.getByRole("link", { name: "Browse what runs" })).toHaveAttribute("href", "/recipes?qualification=Working");
+  expect(screen.getByRole("link", { name: "Browse what runs" })).toHaveAttribute("href", "/recipes");
   expect(screen.getAllByRole("link", { name: "Set up your Controller" })[0]).toHaveAttribute("href", "/install");
   expect(screen.queryByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).not.toBeInTheDocument();
   expect(screen.getByText(/choose a model and recipe for your first run/i)).toBeVisible();

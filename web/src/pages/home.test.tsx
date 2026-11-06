@@ -43,9 +43,9 @@ describe("home page", () => {
     expect(loadRecipeCatalog).not.toHaveBeenCalled();
     expect(listModels).not.toHaveBeenCalled();
     const tiles = within(screen.getByRole("region", { name: "What can you run?" }));
-    expect(tiles.getByRole("link", { name: /Language & chat\s*1 verified/ })).toHaveAttribute("href", "/recipes?type=language&qualification=Working");
+    expect(tiles.getByRole("link", { name: /Language & chat\s*1 verified/ })).toHaveAttribute("href", "/recipes?type=language");
     expect(tiles.getByRole("link", { name: /Code\s*1 verified/ })).toBeVisible();
-    expect(tiles.getByRole("link", { name: /3D\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=3d");
+    expect(tiles.getByRole("link", { name: /3D\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=3d&verified=0");
   });
 
   test("calls the row updated, not new, and links the same count the catalog shows", async () => {
@@ -53,7 +53,7 @@ describe("home page", () => {
     render(<HomePage />);
     const row = await screen.findByRole("region", { name: "Updated this week." });
     expect(within(row).getByText(/1 recipe was refreshed in the last seven days/)).toBeVisible();
-    expect(within(row).getByRole("link", { name: "See all 1 updated recipes" })).toHaveAttribute("href", "/recipes?updated=7");
+    expect(within(row).getByRole("link", { name: "See all 1 updated recipes" })).toHaveAttribute("href", "/recipes?updated=7&verified=0");
     expect(screen.queryByText(/New this week/)).toBeNull();
   });
 

@@ -1,6 +1,7 @@
 import type { RecipeSummary } from "./api/client";
 // Loaded under Node by the release build (via catalog-summary.ts): runtime imports use .ts.
 import { hasModelType, isModelTypeId, type ModelTypeId } from "./model-types.ts";
+import { isVerified } from "./qualification-status.ts";
 
 
 export const CAPABILITY_OPTIONS = [
@@ -64,11 +65,13 @@ export function engineLabel(value: string): string {
 export type UpdatedFilter = "" | "7" | "30" | "90" | "365";
 export type RecipeSort = "catalog" | "recipe" | "modelFamily" | "model" | "quantization" | "runtime" | "abliterated" | "sparks" | "creator" | "updated" | "readiness" | "capability" | "qualification" | "repository" | "download" | "disk" | "memory";
 export type SortDirection = "asc" | "desc";
-export type FilterFacet = "type" | "modelFamily" | "model" | "abliterated" | "sourceOwner" | "repository" | "sparks" | "runtime" | "quantization" | "updated" | "qualification" | "readiness" | "capability" | "download" | "disk" | "memory";
+export type FilterFacet = "type" | "verified" | "modelFamily" | "model" | "abliterated" | "sourceOwner" | "repository" | "sparks" | "runtime" | "quantization" | "updated" | "qualification" | "readiness" | "capability" | "download" | "disk" | "memory";
 
 interface CatalogFilters {
   query: string;
   type: ModelTypeId | "";
+  // "Verified on Spark": on unless turned off (verified=0) or an explicit qualification is chosen.
+  verified: boolean;
   modelFamily: string;
   model: string;
   abliterated: BooleanFilter;
@@ -91,6 +94,7 @@ interface CatalogFilters {
 export const EMPTY_FILTERS: CatalogFilters = {
   query: "",
   type: "",
+  verified: true,
   modelFamily: "",
   model: "",
   abliterated: "",
@@ -129,6 +133,7 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
   return {
     query: parameters.get("q") ?? "",
     type: isModelTypeId(parameters.get("type") ?? "") ? parameters.get("type") as ModelTypeId : "",
+    verified: parameters.get("verified") !== "0" && !qualification,
     modelFamily: parameters.get("model_family") ?? "",
     model: parameters.get("model") ?? "",
     abliterated: abliterated === "true" || abliterated === "false" ? abliterated : "",
@@ -230,6 +235,7 @@ export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, om
     ...facts.tags,
   ].some((value) => value.toLocaleLowerCase().includes(normalized));
   return queryMatches
+    && (omitted === "verified" || !filters.verified || isVerified(recipe))
     && (omitted === "type" || !filters.type || hasModelType(facts.capabilities, filters.type))
     && (omitted === "modelFamily" || !filters.modelFamily || modelFamilyTitle(recipe) === filters.modelFamily)
     && (omitted === "model" || !filters.model || modelVersionKey(recipe) === filters.model)

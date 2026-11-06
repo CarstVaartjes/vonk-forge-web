@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { loadRecipeCatalog, type RecipeSummary } from "../api/client";
-import { modelTypeLabel } from "../model-types";
+import { MODEL_TYPES, hasModelType, modelTypeLabel } from "../model-types";
 import { WORKING_STATUS } from "../qualification-status";
-import { FacetStrip, SparkPicker } from "../catalog-setup";
+import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
 import {
   CAPABILITY_OPTIONS,
   READINESS_OPTIONS,
@@ -137,6 +137,14 @@ export function RecipesPage() {
     replace(next);
   }
 
+  function setVerified(on: boolean) {
+    const next = new URLSearchParams(parameters);
+    next.delete("qualification");
+    if (on) next.delete("verified"); else next.set("verified", "0");
+    next.delete("cursor");
+    replace(next);
+  }
+
   function count(facet: FilterFacet, predicate: (recipe: RecipeSummary) => boolean): number {
     return available.filter((recipe) => recipeMatches(recipe, filters, facet) && predicate(recipe)).length;
   }
@@ -173,10 +181,12 @@ export function RecipesPage() {
   const disks = useMemo(() => distinctSizes(available.map((recipe) => recipe.capacity?.maximum_installed_bytes_per_node)), [available]);
   const memories = useMemo(() => distinctSizes(available.map((recipe) => recipe.capacity?.maximum_runtime_memory_bytes_per_node)), [available]);
 
+  const typeCounts = Object.fromEntries(MODEL_TYPES.map((type) => [type.id, count("type", (recipe) => hasModelType(recipe.catalog.capabilities, type.id))])) as Record<(typeof MODEL_TYPES)[number]["id"], number>;
   const sparkCounts = Object.fromEntries([...SPARK_OPTIONS.map((option) => option.value), ""].map((value) => [value, count("sparks", (recipe) => nodeCountMatches(recipe.catalog.node_count, value as typeof filters.sparks))])) as Record<typeof filters.sparks, number>;
 
   const applied: ActiveFilter[] = [];
   const addApplied = (key: string, label: string, parameter: string) => applied.push({ key, label, remove: () => update(parameter, "") });
+  if (filters.verified) applied.push({ key: "verified", label: "Verified on Spark", remove: () => setVerified(false) });
   if (filters.query) addApplied("query", `Search: ${filters.query}`, "q");
   if (filters.type) addApplied("type", `Type: ${modelTypeLabel(filters.type)}`, "type");
   if (filters.modelFamily) addApplied("modelFamily", `Model family: ${filters.modelFamily}`, "model_family");
@@ -196,7 +206,8 @@ export function RecipesPage() {
   if (filters.memory) addApplied("memory", `Memory: ${filters.memory === "unknown" ? "Not declared" : bytes(Number(filters.memory))}`, "memory");
 
   const columnProps = { activeSort: filters.sort, direction: filters.direction, onSort: updateSort };
-  const clearAll = () => replace(new URLSearchParams());
+  // Clearing means showing everything, so the default Verified on Spark filter goes too.
+  const clearAll = () => replace(new URLSearchParams("verified=0"));
 
   return (
     <main className="catalog-page">
@@ -206,11 +217,19 @@ export function RecipesPage() {
       </header>
 
       {catalog ? (
+        <section className="catalog-type" aria-labelledby="recipe-type-title">
+          <h2 id="recipe-type-title">What kind of model?</h2>
+          <TypeTabs value={filters.type} noun="recipes" counts={typeCounts} total={count("type", () => true)} onChange={(value) => update("type", value)} />
+        </section>
+      ) : null}
+
+      {catalog ? (
         <section className="catalog-setup" aria-labelledby="recipe-setup-title">
           <div className="catalog-setup-heading">
-            <h2 id="recipe-setup-title">Start from your setup.</h2>
+            <h2 id="recipe-setup-title">Then narrow it to your setup.</h2>
             <p>Pick what you have. The list narrows to recipes with a complete placement for it; your Controller makes the same check against the live capacity of your Sparks.</p>
           </div>
+          <VerifiedToggle checked={filters.verified} onChange={setVerified} />
           <SparkPicker
             value={filters.sparks}
             noun="recipes"
@@ -221,6 +240,7 @@ export function RecipesPage() {
             <FacetStrip label="Model family" value={filters.modelFamily} onChange={updateModelFamily} options={modelFamilies.map((value) => ({ value, label: value, count: count("modelFamily", (recipe) => modelFamilyTitle(recipe) === value) }))} />
             <FacetStrip label="Engine" value={filters.runtime} onChange={(value) => update("runtime", value)} options={runtimes.map((value) => ({ value, label: engineLabel(value), count: count("runtime", (recipe) => recipe.catalog.runtime_distribution === value) }))} />
             <FacetStrip label="Creator" value={filters.sourceOwner} onChange={(value) => update("creator", value)} options={sourceOwners.map((value) => ({ value, label: value, count: count("sourceOwner", (recipe) => sameCreator(recipe.catalog.source_owner, value)) }))} />
+            <FacetStrip label="Quantization" value={filters.quantization} onChange={(value) => update("quantization", value)} options={quantizations.map((value) => ({ value, label: value, count: count("quantization", (recipe) => recipe.catalog.quantizations.includes(value)) }))} />
           </div>
         </section>
       ) : null}
@@ -281,7 +301,7 @@ export function RecipesPage() {
             })}</tbody>
           </table>
         </div>
-        {filtered.length === 0 ? <div className="status-panel catalog-empty"><h2>No matching recipes.</h2><p>Clear one or more column filters to broaden the catalog.</p><button type="button" className="button" onClick={clearAll}>Clear filters</button></div> : null}
+        {filtered.length === 0 ? <div className="status-panel catalog-empty"><h2>No matching recipes.</h2><p>{filters.verified ? "Verified on Spark is on, so recipes that have not passed hardware checks on a DGX Spark are hidden. " : ""}Clear one or more filters to broaden the catalog.</p>{filters.verified ? <button type="button" className="button" onClick={() => setVerified(false)}>Include recipes not yet verified</button> : null}<button type="button" className="button" onClick={clearAll}>Clear filters</button></div> : null}
         {filtered.length > PAGE_SIZE ? <nav className="catalog-pagination" aria-label="Recipe pages"><button className="button" type="button" disabled={offset === 0} onClick={() => update("cursor", String(Math.max(0, offset - PAGE_SIZE)))}>Previous page</button><span>Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, filtered.length)} of {filtered.length}</span><button className="button" type="button" disabled={offset + PAGE_SIZE >= filtered.length} onClick={() => update("cursor", String(offset + PAGE_SIZE))}>Next page</button></nav> : null}
       </section> : null}
     </main>

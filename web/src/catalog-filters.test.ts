@@ -27,7 +27,7 @@ function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["cata
       source_repository: "https://github.com/owner/repo",
       alignment: "standard",
       capabilities: ["chat"],
-      qualification: "Not yet verified",
+      qualification: "Working",
       qualification_reason: null,
       execution_readiness: "executable",
       runtime_distribution: "vllm-0-27-1",
@@ -56,6 +56,15 @@ describe("public catalog Controller-parity filters", () => {
     const filters = { ...EMPTY_FILTERS, model: "models/both-v1", quantization: "NVFP4", updated: "30" as const, sparks: "4+" as const, readiness: "executable" as const, capabilities: ["chat", "reasoning"] };
     expect(recipeMatches(both, filters)).toBe(true);
     expect(recipeMatches(chat, filters)).toBe(false);
+  });
+
+  test("Verified on Spark is on by default and off with verified=0 or an explicit qualification", () => {
+    const unverified = recipe("unverified", { qualification: "Not yet verified" });
+    expect(filtersFromParameters(new URLSearchParams("")).verified).toBe(true);
+    expect(filtersFromParameters(new URLSearchParams("verified=0")).verified).toBe(false);
+    expect(filtersFromParameters(new URLSearchParams("qualification=Fix+to+verify")).verified).toBe(false);
+    expect(recipeMatches(unverified, EMPTY_FILTERS)).toBe(false);
+    expect(recipeMatches(unverified, { ...EMPTY_FILTERS, verified: false })).toBe(true);
   });
 
   test("a type matches a recipe with any of its capabilities", () => {

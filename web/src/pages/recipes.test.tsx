@@ -51,7 +51,7 @@ const recipe: RecipeSummary = {
 
 
 beforeEach(() => {
-  window.history.replaceState(null, "", "/recipes?runtime=vllm");
+  window.history.replaceState(null, "", "/recipes?runtime=vllm&verified=0");
   loadRecipeCatalog.mockReset().mockResolvedValue([recipe]);
 });
 
@@ -91,13 +91,13 @@ test("keeps Controller-parity filters in the URL and applies them locally", asyn
 });
 
 test("starts from the visitor's Sparks and engine, in the same URL facets as the columns", async () => {
-  window.history.replaceState(null, "", "/recipes");
+  window.history.replaceState(null, "", "/recipes?verified=0");
   render(<RecipesPage />);
   await screen.findByRole("heading", { name: "Qwen Fast" });
   const oneSpark = screen.getByRole("button", { name: "1 Spark: 1 recipes" });
   expect(screen.getByRole("button", { name: "2 Sparks: 0 recipes" })).toBeDisabled();
   fireEvent.click(oneSpark);
-  await waitFor(() => expect(window.location.search).toBe("?sparks=1"));
+  await waitFor(() => expect(window.location.search).toBe("?verified=0&sparks=1"));
   expect(screen.getByLabelText("Filter by required Sparks")).toHaveValue("1");
   expect(oneSpark).toHaveAttribute("aria-pressed", "true");
   fireEvent.click(within(screen.getByRole("group", { name: "Engine" })).getByRole("button", { name: "vLLM: 1" }));
@@ -118,4 +118,94 @@ test("sorts the list from any column and preserves the selected direction", asyn
   await waitFor(() => expect(window.location.search).toContain("direction=desc"));
   fireEvent.change(screen.getByLabelText("Filter by disk per Spark"), { target: { value: String(20 * 1024 ** 3) } });
   await waitFor(() => expect(window.location.search).toContain("disk=21474836480"));
+});
+
+
+function verifiedCoder(): RecipeSummary {
+  return { ...recipe, slug: "coder", title: "Coder", catalog: { ...recipe.catalog, model_family: "Coder", model_version_slug: "coder", model_version_title: "coder", capabilities: ["code-generation"], qualification: "Working", qualification_reason: null } };
+}
+
+describe("type-first filtering", () => {
+  beforeEach(() => {
+    loadRecipeCatalog.mockReset().mockResolvedValue([recipe, verifiedCoder()]);
+  });
+
+  test("shows only verified recipes until the toggle is turned off", async () => {
+    window.history.replaceState(null, "", "/recipes");
+    render(<RecipesPage />);
+    expect(await screen.findByRole("heading", { name: "Coder" })).toBeVisible();
+    expect(screen.queryByRole("heading", { name: "Qwen Fast" })).not.toBeInTheDocument();
+    const toggle = screen.getByRole("checkbox", { name: /Verified on Spark/ });
+    expect(toggle).toBeChecked();
+    fireEvent.click(toggle);
+    await waitFor(() => expect(window.location.search).toBe("?verified=0"));
+    expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
+    fireEvent.click(toggle);
+    await waitFor(() => expect(window.location.search).toBe(""));
+  });
+
+  test("the type row comes first, counts with the other filters applied, and lives in the URL", async () => {
+    window.history.replaceState(null, "", "/recipes?type=code");
+    render(<RecipesPage />);
+    expect(await screen.findByRole("heading", { name: "Coder" })).toBeVisible();
+    const types = screen.getByRole("group", { name: "Model type" });
+    expect(within(types).getAllByRole("button").map((button) => button.textContent)).toEqual(["All1", "Language0", "Code1", "Vision0", "Image0", "Video0", "Audio0", "3D0"]);
+    expect(within(types).getByRole("button", { name: "Code: 1 recipes" })).toHaveAttribute("aria-pressed", "true");
+    // The type row precedes the setup refinements in the page order.
+    expect(types.compareDocumentPosition(screen.getByRole("group", { name: "How many Sparks do you have?" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    fireEvent.click(within(types).getByRole("button", { name: "All: 1 recipes" }));
+    await waitFor(() => expect(window.location.search).toBe(""));
+    fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "Code: 1 recipes" }));
+    await waitFor(() => expect(window.location.search).toBe("?type=code"));
+  });
+
+  test("an explicit qualification turns the default off", async () => {
+    window.history.replaceState(null, "", "/recipes?qualification=Not+yet+verified");
+    render(<RecipesPage />);
+    expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
+    expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked();
+  });
+
+  function variant(slug: string, owner: string, nodes: number, capabilities: string[]): RecipeSummary {
+    const base = verifiedCoder();
+    return { ...base, slug, title: slug, catalog: { ...base.catalog, model_family: slug, model_version_slug: slug, model_version_title: slug, source_owner: owner, node_count: nodes, capabilities } };
+  }
+
+  test("Sparks and Creator refinements change the type counts, and an empty type chip is aria-disabled", async () => {
+    loadRecipeCatalog.mockReset().mockResolvedValue([variant("coder", "eugr", 1, ["code-generation"]), variant("chatter", "NVIDIA", 2, ["chat"])]);
+    window.history.replaceState(null, "", "/recipes");
+    render(<RecipesPage />);
+    await screen.findByRole("heading", { name: "coder" });
+    const types = () => within(screen.getByRole("group", { name: "Model type" }));
+    expect(types().getByRole("button", { name: "Code: 1 recipes" })).not.toHaveAttribute("aria-disabled");
+    expect(types().getByRole("button", { name: "Language: 1 recipes" })).toBeVisible();
+
+    fireEvent.click(screen.getByRole("button", { name: "2 Sparks: 1 recipes" }));
+    await waitFor(() => expect(types().getByRole("button", { name: "Code: 0 recipes" })).toHaveAttribute("aria-disabled", "true"));
+    expect(types().getByRole("button", { name: "Language: 1 recipes" })).toBeVisible();
+    // An empty chip stays focusable but does nothing.
+    fireEvent.click(types().getByRole("button", { name: "Code: 0 recipes" }));
+    expect(window.location.search).toBe("?sparks=2");
+
+    fireEvent.click(screen.getByRole("button", { name: "Any count: 2 recipes" }));
+    await waitFor(() => expect(window.location.search).toBe(""));
+    fireEvent.click(within(screen.getByRole("group", { name: "Creator" })).getByRole("button", { name: "eugr: 1" }));
+    await waitFor(() => expect(types().getByRole("button", { name: "Language: 0 recipes" })).toHaveAttribute("aria-disabled", "true"));
+    expect(types().getByRole("button", { name: "Code: 1 recipes" })).toBeVisible();
+  });
+
+  test("the default Verified on Spark filter is an applied chip and is named in the empty state", async () => {
+    window.history.replaceState(null, "", "/recipes?type=vision");
+    render(<RecipesPage />);
+    const empty = await screen.findByText("No matching recipes.");
+    expect(empty.parentElement).toHaveTextContent(/Verified on Spark is on, so recipes that have not passed hardware checks/);
+    const applied = screen.getByLabelText("Applied filters");
+    expect(within(applied).getByRole("button", { name: /Verified on Spark/ })).toBeVisible();
+    expect(within(applied).getByRole("button", { name: /Type: Vision/ })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Include recipes not yet verified" }));
+    await waitFor(() => expect(window.location.search).toBe("?type=vision&verified=0"));
+    fireEvent.click(screen.getByRole("button", { name: /^Clear \d+ filter/ }));
+    await waitFor(() => expect(window.location.search).toBe("?verified=0"));
+    expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
+  });
 });

@@ -123,7 +123,7 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   await expect(page.getByText(/Recipes from Acme and Qwen and more/)).toBeVisible();
   await expect(page.getByRole("link", { name: "See the agent-friendly CLI" })).toBeVisible();
   await expect(page.locator(".home-hero").getByRole("link", { name: "Install", exact: true })).toHaveAttribute("href", "/install");
-  await expect(page.getByRole("link", { name: "Browse what runs" })).toHaveAttribute("href", "/recipes?qualification=Working");
+  await expect(page.getByRole("link", { name: "Browse what runs" })).toHaveAttribute("href", "/recipes");
   await expect(page.getByRole("heading", { name: "Know what fits your setup." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Stay current without the chase." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Run the mix you need." })).toBeVisible();
@@ -196,16 +196,16 @@ test("home page shows the live numbers from the build-time summary and loads not
   await expect(title.locator(".rolling-number")).toHaveCount(3);
 
   const tiles = page.getByRole("region", { name: "What can you run?" });
-  await expect(tiles.getByRole("link", { name: /Language & chat\s*3 verified/ })).toHaveAttribute("href", "/recipes?type=language&qualification=Working");
-  await expect(tiles.getByRole("link", { name: /Code\s*1 verified/ })).toHaveAttribute("href", "/recipes?type=code&qualification=Working");
+  await expect(tiles.getByRole("link", { name: /Language & chat\s*3 verified/ })).toHaveAttribute("href", "/recipes?type=language");
+  await expect(tiles.getByRole("link", { name: /Code\s*1 verified/ })).toHaveAttribute("href", "/recipes?type=code");
   await expect(tiles.getByRole("link", { name: /Vision\s*1 verified/ })).toBeVisible();
   await expect(tiles.getByRole("link", { name: /3D\s*1 verified/ })).toBeVisible();
-  await expect(tiles.getByRole("link", { name: /Video\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=video");
+  await expect(tiles.getByRole("link", { name: /Video\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=video&verified=0");
 
   const creators = page.getByRole("region", { name: /Built by the people who run these models/ });
   await expect(creators.getByRole("link")).toHaveCount(2);
   await expect(creators.getByRole("link").first()).toHaveText(/Acme\s*3 verified/);
-  await expect(creators.getByRole("link", { name: /Qwen/ })).toHaveAttribute("href", "/recipes?creator=Qwen&qualification=Working");
+  await expect(creators.getByRole("link", { name: /Qwen/ })).toHaveAttribute("href", "/recipes?creator=Qwen");
 
   // Called "updated": the library moves released_at on every refresh.
   const fresh = page.getByRole("region", { name: "Updated this week." });
@@ -217,9 +217,17 @@ test("home page shows the live numbers from the build-time summary and loads not
   expect(requests).toContain("/catalog/catalog-summary.json");
   expect(requests).not.toContain("/catalog/catalog-index.json");
 
+  // The updated link matches its count under the verified default: it turns the default off,
+  // because the count covers recipes of every status.
+  await fresh.getByRole("link", { name: /See all 1 updated recipes/ }).click();
+  await expect(page).toHaveURL(/\/recipes\?updated=7&verified=0$/);
+  await expect(page.getByText(/^1 of 5 recipes/)).toBeVisible();
+  await expect(page.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked();
+  await page.goBack();
+
   // A type tile lands on the catalog already filtered to that type.
   await tiles.getByRole("link", { name: /Code/ }).click();
-  await expect(page).toHaveURL(/\/recipes\?type=code&qualification=Working$/);
+  await expect(page).toHaveURL(/\/recipes\?type=code$/);
   await expect(page.getByRole("link", { name: "Acme Coder" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Acme Vision" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Qwen Code" })).toHaveCount(0);
@@ -440,4 +448,46 @@ test("publisher navigation points to repository authoring without an upload work
   );
   await expect(page.getByLabel("Upload local JSON")).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Publish publicly" })).toHaveCount(0);
+});
+
+
+test("the model type is the first choice on the recipes and models pages", async ({ page }) => {
+  await page.goto("/recipes?type=code");
+  const types = page.getByRole("group", { name: "Model type" });
+  await expect(types.getByRole("button")).toHaveText(["All4", "Language3", "Code1", "Vision1", "Image0", "Video0", "Audio0", "3D1"]);
+  await expect(types.getByRole("button", { name: /^Code/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("link", { name: "Acme Coder" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Acme Vision" })).toHaveCount(0);
+  // The type row sits above the other refinements.
+  const typeBox = await types.boundingBox();
+  const sparksBox = await page.getByRole("group", { name: "How many Sparks do you have?" }).boundingBox();
+  expect(typeBox!.y).toBeLessThan(sparksBox!.y);
+
+  // Keyboard: focus a chip and press Enter; the URL follows, and so does the list.
+  await types.getByRole("button", { name: /^Vision/ }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/recipes\?type=vision$/);
+  await expect(page.getByRole("link", { name: "Acme Vision" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Acme Coder" })).toHaveCount(0);
+
+  // "Verified on Spark" is on by default; turning it off shows the unverified recipe too.
+  await page.goto("/recipes?type=language");
+  await expect(page.getByRole("link", { name: "Qwen Code" })).toHaveCount(0);
+  await page.getByRole("checkbox", { name: /Verified on Spark/ }).uncheck();
+  await expect(page).toHaveURL(/verified=0/);
+  await page.getByRole("group", { name: "Model type" }).getByRole("button", { name: /^Code/ }).click();
+  await expect(page.getByRole("link", { name: "Qwen Code" })).toBeVisible();
+
+  await page.goto("/models?type=vision");
+  await expect(page.getByRole("group", { name: "Model type" }).getByRole("button", { name: /^Vision/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(page.getByRole("link", { name: /Acme Vision/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /Acme Coder/ })).toHaveCount(0);
+  await expect(page.getByRole("checkbox", { name: /Verified on Spark/ })).toBeChecked();
+  for (const width of [320, 1280]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const path of ["/models", "/recipes"]) {
+      await page.goto(path);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
+    }
+  }
 });
