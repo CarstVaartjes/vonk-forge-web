@@ -2,9 +2,10 @@
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
-import { checkSingleSources, trackedSources } from "./single-source-values.mjs";
+import { checkSingleSources } from "./single-source-values.mjs";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 const nodeOwner = {
@@ -18,10 +19,6 @@ const memoryOwner = {
 const workflow = "- uses: actions/setup-node@reviewed\n  with:\n    node-version-file: .node-version\n";
 
 describe("single source values", () => {
-  test("every registered value has one owner in tracked sources", () => {
-    expect(checkSingleSources(trackedSources(root))).toEqual([]);
-  });
-
   // single-source-adversarial-begin: node-selection
   test.each([
     ["workflow.yml", 'node-version: "24.1.0"'],
@@ -50,9 +47,7 @@ describe("single source values", () => {
   });
 
   test("the local runtime check follows a changed version owner", () => {
-    const base = path.join(root, ".tmp");
-    mkdirSync(base, { recursive: true });
-    const fixture = mkdtempSync(path.join(base, "node-owner-"));
+    const fixture = mkdtempSync(path.join(tmpdir(), "node-owner-"));
     try {
       mkdirSync(path.join(fixture, "web/scripts"), { recursive: true });
       const checker = path.join(fixture, "web/scripts/check-node-version.mjs");

@@ -31,6 +31,11 @@ jobs:
         run: |
           git fetch --no-tags --depth=1 origin "$BASE_SHA"
           git diff -U0 "$BASE_SHA" | node web/scripts/check-test-git.mjs
+      # Every registered single-source value has one owner in the tracked files.
+      # The file list is the input, so the check itself runs no git.
+      - name: Check single-source values
+        shell: bash
+        run: git ls-files -z | node web/scripts/check-single-sources.mjs
       - run: npm --prefix web audit --audit-level=high
       # The same fetch-and-verify step the Pages deployment runs, against the
       # real current signed recipe-library release.
