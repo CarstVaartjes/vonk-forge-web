@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 
 import { loadRecipeCatalog, type RecipeSummary } from "../api/client";
+import { gibLabel } from "../catalog-filters";
 import {
+  ROLE_CLASS,
   ROLE_LABELS,
   SHOWCASE_PROFILES,
   SHOWCASE_PUBLISHER,
@@ -10,16 +12,13 @@ import {
   type ShowcaseRole,
 } from "../showcase-profiles";
 
-function gib(bytes: number | undefined): string | null {
-  if (bytes === undefined) return null;
-  const value = bytes / 1024 ** 3;
-  return `${value >= 10 ? value.toFixed(0) : value.toFixed(1)} GiB per Spark`;
-}
+type Catalog = Map<string, RecipeSummary> | null;
 
-function MemberChip({ member, recipe }: { member: ShowcaseMember; recipe: RecipeSummary | undefined }) {
-  const memory = gib(recipe?.capacity?.maximum_runtime_memory_bytes_per_node);
+function MemberChip({ member, recipe, catalog }: { member: ShowcaseMember; recipe: RecipeSummary | undefined; catalog: Catalog }) {
+  const bytes = recipe?.capacity?.maximum_runtime_memory_bytes_per_node;
+  const memory = bytes === undefined ? null : `${gibLabel(bytes)} per Spark`;
   return (
-    <li className={`showcase-member role-${member.role === "3d" ? "three-d" : member.role}`}>
+    <li className={`showcase-member role-${ROLE_CLASS[member.role]}`}>
       <span className="showcase-role">{ROLE_LABELS[member.role]}</span>
       {recipe ? (
         <>
@@ -29,26 +28,26 @@ function MemberChip({ member, recipe }: { member: ShowcaseMember; recipe: Recipe
       ) : (
         <>
           <span>{member.slug}</span>
-          <small>Not in the published catalog right now.</small>
+          <small>{catalog ? "Not in the published catalog right now." : "Details unavailable."}</small>
         </>
       )}
     </li>
   );
 }
 
-function Column({ name, members, recipes }: { name: string; members: ShowcaseMember[]; recipes: Map<string, RecipeSummary> | null }) {
+function Column({ name, members, recipes }: { name: string; members: ShowcaseMember[]; recipes: Catalog }) {
   return (
     <div className="showcase-column">
       <h4>{name}</h4>
       {members.length === 0 ? <p className="showcase-empty">No model on this Spark in this profile.</p> : (
-        <ul>{members.map((member) => <MemberChip key={member.slug} member={member} recipe={recipes?.get(member.slug)} />)}</ul>
+        <ul>{members.map((member) => <MemberChip key={member.slug} member={member} recipe={recipes?.get(member.slug)} catalog={recipes} />)}</ul>
       )}
     </div>
   );
 }
 
 export function ShowcasePage() {
-  const [recipes, setRecipes] = useState<Map<string, RecipeSummary> | null>(null);
+  const [recipes, setRecipes] = useState<Catalog>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -71,9 +70,10 @@ export function ShowcasePage() {
         <p>One example of how fleet profiles reshape the same two DGX Sparks for different stages of making a 3D game. Every profile is served from one endpoint under the same model names, switching profiles is one load, and a coder stays available beside the creative pipeline.</p>
       </header>
       <ul className="showcase-legend" aria-label="Role colours">
-        {roles.map((role) => <li key={role} className={`showcase-member role-${role === "3d" ? "three-d" : role}`}><span className="showcase-role">{ROLE_LABELS[role]}</span></li>)}
+        {roles.map((role) => <li key={role} className={`showcase-member role-${ROLE_CLASS[role]}`}><span className="showcase-role">{ROLE_LABELS[role]}</span></li>)}
       </ul>
       {error ? <div className="status-panel error" role="alert"><h2>Recipe details are temporarily out of reach.</h2><p>{error}</p></div> : null}
+      {!recipes && !error ? <div className="status-panel" role="status">Loading the public recipe index…</div> : null}
       <div className="showcase-grid">
         {SHOWCASE_PROFILES.map((profile) => {
           const both = side(profile.members, "both");

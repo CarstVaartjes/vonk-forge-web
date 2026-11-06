@@ -27,6 +27,15 @@ export const ROLE_LABELS: Record<ShowcaseRole, string> = {
   video: "Video",
 };
 
+// CSS class suffix per role.
+export const ROLE_CLASS: Record<ShowcaseRole, string> = {
+  coder: "coder",
+  image: "image",
+  "3d": "three-d",
+  audio: "audio",
+  video: "video",
+};
+
 export const LIGHT_CODER = "qwen3-8-27b-exl3-dflash2-mia-single";
 
 const lightCoder: ShowcaseMember = { slug: LIGHT_CODER, role: "coder", column: "left" };

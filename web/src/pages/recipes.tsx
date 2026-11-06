@@ -10,6 +10,7 @@ import {
   SPARK_OPTIONS,
   engineLabel,
   filtersFromParameters,
+  gibLabel,
   foldCreators,
   humanize,
   nodeCountMatches,
@@ -29,12 +30,6 @@ import {
 } from "../catalog-filters";
 
 const PAGE_SIZE = 24;
-
-function bytes(value: number | undefined): string {
-  if (value === undefined) return "Not declared";
-  const gib = value / 1024 ** 3;
-  return `${gib >= 10 ? gib.toFixed(0) : gib.toFixed(1)} GiB`;
-}
 
 function sizeKey(value: number | undefined): string {
   return value === undefined ? "unknown" : String(value);
@@ -201,9 +196,9 @@ export function RecipesPage() {
   if (filters.qualification) addApplied("qualification", `Qualification: ${filters.qualification}`, "qualification");
   if (filters.repository) addApplied("repository", `Repository: ${sourceLabel(filters.repository)}`, "repository");
   if (filters.runtime) addApplied("runtime", `Runtime: ${humanize(filters.runtime)}`, "runtime");
-  if (filters.download) addApplied("download", `Download: ${filters.download === "unknown" ? "Not declared" : bytes(Number(filters.download))}`, "download");
-  if (filters.disk) addApplied("disk", `Disk: ${filters.disk === "unknown" ? "Not declared" : bytes(Number(filters.disk))}`, "disk");
-  if (filters.memory) addApplied("memory", `Memory: ${filters.memory === "unknown" ? "Not declared" : bytes(Number(filters.memory))}`, "memory");
+  if (filters.download) addApplied("download", `Download: ${filters.download === "unknown" ? "Not declared" : gibLabel(Number(filters.download))}`, "download");
+  if (filters.disk) addApplied("disk", `Disk: ${filters.disk === "unknown" ? "Not declared" : gibLabel(Number(filters.disk))}`, "disk");
+  if (filters.memory) addApplied("memory", `Memory: ${filters.memory === "unknown" ? "Not declared" : gibLabel(Number(filters.memory))}`, "memory");
 
   const columnProps = { activeSort: filters.sort, direction: filters.direction, onSort: updateSort };
   // Clearing means showing everything, so the default Verified on Spark filter goes too.
@@ -265,8 +260,8 @@ export function RecipesPage() {
               <ColumnHeader label="Recipe" sort="recipe" filtered={Boolean(filters.query)} {...columnProps}><input type="search" aria-label="Search recipes" value={filters.query} onChange={(event) => update("q", event.target.value)} placeholder="Search…" /></ColumnHeader>
               <ColumnHeader label="Sparks" sort="sparks" filtered={Boolean(filters.sparks)} {...columnProps}><select aria-label="Filter by required Sparks" value={filters.sparks} onChange={(event) => update("sparks", event.target.value)}><option value="">Any</option>{(["1", "2", "3", "4+"] as SparkFilter[]).map((value) => <option key={value} value={value} disabled={count("sparks", (recipe) => value === "4+" ? recipe.catalog.node_count >= 4 : recipe.catalog.node_count === Number(value)) === 0}>{value}{value === "1" ? " Spark" : " Sparks"}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Engine" sort="runtime" filtered={Boolean(filters.runtime)} {...columnProps}><select aria-label="Filter by runtime" value={filters.runtime} onChange={(event) => update("runtime", event.target.value)}><option value="">All</option>{runtimes.map((value) => <option key={value} value={value} disabled={count("runtime", (recipe) => recipe.catalog.runtime_distribution === value) === 0}>{engineLabel(value)}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Memory / Spark" sort="memory" filtered={Boolean(filters.memory)} {...columnProps}><select aria-label="Filter by memory per Spark" value={filters.memory} onChange={(event) => update("memory", event.target.value)}><option value="">Any</option>{memories.map((value) => <option key={sizeKey(value)} value={sizeKey(value)}>{bytes(value)}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Disk / Spark" sort="disk" filtered={Boolean(filters.disk)} {...columnProps}><select aria-label="Filter by disk per Spark" value={filters.disk} onChange={(event) => update("disk", event.target.value)}><option value="">Any</option>{disks.map((value) => <option key={sizeKey(value)} value={sizeKey(value)}>{bytes(value)}</option>)}</select></ColumnHeader>
+              <ColumnHeader label="Memory / Spark" sort="memory" filtered={Boolean(filters.memory)} {...columnProps}><select aria-label="Filter by memory per Spark" value={filters.memory} onChange={(event) => update("memory", event.target.value)}><option value="">Any</option>{memories.map((value) => <option key={sizeKey(value)} value={sizeKey(value)}>{gibLabel(value)}</option>)}</select></ColumnHeader>
+              <ColumnHeader label="Disk / Spark" sort="disk" filtered={Boolean(filters.disk)} {...columnProps}><select aria-label="Filter by disk per Spark" value={filters.disk} onChange={(event) => update("disk", event.target.value)}><option value="">Any</option>{disks.map((value) => <option key={sizeKey(value)} value={sizeKey(value)}>{gibLabel(value)}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Model family" sort="modelFamily" filtered={Boolean(filters.modelFamily)} {...columnProps}><select aria-label="Filter by model family" value={filters.modelFamily} onChange={(event) => updateModelFamily(event.target.value)}><option value="">All</option>{modelFamilies.map((value) => <option key={value} value={value} disabled={count("modelFamily", (recipe) => modelFamilyTitle(recipe) === value) === 0}>{value}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Model" sort="model" filtered={Boolean(filters.model)} {...columnProps}><select aria-label="Filter by model" value={filters.model} onChange={(event) => update("model", event.target.value)}><option value="">All</option>{models.map(([value, label]) => <option key={value} value={value} disabled={count("model", (recipe) => modelVersionKey(recipe) === value) === 0}>{label}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Format" sort="quantization" filtered={Boolean(filters.quantization)} {...columnProps}><select aria-label="Filter by quantization" value={filters.quantization} onChange={(event) => update("quantization", event.target.value)}><option value="">Any</option>{quantizations.map((value) => <option key={value} value={value} disabled={count("quantization", (recipe) => recipe.catalog.quantizations.includes(value)) === 0}>{value}</option>)}</select></ColumnHeader>
@@ -276,7 +271,7 @@ export function RecipesPage() {
               <ColumnHeader label="Capabilities" sort="capability" filtered={filters.capabilities.length > 0} {...columnProps}><select aria-label="Filter by capability" value="" onChange={(event) => toggleCapability(event.target.value)}><option value="">{filters.capabilities.length ? `${filters.capabilities.length} selected · add…` : "Any capability"}</option>{CAPABILITY_OPTIONS.map((option) => <option key={option.value} value={option.value} disabled={capabilityCount(option.value) === 0 && !filters.capabilities.includes(option.value)}>{filters.capabilities.includes(option.value) ? `Remove ${option.label}` : option.label}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Qualification" sort="qualification" filtered={Boolean(filters.qualification)} {...columnProps}><select aria-label="Filter by qualification" value={filters.qualification} onChange={(event) => update("qualification", event.target.value)}><option value="">Any</option>{qualifications.map((status) => <option key={status} value={status} disabled={count("qualification", (recipe) => recipe.catalog.qualification === status) === 0}>{status}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Repository" sort="repository" filtered={Boolean(filters.repository)} {...columnProps}><select aria-label="Filter by original repository" value={filters.repository} onChange={(event) => update("repository", event.target.value)}><option value="">All</option>{repositories.map((value) => <option key={value} value={value} disabled={count("repository", (recipe) => recipe.catalog.source_repository === value) === 0}>{sourceLabel(value)}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Download" sort="download" filtered={Boolean(filters.download)} {...columnProps}><select aria-label="Filter by download size" value={filters.download} onChange={(event) => update("download", event.target.value)}><option value="">Any</option>{downloads.map((value) => <option key={sizeKey(value)} value={sizeKey(value)}>{bytes(value)}</option>)}</select></ColumnHeader>
+              <ColumnHeader label="Download" sort="download" filtered={Boolean(filters.download)} {...columnProps}><select aria-label="Filter by download size" value={filters.download} onChange={(event) => update("download", event.target.value)}><option value="">Any</option>{downloads.map((value) => <option key={sizeKey(value)} value={sizeKey(value)}>{gibLabel(value)}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Abliterated" sort="abliterated" filtered={Boolean(filters.abliterated)} {...columnProps}><select aria-label="Filter by abliterated" value={filters.abliterated} onChange={(event) => update("abliterated", event.target.value)}><option value="">Any</option><option value="true" disabled={count("abliterated", recipeIsAbliterated) === 0}>True</option><option value="false" disabled={count("abliterated", (recipe) => !recipeIsAbliterated(recipe)) === 0}>False</option></select></ColumnHeader>
             </tr></thead>
             <tbody>{pageItems.map((recipe) => {
@@ -286,8 +281,8 @@ export function RecipesPage() {
                 <td className="catalog-table-recipe"><h2><a href={`/recipes/${recipe.publisher}/${recipe.slug}`}>{recipe.title}</a></h2><span>{recipe.publisher}/{recipe.slug}</span><span>{recipe.version ? `v${recipe.version}` : "unversioned"} · {recipe.content_sha256.slice(0, 10)}…</span></td>
                 <td className="catalog-table-number">{counts.length ? counts.join(" / ") : facts.node_count}</td>
                 <td>{engineLabel(facts.runtime_distribution)}</td>
-                <td className="catalog-table-number">{bytes(recipe.capacity?.maximum_runtime_memory_bytes_per_node)}</td>
-                <td className="catalog-table-number">{bytes(recipe.capacity?.maximum_installed_bytes_per_node)}</td>
+                <td className="catalog-table-number">{gibLabel(recipe.capacity?.maximum_runtime_memory_bytes_per_node)}</td>
+                <td className="catalog-table-number">{gibLabel(recipe.capacity?.maximum_installed_bytes_per_node)}</td>
                 <td><strong>{modelFamilyTitle(recipe)}</strong></td>
                 <td className="catalog-table-model"><strong>{facts.model_version_title}</strong><span>{facts.model_version_publisher}/{facts.model_version_slug}</span></td>
                 <td>{facts.quantizations.length ? facts.quantizations.join(" · ") : "—"}</td>
@@ -297,7 +292,7 @@ export function RecipesPage() {
                 <td>{facts.capabilities.length ? facts.capabilities.map(capabilityLabel).join(" · ") : "—"}</td>
                 <td><span className={`badge ${facts.qualification === WORKING_STATUS ? "accepted" : "candidate"}`}>{facts.qualification}</span><span className="catalog-table-substatus">{recipe.facts?.source_bundle_observed ? "Source verified" : "Source pending"}{facts.qualification_reason ? ` · ${facts.qualification_reason}` : ""}</span></td>
                 <td>{facts.source_repository ? <a className="catalog-source-link" href={facts.source_repository}>{sourceLabel(facts.source_repository)}</a> : "—"}</td>
-                <td className="catalog-table-number">{bytes(facts.expected_download_bytes)}</td>
+                <td className="catalog-table-number">{gibLabel(facts.expected_download_bytes)}</td>
                 <td>{recipeIsAbliterated(recipe) ? "True" : "False"}</td>
               </tr>;
             })}</tbody>
