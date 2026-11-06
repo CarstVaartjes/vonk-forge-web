@@ -166,10 +166,15 @@ describe("recipe release publication", () => {
     });
   });
 
-  test("fails closed, keeping the previous catalog, when nothing in the index is verified", async () => {
+  test("a release with nothing verified still builds, with a valid summary of zeros", async () => {
     const packageBytes = Buffer.from("fixture package");
     const assets = fixtureRelease({ index: { recipes: [fixtureRecipe(packageBytes, { qualification: { status: "Not yet verified" } })] } });
-    await expect(publish(assets)).rejects.toThrow("unsupported catalog summary");
+    await publish(assets);
+    expect(JSON.parse(await readFile(path.join(outDir, "catalog-summary.json"), "utf8"))).toMatchObject({ verified: 0, families: 0, creators: 0, topCreators: [], newest: [{ status: "Not yet verified" }] });
+  });
+
+  test("still refuses an index the adapter cannot parse, keeping the previous catalog", async () => {
+    await expect(publish(fixtureRelease({ index: { catalog_entities: [] } }))).rejects.toThrow("unsupported catalog index");
     await expectPreviousCatalogKept();
   });
 

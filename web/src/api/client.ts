@@ -103,6 +103,8 @@ export interface ModelSummary {
   revision_id: string;
   versions: ModelVersionSummary[];
   recipe_count: number;
+  // The same count over recipes that passed hardware checks on a DGX Spark.
+  verified_recipe_count: number;
 }
 
 export interface LibraryRelease {

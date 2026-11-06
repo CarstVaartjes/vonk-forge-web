@@ -262,7 +262,7 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
       catalog_index_sha256: digests.get("catalog-index.json"),
     };
     // The summary the home page reads instead of the full index. An index the
-    // adapter refuses, or one with nothing verified, fails the build here.
+    // adapter refuses fails the build here; a release with nothing verified is a valid summary of zeros.
     const summary = buildCatalogSummary(index, manifest);
     await writeFile(path.join(staging, "catalog-index.json"), indexBytes);
     await writeFile(path.join(staging, "release.json"), `${JSON.stringify(manifest, null, 2)}\n`);

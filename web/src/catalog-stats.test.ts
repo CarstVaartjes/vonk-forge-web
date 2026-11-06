@@ -109,16 +109,19 @@ describe("catalog summary file", () => {
     expect(parseCatalogSummary(JSON.parse(JSON.stringify(good)))).toMatchObject({ verified: 1, families: 1, creators: 1 });
   });
 
+  test("a release with nothing verified is a valid summary of zeros", () => {
+    const empty = { summary_version: 1, release: "v3.1.0", catalog_index_sha256: "a".repeat(64), ...deriveCatalogStats([recipe("a", { status: "Not yet verified" })]) };
+    expect(parseCatalogSummary(JSON.parse(JSON.stringify(empty)))).toMatchObject({ verified: 0, families: 0, creators: 0, topCreators: [] });
+  });
+
   test.each([
     ["no object", null],
     ["another version", { ...good, summary_version: 2 }],
-    ["zero verified", { ...good, verified: 0 }],
     ["a missing count", { ...good, families: undefined }],
     ["a fractional count", { ...good, creators: 1.5 }],
     ["a missing type", { ...good, types: { language: 1 } }],
     ["an unknown type", { ...good, types: { ...good.types, hologram: 1 } }],
     ["a bad date", { ...good, updatedByDate: { yesterday: 1 } }],
-    ["no creators", { ...good, topCreators: [] }],
     ["a malformed recipe row", { ...good, newest: [{ title: "x" }] }],
   ])("refuses %s rather than rendering zeros", (_name, value) => {
     expect(() => parseCatalogSummary(value)).toThrow("unsupported catalog summary");

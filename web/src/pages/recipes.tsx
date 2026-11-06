@@ -207,6 +207,8 @@ export function RecipesPage() {
 
   const columnProps = { activeSort: filters.sort, direction: filters.direction, onSort: updateSort };
   // Clearing means showing everything, so the default Verified on Spark filter goes too.
+  // "Clear" is about what the visitor chose: the default Verified on Spark chip is not counted.
+  const clearable = applied.filter((item) => item.key !== "verified");
   const clearAll = () => replace(new URLSearchParams("verified=0"));
 
   return (
@@ -252,7 +254,7 @@ export function RecipesPage() {
         <div className="catalog-results-heading">
           <div><p aria-live="polite"><strong>{filtered.length}</strong> of {available.length} recipes</p><small>Filter and order the list from its column headings.</small></div>
           <p className="catalog-local-note">Imported, current, and update status appear only in <a href="/control">your local Controller</a>.</p>
-          {applied.length ? <button type="button" className="catalog-clear" onClick={clearAll}>Clear {applied.length} filter{applied.length === 1 ? "" : "s"}</button> : null}
+          {clearable.length ? <button type="button" className="catalog-clear" onClick={clearAll}>Clear {clearable.length} filter{clearable.length === 1 ? "" : "s"}</button> : null}
         </div>
         {applied.length ? <div className="catalog-applied" aria-label="Applied filters">{applied.map((item) => <button type="button" key={item.key} onClick={item.remove}>{item.label}<span aria-hidden="true">×</span><span className="visually-hidden"> Remove filter</span></button>)}</div> : null}
 
