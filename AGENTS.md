@@ -51,7 +51,7 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
 
 `.node-version` owns the Node version used by workflows and local tooling;
 select it before installing dependencies. `web/package-lock.json` is authoritative
-for dependencies. The single-source guard runs with the unit tests and reads
+for dependencies. The single-source guard runs as its own CI step over the tracked file list and reads
 owner-adjacent `*.single-source.json` registrations; register each repaired class
 there, with no baseline allowance.
 
@@ -59,6 +59,7 @@ there, with no baseline allowance.
 npm --prefix web ci
 npm --prefix web audit --audit-level=high
 npm --prefix web test -- --run
+git ls-files -z | node web/scripts/check-single-sources.mjs
 npm --prefix web run build
 npx --prefix web playwright install chromium
 npm --prefix web run test:e2e   # builds and serves web/dist with vite preview
