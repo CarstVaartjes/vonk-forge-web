@@ -27,6 +27,7 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        shell: bash
         run: |
           git fetch --no-tags --depth=1 origin "$BASE_SHA"
           git diff -U0 "$BASE_SHA" | node web/scripts/check-test-git.mjs

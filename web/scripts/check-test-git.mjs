@@ -5,9 +5,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const spawnsGit = /\b(?:execFileSync|execFile|spawnSync|spawn|execSync|exec)\(\s*["'`]git\b/;
-const isTestFile = (file) => /(?:^|\/)[^/]+\.(?:test|spec)\.[^/]+$/.test(file) || /(?:^|\/)e2e\//.test(file);
-// Named exemption: this guard's own test holds patch text that spells the call.
-const exempt = new Set(["web/scripts/check-test-git.test.mjs"]);
+const isTestFile = (file) => /(?:^|\/)[^/]+\.(?:test|spec)\.[^/]+$/.test(file) || /(?:^|\/)test-setup\.[^/]+$/.test(file) || /(?:^|\/)e2e\//.test(file);
 
 export function gitInTests(patch) {
   const found = [];
@@ -20,7 +18,7 @@ export function gitInTests(patch) {
     } else if (text.startsWith("@@")) {
       line = Number(text.match(/\+(\d+)/)?.[1] ?? 0);
     } else if (text.startsWith("+") && file) {
-      if (isTestFile(file) && !exempt.has(file) && spawnsGit.test(text)) found.push(`${file}:${line}: tests never use git; pass the input as an argument`);
+      if (isTestFile(file) && spawnsGit.test(text)) found.push(`${file}:${line}: tests never use git; pass the input as an argument`);
       line++;
     }
   }
