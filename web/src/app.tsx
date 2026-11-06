@@ -9,6 +9,7 @@ import { PrivacyPage } from "./pages/privacy";
 import { PublishingGuidePage } from "./pages/publishing-guide";
 import { RecipeDetailPage } from "./pages/recipe-detail";
 import { RecipesPage } from "./pages/recipes";
+import { ShowcasePage } from "./pages/showcase";
 import { ModelDetailPage, ModelsPage } from "./pages/models";
 
 
@@ -25,6 +26,7 @@ function CurrentPage() {
   }
   if (parts[0] === "models" && parts.length === 1) return <ModelsPage />;
   if (parts[0] === "models" && parts.length === 3) return <ModelDetailPage publisher={parts[1] ?? ""} slug={parts[2] ?? ""} />;
+  if (parts[0] === "example-setup" && parts.length === 1) return <ShowcasePage />;
   if (parts[0] === "publish") {
     return <PublishingGuidePage />;
   }
@@ -83,6 +85,7 @@ export function App() {
             <NavigationLink href="/control">Control</NavigationLink>
             <NavigationLink href="/models">Models</NavigationLink>
             <NavigationLink href="/recipes">Recipes</NavigationLink>
+            <NavigationLink href="/example-setup">Example setup</NavigationLink>
             <NavigationLink href="/publish">Publish</NavigationLink>
           </nav>
         </header>
@@ -100,6 +103,7 @@ export function App() {
             <a href="/control">Control</a>
             <a href="/models">Models</a>
             <a href="/recipes">Recipes</a>
+            <a href="/example-setup">Example setup</a>
             <a href="/publish">Publish</a>
             <a href="/privacy">Privacy</a>
             <a href="https://github.com/CarstVaartjes/vonk-forge">GitHub</a>
