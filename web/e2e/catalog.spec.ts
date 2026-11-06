@@ -1,4 +1,8 @@
+import { statSync } from "node:fs";
+
 import { expect, test } from "@playwright/test";
+
+import { buildCatalogSummary } from "../src/catalog-summary.ts";
 
 
 const releaseTag = "v3.0.0";
@@ -6,6 +10,62 @@ const sourceCommit = "f".repeat(40);
 const recipeDigest = "a".repeat(64);
 const modelDigest = "3".repeat(64);
 const recipeImportUri = `vonk://catalog/vonk-forge/qwen-fast@sha256:${recipeDigest}`;
+
+const today = new Date().toISOString().slice(0, 10);
+
+function modelEntity(options: { digest: string; slug: string; logical: string; publisher: string; family: string; title: string; capabilities: string[]; repository: string; fileDigest: string; tags?: string[] }) {
+  return {
+    content_sha256: options.digest,
+    document: {
+      kind: "model",
+      identity: {
+        publisher: options.publisher,
+        slug: options.slug,
+        family: { publisher: options.publisher, slug: options.family.toLowerCase().replaceAll(" ", "-") },
+        model: { publisher: options.publisher, slug: options.logical },
+        version: "1.0",
+        variant: "nvfp4",
+      },
+      source: { repository: options.repository, revision: "c".repeat(40) },
+      requires_token: false,
+      format: { precision: "nvfp4", quantization: "nvfp4" },
+      files: [{ id: "weights", path: "weights.safetensors", sha256: options.fileDigest, size_bytes: 20_000_000_000, roles: ["weights"] }],
+      capabilities: options.capabilities,
+    },
+    display: { kind: "model-display", family_title: options.family, model_title: options.title, description: `${options.title} model`, tags: options.tags ?? [] },
+  };
+}
+
+function recipeEntry(options: { digest: string; slug: string; title: string; modelDigest: string; modelSlug: string; modelPublisher: string; status: string; nodes: number; releasedAt: string; reference: string; tags?: string[] }) {
+  return {
+    content_sha256: options.digest,
+    source_path: `recipes/${options.slug}.json`,
+    package: {
+      expected_bytes: 123,
+      media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip",
+      minimum_consumer_schema: 2,
+      path: `packages/vonk-forge-${options.slug}.tar.gz`,
+      recipe_content_sha256: options.digest,
+      sha256: "1".repeat(64),
+    },
+    qualification: { status: options.status, changed: [], required_sparks: options.nodes },
+    display: { kind: "recipe-display", title: options.title, description: `${options.title} recipe`, tags: options.tags ?? ["candidate", "executable"], alignment: "standard" },
+    release: { version: "2.1.0", released_at: options.releasedAt },
+    document: {
+      kind: "recipe",
+      identity: { publisher: "vonk-forge", slug: options.slug },
+      models: [{ id: "primary", model: { kind: "model", publisher: options.modelPublisher, slug: options.modelSlug, content_sha256: options.modelDigest }, files: [{ id: "weights", file_id: "weights", roles: ["entrypoint"], mount: { target: "/models" } }] }],
+      runtime: { engine: "vllm", entrypoint: ["vllm", "serve", "/models"] },
+      execution: { build: { context: { path: "adapters/qwen" }, dockerfile: "Dockerfile" } },
+      topology: {
+        name: options.nodes === 1 ? "single" : "pair",
+        node_count: options.nodes,
+        roles: [{ resources: { disk: { artifact_bytes: 21_474_836_480 }, memory: { peak_bytes: 51_539_607_552, reserve_bytes: 0 } } }],
+      },
+      provenance: { source_reference: options.reference, attribution: [options.title] },
+    },
+  };
+}
 
 // The production build reads the verified recipe release that the Pages build
 // writes to /catalog on this origin. Serve a fixture release at those paths so the
@@ -22,76 +82,48 @@ const catalogIndex = {
     media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip",
     path_prefix: "packages/",
   },
-  catalog_entities: [{
-    content_sha256: modelDigest,
-    document: {
-      kind: "model",
-      identity: {
-        publisher: "qwen",
-        slug: "qwen-fast-nvfp4",
-        family: { publisher: "qwen", slug: "qwen" },
-        model: { publisher: "qwen", slug: "qwen-fast" },
-        version: "1.0",
-        variant: "nvfp4",
-      },
-      source: { repository: "https://huggingface.co/Qwen/Qwen-Fast", revision: "c".repeat(40) },
-      requires_token: false,
-      format: { precision: "nvfp4", quantization: "nvfp4" },
-      files: [{ id: "weights", path: "weights.safetensors", sha256: "b".repeat(64), size_bytes: 20_000_000_000, roles: ["weights"] }],
-      capabilities: ["chat", "reasoning"],
-    },
-    display: { kind: "model-display", family_title: "Qwen", model_title: "Qwen Fast", description: "Fast language model", tags: ["language"] },
-  }],
-  recipes: [{
-    content_sha256: recipeDigest,
-    source_path: "recipes/qwen-fast.json",
-    package: {
-      expected_bytes: 123,
-      media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip",
-      minimum_consumer_schema: 2,
-      path: "packages/vonk-forge-qwen-fast.tar.gz",
-      recipe_content_sha256: recipeDigest,
-      sha256: "1".repeat(64),
-    },
-    qualification: { status: "Working", changed: [], required_sparks: 2 },
-    display: { kind: "recipe-display", title: "Qwen Fast", description: "Fast language model", tags: ["candidate", "executable", "chat", "nvfp4"], alignment: "standard" },
-    release: { version: "2.1.0", released_at: "2026-08-07" },
-    document: {
-      kind: "recipe",
-      identity: { publisher: "vonk-forge", slug: "qwen-fast" },
-      models: [{ id: "primary", model: { kind: "model", publisher: "qwen", slug: "qwen-fast-nvfp4", content_sha256: modelDigest }, files: [{ id: "weights", file_id: "weights", roles: ["entrypoint"], mount: { target: "/models" } }] }],
-      runtime: { engine: "vllm", entrypoint: ["vllm", "serve", "/models"] },
-      execution: { build: { context: { path: "adapters/qwen" }, dockerfile: "Dockerfile" } },
-      topology: {
-        name: "pair",
-        node_count: 2,
-        roles: [{ resources: { disk: { artifact_bytes: 21_474_836_480 }, memory: { peak_bytes: 51_539_607_552, reserve_bytes: 0 } } }],
-      },
-      provenance: { source_reference: "https://huggingface.co/Qwen/Qwen-Fast", attribution: ["Qwen"] },
-    },
-  }],
+  catalog_entities: [
+    modelEntity({ digest: modelDigest, slug: "qwen-fast-nvfp4", logical: "qwen-fast", publisher: "qwen", family: "Qwen", title: "Qwen Fast", capabilities: ["chat", "reasoning"], repository: "https://huggingface.co/Qwen/Qwen-Fast", fileDigest: "b".repeat(64), tags: ["language"] }),
+    modelEntity({ digest: "4".repeat(64), slug: "qwen-code-bf16", logical: "qwen-code", publisher: "qwen", family: "Qwen", title: "Qwen Code", capabilities: ["code-generation"], repository: "https://huggingface.co/qwen/Qwen-Code", fileDigest: "c".repeat(64) }),
+    modelEntity({ digest: "5".repeat(64), slug: "acme-coder-bf16", logical: "acme-coder", publisher: "acme", family: "Acme Coder", title: "Acme Coder", capabilities: ["code-generation", "text-generation"], repository: "https://github.com/Acme/Acme-Coder", fileDigest: "d".repeat(64) }),
+    modelEntity({ digest: "6".repeat(64), slug: "acme-vision-bf16", logical: "acme-vision", publisher: "acme", family: "Acme", title: "Acme Vision", capabilities: ["image-understanding", "text-generation"], repository: "https://github.com/Acme/Acme-Vision", fileDigest: "e".repeat(64) }),
+    modelEntity({ digest: "7".repeat(64), slug: "acme-shapes-bf16", logical: "acme-shapes", publisher: "acme", family: "Acme", title: "Acme Shapes", capabilities: ["3d-generation"], repository: "https://github.com/Acme/Acme-Shapes", fileDigest: "f".repeat(64) }),
+  ],
+  recipes: [
+    recipeEntry({ digest: recipeDigest, slug: "qwen-fast", title: "Qwen Fast", modelDigest, modelSlug: "qwen-fast-nvfp4", modelPublisher: "qwen", status: "Working", nodes: 2, releasedAt: "2026-08-07", reference: "https://huggingface.co/Qwen/Qwen-Fast", tags: ["candidate", "executable", "chat", "nvfp4"] }),
+    recipeEntry({ digest: "8".repeat(64), slug: "qwen-code", title: "Qwen Code", modelDigest: "4".repeat(64), modelSlug: "qwen-code-bf16", modelPublisher: "qwen", status: "Not yet verified", nodes: 1, releasedAt: "2026-08-01", reference: "https://huggingface.co/qwen/Qwen-Code" }),
+    recipeEntry({ digest: "9".repeat(64), slug: "acme-coder", title: "Acme Coder", modelDigest: "5".repeat(64), modelSlug: "acme-coder-bf16", modelPublisher: "acme", status: "Working", nodes: 1, releasedAt: today, reference: "https://github.com/Acme/Acme-Coder" }),
+    recipeEntry({ digest: "2".repeat(64), slug: "acme-shapes", title: "Acme Shapes", modelDigest: "7".repeat(64), modelSlug: "acme-shapes-bf16", modelPublisher: "acme", status: "Working", nodes: 1, releasedAt: "2026-08-03", reference: "https://github.com/Acme/Acme-Shapes" }),
+    recipeEntry({ digest: "1".repeat(64), slug: "acme-vision", title: "Acme Vision", modelDigest: "6".repeat(64), modelSlug: "acme-vision-bf16", modelPublisher: "acme", status: "Working", nodes: 1, releasedAt: "2026-08-02", reference: "https://github.com/Acme/Acme-Vision" }),
+  ],
 };
+
+
+
+const release = { repository: "CarstVaartjes/vonk-forge-recipes", tag: releaseTag, contract_version: "3.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: sourceCommit, catalog_index_sha256: "d".repeat(64) };
+// What the Pages build writes beside release.json, derived by the same code from the same index.
+const catalogSummary = buildCatalogSummary(catalogIndex, release);
+const HEADLINE = /4\s*recipes verified on DGX Spark\.\s*3\s*model families\.\s*2\s*creators\./;
 
 
 test.beforeEach(async ({ page }) => {
   // Block every other origin: the catalog must be served from this site.
   await page.route((url) => !["127.0.0.1", "localhost"].includes(url.hostname), (route) => route.abort());
   await page.route("**/catalog/catalog-index.json", (route) => route.fulfill({ json: catalogIndex }));
-  await page.route("**/catalog/release.json", (route) =>
-    route.fulfill({ json: { repository: "CarstVaartjes/vonk-forge-recipes", tag: releaseTag, contract_version: "3.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: sourceCommit, catalog: { recipes: 1, models: 1, families: 1, spark_counts: [2] } } }),
-  );
+  await page.route("**/catalog/release.json", (route) => route.fulfill({ json: release }));
+  await page.route("**/catalog/catalog-summary.json", (route) => route.fulfill({ json: catalogSummary }));
 });
 
 
 test("platform story stays navigable and bounded", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: /Models that fit\s*your Sparks\.\s*Kept current\.\s*One click\./i })).toBeVisible();
-  await expect(page.getByText(/checks every model and recipe against the Sparks you actually have/i)).toBeVisible();
-  const facts = page.getByRole("list", { name: "Product facts" });
-  await expect(facts.getByText("1 recipes")).toBeVisible();
-  await expect(facts.getByText("1 models")).toBeVisible();
-  await expect(facts.getByText("2 Sparks per recipe")).toBeVisible();
+  await expect(page.getByRole("heading", { name: HEADLINE })).toBeVisible();
+  await expect(page.getByText(/Vonk Forge is the open-source Controller for NVIDIA DGX Spark/)).toBeVisible();
+  await expect(page.getByText(/Recipes from Acme and Qwen and more/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "See the agent-friendly CLI" })).toBeVisible();
+  await expect(page.locator(".home-hero").getByRole("link", { name: "Install", exact: true })).toHaveAttribute("href", "/install");
+  await expect(page.getByRole("link", { name: "Browse what runs" })).toHaveAttribute("href", "/recipes?qualification=Working");
   await expect(page.getByRole("heading", { name: "Know what fits your setup." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Stay current without the chase." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Run the mix you need." })).toBeVisible();
@@ -123,7 +155,7 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   expect(horizontalOverflow).toBeLessThanOrEqual(0);
 
   await page.keyboard.press("Tab");
-  await expect(page.locator(".home-hero").getByRole("link", { name: "Set up your Controller" })).toBeFocused();
+  await expect(page.locator(".home-hero").getByRole("link", { name: "Install", exact: true })).toBeFocused();
 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(page.locator("html")).toHaveCSS("scroll-behavior", "auto");
@@ -153,12 +185,101 @@ test("platform story stays navigable and bounded", async ({ page }) => {
 });
 
 
+test("home page shows the live numbers from the build-time summary and loads nothing bigger", async ({ page }) => {
+  const requests: string[] = [];
+  page.on("request", (request) => requests.push(new URL(request.url()).pathname));
+  await page.goto("/");
+
+  // Once the roll has finished the headline is the plain true numbers.
+  const title = page.getByRole("heading", { level: 1 });
+  await expect(title).toHaveText(HEADLINE);
+  await expect(title.locator(".rolling-number")).toHaveCount(3);
+
+  const tiles = page.getByRole("region", { name: "What can you run?" });
+  await expect(tiles.getByRole("link", { name: /Language & chat\s*3 verified/ })).toHaveAttribute("href", "/recipes?type=language&qualification=Working");
+  await expect(tiles.getByRole("link", { name: /Code\s*1 verified/ })).toHaveAttribute("href", "/recipes?type=code&qualification=Working");
+  await expect(tiles.getByRole("link", { name: /Vision\s*1 verified/ })).toBeVisible();
+  await expect(tiles.getByRole("link", { name: /3D\s*1 verified/ })).toBeVisible();
+  await expect(tiles.getByRole("link", { name: /Video\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=video");
+
+  const creators = page.getByRole("region", { name: /Built by the people who run these models/ });
+  await expect(creators.getByRole("link")).toHaveCount(2);
+  await expect(creators.getByRole("link").first()).toHaveText(/Acme\s*3 verified/);
+  await expect(creators.getByRole("link", { name: /Qwen/ })).toHaveAttribute("href", "/recipes?creator=Qwen&qualification=Working");
+
+  // Called "updated": the library moves released_at on every refresh.
+  const fresh = page.getByRole("region", { name: "Updated this week." });
+  await expect(fresh.getByRole("link", { name: /Acme Coder/ })).toBeVisible();
+  await expect(fresh.getByRole("link", { name: /Qwen Fast/ })).toHaveCount(0);
+  await expect(page.getByText(/New this week/)).toHaveCount(0);
+
+  // The home page reads the summary, never the full catalog index.
+  expect(requests).toContain("/catalog/catalog-summary.json");
+  expect(requests).not.toContain("/catalog/catalog-index.json");
+
+  // A type tile lands on the catalog already filtered to that type.
+  await tiles.getByRole("link", { name: /Code/ }).click();
+  await expect(page).toHaveURL(/\/recipes\?type=code&qualification=Working$/);
+  await expect(page.getByRole("link", { name: "Acme Coder" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Acme Vision" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Qwen Code" })).toHaveCount(0);
+});
+
+
+test("the summary the build wrote is small enough to read on the home page", () => {
+  // The real build output (the catalog the CI step verified), not the fixture.
+  expect(statSync("public/catalog/catalog-summary.json").size).toBeLessThan(20_000);
+  expect(statSync("public/catalog/catalog-index.json").size).toBeGreaterThan(100 * statSync("public/catalog/catalog-summary.json").size);
+});
+
+
+test("home page never shows numbers when the summary is missing or malformed", async ({ page }) => {
+  await page.route("**/catalog/catalog-summary.json", (route) => route.fulfill({ status: 404, body: "nope" }));
+  await page.goto("/");
+  await expect(page.getByRole("alert")).toContainText("The recipe library could not be read.");
+  await expect(page.locator(".rolling-number")).toHaveCount(0);
+  await expect(page.getByRole("region", { name: "What can you run?" })).toHaveCount(0);
+
+  await page.route("**/catalog/catalog-summary.json", (route) => route.fulfill({ json: { ...catalogSummary, verified: 0 } }));
+  await page.reload();
+  await expect(page.getByRole("alert")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).not.toContainText("0 recipes");
+});
+
+
+test("the number roll starts from blank, ends at the final value, and is silent for screen readers", async ({ page }) => {
+  await page.goto("/");
+  const first = page.locator(".rolling-number").first();
+  // While rolling: moving digits hidden from assistive technology, one visually hidden final value.
+  await expect(first).toHaveAttribute("data-phase", /armed|playing/, { timeout: 2000 }).catch(() => undefined);
+  if ((await first.getAttribute("data-phase")) !== "final") {
+    await expect(first.locator(".visually-hidden")).toHaveText("4");
+    await expect(first.locator(".rolling-digits")).toHaveAttribute("aria-hidden", "true");
+  }
+  // And it always ends on the true number, with no strips left over.
+  await expect(first).toHaveAttribute("data-phase", "final", { timeout: 5000 });
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(HEADLINE);
+  await expect(page.locator(".rolling-strip")).toHaveCount(0);
+});
+
+
+test("rolling numbers do not animate under reduced motion", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/");
+  await expect(page.locator(".rolling-number").first()).toHaveAttribute("data-phase", "final");
+  await page.waitForTimeout(500);
+  await expect(page.locator(".rolling-strip")).toHaveCount(0);
+  await expect(page.locator(".rolling-number .visually-hidden")).toHaveCount(0);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(HEADLINE);
+});
+
+
 test("minimum supported viewport does not overflow", async ({ page }) => {
   for (const width of [320, 393]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { name: /Models that fit\s*your Sparks\.\s*Kept current\.\s*One click\./i })).toBeVisible();
+    await expect(page.getByRole("heading", { name: HEADLINE })).toBeVisible();
     const horizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );

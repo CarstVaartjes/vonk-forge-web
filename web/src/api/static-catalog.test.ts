@@ -151,6 +151,12 @@ describe("static recipe library adapter", () => {
     });
   });
 
+  test("the update date is the recipe's released_at, which the library moves on every refresh", async () => {
+    serve(index);
+    const recipes = await listStaticRecipeCatalog(indexUrl);
+    expect(recipes.map((recipe) => [recipe.slug, recipe.published_at])).toEqual([["qwen-fast", "2026-08-28"], ["glm-dual", "2026-08-27"]]);
+  });
+
   test.each([0, 8, 800])("projects peak memory per node without adding informational reserve %i", async (reserve) => {
     const fixture = structuredClone(index);
     const topology = fixture.recipes[0]!.document.topology;

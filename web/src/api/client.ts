@@ -1,4 +1,5 @@
-import { getStaticLibraryRelease, getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog } from "./static-catalog";
+import type { CatalogSummary } from "../catalog-stats";
+import { getStaticCatalogSummary, getStaticLibraryRelease, getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog } from "./static-catalog";
 
 
 export interface RecipeSummary {
@@ -102,19 +103,9 @@ export interface ModelSummary {
   recipe_count: number;
 }
 
-export interface LibraryCatalogCounts {
-  recipes: number;
-  models: number;
-  families: number;
-  spark_counts: number[];
-}
-
 export interface LibraryRelease {
   version: string;
   updated_at: string;
-  // Library size facts the Pages build counted from the verified index; absent
-  // when the manifest predates them, in which case the site shows no counts.
-  catalog?: LibraryCatalogCounts;
 }
 
 export interface ModelPage {
@@ -139,6 +130,10 @@ export function listModels(signal?: AbortSignal): Promise<ModelPage> {
 
 export function getModel(publisher: string, slug: string, signal?: AbortSignal): Promise<ModelSummary> {
   return getStaticModel(RECIPE_LIBRARY_INDEX_URL, publisher, slug, signal);
+}
+
+export function getCatalogSummary(signal?: AbortSignal): Promise<CatalogSummary> {
+  return getStaticCatalogSummary(RECIPE_LIBRARY_INDEX_URL, signal);
 }
 
 export function getLibraryRelease(signal?: AbortSignal): Promise<LibraryRelease> {

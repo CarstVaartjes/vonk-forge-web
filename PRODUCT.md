@@ -46,7 +46,7 @@ A macOS or Linux workstation retrieves the signed installer. That same laptop—
 
 ## Product Principles
 
-1. Explain the product before explaining the architecture.
+1. Explain the product before explaining the architecture. The home headline is the live verified counts (owner direction), with the definition sentence directly under it and the CLI path in the first screen; the counts come only from the build-time catalog summary, never from typed-in numbers.
 2. Make installation the primary action for an evaluating operator.
 3. Demonstrate ease with the real operating loop, not vague “simple” claims.
 4. Keep the public catalog and private authority boundary unmistakable.

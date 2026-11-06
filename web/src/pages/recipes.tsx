@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 import { loadRecipeCatalog, type RecipeSummary } from "../api/client";
+import { modelTypeLabel } from "../model-types";
 import { WORKING_STATUS } from "../qualification-status";
 import { FacetStrip, SparkPicker } from "../catalog-setup";
 import {
@@ -9,6 +10,7 @@ import {
   SPARK_OPTIONS,
   engineLabel,
   filtersFromParameters,
+  foldCreators,
   humanize,
   nodeCountMatches,
   modelFamilyTitle,
@@ -162,18 +164,7 @@ export function RecipesPage() {
     const titleCounts = [...identities.values()].reduce((counts, title) => counts.set(title, (counts.get(title) ?? 0) + 1), new Map<string, number>());
     return [...identities].map(([value, title]) => [value, titleCounts.get(title) === 1 ? title : `${title} · ${value}`] as const).sort((left, right) => left[1].localeCompare(right[1]));
   }, [available, filters.modelFamily]);
-  // One entry per creator regardless of letter case, shown with its most common spelling.
-  const sourceOwners = useMemo(() => {
-    const spellings = new Map<string, Map<string, number>>();
-    for (const recipe of available) {
-      const owner = recipe.catalog.source_owner;
-      if (!owner) continue;
-      const forms = spellings.get(owner.toLowerCase()) ?? new Map<string, number>();
-      forms.set(owner, (forms.get(owner) ?? 0) + 1);
-      spellings.set(owner.toLowerCase(), forms);
-    }
-    return Array.from(spellings.values()).map((forms) => [...forms.entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))[0]![0]).sort((left, right) => left.localeCompare(right, undefined, { sensitivity: "base" }));
-  }, [available]);
+  const sourceOwners = useMemo(() => foldCreators(available.map((recipe) => recipe.catalog.source_owner)).map((creator) => creator.name).sort((left, right) => left.localeCompare(right, undefined, { sensitivity: "base" })), [available]);
   const repositories = useMemo(() => Array.from(new Set(available.flatMap((recipe) => recipe.catalog.source_repository ? [recipe.catalog.source_repository as string] : []))).sort(), [available]);
   const qualifications = useMemo(() => Array.from(new Set(available.map((recipe) => recipe.catalog.qualification))).sort(), [available]);
   const runtimes = useMemo(() => Array.from(new Set(available.map((recipe) => recipe.catalog.runtime_distribution))).sort(), [available]);
@@ -187,6 +178,7 @@ export function RecipesPage() {
   const applied: ActiveFilter[] = [];
   const addApplied = (key: string, label: string, parameter: string) => applied.push({ key, label, remove: () => update(parameter, "") });
   if (filters.query) addApplied("query", `Search: ${filters.query}`, "q");
+  if (filters.type) addApplied("type", `Type: ${modelTypeLabel(filters.type)}`, "type");
   if (filters.modelFamily) addApplied("modelFamily", `Model family: ${filters.modelFamily}`, "model_family");
   if (filters.model) addApplied("model", `Model: ${models.find(([value]) => value === filters.model)?.[1] ?? filters.model}`, "model");
   if (filters.quantization) addApplied("quantization", `Format: ${filters.quantization}`, "quantization");

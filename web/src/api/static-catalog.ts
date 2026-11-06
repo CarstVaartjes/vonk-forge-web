@@ -1,9 +1,12 @@
-import type { LibraryCatalogCounts, LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
+import type { LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
 
 
-import contract from "../contract-major.json";
-import { CAPABILITY_OPTIONS } from "../catalog-filters";
-import { STATUS_UNAVAILABLE } from "../qualification-status";
+// The release build (web/scripts/recipe-release.mjs) loads this module under Node, so
+// its runtime imports carry explicit .ts extensions and the JSON import its attribute.
+import contract from "../contract-major.json" with { type: "json" };
+import { CAPABILITY_OPTIONS } from "../catalog-filters.ts";
+import { parseCatalogSummary, type CatalogSummary } from "../catalog-stats.ts";
+import { STATUS_UNAVAILABLE } from "../qualification-status.ts";
 
 
 type JsonRecord = Record<string, unknown>;
@@ -22,7 +25,7 @@ interface LibraryRecipe {
   source_path: string;
 }
 
-interface LibraryIndex {
+export interface LibraryIndex {
   catalog_entities: LibraryEntity[];
   contract_version: string;
   updated_at: string;
@@ -453,24 +456,6 @@ interface ReleaseManifest {
   contract_version: string;
   updated_at: string;
   source_commit: string;
-  catalog?: unknown;
-}
-
-function count(value: unknown): number | null {
-  return typeof value === "number" && Number.isInteger(value) && value >= 0 ? value : null;
-}
-
-// Counts are optional in the manifest; a malformed block is dropped rather than
-// rendered as zeros.
-function catalogCounts(value: unknown): LibraryCatalogCounts | undefined {
-  if (value === undefined) return undefined;
-  const counts = record(value);
-  const recipes = count(counts.recipes);
-  const models = count(counts.models);
-  const families = count(counts.families);
-  const sparkCounts = Array.isArray(counts.spark_counts) ? counts.spark_counts.map(count) : null;
-  if (recipes === null || models === null || families === null || !sparkCounts || sparkCounts.some((item) => item === null || item === 0)) return undefined;
-  return { recipes, models, families, spark_counts: sparkCounts as number[] };
 }
 
 function contractMajor(version: unknown): number | null {
@@ -495,12 +480,18 @@ function libraryRelease(value: unknown): LibraryRelease {
   if (typeof release.tag !== "string" || !/^v\d+\.\d+\.\d+$/.test(release.tag) || typeof release.updated_at !== "string") {
     throw new Error("Recipe library returned an unsupported release manifest");
   }
-  const counts = catalogCounts(release.catalog);
-  return counts ? { version: release.tag, updated_at: release.updated_at, catalog: counts } : { version: release.tag, updated_at: release.updated_at };
+  return { version: release.tag, updated_at: release.updated_at };
 }
 
 async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
   const [rawBody, rawRelease] = await Promise.all([readJson(url, signal), readJson(releaseUrl(url), signal)]);
+  return parseLibraryIndex(rawBody, rawRelease);
+}
+
+// Accepts an index only when it is the one this site understands and belongs to
+// the named release; anything else is refused rather than defaulted. The build
+// (which derives the home summary) and the browser both read through this.
+export function parseLibraryIndex(rawBody: unknown, rawRelease: unknown): LibraryIndex {
   const body = rawBody as Partial<LibraryIndex>;
   const release = record(rawRelease) as Partial<ReleaseManifest>;
   const entities = body.catalog_entities;
@@ -540,9 +531,19 @@ export async function getStaticLibraryRelease(url: string, signal?: AbortSignal)
   return libraryRelease(await readJson(releaseUrl(url), signal));
 }
 
-export async function listStaticRecipeCatalog(url: string, signal?: AbortSignal): Promise<RecipeSummary[]> {
-  const index = await loadIndex(url, signal);
+// The recipes of an accepted index, as the pages show them.
+export function recipesFromIndex(index: LibraryIndex): RecipeSummary[] {
   return index.recipes.map((item) => mapRecipe(item, index));
+}
+
+// The small summary the Pages build derived from the verified index
+// (catalog-summary.json beside release.json). The home page reads only this.
+export async function getStaticCatalogSummary(url: string, signal?: AbortSignal): Promise<CatalogSummary> {
+  return parseCatalogSummary(await readJson(new URL("catalog-summary.json", new URL(url, globalThis.location?.href)).toString(), signal));
+}
+
+export async function listStaticRecipeCatalog(url: string, signal?: AbortSignal): Promise<RecipeSummary[]> {
+  return recipesFromIndex(await loadIndex(url, signal));
 }
 
 export async function listStaticModels(url: string, signal?: AbortSignal): Promise<ModelPage> {
