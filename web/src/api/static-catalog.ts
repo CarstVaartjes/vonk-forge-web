@@ -325,6 +325,7 @@ function mapModels(index: LibraryIndex): ModelSummary[] {
     const identity = modelIdentity(first.document);
     const display = record(first.display);
     const versionRows = variants.map((version) => mapModelVersion(version, recipes)).sort((left, right) => left.title.localeCompare(right.title));
+    const verifiedRecipes = verifiedModelRecipes(versionRows, recipes);
     return {
       publisher: text(identity.publisher),
       slug: text(identity.slug),
@@ -332,8 +333,8 @@ function mapModels(index: LibraryIndex): ModelSummary[] {
       description: text(display.description),
       family: displayTitle(display.family_title) || text(modelFamily(first.document).slug) || undefined,
       runs: modelRuns(versionRows, recipes),
-      verified_runs: runsOf(verifiedModelRecipes(versionRows, recipes)),
-      verified_recipe_count: verifiedModelRecipes(versionRows, recipes).length,
+      verified_runs: runsOf(verifiedRecipes),
+      verified_recipe_count: verifiedRecipes.length,
       tags: array(display.tags).map((value) => text(value).toLowerCase()).filter(Boolean),
       revision_id: text(first.content_sha256, "unknown"),
       versions: versionRows,

@@ -188,13 +188,14 @@ describe("type-first model filtering", () => {
     fireEvent.change(screen.getByLabelText("Sort"), { target: { value: "recipes" } });
     const rows = () => within(screen.getByRole("list", { name: "Models" })).getAllByRole("listitem").map((row) => row.textContent);
     await waitFor(() => expect(rows()[0]).toContain("Beta"));
-    expect(rows()[0]).toContain("2 recipes");
-    expect(rows()[1]).toContain("1 recipe");
+    expect(rows()[0]).toContain("2 verified recipes");
+    expect(rows()[1]).toContain("1 verified recipe");
+    fireEvent.change(screen.getByLabelText("Recipe support"), { target: { value: "recipes" } });
+    await waitFor(() => expect(rows()).toHaveLength(2));
+    // "No public recipes" can only match with Verified off, so choosing it turns the default off.
     fireEvent.change(screen.getByLabelText("Recipe support"), { target: { value: "none" } });
-    await waitFor(() => expect(rows()).toEqual([expect.stringContaining("Gamma")]));
-    expect(rows()[0]).toContain("0 recipes");
-
-    fireEvent.click(screen.getByRole("checkbox", { name: /Verified on Spark/ }));
+    await waitFor(() => expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked());
+    expect(window.location.search).toBe("?verified=0&recipes=none&sort=recipes");
     fireEvent.change(screen.getByLabelText("Recipe support"), { target: { value: "" } });
     await waitFor(() => expect(rows()[0]).toContain("Alpha"));
     expect(rows()[0]).toContain("5 recipes");

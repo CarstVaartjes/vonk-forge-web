@@ -157,7 +157,7 @@ function Hero({ state }: { state: CatalogState }) {
     <section className="home-hero" aria-labelledby="home-title">
       <div className="home-hero-copy">
         {state.status === "error" || state.status === "empty" ? (
-          <h1 id="home-title">Verified recipes for NVIDIA DGX Spark.</h1>
+          <h1 id="home-title">Recipes for NVIDIA DGX Spark.</h1>
         ) : (
           <h1 id="home-title" aria-busy={summary ? undefined : true}>
             <span className="hero-stat"><RollingNumber value={summary?.verified ?? null} /> recipes verified on DGX Spark.</span>
