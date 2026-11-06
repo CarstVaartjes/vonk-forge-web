@@ -244,6 +244,10 @@ The home page opens its argument with four promises in one connected grid: know 
 
 The terminal counterpart of the controller preview: the same tight rectangular frame and Evidence Lift, a mono label, muted comment lines, and Ready Green commands behind a Spark gold prompt. It shows real `vonkctl` invocations only, never invented output.
 
+### Role Colours
+
+The example-setup page (`/example-setup`) scopes five tokens to itself: `--role-coder`, `--role-image`, `--role-three-d`, `--role-audio` and `--role-video`. They tell model roles apart, always sit beside a text role label and a legend, and are never status or action colours.
+
 ## Do's and Don'ts
 
 ### Do:

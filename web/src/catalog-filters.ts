@@ -286,6 +286,13 @@ export function sortRecipes(recipes: RecipeSummary[], sort: RecipeSort, directio
   });
 }
 
+// Memory and disk sizes in GiB, as the catalog tables and the showcase show them.
+export function gibLabel(value: number | undefined): string {
+  if (value === undefined) return "Not declared";
+  const gib = value / 1024 ** 3;
+  return `${gib >= 10 ? gib.toFixed(0) : gib.toFixed(1)} GiB`;
+}
+
 export function humanize(value: string): string {
   if (value.startsWith("vllm-")) return `vLLM ${value.slice(5).replaceAll("-", ".")}`;
   if (value.startsWith("diffusers-")) return `Diffusers ${value.slice(10).replaceAll("-", ".")}`;
