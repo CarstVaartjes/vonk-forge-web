@@ -1,8 +1,8 @@
 import { CommandBlock } from "../command-block";
+import { usePageMeta } from "../page-meta";
 
 export const controllerInstallCommand = "curl -fsSL https://install.vonkforge.ai/nas | sh";
 export const sparkInstallCommand = "curl -fsSL https://install.vonkforge.ai/spark | VONK_CONTROLLER_ADDRESS=192.168.1.231 sh";
-import { usePageMeta } from "../page-meta";
 
 const repository = "https://github.com/CarstVaartjes/vonk-forge/blob/main";
 const tailscaleRunbook = `${repository}/docs/runbooks/tailscale.md`;
