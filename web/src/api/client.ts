@@ -3,6 +3,12 @@ import type { Vocabulary } from "../vocabulary";
 import { getStaticCatalogSummary, getStaticLibraryRelease, getStaticModel, getStaticRecipe, getStaticVocabulary, listStaticModels, listStaticRecipeCatalog } from "./static-catalog";
 
 
+// A model's licence as the catalog published it: shown for information, never a gate.
+export interface Licence {
+  spdx?: string;
+  url?: string;
+}
+
 export interface RecipeSummary {
   publisher: string;
   slug: string;
@@ -64,12 +70,12 @@ export interface RecipeSummary {
 
 export interface RecipeDetail extends RecipeSummary {
   // The newest hardware pass the library recorded for this recipe: when, and on how many Sparks.
-  evidence: { tested_at: string; spark_count: number } | null;
+  evidence: { tested_at: string; spark_count?: number } | null;
   // What the recipe's chat API serves; absent for a recipe that is not a chat API.
   chat_api?: { endpoints: string[]; streaming: boolean; structured_output: boolean; image_input: boolean; audio_input: boolean };
   // The recipe's own defaults for the settings the page shows.
   settings: { context_tokens?: number; concurrency?: number };
-  license: { spdx?: string; url?: string };
+  license: Licence;
   latest_revision: {
     content_sha256: string;
     document: Record<string, unknown>;
@@ -89,7 +95,7 @@ export interface ModelVersionSummary {
   source_revision?: string;
   format?: { precision?: string; quantization?: string };
   sizes?: { download_bytes?: number; installed_bytes?: number };
-  license?: { spdx?: string; url?: string };
+  license?: Licence;
   capabilities: string[];
   recipe_slugs: string[];
 }

@@ -9,7 +9,6 @@ colors:
   recess-black: "#060706"
   iron-panel: "#111311"
   raised-iron: "#181a17"
-  hover-iron: "#1f221d"
   rule-dark: "#2c2f2a"
   rule-bright: "#454940"
   rule-control: "#666b5f"
@@ -168,7 +167,6 @@ The palette is taken from the DGX Spark itself: a graphite dark system with NVID
 - **Dark Rule** (`rule-dark`): Default one-pixel division between regions.
 - **Bright Rule** (`rule-bright`): Focused boundaries and secondary-control strokes.
 - **Recess Black** (`recess-black`): Command blocks and inputs, one step below the page.
-- **Hover Iron** (`hover-iron`): Hover and selected rows.
 - **Control Rule** (`rule-control`): The one border that identifies a button or input (3:1 on every surface; Bright Rule is decorative only).
 - **Green Ink** (`green-ink`): Text on an Action Green fill.
 - **Green Dim** (`green-dim`) and **Gold Dim** (`gold-dim`): Quiet green and gold borders and fills for boundaries that carry state.

@@ -62,8 +62,8 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
         <div>
           <h1>{recipe.title}</h1>
           <p className="byline">
-            {catalog.source_owner ? <span>Recipe by <a href={`https://github.com/${catalog.source_owner}`}>{catalog.source_owner}</a></span> : null}
-            <span className="tag official">{recipe.official ? "Official recipe" : "Community recipe"}</span>
+            {catalog.source_owner ? <span>Recipe by {catalog.source_repository ? <a href={catalog.source_repository}>{catalog.source_owner}</a> : catalog.source_owner}</span> : null}
+            <span className={`tag${recipe.official ? " official" : ""}`}>{recipe.official ? "Official recipe" : "Community recipe"}</span>
             {recipe.version ? <span className="tag">v{recipe.version}</span> : null}
             {recipe.published_at ? <span>released {recipe.published_at}</span> : null}
           </p>
@@ -71,7 +71,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
         <div className={`verdict ${catalog.verified ? "ok" : ""}`}>
           <span className={`status ${catalog.verified ? "ok" : "off"}`}>{catalog.qualification}</span>
           <small>
-            {catalog.verified && evidence ? `Passed hardware checks on ${evidence.spark_count} DGX Spark${evidence.spark_count === 1 ? "" : "s"}, ${dateLabel(evidence.tested_at)}.` : (meaning ?? catalog.qualification_reason ?? "")}{" "}
+            {catalog.verified && evidence ? `Passed hardware checks on ${evidence.spark_count === undefined ? "a" : evidence.spark_count} DGX Spark${evidence.spark_count === undefined || evidence.spark_count === 1 ? "" : "s"}, ${dateLabel(evidence.tested_at)}.` : (meaning ?? catalog.qualification_reason ?? "")}{" "}
             <a href={`/recipes#${STATUS_LEGEND_ID}`}>What this means</a>
           </small>
         </div>
@@ -122,7 +122,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
             <div>
               <dt>Licence</dt>
               <dd>
-                {license.spdx ?? "Not declared"}{license.url ? <> · <a href={license.url}>read the model card</a></> : null}
+                {license.spdx ?? "Not declared"}{license.url ? <> · <a href={license.url}>read the licence</a></> : null}
                 <span className="kv-note">Shown for information. Use is your call.</span>
               </dd>
             </div>

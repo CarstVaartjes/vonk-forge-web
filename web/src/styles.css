@@ -10,7 +10,6 @@
   --recess: #060706;
   --panel: #111311;
   --raised: #181a17;
-  --hover: #1f221d;
   --line: #2c2f2a;
   --line-strong: #454940;
   --line-control: #666b5f; /* 3:1 on every surface: borders that identify a control */
@@ -3091,6 +3090,7 @@ a {
 }
 
 .provenance > summary::after { color: var(--muted); font-weight: 400; content: "+"; }
+.provenance > summary::-webkit-details-marker { display: none; }
 .provenance[open] > summary::after { content: "−"; }
 .provenance-body { display: grid; gap: var(--s5); padding: 0 1.1rem 1.1rem; font-size: var(--t-small); }
 .provenance-body h3 { margin: 0 0 var(--s2); font-size: var(--t-body); letter-spacing: -0.01em; }
