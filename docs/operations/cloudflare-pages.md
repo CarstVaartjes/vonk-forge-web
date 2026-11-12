@@ -124,6 +124,15 @@ push, and in the scheduled and dispatched deploys, until a web fix pull request 
 The last good site stays online during that gap, and the fix pull request is the only
 change needed: nothing in this repository names a major to bump.
 
+Two related cases:
+
+- A new index schema version renames the schema file (`catalog-index-v3.schema.json`).
+  `recipe-release.mjs` then fails the fetch step ("is missing from SHA256SUMS"), so CI and
+  the deploy are red until `SCHEMA_NAME` follows the new name in the fix pull request.
+- An additive minor that adds a required field reds pull-request CI through the test
+  fixtures (`npm run typecheck`), but never the deploy: the deploy build type-checks only
+  shipped code (`web/tsconfig.build.json`).
+
 Recipe updates arrive when the `vonk-forge-recipes` publish job dispatches
 `pages.yml` (`workflow_dispatch`, through the refresh GitHub App installed on this
 repository). The hourly schedule is only the backstop for a failed dispatch; you
