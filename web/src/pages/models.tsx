@@ -4,6 +4,7 @@ import { getModel, listModels, type ModelSummary, type ModelVersionSummary } fro
 import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
 import { CAPABILITY_OPTIONS, SPARK_OPTIONS, engineLabel, nodeCountMatches, type SparkFilter } from "../catalog-filters";
 import { MODEL_TYPES, hasModelType, isModelTypeId, type ModelTypeId } from "../model-types";
+import { CatalogTabs } from "../catalog-tabs";
 
 const PAGE_SIZE = 12;
 
@@ -245,6 +246,7 @@ export function ModelsPage() {
   function clearFilters() { updateFilters({ type: "", verified: false, query: "", publisher: "", capability: "", recipes: "", family: "", engine: "", sparks: "", sort: "name" }); }
   useEffect(() => { document.title = "Models · Vonk Forge"; }, []);
   return <main className="models-page">
+    <CatalogTabs current="models" />
     <header className="page-intro models-intro"><div><h1>Models, with their exact versions.</h1></div><p>Start with a model, then inspect its exact versions and variants and the recipes that bind them. Details come from the published catalog; local cache and running state stay in your Controller.</p></header>
     {models ? (
       <section className="catalog-type" aria-labelledby="model-type-title">

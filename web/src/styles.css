@@ -374,6 +374,17 @@ a {
 .compact-paths > article > .text-link { grid-column: 3; grid-row: 1 / span 3; align-self: center; margin: 0; }
 .text-link { padding: 0.8rem 0.25rem; }
 
+.catalog-tabs { display: flex; gap: 0.4rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--line); }
+.catalog-tabs a {
+  padding: 0.7rem 1.1rem;
+  border-bottom: 2px solid transparent;
+  color: var(--muted);
+  font-weight: 700;
+  text-decoration: none;
+}
+.catalog-tabs a:hover { color: var(--ink); }
+.catalog-tabs a[aria-current="page"] { border-bottom-color: var(--green); color: var(--ink); }
+
 .site-footer {
   display: flex;
   align-items: center;

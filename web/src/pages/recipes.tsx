@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { loadRecipeCatalog, type RecipeSummary } from "../api/client";
 import { MODEL_TYPES, hasModelType, modelTypeLabel } from "../model-types";
 import { WORKING_STATUS } from "../qualification-status";
+import { CatalogTabs } from "../catalog-tabs";
 import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
 import {
   CAPABILITY_OPTIONS,
@@ -208,6 +209,7 @@ export function RecipesPage() {
 
   return (
     <main className="catalog-page">
+      <CatalogTabs current="recipes" />
       <header className="page-intro catalog-intro">
         <h1>Find the right recipe.</h1>
         <p>Compare immutable catalog facts, then open a recipe for its install contract. Your Controller shows this same library filtered to what fits your Sparks; local installation state stays there.</p>
