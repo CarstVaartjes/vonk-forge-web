@@ -1,54 +1,27 @@
 import { useEffect, useState } from "react";
 
 import { getCatalogSummary } from "../api/client";
-import { updatedThisWeek, type CatalogSummary } from "../catalog-stats";
-import { isVerified } from "../qualification-status";
+import type { CatalogSummary } from "../catalog-stats";
+import { CommandBlock } from "../command-block";
 import { MODEL_TYPES } from "../model-types";
+import { controllerInstallCommand, sparkInstallCommand } from "./install";
 import { RollingNumber } from "../rolling-number";
 
 
-// The four jobs Vonk Forge does for a Spark owner. Each ends with the exact
-// vonkctl command that does the same thing, so the agent-friendly path is
-// visible from the first screen.
-const promises = [
+// What the Controller does for a Spark owner, in one sentence each. The
+// vonkctl calls that do the same things are the agent session below.
+const points = [
   {
-    title: "Know what fits your setup.",
-    body: "Every recipe declares the memory, disk, and number of Sparks it needs. Your Controller checks that against the live capacity of the Sparks you actually have, shows what fits now, and says exactly why the rest does not.",
-    command: "vonkctl recipe library --fits-fleet",
+    title: "Know what fits.",
+    body: "Every recipe declares the memory, disk and number of Sparks it needs. Your Controller checks that against your live fleet and says exactly why the rest does not fit.",
   },
   {
-    title: "Stay current without the chase.",
-    body: "New models, engines, and quantizations arrive faster than anyone can track by hand. The recipe library follows upstream releases and refreshes recipes in place. Your Controller syncs the signed library on its own and marks a running install stale when a newer revision exists. You decide when to update.",
-    command: "vonkctl recipe update --all",
+    title: "Stay current.",
+    body: "The recipe library follows upstream releases and refreshes recipes in place. Your Controller syncs it on its own and marks a running install stale; you decide when to update.",
   },
   {
     title: "Run the mix you need.",
-    body: "A coding model on two Sparks, a vision model on the third, an image model when you want it. Save that as a profile, review the exact plan, apply it. Switch profiles when the job changes.",
-    command: "vonkctl --profile 2 profile load",
-  },
-  {
-    title: "Click it, or script it.",
-    body: "The Web Controller guides first use in a few clicks. vonkctl drives the same API with JSON output, a read-only review, and explicit consent, so scripts and AI agents operate your fleet safely.",
-    command: "vonkctl run \"Qwen Code\" --yes --json",
-  },
-];
-
-const setupFlow = [
-  {
-    title: "Install the controller",
-    body: "Put one Controller on a laptop, NAS, or local server.",
-  },
-  {
-    title: "Connect your Sparks",
-    body: "Connect one or more Sparks and see which nodes are ready.",
-  },
-  {
-    title: "Choose a model or recipe",
-    body: "Choose a model for what it can do, then a recipe for the engine, settings, and number of Sparks. Filter to what fits your fleet.",
-  },
-  {
-    title: "Prepare, run, switch",
-    body: "Your Controller caches verified model files and runtime images on the NAS, then shows progress, recovery, and the next action.",
+    body: "A coding model on two Sparks, a vision model on the third. Save it as a profile, review the exact plan, apply it, and switch profiles when the job changes.",
   },
 ];
 
@@ -61,28 +34,6 @@ const agentSession = [
   { comment: "Apply it without a prompt; progress stays parseable.", command: "vonkctl --profile 2 profile load --yes --json" },
 ];
 
-const hosts = [
-  {
-    name: "Your laptop",
-    fit: "Fastest way to evaluate",
-    needs: "Docker Compose and durable local storage",
-    note: "The controller is available while the laptop is running.",
-  },
-  {
-    name: "A NAS",
-    fit: "Quiet, always-on lab",
-    needs: "A Docker Compose-capable NAS",
-    note: "Useful when you want the controller to stay up without a workstation.",
-  },
-  {
-    name: "A local server",
-    fit: "Shared or larger fleet",
-    needs: "Docker Compose and durable storage",
-    note: "A natural home for an always-on team or rack installation.",
-  },
-];
-
-
 function StateDot({ tone = "ready" }: { tone?: "ready" | "source" }) {
   return <span className={`state-dot ${tone}`} aria-hidden="true" />;
 }
@@ -93,13 +44,11 @@ function ProductShot({
   alt,
   title,
   body,
-  eager = false,
 }: {
   src: string;
   alt: string;
   title: string;
   body: string;
-  eager?: boolean;
 }) {
   return (
     <figure className="product-shot">
@@ -109,8 +58,7 @@ function ProductShot({
           alt={alt}
           width="1280"
           height="800"
-          loading={eager ? "eager" : "lazy"}
-          fetchPriority={eager ? "high" : "auto"}
+          loading="lazy"
         />
       </div>
       <figcaption>
@@ -148,23 +96,16 @@ function joinNames(names: string[]): string {
   return `${names.slice(0, -1).join(", ")} and ${names.at(-1)}`;
 }
 
-// The counts headline (the owner asked for it); the definition sentence stays
-// directly under it. All three counts are over recipes verified on a DGX Spark.
+// The sentence leads (owner 2026-11-12); the counts follow as proof. All three
+// counts are over recipes verified on a DGX Spark.
 function Hero({ state }: { state: CatalogState }) {
   const summary = state.status === "ready" ? state.summary : null;
   const top = summary ? summary.topCreators.slice(0, 3).map((creator) => creator.name) : [];
+  const showCounts = state.status === "loading" || state.status === "ready";
   return (
     <section className="home-hero" aria-labelledby="home-title">
       <div className="home-hero-copy">
-        {state.status === "error" || state.status === "empty" ? (
-          <h1 id="home-title">Recipes for NVIDIA DGX Spark.</h1>
-        ) : (
-          <h1 id="home-title" aria-busy={summary ? undefined : true}>
-            <span className="hero-stat"><RollingNumber value={summary?.verified ?? null} /> recipes verified on DGX Spark.</span>
-            <span className="hero-stat"><RollingNumber value={summary?.families ?? null} placeholderDigits={2} /> model families.</span>
-            <span className="hero-stat"><RollingNumber value={summary?.creators ?? null} placeholderDigits={2} /> creators.</span>
-          </h1>
-        )}
+        <h1 id="home-title">Models that fit your Sparks, kept current.</h1>
         <p className="home-definition">
           Vonk Forge is the open-source Controller for NVIDIA DGX Spark. It
           checks every model and recipe against the Sparks you actually have,
@@ -172,6 +113,13 @@ function Hero({ state }: { state: CatalogState }) {
           mix you need in a few clicks or one <code>vonkctl</code> command your
           agents can drive.
         </p>
+        {showCounts ? (
+          <p className="hero-proof" aria-label="Catalog counts" aria-busy={summary ? undefined : true}>
+            <span className="hero-stat"><RollingNumber value={summary?.verified ?? null} /> recipes verified on DGX Spark</span>
+            <span className="hero-stat"><RollingNumber value={summary?.families ?? null} placeholderDigits={2} /> model families</span>
+            <span className="hero-stat"><RollingNumber value={summary?.creators ?? null} placeholderDigits={2} /> creators</span>
+          </p>
+        ) : null}
         {top.length ? (
           <p className="home-creators">
             Recipes from {joinNames(top)} and more, each shown with whether it passed hardware checks on a DGX Spark.
@@ -188,52 +136,6 @@ function Hero({ state }: { state: CatalogState }) {
           <li>Open source · MIT</li>
         </ul>
       </div>
-      <ProductShot
-        src="/product/controller-library.webp"
-        alt="Vonk Forge Library showing model and recipe lists from illustrative fixture data"
-        title="The real Web Controller"
-        body="Fixture-backed product screen · no live fleet data"
-        eager
-      />
-    </section>
-  );
-}
-
-// Each benefit states something the system does, and the page that documents it.
-const benefits = [
-  {
-    title: "Secure",
-    body: "Installers verify release signatures and digests in their bootstrap step, and Spark packages come from a signed APT repository. Runtime images are pinned by digest. Everything runs on hardware you own: your secrets, fleet state and workloads stay on your network, and this site never receives them.",
-    href: "/architecture",
-    link: "How the boundary works",
-  },
-  {
-    title: "No hassle",
-    body: "One Controller on a laptop, a NAS or a local server, and a guided install. For each recipe it shows whether it fits your Sparks and why, and it keeps verified model files and images in a Controller cache (laptop, NAS or server).",
-    href: "/install",
-    link: "See the install steps",
-  },
-  {
-    title: "Always current",
-    body: "Recipes follow their creators' newest releases, and one only shows as Working after it passed hardware checks on a DGX Spark. Your Controller syncs the signed recipe library on its own, and vonkctl recipe update --all refreshes your cached recipes.",
-    href: "/control#local-cli",
-    link: "Update from the CLI",
-  },
-];
-
-function BenefitTrio() {
-  return (
-    <section className="benefit-section" aria-labelledby="benefit-title">
-      <h2 id="benefit-title" className="visually-hidden">Why run Vonk Forge</h2>
-      <ul className="benefit-grid">
-        {benefits.map((benefit) => (
-          <li key={benefit.title}>
-            <h3>{benefit.title}</h3>
-            <p>{benefit.body}</p>
-            <a className="text-link" href={benefit.href}>{benefit.link}</a>
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }
@@ -263,66 +165,6 @@ function TypeTiles({ summary }: { summary: CatalogSummary }) {
   );
 }
 
-function CreatorStrip({ summary }: { summary: CatalogSummary }) {
-  return (
-    <section className="creator-section" aria-labelledby="creator-title">
-      <div className="home-section-heading">
-        <h2 id="creator-title">Built by the people who run these models.</h2>
-        <p>Every recipe credits the creator it comes from. These have the most recipes verified on a DGX Spark.</p>
-      </div>
-      <ul className="creator-strip">
-        {summary.topCreators.map((creator) => (
-          <li key={creator.name.toLowerCase()}>
-            <a href={`/recipes?creator=${encodeURIComponent(creator.name)}`}>
-              <strong>{creator.name}</strong>
-              <span>{number.format(creator.verified)} verified</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
-function releaseLabel(date: string): string {
-  const parsed = new Date(`${date}T00:00:00Z`);
-  return Number.isNaN(parsed.getTime()) ? date : new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" }).format(parsed);
-}
-
-// The library moves a recipe's release date forward every time it refreshes the
-// recipe, so this row is what was updated, not what is new.
-function UpdatedRow({ summary }: { summary: CatalogSummary }) {
-  const week = updatedThisWeek(summary);
-  const recipes = (week.recipes.length ? week.recipes : summary.newest).slice(0, 6);
-  if (recipes.length === 0) return null;
-  const thisWeek = week.recipes.length > 0;
-  return (
-    <section className="new-section" aria-labelledby="updated-title">
-      <div className="home-section-heading">
-        <h2 id="updated-title">{thisWeek ? "Updated this week." : "Latest updates."}</h2>
-        <p>
-          {thisWeek
-            ? `${number.format(week.count)} ${week.count === 1 ? "recipe was" : "recipes were"} refreshed in the last seven days, to follow their creators' newest releases.`
-            : "Nothing was refreshed in the last seven days. These are the most recent updates."}
-          {" "}Each shows its verification status as the library published it.
-        </p>
-      </div>
-      <ul className="new-list">
-        {recipes.map((recipe) => (
-          <li key={`${recipe.publisher}/${recipe.slug}`}>
-            <a href={`/recipes/${recipe.publisher}/${recipe.slug}`}>
-              <strong>{recipe.title}</strong>
-              <span>{recipe.creator ?? recipe.publisher} · updated {releaseLabel(recipe.date)}</span>
-              <span className="new-status"><StateDot tone={isVerified({ catalog: { qualification: recipe.status } }) ? "ready" : "source"} /> {recipe.status}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
-      {thisWeek ? <a className="text-link" href="/recipes?updated=7&verified=0">See all {number.format(week.count)} updated recipes</a> : null}
-    </section>
-  );
-}
-
 function CatalogSections({ state, retry }: { state: CatalogState; retry: () => void }) {
   if (state.status === "empty") return <div className="status-panel" role="status">No recipe in this release has passed hardware checks on a DGX Spark yet, so there are no numbers to show. <a href="/recipes?verified=0">Browse every recipe</a></div>;
   if (state.status === "loading") return <div className="status-panel" role="status">Reading the verified recipe library…</div>;
@@ -335,13 +177,7 @@ function CatalogSections({ state, retry }: { state: CatalogState; retry: () => v
       </div>
     );
   }
-  return (
-    <>
-      <TypeTiles summary={state.summary} />
-      <CreatorStrip summary={state.summary} />
-      <UpdatedRow summary={state.summary} />
-    </>
-  );
+  return <TypeTiles summary={state.summary} />;
 }
 
 
@@ -350,67 +186,28 @@ export function HomePage() {
   return (
     <main className="home-page">
       <Hero state={state} />
-      <BenefitTrio />
       <CatalogSections state={state} retry={retry} />
-
-      <section className="promise-section" aria-labelledby="promise-title">
-        <div className="home-section-heading">
-          <h2 id="promise-title">What Vonk Forge does for you.</h2>
-          <p>
-            One Controller answers the questions that otherwise eat your evenings:
-            what fits, what changed, what to run together, and how to do it
-            again without clicking through it twice.
-          </p>
-        </div>
-        <ol className="promise-grid">
-          {promises.map((promise, index) => (
-            <li key={promise.title}>
-              <span className="promise-index">{String(index + 1).padStart(2, "0")}</span>
-              <h3>{promise.title}</h3>
-              <p>{promise.body}</p>
-              <code className="promise-command">{promise.command}</code>
-            </li>
-          ))}
-        </ol>
-      </section>
 
       <section className="quickstart" aria-labelledby="quickstart-title">
         <div className="quickstart-heading">
           <h2 id="quickstart-title">Start on the computer in front of you.</h2>
           <p>
-            The installer prepares a portable controller project. Run it here for
-            a lab, or move the same project to an always-on host.
+            One Controller on a laptop, a NAS or a local server (Docker Compose
+            is enough), then each Spark enrolls with one command. Your Controller
+            caches verified model files and images, and shows progress, recovery
+            and the next action.
           </p>
         </div>
-        <div className="quickstart-command quickstart-preflight">
-          <span>One clear next step</span>
-          <strong>Set up your Controller, then choose a model and recipe for your first run.</strong>
-          <a href="/install">Set up your Controller</a>
+        <div className="quickstart-commands">
+          <CommandBlock label="1 · Controller, on your workstation">{controllerInstallCommand}</CommandBlock>
+          <CommandBlock label="2 · Each Spark, on the Spark">{sparkInstallCommand}</CommandBlock>
         </div>
-      </section>
-
-      <section className="setup-section" aria-labelledby="setup-title">
-        <div className="home-section-heading">
-          <h2 id="setup-title">From choice to running Sparks. One visible flow.</h2>
-          <p>
-            Your Controller prepares the selected assets, places them for the
-            recipe, starts the run, and keeps updates and recovery close by.
-          </p>
-        </div>
-        <ol className="setup-flow">
-          {setupFlow.map((step, index) => (
-            <li key={step.title}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <div><h3>{step.title}</h3><p>{step.body}</p></div>
-            </li>
-          ))}
-        </ol>
-        <a className="text-link setup-explainer-link" href="/models#model-recipe-explainer">See how models, recipes, and your Controller fit together</a>
+        <p className="quickstart-note">Replace the address with your Controller&apos;s reserved LAN address. <a className="text-link" href="/install">Full install guide</a> · <a className="text-link" href="/models#model-recipe-explainer">See how models, recipes, and your Controller fit together</a></p>
       </section>
 
       <section id="product-tour" className="product-tour" aria-labelledby="tour-title">
         <div className="home-section-heading">
-          <h2 id="tour-title">Two ways to drive. One Controller.</h2>
+          <h2 id="tour-title">Click it, or script it. One Controller.</h2>
           <p>
             The browser shows what fits, what will change, what is running, and
             what needs attention. The CLI exposes the same facts and the same
@@ -441,6 +238,11 @@ export function HomePage() {
             </figcaption>
           </figure>
         </div>
+        <ul className="tour-points">
+          {points.map((point) => (
+            <li key={point.title}><h3>{point.title}</h3><p>{point.body}</p></li>
+          ))}
+        </ul>
         <div className="control-paths">
           <div><strong>Guided in the browser</strong><span>Best for first use and visual review.</span><a href="/control#web-controller">Tour the Web Controller</a></div>
           <div><strong>Repeatable in <code>vonkctl</code></strong><span>The same controller API, with explicit apply and JSON output.</span><a href="/control#local-cli">See the CLI</a></div>
@@ -483,26 +285,6 @@ export function HomePage() {
             <li><StateDot /> Model uploads</li>
           </ul>
           <a href="/architecture">Inspect the complete architecture</a>
-        </div>
-      </section>
-
-      <section className="host-section" aria-labelledby="host-title">
-        <div className="home-section-heading">
-          <h2 id="host-title">Your controller, your choice.</h2>
-          <p>
-            Vonk Forge needs a local computer that can run Docker Compose. A NAS
-            is convenient, not compulsory.
-          </p>
-        </div>
-        <div className="host-table" role="table" aria-label="Controller host comparison">
-          <div className="host-row host-head" role="row">
-            <span role="columnheader">Host</span><span role="columnheader">Best fit</span><span role="columnheader">What it needs</span><span role="columnheader">Know before choosing</span>
-          </div>
-          {hosts.map((host) => (
-            <div className="host-row" role="row" key={host.name}>
-              <strong role="cell">{host.name}</strong><span role="cell">{host.fit}</span><span role="cell">{host.needs}</span><span role="cell">{host.note}</span>
-            </div>
-          ))}
         </div>
       </section>
 

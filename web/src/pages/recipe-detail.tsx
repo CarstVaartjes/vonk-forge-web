@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 import { getRecipe, type RecipeDetail } from "../api/client";
+import { usePageMeta } from "../page-meta";
 
 
 const recipeAuthoringGuide = "https://github.com/CarstVaartjes/vonk-forge-recipes#recipe-contract";
@@ -19,9 +20,9 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
       });
     return () => controller.abort();
   }, [publisher, slug]);
+  usePageMeta(recipe?.title ?? "Recipe", recipe ? `${recipe.title}: a recipe for NVIDIA DGX Spark, with its published verification status and install contract.` : "A Vonk Forge recipe for NVIDIA DGX Spark.");
   useEffect(() => {
     if (!recipe) return;
-    document.title = `${recipe.title} · Vonk Forge`;
     let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
     if (!canonical) {
       canonical = document.createElement("link");

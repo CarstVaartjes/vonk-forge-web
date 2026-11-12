@@ -1,19 +1,14 @@
+import { CommandBlock } from "../command-block";
+import { usePageMeta } from "../page-meta";
+
 const repository = "https://github.com/CarstVaartjes/vonk-forge";
 
-
-function CommandBlock({ children, label }: { children: string; label: string }) {
-  return (
-    <div className="command-block">
-      <span>{label}</span>
-      <pre><code>{children}</code></pre>
-    </div>
-  );
-}
 
 
 // Every command on this page comes from the vonk-forge vonkctl runbook
 // (docs/runbooks/vonkctl.md). Keep them in step with it.
 export function ControlPage() {
+  usePageMeta("Control", "Drive your Vonk Forge fleet from the Web Controller or from vonkctl, the JSON-first CLI built for scripts and AI agents.");
   return (
     <main className="guide-page control-page">
       <section className="guide-hero" aria-labelledby="control-title">
@@ -195,6 +190,37 @@ uv tool uninstall vonk-cluster-profiles`}</CommandBlock>
           <a href={`${repository}/blob/main/docs/runbooks/vonkctl.md`}>Complete CLI command reference on GitHub</a>
           <a href={`${repository}/tree/main`}>Source and release history on GitHub</a>
         </div>
+      </section>
+
+      <section id="connect-tools" className="control-guide connect-guide" aria-labelledby="connect-tools-title">
+        <header>
+          <div><h2 id="connect-tools-title">Connect your tools</h2><span className="guide-meta">One address for everything a fleet serves</span></div>
+          <code>/v1</code>
+        </header>
+        <p className="lane-intro">
+          Everything your fleet serves sits behind one OpenAI-compatible address on
+          your Controller, <code>https://&lt;controller&gt;/v1</code>. Give each model an
+          alias you choose, such as <code>chat</code> or <code>code</code>, and point
+          your editor, agent or script at that alias. Switching the model behind it
+          changes nothing in the tool. The Controller shows the same examples with your own
+          address and alias filled in.
+        </p>
+        <CommandBlock label="Create a key and set the address">{String.raw`vonkctl key create NAME --output CLIENT_KEY_FILE
+export OPENAI_API_KEY="$(cat CLIENT_KEY_FILE)"
+export OPENAI_BASE_URL='https://vonk-forge.example.ts.net/v1'`}</CommandBlock>
+        <CommandBlock label="curl">{String.raw`curl "$OPENAI_BASE_URL/chat/completions" \
+  -H "Authorization: Bearer $OPENAI_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"qwen-code","messages":[{"role":"user","content":"Hello"}]}'`}</CommandBlock>
+        <CommandBlock label="Python">{String.raw`from openai import OpenAI
+
+client = OpenAI()
+response = client.chat.completions.create(
+    model="qwen-code",
+    messages=[{"role": "user", "content": "Hello"}],
+)
+print(response.choices[0].message.content)`}</CommandBlock>
+        <p className="fleet-note">Thinking and sampling settings are usually set per request, not in the recipe.</p>
       </section>
 
       <section className="guide-cta" aria-labelledby="control-next-title">

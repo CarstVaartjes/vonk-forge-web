@@ -62,7 +62,7 @@ test("shows sizing, immutable identity, and evidence provenance", async () => {
   expect(screen.getByRole("cell", { name: "20 GiB" })).toBeVisible();
   expect(screen.getByRole("cell", { name: "48 GiB" })).toBeVisible();
   expect(screen.getByText(/Source verified/)).toBeVisible();
-  expect(screen.getByText(/Not yet verified/, { selector: ".badge" })).toBeVisible();
+  expect(within(screen.getByRole("table")).getByText(/Not yet verified/, { selector: ".badge" })).toBeVisible();
   expect(screen.getByText(/never tested/)).toBeVisible();
   expect(screen.getByText(/not a Vonk endorsement/i)).toBeVisible();
   expect(screen.getByText(/aaaaaaaaaa…/)).toBeVisible();
@@ -221,4 +221,22 @@ describe("type-first filtering", () => {
     await waitFor(() => expect(window.location.search).toBe("?verified=0"));
     expect(screen.queryByRole("button", { name: /^Clear \d+ filter/ })).not.toBeInTheDocument();
   });
+});
+
+
+test("explains each status shown, links every badge to the explanation, and lists only the published statuses", async () => {
+  loadRecipeCatalog.mockResolvedValue([
+    recipe,
+    { ...recipe, slug: "odd", title: "Odd", catalog: { ...recipe.catalog, qualification: "Status from a newer library" } },
+  ]);
+  render(<RecipesPage />);
+  await screen.findByRole("heading", { name: "Odd" });
+  const legend = within(document.getElementById("how-recipes-are-verified") as HTMLElement);
+  expect(legend.getByText(/information to help you choose, never a gate/)).toBeInTheDocument();
+  expect(legend.getAllByText("Status from a newer library")).toHaveLength(1);
+  expect(legend.getByRole("link", { name: "What each status means" })).toHaveAttribute("href", expect.stringContaining("vonk-forge-recipes/blob/main/docs/recipe-authoring.md"));
+  expect(legend.queryByText("Working")).toBeNull();
+  const badgeLinks = within(screen.getByRole("table")).getAllByTitle("What this status means");
+  expect(badgeLinks).toHaveLength(2);
+  badgeLinks.forEach((link) => expect(link).toHaveAttribute("href", "#how-recipes-are-verified"));
 });

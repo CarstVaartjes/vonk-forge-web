@@ -35,8 +35,9 @@ describe("home page", () => {
   test("the hero carries the true numbers from the summary and never loads the catalog index", async () => {
     getCatalogSummary.mockResolvedValue(summary());
     render(<HomePage />);
-    const title = await screen.findByRole("heading", { level: 1, name: /2 recipes verified on DGX Spark/ });
-    expect(title.textContent).toBe("2 recipes verified on DGX Spark.2 model families.1 creators.");
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Models that fit your Sparks, kept current.");
+    const proof = await screen.findByLabelText("Catalog counts");
+    await waitFor(() => expect(proof.textContent).toBe("2 recipes verified on DGX Spark2 model families1 creators"));
     expect(screen.getByText(/Vonk Forge is the open-source Controller for NVIDIA DGX Spark/)).toBeVisible();
     expect(screen.getByText(/Recipes from nvidia and more/i)).toBeVisible();
     expect(screen.getByRole("link", { name: "See the agent-friendly CLI" })).toHaveAttribute("href", "/control#local-cli");
@@ -48,13 +49,13 @@ describe("home page", () => {
     expect(tiles.getByRole("link", { name: /3D\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=3d&verified=0");
   });
 
-  test("calls the row updated, not new, and links the same count the catalog shows", async () => {
+  test("shows the two install commands, each with a Copy button", async () => {
     getCatalogSummary.mockResolvedValue(summary());
     render(<HomePage />);
-    const row = await screen.findByRole("region", { name: "Updated this week." });
-    expect(within(row).getByText(/1 recipe was refreshed in the last seven days/)).toBeVisible();
-    expect(within(row).getByRole("link", { name: "See all 1 updated recipes" })).toHaveAttribute("href", "/recipes?updated=7&verified=0");
-    expect(screen.queryByText(/New this week/)).toBeNull();
+    const quickstart = within(await screen.findByRole("region", { name: /Start on the computer/ }));
+    expect(quickstart.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
+    expect(quickstart.getByText(/install\.vonkforge\.ai\/spark \| VONK_CONTROLLER_ADDRESS=/)).toBeVisible();
+    expect(quickstart.getAllByRole("button", { name: "Copy" })).toHaveLength(2);
   });
 
   test("shows no numbers and an alert when the summary is missing or malformed", async () => {

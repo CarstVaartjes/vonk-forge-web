@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 
 import { App } from "./app";
+import indexHtml from "../index.html?raw";
 
 
 // The footer reads the verified release manifest the Pages build writes.
@@ -29,90 +30,62 @@ test("shows the recipe library version and when it was last updated", async () =
 test("defines the product and puts installation first", () => {
   render(<App />);
 
-  expect(
-    screen.getByRole("heading", { name: /recipes verified on DGX Spark/i }),
-  ).toBeVisible();
+  expect(screen.getByRole("heading", { level: 1, name: "Models that fit your Sparks, kept current." })).toBeVisible();
   expect(screen.getByText(/Vonk Forge is the open-source Controller for NVIDIA DGX Spark/)).toBeVisible();
   expect(screen.getByRole("link", { name: "See the agent-friendly CLI" })).toHaveAttribute("href", "/control#local-cli");
   expect(screen.getAllByRole("link", { name: "Install" })[0]).toHaveAttribute("href", "/install");
   expect(screen.getByRole("link", { name: "Browse what runs" })).toHaveAttribute("href", "/recipes");
-  expect(screen.getAllByRole("link", { name: "Set up your Controller" })[0]).toHaveAttribute("href", "/install");
-  expect(screen.queryByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).not.toBeInTheDocument();
-  expect(screen.getByText(/choose a model and recipe for your first run/i)).toBeVisible();
-  expect(screen.getByText("The real Web Controller")).toBeVisible();
-  expect(screen.getByAltText(/Vonk Forge Library showing model and recipe lists/i)).toBeVisible();
+  expect(screen.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
+  expect(screen.getByText(/install\.vonkforge\.ai\/spark \| VONK_CONTROLLER_ADDRESS=/)).toBeVisible();
+  expect(screen.getByAltText(/Vonk Forge Fleet showing an illustrative Spark roster/i)).toBeVisible();
 });
 
 
-test("states the four promises with the vonkctl command behind each", () => {
+test("tells one story: what it does, with the vonkctl session behind it", () => {
   render(<App />);
 
-  const promises = screen.getByRole("heading", { name: "What Vonk Forge does for you." }).closest("section");
-  expect(promises).not.toBeNull();
-  const section = within(promises as HTMLElement);
-  const expected: Array<[string, string]> = [
-    ["Know what fits your setup.", "vonkctl recipe library --fits-fleet"],
-    ["Stay current without the chase.", "vonkctl recipe update --all"],
-    ["Run the mix you need.", "vonkctl --profile 2 profile load"],
-    ["Click it, or script it.", 'vonkctl run "Qwen Code" --yes --json'],
-  ];
-  for (const [title, command] of expected) {
-    expect(section.getByRole("heading", { name: title })).toBeVisible();
-    expect(section.getByText(command)).toBeVisible();
+  for (const title of ["Know what fits.", "Stay current.", "Run the mix you need."]) {
+    expect(screen.getByRole("heading", { name: title })).toBeVisible();
   }
-  expect(section.getByText(/syncs the signed library on its own/i)).toBeVisible();
-  expect(document.body.textContent).not.toMatch(/15 minutes/);
+  expect(screen.getByText("vonkctl recipe library --fits-fleet --json")).toBeVisible();
   expect(screen.getByText("vonkctl --profile 2 profile load --yes --json")).toBeVisible();
+  expect(document.body.textContent).not.toMatch(/15 minutes/);
+  expect(document.querySelectorAll("main section").length).toBeLessThanOrEqual(7);
 });
 
 
-test("provides the catalog and publishing navigation", () => {
+test("top menu is Catalog, Install, Docs; Publish and Example setup live in the footer", () => {
   render(<App />);
 
-  const primaryNavigation = screen.getByRole("navigation", {
-    name: "Primary navigation",
-  });
+  const primaryNavigation = within(screen.getByRole("navigation", { name: "Primary navigation" }));
+  expect(primaryNavigation.getAllByRole("link").map((link) => link.textContent)).toEqual(["Catalog", "Install", "Docs"]);
+  expect(primaryNavigation.getByRole("link", { name: "Catalog" })).toHaveAttribute("href", "/recipes");
+  expect(primaryNavigation.getByRole("link", { name: "Install" })).toHaveAttribute("href", "/install");
+  expect(primaryNavigation.getByRole("link", { name: "Docs" })).toHaveAttribute("href", "/architecture");
 
-  expect(within(primaryNavigation).getByRole("link", { name: "Recipes" })).toHaveAttribute(
-    "href",
-    "/recipes",
-  );
-  expect(within(primaryNavigation).getByRole("link", { name: "Models" })).toHaveAttribute(
-    "href",
-    "/models",
-  );
-  expect(within(primaryNavigation).getByRole("link", { name: "Publish" })).toHaveAttribute(
-    "href",
-    "/publish",
-  );
-  expect(within(primaryNavigation).getByRole("link", { name: "How it works" })).toHaveAttribute(
-    "href",
-    "/architecture",
-  );
-  expect(within(primaryNavigation).getByRole("link", { name: "Install" })).toHaveAttribute(
-    "href",
-    "/install",
-  );
-  expect(within(primaryNavigation).getByRole("link", { name: "Control" })).toHaveAttribute(
-    "href",
-    "/control",
-  );
+  const footer = within(screen.getByRole("navigation", { name: "Footer navigation" }));
+  expect(footer.getByRole("link", { name: "Publish" })).toHaveAttribute("href", "/publish");
+  expect(footer.getByRole("link", { name: "Example setup" })).toHaveAttribute("href", "/example-setup");
 });
 
 
-test("marks the current top-level destination in the primary navigation", () => {
-  window.history.replaceState({}, "", "/recipes/vonk/qwen-fast");
-  const view = render(<App />);
-  const primaryNavigation = screen.getByRole("navigation", { name: "Primary navigation" });
+test("marks the current top-level destination, grouping the pages under it", () => {
+  const current = (path: string) => {
+    window.history.replaceState({}, "", path);
+    const view = render(<App />);
+    const links = within(screen.getByRole("navigation", { name: "Primary navigation" })).getAllByRole("link");
+    const marked = links.filter((link) => link.getAttribute("aria-current") === "page").map((link) => link.textContent);
+    view.unmount();
+    return marked;
+  };
 
-  expect(within(primaryNavigation).getByRole("link", { name: "Recipes" })).toHaveAttribute("aria-current", "page");
-  expect(within(primaryNavigation).getByRole("link", { name: "Install" })).not.toHaveAttribute("aria-current");
-
-  view.unmount();
-  window.history.replaceState({}, "", "/publish");
-  render(<App />);
-  expect(within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("link", { name: "Publish" })).toHaveAttribute("aria-current", "page");
+  expect(current("/recipes/vonk/qwen-fast")).toEqual(["Catalog"]);
+  expect(current("/models")).toEqual(["Catalog"]);
+  expect(current("/install")).toEqual(["Install"]);
+  expect(current("/control")).toEqual(["Docs"]);
+  expect(current("/publish")).toEqual([]);
 });
+
 
 test("routes publishing to the repository guide without a browser authoring workspace", () => {
   window.history.replaceState({}, "", "/publish");
@@ -173,10 +146,6 @@ test("provides the current signed controller and Spark installation path", () =>
   const controllerCommand = screen.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh");
   expect(preflightHeading.compareDocumentPosition(controllerCommand) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(screen.getByText(/MagicDNS and HTTPS certificates/i)).toBeVisible();
-  const serviceModes = within(screen.getByLabelText("Tailscale Services by feature set"));
-  expect(serviceModes.getAllByText("svc:vonk-forge")).toHaveLength(2);
-  expect(serviceModes.getByText("svc:hermes-api")).toBeVisible();
-  expect(serviceModes.getByText("svc:hermes-dashboard")).toBeVisible();
   expect(screen.getByText(/OAuth client with only/)).toHaveTextContent(/auth_keys.*tag:vonk-gateway/i);
   expect(screen.getByText(/Production and development use these same unsuffixed names/i)).toBeVisible();
   expect(screen.getByText(/isolated, disposable test tailnet/i)).toBeVisible();
@@ -190,7 +159,7 @@ test("provides the current signed controller and Spark installation path", () =>
   expect(screen.getByText(/docker compose exec tailscale-gateway tailscale status --json/)).toBeVisible();
   expect(screen.getByText(/tailscale ping vonk-forge\.<TAILNET_DNS_SUFFIX>\.ts\.net/)).toBeVisible();
   expect(screen.getByLabelText("Exact Tailscale Serve map")).toHaveTextContent(
-    /svc:vonk-forge.*http:\/\/caddy:8080.*svc:hermes-api.*http:\/\/hermes-agent:8642.*svc:hermes-dashboard.*http:\/\/hermes-agent:9119/i,
+    /svc:vonk-forge.*http:\/\/caddy:8080/i,
   );
   expect(screen.getByText("No matching peer")).toBeVisible();
   expect(document.querySelector(".control-install .fleet-note")).toHaveTextContent(
@@ -270,12 +239,26 @@ test("maps the public catalog to operator-owned control and execution", () => {
 });
 
 
-test("shows the safe operating loop without hiding the private boundary", () => {
-  render(<App />);
+test("each route sets its own tab title and description", () => {
+  const meta = (path: string) => {
+    window.history.replaceState({}, "", path);
+    const view = render(<App />);
+    const seen = [document.title, document.querySelector('meta[name="description"]')?.getAttribute("content")];
+    view.unmount();
+    return seen;
+  };
+  const pages = ["/recipes", "/install", "/control", "/architecture", "/publish", "/example-setup"].map(meta);
 
-  for (const name of ["Install the controller", "Connect your Sparks", "Choose a model or recipe", "Prepare, run, switch"]) {
-    expect(screen.getByRole("heading", { name })).toBeVisible();
-  }
-  expect(screen.getByRole("heading", { name: /your controller, your choice/i })).toBeVisible();
-  expect(screen.getByText(/A NAS is convenient, not compulsory/i)).toBeVisible();
+  expect(pages.map(([title]) => title)).toEqual(
+    ["Recipes", "Install", "Control", "How it works", "Publish a recipe", "Example setup"].map((name) => `${name} · Vonk Forge`),
+  );
+  expect(new Set(pages.map(([, description]) => description)).size).toBe(pages.length);
+});
+
+
+test("shared links get a large card with the share image", () => {
+  const html = indexHtml;
+  expect(html).toContain('<meta name="twitter:card" content="summary_large_image" />');
+  expect(html).toContain('content="https://vonkforge.ai/og.png"');
+  expect(html).toContain('<link rel="icon" href="/favicon.svg"');
 });

@@ -1,18 +1,16 @@
+import { CommandBlock } from "../command-block";
+import { usePageMeta } from "../page-meta";
+
+export const controllerInstallCommand = "curl -fsSL https://install.vonkforge.ai/nas | sh";
+export const sparkInstallCommand = "curl -fsSL https://install.vonkforge.ai/spark | VONK_CONTROLLER_ADDRESS=192.168.1.231 sh";
+
 const repository = "https://github.com/CarstVaartjes/vonk-forge/blob/main";
 const tailscaleRunbook = `${repository}/docs/runbooks/tailscale.md`;
 
 
-function CommandBlock({ children, label }: { children: string; label: string }) {
-  return (
-    <div className="command-block">
-      <span>{label}</span>
-      <pre><code>{children}</code></pre>
-    </div>
-  );
-}
-
 
 export function InstallPage() {
+  usePageMeta("Install", "Install the Vonk Forge Controller on a laptop, NAS or local server with one signed command, then enroll your DGX Sparks.");
   return (
     <main className="guide-page install-page">
       <section className="guide-hero" aria-labelledby="install-title">
@@ -79,8 +77,8 @@ export function InstallPage() {
           <li>
             <span>02</span>
             <div>
-              <h3>Define only the Services you use</h3>
-              <p>Every install needs <code>svc:vonk-forge</code> on <code>tcp:443</code>. Add <code>svc:hermes-api</code> and <code>svc:hermes-dashboard</code>, also on <code>tcp:443</code>, only when Hermes is enabled.</p>
+              <h3>Define the Service</h3>
+              <p>Define one Service, <code>svc:vonk-forge</code>, on <code>tcp:443</code>.</p>
             </div>
           </li>
           <li>
@@ -92,10 +90,6 @@ export function InstallPage() {
             <div><h3>Create one machine credential</h3><p>Create a Tailscale OAuth client with only <code>auth_keys</code> write scope and only <code>tag:vonk-gateway</code>. Keep its raw ID and secret ready for the hidden prompts.</p></div>
           </li>
         </ol>
-        <div className="service-mode-grid" aria-label="Tailscale Services by feature set">
-          <article><strong>Hermes disabled · 1 Service</strong><code>svc:vonk-forge</code></article>
-          <article><strong>Hermes enabled · 3 Services</strong><code>svc:vonk-forge</code><code>svc:hermes-api</code><code>svc:hermes-dashboard</code></article>
-        </div>
         <div className="preflight-boundary">
           <strong>Production and development use these same unsuffixed names.</strong>
           <p>Never add development, acceptance, or test suffixes to an operator tailnet. Full-tailnet acceptance belongs only in an isolated, disposable test tailnet with separate credentials and policy, removed after the run.</p>
@@ -110,7 +104,7 @@ export function InstallPage() {
           self-contained controller project directory.
         </p>
         <p className="installer-gate"><strong>Preflight complete?</strong> Confirm the four checks above before copying this command.</p>
-        <CommandBlock label="Workstation terminal">curl -fsSL https://install.vonkforge.ai/nas | sh</CommandBlock>
+        <CommandBlock label="Workstation terminal">{controllerInstallCommand}</CommandBlock>
         <ol className="install-steps">
           <li><span>01</span><div><h3>Answer the guided prompts</h3><p>The installer prepares local identity, configuration, and secrets without changing the eventual controller host or requiring Docker on the workstation.</p></div></li>
           <li><span>02</span><div><h3>Check the generated directory</h3><p>The output is exactly <code>vonk-forge/docker-compose.yaml</code>, <code>vonk-forge/.env</code>, and <code>vonk-forge/secrets/</code>. Keep the directory private and back it up securely.</p></div></li>
@@ -134,8 +128,6 @@ export function InstallPage() {
             <p>Both gateway containers must be healthy. The exact Serve map must use HTTPS 443, and <code>Self.PrimaryRoutes</code> must contain each Service TailVIP route.</p>
             <ul className="serve-map" aria-label="Exact Tailscale Serve map">
               <li><code>svc:vonk-forge</code><span>HTTPS 443 → <code>http://caddy:8080</code></span></li>
-              <li><code>svc:hermes-api</code><span>HTTPS 443 → <code>http://hermes-agent:8642</code></span></li>
-              <li><code>svc:hermes-dashboard</code><span>HTTPS 443 → <code>http://hermes-agent:9119</code></span></li>
             </ul>
             <CommandBlock label="Controller host terminal">{`docker compose ps --all
 docker compose logs --no-color --tail 100 tailscale-gateway tailscale-configurator
@@ -195,7 +187,7 @@ curl --fail --show-error --silent \\
         </p>
         <CommandBlock label="CLI alternative for creating the grant">{`vonkctl fleet enroll Atlas --output atlas-grant.json
 vonkctl fleet enrollment status GRANT_UUID`}</CommandBlock>
-        <CommandBlock label="Spark terminal">curl -fsSL https://install.vonkforge.ai/spark | VONK_CONTROLLER_ADDRESS=192.168.1.231 sh</CommandBlock>
+        <CommandBlock label="Spark terminal">{sparkInstallCommand}</CommandBlock>
         <ol className="install-steps fleet-steps">
           <li><span>01</span><div><h3>Use the controller&apos;s stable LAN address</h3><p>Replace <code>192.168.1.231</code> with the address reserved for your laptop, NAS, or other controller host. The controller hostnames remain in place for TLS while the installer creates the local mapping.</p></div></li>
           <li><span>02</span><div><h3>Complete the pairing prompts</h3><p>Enter the one-use grant values and the requested Spark management and fabric addresses. The installer writes the agent and firewall configuration.</p></div></li>

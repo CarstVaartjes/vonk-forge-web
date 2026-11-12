@@ -1,8 +1,11 @@
+import { usePageMeta } from "../page-meta";
+
 const recipeLibrary = "https://github.com/CarstVaartjes/vonk-forge-recipes";
 const authoringGuide = `${recipeLibrary}/blob/main/docs/recipe-authoring.md`;
 
 
 export function PublishingGuidePage() {
+  usePageMeta("Publish a recipe", "How to publish a Vonk Forge recipe others can trust, through the recipe repository.");
   return (
     <main className="guide-page publishing-guide">
       <section className="guide-hero" aria-labelledby="publishing-title">

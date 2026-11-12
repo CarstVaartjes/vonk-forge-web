@@ -46,6 +46,13 @@ describe("public model browse", () => {
     listModels.mockResolvedValue({ items: Array.from({ length: 13 }, (_, index) => model(index + 1)) });
   });
 
+  test("Models is a tab of the catalog, next to Recipes", () => {
+    render(<ModelsPage />);
+    const tabs = within(screen.getByRole("navigation", { name: "Catalog views" }));
+    expect(tabs.getByRole("link", { name: "Models" })).toHaveAttribute("aria-current", "page");
+    expect(tabs.getByRole("link", { name: "Recipes" })).toHaveAttribute("href", "/recipes");
+  });
+
   test("paginates the model index and persists filters in the URL", async () => {
     render(<ModelsPage />);
     await waitFor(() => expect(screen.getByText("13 of 13 models")).toBeVisible());

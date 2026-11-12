@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { usePageMeta } from "../page-meta";
 
 import { loadRecipeCatalog, type RecipeSummary } from "../api/client";
 import { gibLabel } from "../catalog-filters";
@@ -47,6 +48,7 @@ function Column({ name, members, recipes }: { name: string; members: ShowcaseMem
 }
 
 export function ShowcasePage() {
+  usePageMeta("Example setup", "An example setup: 3D game generation on two DGX Sparks, with the models and recipes it uses.");
   const [recipes, setRecipes] = useState<Catalog>(null);
   const [error, setError] = useState<string | null>(null);
 

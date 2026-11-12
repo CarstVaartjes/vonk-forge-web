@@ -55,9 +55,10 @@ function LibraryVersion() {
   );
 }
 
-function NavigationLink({ href, children, primary = false }: { href: string; children: string; primary?: boolean }) {
+// A top-level entry is current on its own path and on the pages it groups.
+function NavigationLink({ href, children, primary = false, also = [] }: { href: string; children: string; primary?: boolean; also?: string[] }) {
   const path = window.location.pathname;
-  const current = path === href || path.startsWith(`${href}/`);
+  const current = [href, ...also].some((root) => path === root || path.startsWith(`${root}/`));
   return (
     <a
       aria-current={current ? "page" : undefined}
@@ -80,13 +81,9 @@ export function App() {
             <span className="brand-name"><strong>Vonk</strong> Forge</span>
           </a>
           <nav aria-label="Primary navigation">
+            <NavigationLink href="/recipes" also={["/models"]}>Catalog</NavigationLink>
             <NavigationLink primary href="/install">Install</NavigationLink>
-            <NavigationLink href="/architecture">How it works</NavigationLink>
-            <NavigationLink href="/control">Control</NavigationLink>
-            <NavigationLink href="/models">Models</NavigationLink>
-            <NavigationLink href="/recipes">Recipes</NavigationLink>
-            <NavigationLink href="/example-setup">Example setup</NavigationLink>
-            <NavigationLink href="/publish">Publish</NavigationLink>
+            <NavigationLink href="/architecture" also={["/control"]}>Docs</NavigationLink>
           </nav>
         </header>
         <div id="main-content" tabIndex={-1}>
@@ -98,11 +95,10 @@ export function App() {
             <LibraryVersion />
           </div>
           <nav aria-label="Footer navigation">
+            <a href="/recipes">Catalog</a>
             <a href="/install">Install</a>
             <a href="/architecture">How it works</a>
             <a href="/control">Control</a>
-            <a href="/models">Models</a>
-            <a href="/recipes">Recipes</a>
             <a href="/example-setup">Example setup</a>
             <a href="/publish">Publish</a>
             <a href="/privacy">Privacy</a>

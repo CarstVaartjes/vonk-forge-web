@@ -1,3 +1,5 @@
+import { usePageMeta } from "../page-meta";
+
 const connections = [
   { className: "tailnet", label: "Tailscale HTTPS", detail: "Human browser access" },
   { className: "management", label: "Management-LAN TLS / mTLS", detail: "Enrollment, claims, and evidence" },
@@ -7,6 +9,7 @@ const connections = [
 
 
 export function ArchitecturePage() {
+  usePageMeta("How it works", "How the public catalog, your local Controller and your Spark fleet fit together, and what never leaves your network.");
   return (
     <main className="guide-page architecture-page">
       <section className="guide-hero" aria-labelledby="architecture-title">
