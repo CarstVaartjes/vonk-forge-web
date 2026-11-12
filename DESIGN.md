@@ -6,77 +6,104 @@ colors:
   ash-muted: "#aaa396"
   ash-faint: "#958e80"
   workbench-black: "#0a0b0a"
+  recess-black: "#060706"
   iron-panel: "#111311"
   raised-iron: "#181a17"
   rule-dark: "#2c2f2a"
   rule-bright: "#454940"
+  rule-control: "#666b5f"
   action-green: "#76b900"
   ready-green: "#a3d93a"
+  green-ink: "#0b0d08"
+  green-dim: "#4a6b14"
   spark-gold: "#d9b56f"
   spark-gold-soft: "#eacf9a"
-  danger-red: "#ff715e"
+  gold-dim: "#5e4e2b"
+  warning-amber: "#ffb347"
+  danger-red: "#ff7a6b"
+  info-blue: "#8fc4ff"
+  meter-track: "#2a2e27"
+  lane-public: "#9f8fff"
+  lane-network: "#5cc8ff"
+  role-coder: "#8ab4ff"
+  role-image: "#f0a0d8"
+  role-three-d: "#f2a65a"
+  role-audio: "#62d6c4"
+  role-video: "#c0a6ff"
 typography:
   display:
     fontFamily: "Onest Variable, Helvetica Neue, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(3.5rem, 6.8vw, 6rem)"
+    fontSize: "clamp(2.6rem, 5.6vw, 4.75rem)"
     fontWeight: 700
-    lineHeight: 0.92
-    letterSpacing: "-0.04em"
+    lineHeight: 0.95
+    letterSpacing: "-0.045em"
   headline:
     fontFamily: "Onest Variable, Helvetica Neue, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(2.4rem, 5vw, 4.7rem)"
+    fontSize: "clamp(1.75rem, 3.2vw, 2.6rem)"
     fontWeight: 700
-    lineHeight: 0.96
-    letterSpacing: "-0.04em"
+    lineHeight: 1.02
+    letterSpacing: "-0.035em"
   title:
     fontFamily: "Onest Variable, Helvetica Neue, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(1.45rem, 2.5vw, 2rem)"
+    fontSize: "1.25rem"
     fontWeight: 700
-    letterSpacing: "-0.04em"
+    lineHeight: 1.2
+    letterSpacing: "-0.02em"
+  lead:
+    fontFamily: "Onest Variable, Helvetica Neue, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "clamp(1.05rem, 1.4vw, 1.2rem)"
+    fontWeight: 400
+    lineHeight: 1.6
   body:
     fontFamily: "Onest Variable, Helvetica Neue, ui-sans-serif, system-ui, sans-serif"
     fontSize: "1rem"
     fontWeight: 400
-    lineHeight: 1.7
+    lineHeight: 1.6
+  small:
+    fontFamily: "Onest Variable, Helvetica Neue, ui-sans-serif, system-ui, sans-serif"
+    fontSize: "0.875rem"
+    fontWeight: 400
+    lineHeight: 1.5
   label:
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace"
-    fontSize: "0.7rem"
+    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
+    fontSize: "0.72rem"
     fontWeight: 700
     lineHeight: 1.4
     letterSpacing: "0.05em"
 rounded:
   square: "0"
-  tight: "0.2rem"
+  tight: "0.25rem"
   control: "0.45rem"
-  surface: "0.75rem"
   pill: "999px"
-  circle: "50%"
 spacing:
-  xs: "0.35rem"
-  sm: "0.65rem"
-  md: "1rem"
-  lg: "1.5rem"
-  xl: "2rem"
-  section: "clamp(5rem, 10vw, 9rem)"
+  s1: "0.25rem"
+  s2: "0.5rem"
+  s3: "0.75rem"
+  s4: "1rem"
+  s5: "1.5rem"
+  s6: "2rem"
+  s7: "3rem"
+  s8: "4rem"
+  section: "clamp(4rem, 8vw, 7rem)"
 components:
   button-primary:
     backgroundColor: "{colors.action-green}"
-    textColor: "{colors.workbench-black}"
+    textColor: "{colors.green-ink}"
     typography: "{typography.body}"
     rounded: "{rounded.control}"
-    padding: "0.78rem 1.15rem"
-    height: "3rem"
+    padding: "0 1.15rem"
+    height: "2.75rem"
   button-primary-hover:
     backgroundColor: "{colors.ready-green}"
-    textColor: "{colors.workbench-black}"
+    textColor: "{colors.green-ink}"
     rounded: "{rounded.control}"
   button-secondary:
     backgroundColor: "transparent"
     textColor: "{colors.forge-ivory}"
     typography: "{typography.body}"
     rounded: "{rounded.control}"
-    padding: "0.78rem 1.15rem"
-    height: "3rem"
+    padding: "0 1.15rem"
+    height: "2.75rem"
   nav-install:
     backgroundColor: "transparent"
     textColor: "{colors.ready-green}"
@@ -139,7 +166,14 @@ The palette is taken from the DGX Spark itself: a graphite dark system with NVID
 - **Ash Faint** (`ash-faint`): Metadata that remains useful but should recede.
 - **Dark Rule** (`rule-dark`): Default one-pixel division between regions.
 - **Bright Rule** (`rule-bright`): Focused boundaries and secondary-control strokes.
+- **Recess Black** (`recess-black`): Command blocks and inputs, one step below the page.
+- **Control Rule** (`rule-control`): The one border that identifies a button or input (3:1 on every surface; Bright Rule is decorative only).
+- **Green Ink** (`green-ink`): Text on an Action Green fill.
+- **Green Dim** (`green-dim`) and **Gold Dim** (`gold-dim`): Quiet green and gold borders and fills for boundaries that carry state.
+- **Warning Amber** (`warning-amber`): Warning status. It moved off the old pale yellow, which read as Spark gold.
 - **Danger Red** (`danger-red`): Error state only; never decoration.
+- **Info Blue** (`info-blue`): Informational status.
+- **Meter Track** (`meter-track`): The empty part of a meter.
 
 ### Named Rules
 
@@ -157,10 +191,14 @@ The palette is taken from the DGX Spark itself: a graphite dark system with NVID
 
 ### Hierarchy
 
-- **Display** (700, `display`, 0.92 line-height): One decisive product or section definition with tight wrapping and no decorative preamble.
-- **Headline** (700, `headline`, 0.96 line-height): Major section statements, balanced into compact blocks.
+The stylesheet uses these sizes and only these (`--t-display`, `--t-h2`, `--t-h3`, `--t-lead`, `--t-body`, `--t-small`, `--t-label`), plus `2rem` for a large figure and `0.9em` for inline code.
+
+- **Display** (700, `display`): The home hero sentence only.
+- **Headline** (700, `headline`): Section headings and page titles, balanced into compact blocks.
 - **Title** (700, `title`): Operational stages, cards, and system choices.
+- **Lead** (400, `lead`): One lead paragraph per page.
 - **Body** (400, `body`): Explanations and interface guidance; keep long copy near 65–68 characters per line.
+- **Small** (400, `small`): Secondary lines and captions.
 - **Label** (700, `label`, uppercase only where the implementation uses column or terminal metadata): Commands, row indices, table labels, and state metadata.
 
 ### Named Rules
@@ -194,7 +232,7 @@ The system is flat by default. Tonal changes and crisp one-pixel boundaries carr
 
 ## Shapes
 
-The form language is rectilinear and precise. Connected content regions use square corners; embedded controller views use a barely softened tight corner (`tight`), and ordinary controls use a compact functional radius (`control`). Larger surface rounding (`surface`) does not belong on workbench structures. Circular geometry is reserved for status dots and the established forge mark.
+The form language is rectilinear and precise. Connected content regions use square corners; embedded controller views use a barely softened tight corner (`tight`), and ordinary controls use a compact functional radius (`control`). Larger rounding does not belong on workbench structures. Circular geometry is reserved for status dots and the established forge mark.
 
 Borders are one pixel. Do not create thick side tabs, decorative rails, or oversized pills as substitutes for hierarchy. Clipping should reinforce a contained tool surface, not add ornamental silhouettes.
 
@@ -206,8 +244,8 @@ Components feel firm, precise, and ready for real operation.
 
 ### Buttons
 
-- **Shape:** Compact functional corners (`control`) with a one-pixel stroke and a 3rem minimum height.
-- **Primary:** Action Green with Workbench Black text, strong weight, and `0.78rem 1.15rem` padding.
+- **Shape:** Compact functional corners (`control`) with a one-pixel stroke and a 2.75rem minimum height.
+- **Primary:** Action Green with Green Ink text, strong weight, and `0 1.15rem` padding at a 2.75rem height.
 - **Hover / Focus:** Shift to Ready Green and lift by 2px on hover. Use a clearly visible green focus ring; reduced-motion mode removes the movement.
 - **Secondary:** Transparent with Forge Ivory text and a Bright Rule border; hover raises the surface by one subtle tonal step.
 
@@ -246,7 +284,7 @@ The terminal counterpart of the controller preview: the same tight rectangular f
 
 ### Role Colours
 
-The example-setup page (`/example-setup`) scopes five tokens to itself: `--role-coder`, `--role-image`, `--role-three-d`, `--role-audio` and `--role-video`. They tell model roles apart, always sit beside a text role label and a legend, and are never status or action colours.
+Five tokens in `:root`, `--role-coder`, `--role-image`, `--role-three-d`, `--role-audio` and `--role-video`, are used only by the example-setup page (`/example-setup`); the architecture diagram's two lane colours (`--lane-public`, `--lane-network`) are the same kind of identity token. They tell model roles apart, always sit beside a text role label and a legend, and are never status or action colours.
 
 ## Do's and Don'ts
 

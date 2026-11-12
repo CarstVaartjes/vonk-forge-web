@@ -1,4 +1,4 @@
-import type { LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
+import type { Licence, LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
 
 
 // The release build (web/scripts/recipe-release.mjs) loads this module under Node, so
@@ -151,6 +151,11 @@ function modelSize(document: ModelDefinition, deduplicate: boolean): number {
   }, 0);
 }
 
+// An empty field is a missing one: the catalog writes "" where it has nothing to say.
+function licenceOf(display: CatalogModelEntry["display"]): Licence {
+  return { spdx: display.license.spdx || undefined, url: display.license.url || undefined };
+}
+
 function mapModelVersion(entity: CatalogModelEntry, index: LibraryIndex): ModelVersionSummary {
   const { document, display } = entity;
   const { identity, source, format } = document;
@@ -171,7 +176,7 @@ function mapModelVersion(entity: CatalogModelEntry, index: LibraryIndex): ModelV
     source_revision: ("revision" in source ? source.revision : "") || undefined,
     format: { precision: format.precision || undefined, quantization: format.quantization || undefined },
     sizes: { download_bytes: modelSize(document, true), installed_bytes: modelSize(document, false) },
-    license: { spdx: display.license.spdx || undefined, url: display.license.url || undefined },
+    license: licenceOf(display),
     capabilities: declaredCapabilities(entity),
     recipe_slugs: recipeSlugs,
   };
@@ -285,6 +290,12 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
     ? item.package.path.slice(index.package_contract.path_prefix.length)
     : item.package.path;
   const contextPath = build.context.path;
+  const lastPass = item.qualification.last_pass;
+  const api = item.api?.api;
+  // Only a chat-shaped API has endpoints and streaming facts.
+  const chat = api && "endpoints" in api ? api : null;
+  const settings = document.settings;
+  const modelEntity = selectedEntity(document, index);
 
   return {
     publisher,
@@ -324,6 +335,13 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
       media_type: item.package.media_type,
     },
     catalog: publicMetadata(item, index, artifacts),
+    evidence: lastPass ? { tested_at: lastPass.tested_at, spark_count: lastPass.platform.spark_count ?? undefined } : null,
+    chat_api: chat ? { endpoints: chat.endpoints, streaming: chat.streaming, structured_output: chat.structured_output, image_input: chat.input_modalities.image, audio_input: chat.input_modalities.audio } : undefined,
+    settings: {
+      context_tokens: "context_tokens" in settings ? settings.context_tokens.value : undefined,
+      concurrency: "concurrency" in settings ? settings.concurrency?.value : undefined,
+    },
+    license: modelEntity ? licenceOf(modelEntity.display) : {},
     latest_revision: {
       content_sha256: item.content_sha256,
       document,

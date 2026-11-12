@@ -4,6 +4,7 @@ import { getCatalogSummary } from "../api/client";
 import type { CatalogSummary } from "../catalog-stats";
 import { CommandBlock } from "../command-block";
 import { controllerInstallCommand, sparkInstallCommand } from "./install";
+import { TypeIcon } from "../icons";
 import { RollingNumber } from "../rolling-number";
 
 
@@ -52,6 +53,7 @@ function ProductShot({
   return (
     <figure className="product-shot">
       <div className="product-shot-frame">
+        <div className="product-shot-bar" aria-hidden="true"><i /><i /><i /><span>https://controller.fixture.invalid/fleet</span></div>
         <img
           src={src}
           alt={alt}
@@ -112,22 +114,15 @@ function Hero({ state }: { state: CatalogState }) {
           mix you need in a few clicks or one <code>vonkctl</code> command your
           agents can drive.
         </p>
-        {showCounts ? (
-          <p className="hero-proof" aria-label="Catalog counts" aria-busy={summary ? undefined : true}>
-            <span className="hero-stat"><RollingNumber value={summary?.verified ?? null} /> recipes verified on DGX Spark</span>
-            <span className="hero-stat"><RollingNumber value={summary?.families ?? null} placeholderDigits={2} /> model families</span>
-            <span className="hero-stat"><RollingNumber value={summary?.creators ?? null} placeholderDigits={2} /> creators</span>
-          </p>
-        ) : null}
+        <div className="hero-actions">
+          <a className="button primary" href="/install">Install</a>
+          <a className="button secondary" href="/recipes">Browse what runs</a>
+        </div>
         {top.length ? (
           <p className="home-creators">
             Recipes from {joinNames(top)} and more, each shown with whether it passed hardware checks on a DGX Spark.
           </p>
         ) : null}
-        <div className="hero-actions">
-          <a className="button primary" href="/install">Install</a>
-          <a className="button secondary" href="/recipes">Browse what runs</a>
-        </div>
         <p className="hero-cli"><a className="text-link" href="/control#local-cli">See the agent-friendly CLI</a></p>
         <ul className="home-facts" aria-label="Product facts">
           <li><StateDot /> Runs on infrastructure you own</li>
@@ -135,6 +130,13 @@ function Hero({ state }: { state: CatalogState }) {
           <li>Open source · MIT</li>
         </ul>
       </div>
+      {showCounts ? (
+        <p className="hero-proof" aria-label="Catalog counts" aria-busy={summary ? undefined : true}>
+          <span className="hero-stat"><RollingNumber value={summary?.verified ?? null} /> recipes verified on DGX Spark</span>
+          <span className="hero-stat"><RollingNumber value={summary?.families ?? null} placeholderDigits={2} /> model families</span>
+          <span className="hero-stat"><RollingNumber value={summary?.creators ?? null} placeholderDigits={2} /> creators</span>
+        </p>
+      ) : null}
     </section>
   );
 }
@@ -147,14 +149,26 @@ function TypeTiles({ summary }: { summary: CatalogSummary }) {
         <p>Pick a kind of model. Each count is recipes that passed hardware checks on a DGX Spark, and the catalog opens on that type with "Verified on Spark" on.</p>
       </div>
       <ul className="type-grid">
+        <li>
+          <a href="/recipes">
+            <TypeIcon id="all" />
+            <span className="type-text">
+              <strong>All verified</strong>
+              <span className="type-count"><b>{number.format(summary.verified)}</b> recipes</span>
+            </span>
+          </a>
+        </li>
         {summary.types.map((type) => {
           const { verified } = type;
           const href = verified > 0 ? `/recipes?type=${type.id}` : `/recipes?type=${type.id}&verified=0`;
           return (
             <li key={type.id}>
               <a href={href}>
-                <strong>{type.label}</strong>
-                <span className="type-count">{verified > 0 ? <><b>{number.format(verified)}</b> verified</> : "None verified yet"}</span>
+                <TypeIcon id={type.id} />
+                <span className="type-text">
+                  <strong>{type.label}</strong>
+                  <span className="type-count">{verified > 0 ? <><b>{number.format(verified)}</b> verified</> : "None verified yet"}</span>
+                </span>
               </a>
             </li>
           );
@@ -293,7 +307,7 @@ export function HomePage() {
           <p>Install the local controller, add one Spark, and let it show you what fits.</p>
         </div>
         <div className="hero-actions">
-          <a className="button primary" href="/install">Install Vonk Forge</a>
+          <a className="button" href="/install">Install Vonk Forge</a>
           <a className="button secondary" href="/models">Browse models and recipes</a>
         </div>
       </section>
