@@ -85,7 +85,7 @@ test("platform story stays navigable and bounded", async ({ page }) => {
     };
     const foreground = styles.getPropertyValue("--faint");
     return Math.min(
-      ...["--night", "--panel", "--panel-raised"].map((token) =>
+      ...["--bg", "--panel", "--raised"].map((token) =>
         contrast(foreground, styles.getPropertyValue(token))),
     );
   });

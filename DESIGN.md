@@ -6,15 +6,22 @@ colors:
   ash-muted: "#aaa396"
   ash-faint: "#958e80"
   workbench-black: "#0a0b0a"
+  recess-black: "#060706"
   iron-panel: "#111311"
   raised-iron: "#181a17"
+  hover-iron: "#1f221d"
   rule-dark: "#2c2f2a"
   rule-bright: "#454940"
+  rule-control: "#666b5f"
   action-green: "#76b900"
   ready-green: "#a3d93a"
+  green-ink: "#0b0d08"
   spark-gold: "#d9b56f"
   spark-gold-soft: "#eacf9a"
-  danger-red: "#ff715e"
+  warning-amber: "#ffb347"
+  danger-red: "#ff7a6b"
+  info-blue: "#8fc4ff"
+  meter-track: "#2a2e27"
 typography:
   display:
     fontFamily: "Onest Variable, Helvetica Neue, ui-sans-serif, system-ui, sans-serif"
@@ -139,7 +146,14 @@ The palette is taken from the DGX Spark itself: a graphite dark system with NVID
 - **Ash Faint** (`ash-faint`): Metadata that remains useful but should recede.
 - **Dark Rule** (`rule-dark`): Default one-pixel division between regions.
 - **Bright Rule** (`rule-bright`): Focused boundaries and secondary-control strokes.
+- **Recess Black** (`recess-black`): Command blocks and inputs, one step below the page.
+- **Hover Iron** (`hover-iron`): Hover and selected rows.
+- **Control Rule** (`rule-control`): The one border that identifies a button or input (3:1 on every surface; Bright Rule is decorative only).
+- **Green Ink** (`green-ink`): Text on an Action Green fill.
+- **Warning Amber** (`warning-amber`): Warning status. It moved off the old pale yellow, which read as Spark gold.
 - **Danger Red** (`danger-red`): Error state only; never decoration.
+- **Info Blue** (`info-blue`): Informational status.
+- **Meter Track** (`meter-track`): The empty part of a meter.
 
 ### Named Rules
 
@@ -246,7 +260,7 @@ The terminal counterpart of the controller preview: the same tight rectangular f
 
 ### Role Colours
 
-The example-setup page (`/example-setup`) scopes five tokens to itself: `--role-coder`, `--role-image`, `--role-three-d`, `--role-audio` and `--role-video`. They tell model roles apart, always sit beside a text role label and a legend, and are never status or action colours.
+Five tokens in `:root`, `--role-coder`, `--role-image`, `--role-three-d`, `--role-audio` and `--role-video`, are used only by the example-setup page (`/example-setup`); the architecture diagram's two lane colours (`--lane-public`, `--lane-network`) are the same kind of identity token. They tell model roles apart, always sit beside a text role label and a legend, and are never status or action colours.
 
 ## Do's and Don'ts
 
