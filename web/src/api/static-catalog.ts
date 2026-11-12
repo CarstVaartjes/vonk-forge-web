@@ -4,61 +4,26 @@ import type { LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSu
 // The release build (web/scripts/recipe-release.mjs) loads this module under Node, so
 // its runtime imports carry explicit .ts extensions and the JSON import its attribute.
 import contract from "../contract-major.json" with { type: "json" };
-import { CAPABILITY_OPTIONS } from "../catalog-filters.ts";
 import { parseCatalogSummary, type CatalogSummary } from "../catalog-stats.ts";
-import { STATUS_UNAVAILABLE, isVerified } from "../qualification-status.ts";
+import { isVerified } from "../qualification-status.ts";
+import type { CatalogIndex, CatalogModelEntry, CatalogRecipeEntry } from "./catalog-types.ts";
 
 
-type JsonRecord = Record<string, unknown>;
+// The index is read through the types generated from the schema the release ships
+// (catalog-types.ts), so a field the contract does not have is a `tsc` error and a
+// field it has is never defaulted. Only text the site itself defines is read loosely.
+export type LibraryIndex = CatalogIndex;
+type RecipeDefinition = CatalogRecipeEntry["document"];
+type ModelDefinition = CatalogModelEntry["document"];
 
 // The recipe/model contract major this site renders (web/scripts/recipe-release.mjs
 // selects the matching library release).
 const SUPPORTED_CONTRACT_MAJOR = contract.major;
 
-interface LibraryRecipe {
-  content_sha256: string;
-  display?: JsonRecord;
-  document: JsonRecord;
-  package: { expected_bytes: number; media_type: string; minimum_consumer_schema: number; path: string; recipe_content_sha256: string; sha256: string };
-  qualification?: JsonRecord;
-  release?: JsonRecord;
-  source_path: string;
-}
-
-export interface LibraryIndex {
-  catalog_entities: LibraryEntity[];
-  contract_version: string;
-  updated_at: string;
-  repository: string;
-  recipes: LibraryRecipe[];
-  schema_version: number;
-  kind: "recipe-library-index";
-  source_commit: string;
-  package_contract: { media_type: string; path_prefix: string; schema_version: number };
-}
-
-interface LibraryEntity {
-  content_sha256?: string;
-  display?: JsonRecord;
-  document: JsonRecord;
-  source_path?: string;
-}
-
-interface CatalogReference {
-  kind: string;
-  publisher: string;
-  slug: string;
-  content_sha256: string;
-}
-
 const cachedIndexes = new Map<string, Promise<LibraryIndex>>();
 
-function record(value: unknown): JsonRecord {
-  return typeof value === "object" && value !== null ? value as JsonRecord : {};
-}
-
-function array(value: unknown): unknown[] {
-  return Array.isArray(value) ? value : [];
+function record(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null ? value as Record<string, unknown> : {};
 }
 
 function text(value: unknown, fallback = ""): string {
@@ -72,22 +37,14 @@ export function displayTitle(value: unknown, fallback = ""): string {
   return trimmed || fallback;
 }
 
-function number(value: unknown): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : 0;
-}
-
-function nodeResources(document: JsonRecord): { disk: number; memory: number } {
-  const topology = record(document.topology);
-  const roles = array(topology.roles).map(record);
-  return roles.reduce<{ disk: number; memory: number }>(
+function nodeResources(document: RecipeDefinition): { disk: number; memory: number } {
+  return document.topology.roles.reduce<{ disk: number; memory: number }>(
     (maximum, role) => {
-      const resources = record(role.resources);
-      const disk = record(resources.disk);
-      const memory = record(resources.memory);
-      const diskBytes = Object.values(disk).reduce<number>((total, value) => total + number(value), 0);
+      const { disk, memory } = role.resources;
+      const diskBytes = Object.values(disk).reduce((total, value) => total + value, 0);
       // Controller resource planning defines reserve_bytes as informational:
       // peak_bytes already describes the complete runtime memory requirement.
-      const runtimeBytes = number(memory.peak_bytes);
+      const runtimeBytes = memory.peak_bytes;
       return {
         disk: Math.max(maximum.disk, diskBytes),
         memory: Math.max(maximum.memory, runtimeBytes),
@@ -97,13 +54,9 @@ function nodeResources(document: JsonRecord): { disk: number; memory: number } {
   );
 }
 
-function runtimeAdapter(document: JsonRecord): string {
-  const runtime = record(document.runtime);
-  const engine = text(runtime.engine);
-  const haystack = [
-    engine,
-    ...array(runtime.entrypoint).map((value) => text(value)),
-  ].join(" ").toLowerCase();
+function runtimeAdapter(document: RecipeDefinition): string {
+  const { engine, entrypoint } = document.runtime;
+  const haystack = [engine, ...entrypoint].join(" ").toLowerCase();
   if (haystack.includes("vllm")) return "vllm";
   if (haystack.includes("sglang")) return "sglang";
   if (haystack.includes("llama")) return "llama.cpp";
@@ -111,29 +64,14 @@ function runtimeAdapter(document: JsonRecord): string {
   return engine || "custom";
 }
 
-const PUBLIC_CAPABILITIES = CAPABILITY_OPTIONS.map((option) => option.value);
-
-function tags(display: JsonRecord): string[] {
-  return array(display.tags).map((value) => text(value).toLowerCase()).filter(Boolean);
+function lowerTags(tags: string[]): string[] {
+  return tags.map((value) => value.toLowerCase()).filter(Boolean);
 }
 
 // Contract major 4 keeps a model's capabilities and licence in its display
 // document, not its execution document. They are a plain list of names.
-function declaredCapabilities(display: JsonRecord): string[] {
-  return Array.from(new Set(array(display.capabilities).map((value) => text(value)).filter(Boolean)));
-}
-
-function publicCapabilities(display: JsonRecord): string[] {
-  const values = new Set(declaredCapabilities(display));
-  return PUBLIC_CAPABILITIES.filter((value) => values.has(value));
-}
-
-// Shown as published. An entry without a readable status degrades only that
-// entry; the rest of the catalog keeps rendering.
-function publishedQualification(item: LibraryRecipe): { status: string; reason: string | null } {
-  const published = record(item.qualification);
-  const status = typeof published.status === "string" ? published.status.trim() : "";
-  return { status: status || STATUS_UNAVAILABLE, reason: text(published.reason) || null };
+function declaredCapabilities(entity: CatalogModelEntry): string[] {
+  return Array.from(new Set<string>(entity.display.capabilities));
 }
 
 function executionReadiness(recipeTags: string[]): "executable" | "integration-required" | "not-executable" | "not-declared" {
@@ -177,119 +115,70 @@ function canonicalSource(sourceReference: string): { owner: string; repository: 
   }
 }
 
-function modelMetadata(document: JsonRecord, index: LibraryIndex): { publisher: string; slug: string; title: string; family: string; versionPublisher: string; versionSlug: string; versionTitle: string } {
-  const selected = recipeModelSelections(document)[0];
-  const versionEntity = index.catalog_entities.find((entity) => selected && sameReference(selected.model, entity));
-  const version = versionEntity?.document;
-  const versionIdentity = entityIdentity(version ?? {});
-  const logical = modelIdentity(version ?? {});
-  const display = record(versionEntity?.display);
-  const versionTitle = text(versionIdentity.slug, "unknown");
-  const versionPublisher = text(versionIdentity.publisher, "unknown");
-  const versionSlug = text(versionIdentity.slug, "unknown");
-  const slug = text(logical.slug, versionSlug);
+
+// A recipe selects a model by kind, identity and content digest; the entity is that exact document.
+function sameReference(selected: RecipeDefinition["models"][number]["model"], entity: CatalogModelEntry): boolean {
+  const { identity } = entity.document;
+  return selected.kind === entity.document.kind
+    && selected.publisher === identity.publisher
+    && selected.slug === identity.slug
+    && selected.content_sha256 === entity.content_sha256;
+}
+
+function selectedEntity(document: RecipeDefinition, index: LibraryIndex, selection = document.models[0]): CatalogModelEntry | undefined {
+  return selection && index.catalog_entities.find((entity) => sameReference(selection.model, entity));
+}
+
+function modelMetadata(document: RecipeDefinition, index: LibraryIndex): { publisher: string; slug: string; title: string; family: string; versionPublisher: string; versionSlug: string; versionTitle: string } {
+  const entity = selectedEntity(document, index);
+  const identity = entity?.document.identity;
+  const versionSlug = identity?.slug ?? "unknown";
+  const versionPublisher = identity?.publisher ?? "unknown";
+  const slug = identity?.model.slug ?? versionSlug;
   return {
-    publisher: text(logical.publisher, versionPublisher),
+    publisher: identity?.model.publisher ?? versionPublisher,
     slug,
-    title: displayTitle(display.model_title, slug),
-    family: displayTitle(display.family_title) || text(modelFamily(version ?? {}).slug) || displayTitle(display.model_title, slug),
+    title: displayTitle(entity?.display.model_title, slug),
+    family: displayTitle(entity?.display.family_title) || identity?.family.slug || displayTitle(entity?.display.model_title, slug),
     versionPublisher,
     versionSlug,
-    versionTitle,
+    versionTitle: versionSlug,
   };
 }
 
-function entityIdentity(document: JsonRecord): { publisher: string; slug: string } {
-  const identity = record(document.identity);
-  return { publisher: text(identity.publisher), slug: text(identity.slug) };
-}
-
-function reference(value: unknown): CatalogReference {
-  const source = record(value);
-  const document = record(source.document);
-  const identity = record(document.identity);
-  return {
-    kind: text(source.kind, text(document.kind)),
-    publisher: text(source.publisher, text(identity.publisher)),
-    slug: text(source.slug, text(identity.slug)),
-    content_sha256: text(source.content_sha256),
-  };
-}
-
-function sameReference(left: unknown, right: unknown): boolean {
-  const a = reference(left);
-  const b = reference(right);
-  return Boolean(a.kind && a.publisher && a.slug && a.content_sha256)
-    && a.kind === b.kind
-    && a.publisher === b.publisher
-    && a.slug === b.slug
-    && a.content_sha256 === b.content_sha256;
-}
-
-function modelIdentity(document: JsonRecord): JsonRecord {
-  return record(record(document.identity).model);
-}
-
-function modelFamily(document: JsonRecord): JsonRecord {
-  return record(record(document.identity).family);
-}
-
-function modelFiles(document: JsonRecord): JsonRecord[] {
-  return array(document.files).map(record);
-}
-
-function modelSize(document: JsonRecord, deduplicate: boolean): number {
-  const files = modelFiles(document);
+function modelSize(document: ModelDefinition, deduplicate: boolean): number {
   const seen = new Set<string>();
-  return files.reduce((total, file) => {
-    const digest = text(file.sha256);
-    if (deduplicate && digest && seen.has(digest)) return total;
-    if (deduplicate && digest) seen.add(digest);
-    return total + number(file.size_bytes);
+  return document.files.reduce((total, file) => {
+    if (deduplicate && seen.has(file.sha256)) return total;
+    if (deduplicate) seen.add(file.sha256);
+    return total + file.size_bytes;
   }, 0);
 }
 
-function mapModelVersion(
-  entity: LibraryEntity,
-  recipes: RecipeSummary[],
-): ModelVersionSummary {
-  const document = entity.document;
-  const identity = entityIdentity(document);
-  const logicalModel = modelIdentity(document);
-  const source = record(document.source);
-  const format = record(document.format);
-  const display = record(entity.display);
-  const license = record(display.license);
-  const recipeSlugs = recipes
-    .filter((recipe) => recipeModels(recipe).some((candidate) => sameReference(candidate, entity)))
-    .map((recipe) => `${recipe.publisher}/${recipe.slug}`)
+function mapModelVersion(entity: CatalogModelEntry, index: LibraryIndex): ModelVersionSummary {
+  const { document, display } = entity;
+  const { identity, source, format } = document;
+  const recipeSlugs = index.recipes
+    .filter((recipe) => recipe.document.models.some((selection) => sameReference(selection.model, entity)))
+    .map((recipe) => `${recipe.document.identity.publisher}/${recipe.document.identity.slug}`)
     .sort();
   return {
     publisher: identity.publisher,
     slug: identity.slug,
     title: identity.slug,
-    version: text(record(document.identity).version, identity.slug),
-    revision_id: text(entity.content_sha256, "unknown"),
-    model_slug: text(logicalModel.slug),
-    variant: text(record(document.identity).variant) || undefined,
-    requires_token: typeof document.requires_token === "boolean" ? document.requires_token : undefined,
-    source_repository: text(source.repository) || undefined,
-    source_revision: text(source.revision) || undefined,
-    format: { precision: text(format.precision) || undefined, quantization: text(format.quantization) || undefined },
+    version: identity.version,
+    revision_id: entity.content_sha256,
+    model_slug: identity.model.slug,
+    variant: identity.variant || undefined,
+    requires_token: document.requires_token,
+    source_repository: source.repository || undefined,
+    source_revision: ("revision" in source ? source.revision : "") || undefined,
+    format: { precision: format.precision || undefined, quantization: format.quantization || undefined },
     sizes: { download_bytes: modelSize(document, true), installed_bytes: modelSize(document, false) },
-    license: { spdx: text(license.spdx) || undefined, url: text(license.url) || undefined },
-    capabilities: declaredCapabilities(display),
+    license: { spdx: display.license.spdx || undefined, url: display.license.url || undefined },
+    capabilities: declaredCapabilities(entity),
     recipe_slugs: recipeSlugs,
   };
-}
-
-function recipeModels(recipe: RecipeSummary): JsonRecord[] {
-  return array((recipe as RecipeSummary & { latest_revision: { document: JsonRecord } }).latest_revision.document.models)
-    .map((selection) => record(record(selection).model));
-}
-
-function recipeModelSelections(document: JsonRecord): JsonRecord[] {
-  return array(document.models).map(record);
 }
 
 function modelRuns(versions: ModelVersionSummary[], recipes: RecipeSummary[]): ModelRuns {
@@ -313,57 +202,44 @@ function verifiedModelRecipes(versions: ModelVersionSummary[], recipes: RecipeSu
 }
 
 function mapModels(index: LibraryIndex): ModelSummary[] {
-  const entities = index.catalog_entities;
   const recipes = index.recipes.map((item) => mapRecipe(item, index));
-  const models = entities.filter((entity) => entity.document.kind === "model");
-  const groups = new Map<string, LibraryEntity[]>();
-  for (const entity of models) {
-    const logical = modelIdentity(entity.document);
-    const key = `${text(logical.publisher)}\0${text(logical.slug)}`;
+  const groups = new Map<string, CatalogModelEntry[]>();
+  for (const entity of index.catalog_entities) {
+    const logical = entity.document.identity.model;
+    const key = `${logical.publisher}\0${logical.slug}`;
     groups.set(key, [...(groups.get(key) ?? []), entity]);
   }
   return Array.from(groups.values()).map((variants) => {
     const first = variants[0]!;
-    const identity = modelIdentity(first.document);
-    const display = record(first.display);
-    const versionRows = variants.map((version) => mapModelVersion(version, recipes)).sort((left, right) => left.title.localeCompare(right.title));
+    const { identity, display } = { identity: first.document.identity.model, display: first.display };
+    const versionRows = variants.map((version) => mapModelVersion(version, index)).sort((left, right) => left.title.localeCompare(right.title));
     const verifiedRecipes = verifiedModelRecipes(versionRows, recipes);
     return {
-      publisher: text(identity.publisher),
-      slug: text(identity.slug),
-      title: displayTitle(display.model_title, text(identity.slug)),
-      description: text(display.description),
-      family: displayTitle(display.family_title) || text(modelFamily(first.document).slug) || undefined,
+      publisher: identity.publisher,
+      slug: identity.slug,
+      title: displayTitle(display.model_title, identity.slug),
+      description: display.description,
+      family: displayTitle(display.family_title) || first.document.identity.family.slug || undefined,
       runs: modelRuns(versionRows, recipes),
       verified_runs: runsOf(verifiedRecipes),
       verified_recipe_count: verifiedRecipes.length,
-      tags: array(display.tags).map((value) => text(value).toLowerCase()).filter(Boolean),
-      revision_id: text(first.content_sha256, "unknown"),
+      tags: lowerTags(display.tags),
+      revision_id: first.content_sha256,
       versions: versionRows,
       recipe_count: new Set(versionRows.flatMap((version) => version.recipe_slugs)).size,
     };
   }).sort((left, right) => left.title.localeCompare(right.title));
 }
 
-function publicMetadata(item: LibraryRecipe, document: JsonRecord, index: LibraryIndex, artifacts: RecipeSummary["artifacts"]): NonNullable<RecipeSummary["catalog"]> {
-  const published = publishedQualification(item);
-  const display = record(item.display);
-  const recipeTags = tags(display);
-  const runtime = record(document.runtime);
-  const topology = record(document.topology);
-  const provenance = record(document.provenance);
+function publicMetadata(item: CatalogRecipeEntry, index: LibraryIndex, artifacts: RecipeSummary["artifacts"]): NonNullable<RecipeSummary["catalog"]> {
+  const { document, display } = item;
+  const recipeTags = lowerTags(display.tags);
   const model = modelMetadata(document, index);
-  const source = canonicalSource(text(provenance.source_reference));
-  const alignmentValue = text(display.alignment, "unspecified");
-  const alignment = ["standard", "abliterated", "derisked", "other-modified", "unspecified"].includes(alignmentValue) ? alignmentValue as NonNullable<RecipeSummary["catalog"]>["alignment"] : "unspecified";
-  const selected = recipeModelSelections(document)[0];
-  const modelEntity = index.catalog_entities.find((entity) => selected && sameReference(selected.model, entity));
-  const format = record(modelEntity?.document.format);
-  const quantization = text(format.quantization);
-  const quantizations = quantization ? [quantization.toUpperCase()] : [];
-  const precision = text(format.precision) || null;
+  const source = canonicalSource(document.provenance.source_reference ?? "");
+  const modelEntity = selectedEntity(document, index);
+  const quantization = modelEntity?.document.format.quantization ?? "";
   return {
-    description: text(display.description),
+    description: display.description,
     tags: recipeTags,
     model_publisher: model.publisher,
     model_slug: model.slug,
@@ -374,62 +250,53 @@ function publicMetadata(item: LibraryRecipe, document: JsonRecord, index: Librar
     model_family: model.family,
     source_owner: source?.owner ?? null,
     source_repository: source?.repository ?? null,
-    alignment,
-    capabilities: modelEntity ? publicCapabilities(record(modelEntity.display)) : [],
-    qualification: published.status,
-    qualification_reason: published.reason,
+    alignment: display.alignment ?? "unspecified",
+    capabilities: modelEntity ? declaredCapabilities(modelEntity) : [],
+    qualification: item.qualification.status,
+    qualification_reason: item.qualification.reason ?? null,
     execution_readiness: executionReadiness(recipeTags),
-    runtime_distribution: text(runtime.engine, "unknown"),
-    precision,
-    quantizations,
-    node_count: Math.max(1, number(topology.node_count)),
+    runtime_distribution: document.runtime.engine || "unknown",
+    precision: modelEntity?.document.format.precision || null,
+    quantizations: quantization ? [quantization.toUpperCase()] : [],
+    node_count: Math.max(1, document.topology.node_count),
     expected_download_bytes: (artifacts ?? []).reduce((total, artifact) => total + (artifact.download_bytes ?? 0), 0),
   };
 }
 
-function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
-  const document = record(item.document);
-  const identity = record(document.identity);
-  const display = record(item.display);
-  const execution = record(document.execution);
-  const build = record(execution.build);
-  const context = record(build.context);
-  const topology = record(document.topology);
-  const release = record(item.release);
-  const publisher = text(identity.publisher);
-  const slug = text(identity.slug);
-  const nodeCount = Math.max(1, number(topology.node_count));
+function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail {
+  const { document, display } = item;
+  const { publisher, slug } = document.identity;
+  const { build } = document.execution;
+  const nodeCount = Math.max(1, document.topology.node_count);
   const resources = nodeResources(document);
-  const artifacts = recipeModelSelections(document).flatMap((selection) => {
-    const entity = index.catalog_entities.find((candidate) => sameReference(selection.model, candidate));
-    const source = record(entity?.document.source);
-    const selectedFiles = new Set(array(selection.files).map((value) => text(record(value).file_id)));
-    return entity ? modelFiles(entity.document)
-      .filter((file) => selectedFiles.has(text(file.id)))
+  const artifacts = document.models.flatMap((selection) => {
+    const entity = selectedEntity(document, index, selection);
+    const selectedFiles = new Set(selection.files.map((file) => file.file_id));
+    return entity ? entity.document.files
+      .filter((file) => selectedFiles.has(file.id))
       .map((file) => ({
-        repository: text(source.repository),
-        revision: text(source.revision),
-        download_bytes: number(file.size_bytes),
+        repository: entity.document.source.repository,
+        revision: "revision" in entity.document.source ? entity.document.source.revision : "",
+        download_bytes: file.size_bytes,
       })) : [];
   });
-  const version = text(release.version);
   const sourceUrl = `https://github.com/${index.repository}/blob/${index.source_commit}/${item.source_path}`;
   const packageName = item.package.path.startsWith(index.package_contract.path_prefix)
     ? item.package.path.slice(index.package_contract.path_prefix.length)
     : item.package.path;
-  const contextPath = text(context.path);
+  const contextPath = build.context.path;
 
   return {
     publisher,
     slug,
-    title: text(display.title, slug),
+    title: display.title,
     official: publisher === "vonk-forge",
     content_sha256: item.content_sha256,
-    published_at: text(release.released_at),
-    version: version || undefined,
+    published_at: item.release.released_at,
+    version: item.release.version || undefined,
     runtime: { adapter: runtimeAdapter(document) },
     build: {
-      dockerfile: text(build.dockerfile),
+      dockerfile: build.dockerfile,
     },
     artifacts,
     capacity: {
@@ -456,7 +323,7 @@ function mapRecipe(item: LibraryRecipe, index: LibraryIndex): RecipeDetail {
       bytes: item.package.expected_bytes,
       media_type: item.package.media_type,
     },
-    catalog: publicMetadata(item, document, index, artifacts),
+    catalog: publicMetadata(item, index, artifacts),
     latest_revision: {
       content_sha256: item.content_sha256,
       document,
@@ -502,30 +369,22 @@ async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryInde
   return parseLibraryIndex(rawBody, rawRelease);
 }
 
-// Accepts an index only when it is the one this site understands and belongs to
-// the named release; anything else is refused rather than defaulted. The build
-// (which derives the home summary) and the browser both read through this.
+// Accepts an index only when it is the major this site renders, has the shape the
+// pages need, and belongs to the named release; anything else is refused rather than
+// defaulted. The envelope's version and kind were checked against the release's own
+// schema when the build verified the bundle (recipe-release.mjs), so they are not
+// repeated here. The build (which derives the home summary) and the browser both read
+// through this.
 export function parseLibraryIndex(rawBody: unknown, rawRelease: unknown): LibraryIndex {
   const body = rawBody as Partial<LibraryIndex>;
   const release = record(rawRelease) as Partial<ReleaseManifest>;
-  const entities = body.catalog_entities;
-  const validEntities = Array.isArray(entities) && entities.length > 0 && entities.every((value) => {
-    const entity = record(value);
-    const document = record(entity.document);
-    const identity = record(document.identity);
-    return /^[0-9a-f]{64}$/.test(text(entity.content_sha256))
-      && typeof document.kind === "string"
-      && typeof identity.publisher === "string"
-      && typeof identity.slug === "string";
-  });
-  if (body.schema_version !== contract.index_schema_version || contractMajor(body.contract_version) !== SUPPORTED_CONTRACT_MAJOR || typeof body.updated_at !== "string" || body.kind !== "recipe-library-index" || typeof body.repository !== "string" || typeof body.source_commit !== "string" || !validEntities || !Array.isArray(body.recipes) || !body.package_contract || body.package_contract.schema_version !== contract.package_schema_version || typeof body.package_contract.media_type !== "string" || typeof body.package_contract.path_prefix !== "string") {
+  if (contractMajor(body.contract_version) !== SUPPORTED_CONTRACT_MAJOR || !Array.isArray(body.catalog_entities) || body.catalog_entities.length === 0 || !Array.isArray(body.recipes) || !body.package_contract) {
     throw new Error("Recipe library returned an unsupported catalog index");
   }
   if (typeof release.tag !== "string" || !/^v\d+\.\d+\.\d+$/.test(release.tag) || release.repository !== body.repository || release.source_commit !== body.source_commit) {
     throw new Error("Recipe library returned an index that does not match its release");
   }
-  const index = body as LibraryIndex;
-  return index;
+  return body as LibraryIndex;
 }
 
 function loadIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
@@ -579,10 +438,7 @@ export async function getStaticRecipe(
   signal?: AbortSignal,
 ): Promise<RecipeDetail> {
   const index = await loadIndex(url, signal);
-  const item = index.recipes.find((candidate) => {
-    const identity = record(record(candidate.document).identity);
-    return identity.publisher === publisher && identity.slug === slug;
-  });
+  const item = index.recipes.find((candidate) => candidate.document.identity.publisher === publisher && candidate.document.identity.slug === slug);
   if (!item) throw new Error("Recipe not found in the public library");
   return mapRecipe(item, index);
 }

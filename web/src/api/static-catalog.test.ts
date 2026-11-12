@@ -1,68 +1,17 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
+import { catalogIndexFixture } from "./catalog.fixture";
+import type { CatalogIndex } from "./catalog-types";
 import { displayTitle, getStaticLibraryRelease, getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog, resetStaticCatalogCacheForTests } from "./static-catalog";
 
 
-const index = {
-  schema_version: 2,
-  contract_version: "4.0.0",
-  updated_at: "2026-09-28T20:04:06Z",
-  kind: "recipe-library-index",
-  repository: "CarstVaartjes/vonk-forge-recipes",
-  source_commit: "f".repeat(40),
-  package_contract: {
-    schema_version: 2,
-    media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip",
-    path_prefix: "packages/",
-  },
-  catalog_entities: [
-    { content_sha256: "3".repeat(64), document: { kind: "model", identity: { publisher: "qwen", slug: "qwen-fast-nvfp4", family: { publisher: "qwen", slug: "qwen" }, model: { publisher: "qwen", slug: "qwen-fast" }, version: "1.0", variant: "nvfp4" }, requires_token: false, dependencies: [], source: { repository: "https://huggingface.co/Qwen/Qwen", revision: "c".repeat(40) }, format: { precision: "nvfp4", quantization: "nvfp4" }, files: [{ id: "weights", path: "weights.safetensors", sha256: "b".repeat(64), size_bytes: 20, roles: ["weights"] }] }, display: { kind: "model-display", capabilities: ["chat", "reasoning"], modalities: ["text"], license: { spdx: "Apache-2.0", url: "https://example.test/license", attribution: ["Qwen"] }, family_title: "Qwen", model_title: "Qwen Fast", description: "Fast language model", tags: ["language"] } },
-  ],
-  recipes: [
-    {
-      content_sha256: "a".repeat(64),
-      source_path: "recipes/qwen-fast.json",
-      qualification: { status: "Working", changed: [], required_sparks: 1 },
-      display: { kind: "recipe-display", title: "Qwen Fast NVFP4", description: "Fast language model", tags: ["candidate", "executable", "reasoning", "nvfp4"], alignment: "standard" },
-      package: { expected_bytes: 123, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", minimum_consumer_schema: 2, path: "packages/vonk-forge-qwen-fast.tar.gz", recipe_content_sha256: "a".repeat(64), sha256: "1".repeat(64) },
-      release: { version: "2.1.0", released_at: "2026-08-28" },
-      document: {
-        identity: { publisher: "vonk-forge", slug: "qwen-fast" },
-        kind: "recipe",
-        models: [{ id: "primary", model: { kind: "model", publisher: "qwen", slug: "qwen-fast-nvfp4", content_sha256: "3".repeat(64) }, files: [{ id: "weights", file_id: "weights", roles: ["entrypoint"], mount: { target: "/models" } }] }],
-        interfaces: [{ adapter: "openai" }],
-        runtime: { engine: "vllm", entrypoint: ["vllm", "serve"], arguments: [], environment: [], lifecycle: { stop_timeout_seconds: 120 } },
-        execution: { build: { base_image: { repository: "ubuntu", digest: "e".repeat(64) }, context: { path: "adapters/qwen" }, dockerfile: "Dockerfile", patches: [], network: { hosts: [] } } },
-        topology: {
-          name: "solo",
-          node_count: 1,
-          roles: [{ resources: { disk: { image_bytes: 5, artifact_bytes: 10, working_bytes: 3, safety_margin_bytes: 2 }, memory: { peak_bytes: 40, reserve_bytes: 8 } } }],
-        },
-        provenance: { source_reference: "https://huggingface.co/Qwen/Qwen/tree/abc", attribution: ["Qwen"] },
-        settings: { kind: "generation", context_tokens: { value: 8192, change_effect: "restart" }, concurrency: { value: 1, change_effect: "restart" }, max_batch_tokens: null, knobs: {} },
-      },
-    },
-    {
-      content_sha256: "d".repeat(64),
-      source_path: "recipes/glm-dual.json",
-      qualification: { status: "Not yet verified", changed: [], reason: "needs more Sparks", required_sparks: 2 },
-      display: { kind: "recipe-display", title: "GLM Dual", description: "", tags: ["chat"], alignment: "unspecified" },
-      package: { expected_bytes: 321, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", minimum_consumer_schema: 2, path: "packages/community-glm-dual.tar.gz", recipe_content_sha256: "d".repeat(64), sha256: "2".repeat(64) },
-      release: { version: "1.0.0", released_at: "2026-08-27" },
-      document: {
-        identity: { publisher: "community", slug: "glm-dual" },
-        kind: "recipe",
-        models: [{ id: "primary", model: { kind: "model", publisher: "qwen", slug: "qwen-fast-nvfp4", content_sha256: "3".repeat(64) }, files: [{ id: "weights", file_id: "weights", roles: ["entrypoint"], mount: { target: "/models" } }] }],
-        runtime: { engine: "sglang", entrypoint: ["sglang", "serve"], arguments: [], environment: [], lifecycle: { stop_timeout_seconds: 120 } },
-        execution: { build: { base_image: { repository: "ubuntu", digest: "f".repeat(64) }, context: { path: "adapters/glm" }, dockerfile: "Dockerfile", patches: [], network: { hosts: [] } } },
-        topology: { name: "dual", node_count: 2, roles: [] },
-      },
-    },
-  ],
-};
-
-const release = { repository: "CarstVaartjes/vonk-forge-recipes", tag: "v4.0.0", contract_version: "4.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: "f".repeat(40) };
+// Real entries of the signed library (see catalog.fixture.ts): two single-Spark Working
+// gemma recipes, a Working 3D recipe and an eight-Spark recipe that needs more Sparks.
+const index = catalogIndexFixture as CatalogIndex;
+const release = { repository: index.repository, tag: "v4.8.0", contract_version: index.contract_version, updated_at: index.updated_at, source_commit: index.source_commit };
 const indexUrl = "https://example.test/catalog/catalog-index.json";
+const nvidia = "gemma-4-e2b-it-nvidia-vllm-single";
+const eight = "inkling-975b-a41b-nvfp4-sglang-eight";
 
 // Serve the verified release the Pages build writes: the index and its manifest.
 function serve(indexBody: unknown, releaseBody: unknown = release) {
@@ -83,16 +32,15 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("static recipe library adapter", () => {
-  test("reads one verified release from this origin and pins source links to the library commit and offers no package download", async () => {
+  test("reads one verified release from this origin and offers no package download", async () => {
     const fetchMock = serve(index);
     const [recipe, models] = await Promise.all([
-      getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast"),
+      getStaticRecipe(indexUrl, "vonk-forge", nvidia),
       listStaticModels(indexUrl),
     ]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(recipe.package).not.toHaveProperty("url");
-    expect(recipe.source?.recipe_url).toBe(`https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${"f".repeat(40)}/recipes/qwen-fast.json`);
-    expect(models.items[0]?.recipe_count).toBe(2);
+    expect(models.items).toHaveLength(4);
   });
 
   test("resolves the default same-origin index path against the page", async () => {
@@ -117,161 +65,124 @@ describe("static recipe library adapter", () => {
       .mockImplementation(async (url: string) => ({ ok: true, json: async () => (url.endsWith("release.json") ? release : index) }));
     vi.stubGlobal("fetch", fetchMock);
     await expect(listStaticModels(indexUrl)).rejects.toThrow("returned 503");
-    expect((await listStaticModels(indexUrl)).items).toHaveLength(1);
+    expect((await listStaticModels(indexUrl)).items).toHaveLength(4);
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
-  test("maps the immutable library index into public recipe cards", async () => {
+  test("maps a Working single-Spark recipe, projecting peak memory without the informational reserve", async () => {
     const recipes = await listStaticRecipeCatalog(indexUrl);
 
-    expect(recipes).toHaveLength(2);
-    expect(recipes.find((recipe) => recipe.slug === "qwen-fast")).toMatchObject({
+    expect(recipes.map((recipe) => recipe.slug)).toEqual([nvidia, "gemma-4-e2b-it-q8-0-ggml-org-llamacpp-single", eight, "skintokens-pytorch-single"]);
+    expect(recipes[0]).toMatchObject({
       publisher: "vonk-forge",
-      slug: "qwen-fast",
-      title: "Qwen Fast NVFP4",
-      version: "2.1.0",
+      title: "Gemma 4 E2B IT vLLM single Spark (NVIDIA playbook)",
+      version: "1.0.6",
+      published_at: "2026-11-03",
       runtime: { adapter: "vllm" },
-      capacity: { profile_node_counts: [1], maximum_installed_bytes_per_node: 20, maximum_runtime_memory_bytes_per_node: 40 },
+      // peak 119063746765 per node; the 8 GB reserve is not added. Disk is the sum of the four disk fields.
+      capacity: { profile_node_counts: [1], maximum_installed_bytes_per_node: 60278835678, maximum_runtime_memory_bytes_per_node: 119063746765 },
       catalog: {
-        model_publisher: "qwen",
-        model_slug: "qwen-fast",
-        model_title: "Qwen Fast",
-        model_version_publisher: "qwen",
-        model_version_slug: "qwen-fast-nvfp4",
-        model_version_title: "qwen-fast-nvfp4",
-        source_owner: "Qwen",
-        source_repository: "https://huggingface.co/Qwen/Qwen",
-        alignment: "standard",
-        capabilities: ["chat", "reasoning"],
+        description: index.recipes[0]!.display.description,
+        model_publisher: "google",
+        model_slug: "gemma-4-e2b",
+        model_title: "Gemma 4 E2B",
+        model_version_slug: "gemma-4-e2b-it-4adf1574",
+        model_family: "Google Gemma",
+        source_owner: "NVIDIA",
+        source_repository: "https://github.com/NVIDIA/dgx-spark-playbooks",
+        alignment: "unspecified",
+        capabilities: ["audio-understanding", "chat", "image-understanding", "reasoning", "text-generation", "tool-use"],
         qualification: "Working",
+        qualification_reason: null,
         execution_readiness: "executable",
-        precision: "nvfp4",
-        quantizations: ["NVFP4"],
+        runtime_distribution: "vllm",
+        precision: "bf16",
+        node_count: 1,
       },
     });
   });
 
-  test("the update date is the recipe's released_at, which the library moves on every refresh", async () => {
-    serve(index);
-    const recipes = await listStaticRecipeCatalog(indexUrl);
-    expect(recipes.map((recipe) => [recipe.slug, recipe.published_at])).toEqual([["qwen-fast", "2026-08-28"], ["glm-dual", "2026-08-27"]]);
+  test("an eight-Spark recipe keeps the largest role peak and its published reason", async () => {
+    const recipe = (await listStaticRecipeCatalog(indexUrl)).find((item) => item.slug === eight)!;
+    expect(recipe.capacity).toMatchObject({ profile_node_counts: [8], maximum_runtime_memory_bytes_per_node: 119000000000, maximum_installed_bytes_per_node: 1916112011354 });
+    expect(recipe.catalog).toMatchObject({ node_count: 8, runtime_distribution: "sglang", qualification: "Not yet verified", qualification_reason: "needs more Sparks" });
+    expect(recipe.runtime.adapter).toBe("sglang");
   });
 
-  test.each([0, 8, 800])("projects peak memory per node without adding informational reserve %i", async (reserve) => {
-    const fixture = structuredClone(index);
-    const topology = fixture.recipes[0]!.document.topology;
-    const primary = topology.roles[0]!;
-    primary.resources.memory.reserve_bytes = reserve;
-    // A smaller role with a larger reserve must not become the maximum.
-    topology.roles = [primary, { resources: { ...primary.resources, memory: { peak_bytes: 30, reserve_bytes: reserve * 2 } } }];
-    topology.node_count = 2;
-    serve(fixture);
-
-    const recipes = await listStaticRecipeCatalog(indexUrl);
-    const detail = await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast");
-    expect(recipes[0]!.capacity?.maximum_runtime_memory_bytes_per_node).toBe(40);
-    expect(detail.capacity?.maximum_runtime_memory_bytes_per_node).toBe(40);
-  });
-
-  test.each(["Working", "Re-check: worked before", "Fix to verify", "Failed: recipe", "Not yet verified", "A status added later"])("renders the published status %s as written, ignoring tags", async (status) => {
+  test.each(["Working", "Re-check: worked before", "Fix to verify", "Failed: recipe", "Not yet verified"] as const)("renders the published status %s as written, ignoring tags", async (status) => {
     const fixture = structuredClone(index);
     // Tags that used to drive the status must have no effect now.
     fixture.recipes[0]!.display.tags = ["accepted", "executable"];
-    fixture.recipes[0]!.qualification = { status, changed: [], reason: "never tested", required_sparks: 1 } as never;
+    fixture.recipes[0]!.qualification = { ...fixture.recipes[0]!.qualification, status };
     serve(fixture);
 
-    const summary = (await listStaticRecipeCatalog(indexUrl)).find((recipe) => recipe.slug === "qwen-fast")!;
-    const detail = await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast");
+    const summary = (await listStaticRecipeCatalog(indexUrl)).find((recipe) => recipe.slug === nvidia)!;
+    const detail = await getStaticRecipe(indexUrl, "vonk-forge", nvidia);
     for (const recipe of [summary, detail]) {
       expect(recipe.catalog.qualification).toBe(status);
-      expect(recipe.catalog.qualification_reason).toBe("never tested");
       expect(recipe.facts).toEqual({ source_bundle_observed: true });
     }
   });
 
-  test("an entry with a missing or non-string status degrades only that entry", async () => {
-    const fixture = structuredClone(index);
-    fixture.recipes[0]!.qualification = undefined as never;
-    serve(fixture);
-
-    const recipes = await listStaticRecipeCatalog(indexUrl);
-    expect(recipes.map((recipe) => recipe.catalog.qualification)).toEqual(["Status unavailable", "Not yet verified"]);
-    fixture.recipes[0]!.qualification = { status: 7, required_sparks: 1 } as never;
-    resetStaticCatalogCacheForTests();
-    serve(fixture);
-    expect((await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast")).catalog.qualification).toBe("Status unavailable");
-    expect((await listStaticModels(indexUrl)).items).toHaveLength(1);
-  });
-
-  test("an unknown status on one entry leaves the others and the Models page rendering", async () => {
-    const fixture = structuredClone(index);
-    fixture.recipes[0]!.qualification = { status: "Testing later", changed: [], required_sparks: 1 } as never;
-    serve(fixture);
-
-    const recipes = await listStaticRecipeCatalog(indexUrl);
-    expect(recipes.map((recipe) => recipe.catalog.qualification)).toEqual(["Testing later", "Not yet verified"]);
-    expect((await listStaticModels(indexUrl)).items).toHaveLength(1);
-  });
-
   test("provides immutable detail, import, and source links without an API", async () => {
-    const recipe = await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast");
+    const recipe = await getStaticRecipe(indexUrl, "vonk-forge", nvidia);
 
-    expect(recipe.import?.uri).toBe(`vonk://catalog/vonk-forge/qwen-fast@sha256:${"a".repeat(64)}`);
+    expect(recipe.import?.uri).toBe(`vonk://catalog/vonk-forge/${nvidia}@sha256:${index.recipes[0]!.content_sha256}`);
     expect(recipe.import?.instruction).toBe("Use this exact recipe in your local Controller.");
-    expect(recipe.source?.recipe_url).toBe(`https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${"f".repeat(40)}/recipes/qwen-fast.json`);
-    expect(recipe.source?.bundle_url).toBe(`https://github.com/CarstVaartjes/vonk-forge-recipes/tree/${"f".repeat(40)}/adapters/qwen`);
-    expect(recipe.package).toMatchObject({ member: "vonk-forge-qwen-fast.tar.gz", sha256: "1".repeat(64), bytes: 123 });
-    expect(recipe.latest_revision.document).toMatchObject({ identity: { slug: "qwen-fast" } });
+    expect(recipe.source?.recipe_url).toBe(`https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${index.source_commit}/recipes/${nvidia}.json`);
+    expect(recipe.source?.bundle_url).toBe(`https://github.com/CarstVaartjes/vonk-forge-recipes/tree/${index.source_commit}/adapters/nvidia/${nvidia}`);
+    expect(recipe.package).toMatchObject({ member: `${nvidia}.tar.gz`, sha256: index.recipes[0]!.package.sha256, bytes: index.recipes[0]!.package.expected_bytes });
+    expect(recipe.latest_revision.document).toMatchObject({ identity: { slug: nvidia } });
+    await expect(getStaticRecipe(indexUrl, "vonk-forge", "missing")).rejects.toThrow("Recipe not found");
   });
 
-  test("links model versions to recipes and preserves declared capabilities", async () => {
+  test("links model versions to recipes and preserves declared capabilities, licence and file sizes", async () => {
     const page = await listStaticModels(indexUrl);
-    expect(page.items).toHaveLength(1);
+    expect(page.items.map((item) => `${item.publisher}/${item.slug}`)).toEqual(["google/gemma-4-e2b", "ggml-org/gemma-4-e2b", "thinkingmachines/inkling-975b-a41b", "vast-ai/skintokens"]);
     expect(page.items[0]).toMatchObject({
-      publisher: "qwen",
-      slug: "qwen-fast",
-      title: "Qwen Fast",
-      recipe_count: 2,
+      title: "Gemma 4 E2B",
+      description: "Exact public Google Gemma 4 E2B instruction-tuned checkpoint.",
+      family: "Google Gemma",
+      tags: ["google", "gemma", "language", "instruction-tuned", "candidate"],
+      recipe_count: 1,
+      verified_recipe_count: 1,
+      runs: { spark_counts: [1], engines: ["vllm"], creators: ["NVIDIA"] },
       versions: [{
-        slug: "qwen-fast-nvfp4",
-        model_slug: "qwen-fast",
+        slug: "gemma-4-e2b-it-4adf1574",
+        model_slug: "gemma-4-e2b",
         requires_token: false,
-        capabilities: ["chat", "reasoning"],
-        license: { spdx: "Apache-2.0", url: "https://example.test/license" },
-        recipe_slugs: ["community/glm-dual", "vonk-forge/qwen-fast"],
+        variant: "IT 4adf1574",
+        source_repository: "https://huggingface.co/google/gemma-4-E2B-it",
+        source_revision: "4adf15748de9e1a0097b6274cee9c15836c41c37",
+        capabilities: ["audio-understanding", "chat", "image-understanding", "reasoning", "text-generation", "tool-use"],
+        license: { spdx: "Apache-2.0" },
+        recipe_slugs: [`vonk-forge/${nvidia}`],
       }],
     });
-    await expect(getStaticModel(indexUrl, "qwen", "missing")).rejects.toThrow("Model not found");
+    // The eight-Spark model has a recipe but none verified.
+    const inkling = page.items.find((item) => item.slug === "inkling-975b-a41b")!;
+    expect(inkling).toMatchObject({ recipe_count: 1, verified_recipe_count: 0, verified_runs: { spark_counts: [], engines: [], creators: [] }, runs: { spark_counts: [8] } });
+    expect(inkling.versions[0]!.sizes).toEqual({ download_bytes: expect.any(Number), installed_bytes: expect.any(Number) });
+    await expect(getStaticModel(indexUrl, "google", "missing")).rejects.toThrow("Model not found");
   });
 
   test("keeps published model entities visible when no recipe selects them", async () => {
-    const standaloneModel = {
-      content_sha256: "4".repeat(64),
-      document: {
-        kind: "model",
-        identity: { publisher: "standalone", slug: "standalone-v1", family: { publisher: "standalone", slug: "standalone" }, model: { publisher: "standalone", slug: "standalone" }, version: "1", variant: "bf16" },
-      },
-      display: { kind: "model-display", family_title: "Standalone", model_title: "Standalone", description: "", tags: [] },
-    };
-    resetStaticCatalogCacheForTests();
-    serve({ ...index, catalog_entities: [...index.catalog_entities, standaloneModel] });
+    const standalone = structuredClone(index.catalog_entities[3]!);
+    standalone.content_sha256 = "4".repeat(64);
+    standalone.document.identity = { ...standalone.document.identity, publisher: "standalone", slug: "standalone-v1", model: { publisher: "standalone", slug: "standalone" } };
+    serve({ ...index, catalog_entities: [...index.catalog_entities, standalone] });
     const page = await listStaticModels(indexUrl);
-    expect(page.items).toHaveLength(2);
+    expect(page.items).toHaveLength(5);
     expect(page.items.find((item) => item.publisher === "standalone")).toMatchObject({ slug: "standalone", recipe_count: 0, versions: [{ recipe_slugs: [] }] });
   });
 
   test("does not join same-slug entities when their immutable digests differ", async () => {
-    const adversarialIndex = {
-      ...index,
-      catalog_entities: [
-        { content_sha256: "9".repeat(64), document: { kind: "model", identity: { publisher: "qwen", slug: "qwen-fast-wrong", family: { publisher: "qwen", slug: "qwen" }, model: { publisher: "qwen", slug: "qwen-fast" }, version: "1.0", variant: "wrong" } }, display: { kind: "model-display", family_title: "Qwen", model_title: "Wrong model", description: "Wrong", tags: [] } },
-        ...index.catalog_entities,
-      ],
-    };
-    resetStaticCatalogCacheForTests();
-    serve(adversarialIndex);
-    const recipe = await getStaticRecipe(indexUrl, "vonk-forge", "qwen-fast");
-    expect(recipe.catalog).toMatchObject({ model_title: "Qwen Fast", model_version_title: "qwen-fast-nvfp4", capabilities: ["chat", "reasoning"] });
+    const wrong = structuredClone(index.catalog_entities[0]!);
+    wrong.content_sha256 = "9".repeat(64);
+    wrong.display.model_title = "Wrong model";
+    serve({ ...index, catalog_entities: [wrong, ...index.catalog_entities] });
+    const recipe = await getStaticRecipe(indexUrl, "vonk-forge", nvidia);
+    expect(recipe.catalog).toMatchObject({ model_title: "Gemma 4 E2B", capabilities: ["audio-understanding", "chat", "image-understanding", "reasoning", "text-generation", "tool-use"] });
   });
 
   test("drops a dangling separator from a catalog title and keeps real names whole", async () => {
@@ -280,35 +191,22 @@ describe("static recipe library adapter", () => {
     expect(displayTitle("Qwen3.8 27B-A3B")).toBe("Qwen3.8 27B-A3B");
     expect(displayTitle("  ", "fallback")).toBe("fallback");
     expect(displayTitle(undefined, "slug")).toBe("slug");
-    const odd = { ...index, catalog_entities: index.catalog_entities.map((entity) => ({ ...entity, display: { ...entity.display, model_title: "Qwen Fast /" } })) };
-    vi.mocked(fetch).mockImplementation(async (input) => new Response(JSON.stringify(String(input).endsWith("release.json") ? release : odd), { status: 200 }));
-    const page = await listStaticModels(indexUrl);
-    expect(page.items[0]!.title).toBe("Qwen Fast");
+    // The published SkinTokens recipe title has a mid-title slash, which stays.
+    const recipe = (await listStaticRecipeCatalog(indexUrl)).find((item) => item.slug === "skintokens-pytorch-single")!;
+    expect(recipe.title).toBe("SkinTokens / TokenRig pytorch-pipeline single Spark");
   });
 
-  test("renders titles, descriptions, tags and families from display alone (contract 3 shape)", async () => {
-    expect(JSON.stringify(index)).not.toContain('"metadata"');
-    const recipe = (await listStaticRecipeCatalog(indexUrl)).find((item) => item.slug === "qwen-fast")!;
-    expect(recipe).toMatchObject({ title: "Qwen Fast NVFP4", catalog: { description: "Fast language model", alignment: "standard", model_title: "Qwen Fast", model_family: "Qwen", tags: ["candidate", "executable", "reasoning", "nvfp4"] } });
-    const model = (await listStaticModels(indexUrl)).items[0]!;
-    expect(model).toMatchObject({ title: "Qwen Fast", description: "Fast language model", family: "Qwen", tags: ["language"] });
-  });
-
-  test("rejects an index for another contract major", async () => {
-    resetStaticCatalogCacheForTests();
+  test("rejects an index for another contract major or without catalog entities", async () => {
     serve({ ...index, contract_version: "3.2.0" });
+    await expect(listStaticModels(indexUrl)).rejects.toThrow("unsupported catalog index");
+    resetStaticCatalogCacheForTests();
+    serve({ ...index, catalog_entities: [] });
     await expect(listStaticModels(indexUrl)).rejects.toThrow("unsupported catalog index");
   });
 
   test("reads the library version and update time from the release manifest alone", async () => {
     const fetchMock = serve(index);
-    await expect(getStaticLibraryRelease(indexUrl)).resolves.toEqual({ version: "v4.0.0", updated_at: "2026-09-28T20:04:06Z" });
+    await expect(getStaticLibraryRelease(indexUrl)).resolves.toEqual({ version: "v4.8.0", updated_at: index.updated_at });
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(["https://example.test/catalog/release.json"]);
-  });
-
-  test("rejects an index without immutable catalog entities", async () => {
-    resetStaticCatalogCacheForTests();
-    serve({ ...index, catalog_entities: [] });
-    await expect(listStaticModels(indexUrl)).rejects.toThrow("unsupported catalog index");
   });
 });

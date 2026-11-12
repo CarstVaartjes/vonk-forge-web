@@ -65,10 +65,12 @@ and incoming data in the dashboard.
 ## Releases
 
 `pages.yml` is the only workflow that runs on a push to `main`; it also runs
-on manual dispatch and hourly (at minute 17). Push and dispatch runs first call
+on manual dispatch and hourly (at minute 17). Push runs first call
 `ci.yml` and the deploy job waits for it (pull requests run `ci.yml` directly).
-Scheduled runs skip CI, since the code has not changed since the last main
-push that passed it; they only poll for a new recipe release. The deploy job:
+Scheduled and dispatched runs skip CI, since the code has not changed since the last main
+push that passed it; they only pick up a new recipe release, and the deploy build
+still type-checks the shipped code against it. A release dispatch is therefore not
+blocked by CI checks that look at other branches. The deploy job:
 
 1. installs the locked frontend dependencies;
 2. runs `web/scripts/recipe-release.mjs`, which lists the
@@ -86,9 +88,17 @@ push that passed it; they only poll for a new recipe release. The deploy job:
    source commit equal to the index's `source_commit`), checks every file in
    the tar against `SHA256SUMS` (all listed files present, nothing unsigned
    extra) and the index's package digests, requires the index's `contract_version` to have that major,
-   and writes `web/public/catalog/` (its `release.json` records the tag,
-   `contract_version` and `updated_at`);
-3. builds `web/dist` and uploads it as the production Pages deployment with
+   checks the index envelope (`kind`, `schema_version` and the package schema version)
+   against the constants of `catalog-index-v2.schema.json`, the JSON Schema the
+   release ships and signs, and writes `web/public/catalog/` (its `release.json`
+   records the tag, `contract_version` and `updated_at`);
+3. runs `web/scripts/generate-catalog-types.mjs`, which compiles that schema to
+   `web/src/api/catalog.generated.d.ts` (git-ignored; `npm --prefix web run catalog`
+   does steps 2 and 3 locally). The adapter and every test fixture read the index
+   through these types, so `tsc` fails when either reads a field the release's contract
+   does not have: the first step of `npm run build` for the shipped adapter, and
+   `npm run typecheck` (pull-request CI only) for tests and fixtures;
+4. builds `web/dist` (`npm run build` type-checks only shipped code through `web/tsconfig.build.json`; tests and fixtures are checked by `npm run typecheck`, which CI runs on pull requests only. An additive contract minor with a new required field therefore reds PR CI, through the fixtures, but never the deploy) and uploads it as the production Pages deployment with
    Wrangler. A scheduled run whose verified `release.json` equals the one
    already served at `https://<project>.pages.dev/catalog/release.json` skips
    the upload.
@@ -113,10 +123,10 @@ newer contract major than `web/src/contract-major.json` supports exists. That re
 scheduled deploy is the alarm that the site must follow the new major; the last
 good site stays online. Pull requests and pushes do not run this check.
 
-Recipe updates arrive through the hourly schedule. `vonk-forge-recipes`
-does not hold a token that could send a `repository_dispatch` to this
-repository, so polling is the deliberate choice; dispatch `pages.yml` manually
-to publish an update immediately. Pull requests run CI only; they do not
+Recipe updates arrive when the `vonk-forge-recipes` publish job dispatches
+`pages.yml` (`workflow_dispatch`, through the refresh GitHub App installed on this
+repository). The hourly schedule is only the backstop for a failed dispatch; you
+can also dispatch `pages.yml` manually. Pull requests run CI only; they do not
 publish production.
 
 The site has no per-recipe package download. Recipe pages link "View source"

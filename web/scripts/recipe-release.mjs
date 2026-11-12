@@ -35,6 +35,11 @@ export const SIGNER_REF = "refs/heads/main";
 const CONTRACT = JSON.parse(readFileSync(new URL("../src/contract-major.json", import.meta.url), "utf8"));
 export const SUPPORTED_CONTRACT_MAJOR = CONTRACT.major;
 
+// The release ships the JSON Schema of its own catalog-index.json (an OpenAPI components
+// document). Its constants are the envelope checks, and web/scripts/generate-catalog-types.mjs
+// compiles the site's types from it.
+export const SCHEMA_NAME = "catalog-index-v2.schema.json";
+
 const TAG = /^v\d+\.\d+\.\d+$/;
 const DIGEST = /^[0-9a-f]{64}$/;
 const COMMIT = /^[0-9a-f]{40}$/;
@@ -167,7 +172,7 @@ function octal(field, what) {
  * for the small members the trust chain needs (SHA256SUMS, its Sigstore
  * bundle, the index). Nothing from the archive is written under its own name.
  */
-export async function readBundle(file, keep = new Set([CHECKSUMS_NAME, SIGNATURE_NAME, "catalog-index.json"])) {
+export async function readBundle(file, keep = new Set([CHECKSUMS_NAME, SIGNATURE_NAME, SCHEMA_NAME, "catalog-index.json"])) {
   const handle = await open(file, "r");
   try {
     const total = (await handle.stat()).size;
@@ -213,6 +218,19 @@ export async function readBundle(file, keep = new Set([CHECKSUMS_NAME, SIGNATURE
   }
 }
 
+// The envelope constants the release's own schema declares.
+function envelopeConstants(schema) {
+  const schemas = schema?.components?.schemas;
+  const properties = schemas?.CatalogIndex?.properties;
+  const constants = {
+    schemaVersion: properties?.schema_version?.const,
+    kind: properties?.kind?.const,
+    packageSchemaVersion: schemas?.PackageContract?.properties?.schema_version?.const,
+  };
+  if (Object.values(constants).some((value) => value === undefined)) fail(`${SCHEMA_NAME} declares no envelope constants`);
+  return constants;
+}
+
 /**
  * Download, verify, and write one release into `outDir`.
  * `download(tag, destination)` writes the release's bundle tar to `destination`; `verifySignature(checksumsPath, bundlePath)`
@@ -255,12 +273,16 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
     }
     const indexBytes = members.get("catalog-index.json")?.bytes;
     if (!indexBytes) fail("catalog-index.json is missing from SHA256SUMS");
+    const schemaBytes = members.get(SCHEMA_NAME)?.bytes;
+    if (!schemaBytes || !digests.has(SCHEMA_NAME)) fail(`${SCHEMA_NAME} is missing from SHA256SUMS`);
+    const constants = envelopeConstants(JSON.parse(schemaBytes.toString("utf8")));
     const index = JSON.parse(indexBytes.toString("utf8"));
-    if (index.kind !== "recipe-library-index" || index.schema_version !== CONTRACT.index_schema_version) fail("unsupported catalog index");
+    if (index.kind !== constants.kind || index.schema_version !== constants.schemaVersion) fail("unsupported catalog index");
     if (semver(`v${index.contract_version}`)?.[0] !== SUPPORTED_CONTRACT_MAJOR) fail(`unsupported contract version ${JSON.stringify(index.contract_version)}`);
     if (typeof index.updated_at !== "string" || Number.isNaN(Date.parse(index.updated_at))) fail("index has no updated_at");
     if (index.repository !== RECIPE_REPOSITORY) fail(`index names repository ${index.repository}`);
     if (index.source_commit !== signedCommit) fail("index source_commit differs from the signed commit");
+    if (index.package_contract?.schema_version !== constants.packageSchemaVersion) fail("unsupported package contract");
     const prefix = index.package_contract?.path_prefix;
     if (typeof prefix !== "string" || !Array.isArray(index.recipes)) fail("index has no package contract");
     for (const recipe of index.recipes) {
@@ -285,6 +307,7 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
     // adapter refuses fails the build here; a release with nothing verified is a valid summary of zeros.
     const summary = buildCatalogSummary(index, manifest);
     await writeFile(path.join(staging, "catalog-index.json"), indexBytes);
+    await writeFile(path.join(staging, SCHEMA_NAME), schemaBytes);
     await writeFile(path.join(staging, "release.json"), `${JSON.stringify(manifest, null, 2)}\n`);
     await writeFile(path.join(staging, "catalog-summary.json"), `${JSON.stringify(summary)}\n`);
     await chmod(staging, 0o755);

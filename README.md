@@ -85,14 +85,14 @@ Sigstore bundle and every file `SHA256SUMS` lists), refuses any member that is
 not a unique flat regular file, verifies `SHA256SUMS`
 against its Sigstore attestation from the library's `publish.yml` on `main`,
 checks every bundle file and the index against `SHA256SUMS`, and writes
-`web/public/catalog/` (`catalog-index.json`, `release.json`, `SHA256SUMS` and its
+`web/public/catalog/` (`catalog-index.json`, `release.json`, `catalog-index-v2.schema.json`, `SHA256SUMS` and its
 bundle), plus `catalog-summary.json` (about 3 KB): the home page numbers (verified
 recipes, model families and creators over verified recipes, verified recipes per model
 type, the top creators and the most recently updated recipes). The build derives it from
 the verified index with the same adapter, type mapping (`web/src/model-types.ts`) and
 derivation the pages use (`web/src/catalog-summary.ts`), validates it with the browser's own
 check, and fails if the index is refused or nothing in it is verified. The home page reads
-only that file, never the full index; there is no hard-coded count. The browser reads only those same-origin files. The site offers no package
+only that file, never the full index; there is no hard-coded count. The browser reads only those same-origin files. `npm --prefix web run catalog` then compiles the release schema to `web/src/api/catalog.generated.d.ts`, and the adapter and every fixture are typed against it. The site offers no package
 download (packages are not copied to Pages: some exceed its 25 MiB per-file limit); recipe
 pages link "View source" (and "View adapter source") to the recipe files in the library
 repository, pinned to the verified release's source commit.
@@ -101,15 +101,17 @@ The library's release tag is its contract version (for example `v3.0.0`).
 Recipe changes do not create a new release: the library updates that release's
 assets in place and records `updated_at` in the index, which the site shows
 beside the library version. Publishing a recipe is a pull request against the
-recipe library; the hourly Pages build picks up the updated release. For local
-development with the real catalog, run `node web/scripts/recipe-release.mjs`
-first (requires an authenticated `gh`).
+recipe library; the recipes publish job dispatches the Pages build (the hourly run is the backstop). For local
+development with the real catalog, run `npm --prefix web run catalog`
+(requires an authenticated `gh`; it also generates the types).
 
 ## Checks
 
 ```bash
 npm --prefix web ci
 npm --prefix web audit --audit-level=high
+npm --prefix web run catalog      # fetch the release, generate the types
+npm --prefix web run typecheck
 npm --prefix web test -- --run
 npm --prefix web run build
 npm --prefix web run test:e2e   # builds, serves web/dist, and runs Playwright

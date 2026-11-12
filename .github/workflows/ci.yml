@@ -43,6 +43,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: node web/scripts/recipe-release.mjs
+      # Compile the site against the schema that release ships: `tsc` (the build
+      # below) fails when the shipped adapter reads a field it does not have; the
+      # typecheck step below does the same for tests and fixtures.
+      - name: Generate the catalog types from the release schema
+        run: npm --prefix web run catalog:types
+      # Tests and fixtures are type-checked on pull requests only. pages.yml runs this
+      # workflow on push too, and an additive recipe release must never
+      # block a deploy; the deploy build checks only shipped code.
+      - name: Type-check tests and fixtures
+        if: github.event_name == 'pull_request'
+        run: npm --prefix web run typecheck
       - run: npm --prefix web test -- --run
       - run: npm --prefix web run build
       - run: npx --prefix web playwright install --with-deps chromium

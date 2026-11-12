@@ -88,7 +88,7 @@ describe("single source values", () => {
   });
 
   test("allows the sole peak projection and rejects a second implementation", () => {
-    const source = "function nodeResources() { const bytes = number(memory.peak_bytes); }";
+    const source = "function nodeResources() { const bytes = memory.peak_bytes; }";
     const files = new Map([["catalog.ts", source]]);
     expect(checkSingleSources(files, [memoryOwner])).toEqual([]);
     files.set("other.ts", source);
@@ -118,7 +118,7 @@ describe("single source values", () => {
     });
 
     test("allows imports, test files and longer text", () => {
-      expect(check([["web/src/x.tsx", 'import { WORKING_STATUS } from "./status"; const a = <b>Working on it</b>;'], ["web/src/x.test.tsx", 'const a = "Working";']])).toBe("");
+      expect(check([["web/src/x.tsx", 'import { WORKING_STATUS } from "./status"; const a = <b>Working on it</b>;'], ["web/src/x.test.tsx", 'const a = "Working";'], ["web/src/x.fixture.ts", 'const a = "Working";']])).toBe("");
     });
 
     test.each(["", "abc123", "A".repeat(40)])("rejects a missing or short source revision %j", (revision) => {
@@ -128,7 +128,7 @@ describe("single source values", () => {
 
   describe("contract versions", () => {
     const entry = { id: "catalog.contract-versions", kind: "contract-versions", owner: { file: "web/src/contract-major.json", selector: "major" }, derive: "read the owner" };
-    const owner = '{ "major": 3, "index_schema_version": 2, "package_schema_version": 2 }';
+    const owner = '{ "major": 3 }';
     const check = (source, file = "web/src/x.ts", ownerText = owner) => checkSingleSources(new Map([["web/src/contract-major.json", ownerText], [file, source]]), [entry]).join("\n");
 
     test.each([
@@ -167,7 +167,7 @@ describe("single source values", () => {
     });
 
     test("allows reads from the owner, test files and unrelated numbers", () => {
-      expect(check("const SUPPORTED_CONTRACT_MAJOR = contract.major; if (body.schema_version !== contract.index_schema_version) {} const retries = 3;")).toBe("");
+      expect(check("const SUPPORTED_CONTRACT_MAJOR = contract.major; if (body.schema_version !== constants.schemaVersion) {} const retries = 3;")).toBe("");
       expect(check("const SUPPORTED_CONTRACT_MAJOR = 3;", "web/src/x.test.ts")).toBe("");
     });
 

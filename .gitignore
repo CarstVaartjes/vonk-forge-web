@@ -13,3 +13,6 @@ test-results/
 
 # Verified recipe release written by web/scripts/recipe-release.mjs
 web/public/catalog/
+
+# Generated from the release schema by web/scripts/generate-catalog-types.mjs
+web/src/api/catalog.generated.d.ts
