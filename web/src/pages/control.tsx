@@ -1,14 +1,7 @@
+import { CommandBlock } from "../command-block";
+
 const repository = "https://github.com/CarstVaartjes/vonk-forge";
 
-
-function CommandBlock({ children, label }: { children: string; label: string }) {
-  return (
-    <div className="command-block">
-      <span>{label}</span>
-      <pre><code>{children}</code></pre>
-    </div>
-  );
-}
 
 
 // Every command on this page comes from the vonk-forge vonkctl runbook

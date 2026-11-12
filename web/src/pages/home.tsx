@@ -3,7 +3,9 @@ import { useEffect, useState } from "react";
 import { getCatalogSummary } from "../api/client";
 import { updatedThisWeek, type CatalogSummary } from "../catalog-stats";
 import { isVerified } from "../qualification-status";
+import { CommandBlock } from "../command-block";
 import { MODEL_TYPES } from "../model-types";
+import { controllerInstallCommand, sparkInstallCommand } from "./install";
 import { RollingNumber } from "../rolling-number";
 
 
@@ -382,11 +384,11 @@ export function HomePage() {
             a lab, or move the same project to an always-on host.
           </p>
         </div>
-        <div className="quickstart-command quickstart-preflight">
-          <span>One clear next step</span>
-          <strong>Set up your Controller, then choose a model and recipe for your first run.</strong>
-          <a href="/install">Set up your Controller</a>
+        <div className="quickstart-commands">
+          <CommandBlock label="1 · Controller, on your workstation">{controllerInstallCommand}</CommandBlock>
+          <CommandBlock label="2 · Each Spark, on the Spark">{sparkInstallCommand}</CommandBlock>
         </div>
+        <p className="quickstart-note">Replace the address with your Controller&apos;s reserved LAN address. <a className="text-link" href="/install">Full install guide</a></p>
       </section>
 
       <section className="setup-section" aria-labelledby="setup-title">

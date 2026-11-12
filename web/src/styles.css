@@ -885,15 +885,40 @@ a {
   background: #080705;
 }
 
-.command-block > span {
-  display: block;
-  padding: 0.65rem 1rem;
+.command-block-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 0.5rem 0 1rem;
   border-bottom: 1px solid var(--line);
+}
+
+.command-block-head > span:first-child {
+  display: block;
+  padding: 0.65rem 0;
+  min-width: 0;
   color: var(--faint);
   font: 700 0.65rem ui-monospace, SFMono-Regular, Menlo, monospace;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+.command-copy {
+  flex: none;
+  min-height: 2rem;
+  padding: 0.2rem 0.75rem;
+  border: 1px solid var(--line-bright);
+  border-radius: 0.3rem;
+  color: var(--ink);
+  background: transparent;
+  font: 700 0.68rem ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.command-copy:hover { border-color: var(--green); color: var(--green-soft); }
 
 .command-block pre {
   max-width: 100%;
@@ -1918,39 +1943,6 @@ a {
   line-height: 1.7;
 }
 
-.quickstart-command {
-  display: grid;
-  grid-template-columns: 6rem minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 1rem;
-  margin-top: 2rem;
-  padding: 1rem 1.2rem;
-  border: 1px solid #4a6b14;
-  background: #10130d;
-}
-
-.quickstart-command > span {
-  color: #8e8a81;
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-
-.quickstart-command code {
-  overflow-x: auto;
-  color: var(--green-soft);
-  font: 650 clamp(0.78rem, 1.4vw, 1rem)/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
-  white-space: nowrap;
-}
-
-.quickstart-preflight strong {
-  color: var(--ink);
-  font-size: 0.9rem;
-  line-height: 1.55;
-}
-
-.quickstart-command a,
 .control-paths a,
 .private-ledger > a {
   color: var(--green-soft);
@@ -1960,8 +1952,8 @@ a {
   white-space: nowrap;
 }
 
-.quickstart-command.quickstart-preflight > * { min-width: 0; }
-.quickstart-command.quickstart-preflight a { overflow-wrap: anywhere; white-space: normal; }
+.quickstart-commands { display: grid; gap: 1rem; margin-top: 2rem; }
+.quickstart-note { margin: 1rem 0 0; color: var(--muted); font-size: 0.88rem; }
 
 .setup-section,
 .product-tour,
@@ -2305,15 +2297,6 @@ a {
   .home-closing {
     grid-template-columns: 1fr;
     align-items: start;
-  }
-
-  .quickstart-command {
-    grid-template-columns: 1fr;
-  }
-
-  .quickstart-command a {
-    width: fit-content;
-    max-width: 100%;
   }
 
   .home-closing .hero-actions {

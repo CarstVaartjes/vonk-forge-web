@@ -1,15 +1,11 @@
+import { CommandBlock } from "../command-block";
+
+export const controllerInstallCommand = "curl -fsSL https://install.vonkforge.ai/nas | sh";
+export const sparkInstallCommand = "curl -fsSL https://install.vonkforge.ai/spark | VONK_CONTROLLER_ADDRESS=192.168.1.231 sh";
+
 const repository = "https://github.com/CarstVaartjes/vonk-forge/blob/main";
 const tailscaleRunbook = `${repository}/docs/runbooks/tailscale.md`;
 
-
-function CommandBlock({ children, label }: { children: string; label: string }) {
-  return (
-    <div className="command-block">
-      <span>{label}</span>
-      <pre><code>{children}</code></pre>
-    </div>
-  );
-}
 
 
 export function InstallPage() {
@@ -106,7 +102,7 @@ export function InstallPage() {
           self-contained controller project directory.
         </p>
         <p className="installer-gate"><strong>Preflight complete?</strong> Confirm the four checks above before copying this command.</p>
-        <CommandBlock label="Workstation terminal">curl -fsSL https://install.vonkforge.ai/nas | sh</CommandBlock>
+        <CommandBlock label="Workstation terminal">{controllerInstallCommand}</CommandBlock>
         <ol className="install-steps">
           <li><span>01</span><div><h3>Answer the guided prompts</h3><p>The installer prepares local identity, configuration, and secrets without changing the eventual controller host or requiring Docker on the workstation.</p></div></li>
           <li><span>02</span><div><h3>Check the generated directory</h3><p>The output is exactly <code>vonk-forge/docker-compose.yaml</code>, <code>vonk-forge/.env</code>, and <code>vonk-forge/secrets/</code>. Keep the directory private and back it up securely.</p></div></li>
@@ -189,7 +185,7 @@ curl --fail --show-error --silent \\
         </p>
         <CommandBlock label="CLI alternative for creating the grant">{`vonkctl fleet enroll Atlas --output atlas-grant.json
 vonkctl fleet enrollment status GRANT_UUID`}</CommandBlock>
-        <CommandBlock label="Spark terminal">curl -fsSL https://install.vonkforge.ai/spark | VONK_CONTROLLER_ADDRESS=192.168.1.231 sh</CommandBlock>
+        <CommandBlock label="Spark terminal">{sparkInstallCommand}</CommandBlock>
         <ol className="install-steps fleet-steps">
           <li><span>01</span><div><h3>Use the controller&apos;s stable LAN address</h3><p>Replace <code>192.168.1.231</code> with the address reserved for your laptop, NAS, or other controller host. The controller hostnames remain in place for TLS while the installer creates the local mapping.</p></div></li>
           <li><span>02</span><div><h3>Complete the pairing prompts</h3><p>Enter the one-use grant values and the requested Spark management and fabric addresses. The installer writes the agent and firewall configuration.</p></div></li>
