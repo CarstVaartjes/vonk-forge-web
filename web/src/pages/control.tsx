@@ -212,7 +212,7 @@ export OPENAI_BASE_URL='https://vonk-forge.example.ts.net/v1'`}</CommandBlock>
   -H "Authorization: Bearer $OPENAI_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"model":"qwen-code","messages":[{"role":"user","content":"Hello"}]}'`}</CommandBlock>
-        <CommandBlock label="Python">{String.raw`from openai import OpenAI
+        <CommandBlock label="Python" prompt={false}>{String.raw`from openai import OpenAI
 
 client = OpenAI()
 response = client.chat.completions.create(

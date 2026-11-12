@@ -965,11 +965,12 @@ a {
 .cli-section > p code { color: var(--ink); }
 .cli-section .credential-warning { margin-top: 0; }
 
+/* The one command block: recess background, gold prompt, green command, Copy with a 3:1 border. */
 .command-block {
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--line-strong);
-  border-radius: 0.55rem;
+  border-radius: var(--r1);
   background: var(--recess);
 }
 
@@ -978,47 +979,60 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0 0.5rem 0 1rem;
+  padding: 0.35rem 0.4rem 0.35rem 0.9rem;
   border-bottom: 1px solid var(--line);
 }
 
 .command-block-head > span:first-child {
   display: block;
-  padding: 0.65rem 0;
   min-width: 0;
-  color: var(--faint);
-  font: 700 var(--t-label) ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: 0.08em;
+  color: var(--muted);
+  font: 700 var(--t-label)/1.4 var(--mono);
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
 .command-copy {
   flex: none;
-  min-height: 2rem;
-  padding: 0.2rem 0.75rem;
-  border: 1px solid var(--line-strong);
-  border-radius: 0.3rem;
+  min-height: 1.9rem;
+  padding: 0 0.7rem;
+  border: 1px solid var(--line-control);
+  border-radius: var(--r1);
   color: var(--ink);
   background: transparent;
-  font: 700 var(--t-label) ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 700 var(--t-label) var(--mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   cursor: pointer;
+  transition: background var(--fast) var(--ease);
 }
 
-.command-copy:hover { border-color: var(--green); color: var(--green-text); }
+.command-copy:hover { background: var(--raised); }
 
 .command-block pre {
   max-width: 100%;
   margin: 0;
-  padding: 1rem;
-  overflow: auto;
-  color: var(--ink);
-  font: 500 var(--t-small)/1.65 ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 0.9rem;
+  overflow-x: auto;
+  color: var(--green-text);
+  font: 500 var(--t-small)/1.6 var(--mono);
   white-space: pre;
+  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-width: thin;
 }
 
 .command-block code { font: inherit; }
+
+/* The prompt is drawn, not text: it is never selected or copied. */
+.command-block code.prompted::before {
+  color: var(--gold);
+  content: "$ ";
+  user-select: none;
+}
+
+@media (pointer: coarse), (max-width: 42rem) {
+  .command-copy { min-height: 2.75rem; }
+}
 
 .privacy-content {
   padding: var(--section) 0;
