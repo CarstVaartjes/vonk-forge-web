@@ -74,9 +74,7 @@ push that passed it; they only poll for a new recipe release. The deploy job:
 2. runs `web/scripts/recipe-release.mjs`, which lists the
    [`vonk-forge-recipes`](https://github.com/CarstVaartjes/vonk-forge-recipes)
    releases and picks the newest non-draft release whose tag major equals
-   the supported contract major (`web/src/contract-major.json`). If a non-draft release of a
-   newer major exists, the step fails, so the scheduled deploy goes red (the last good site
-   stays online) until the site follows that major. It downloads only
+   the supported contract major (`web/src/contract-major.json`). It downloads only
    that release's `recipe-library.tar` (one uncompressed tar holding
    `SHA256SUMS`, `SHA256SUMS.sigstore.json` and every file `SHA256SUMS` lists,
    as flat names), rejects any member that is not a unique flat regular file
@@ -107,8 +105,13 @@ download fails and the next run heals it.
 
 To pin a release instead of following the newest one, set the `production`
 environment (or repository) variable `VONK_RECIPE_RELEASE` to an exact tag such
-as `v3.0.0` and dispatch the workflow; clear it to follow the newest release
-again.
+as `v4.0.0` and dispatch the workflow; clear it to follow the newest release
+again. A pin skips release resolution, and with it the newer-major check below.
+
+The scheduled run also fails, before the fetch step, when a non-draft release of a
+newer contract major than `web/src/contract-major.json` supports exists. That red
+scheduled deploy is the alarm that the site must follow the new major; the last
+good site stays online. Pull requests and pushes do not run this check.
 
 Recipe updates arrive through the hourly schedule. `vonk-forge-recipes`
 does not hold a token that could send a `repository_dispatch` to this
