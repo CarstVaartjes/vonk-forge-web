@@ -55,7 +55,7 @@ describe("home page", () => {
     const quickstart = within(await screen.findByRole("region", { name: /Start on the computer/ }));
     expect(quickstart.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
     expect(quickstart.getByText(/install\.vonkforge\.ai\/spark \| VONK_CONTROLLER_ADDRESS=/)).toBeVisible();
-    expect(quickstart.getAllByRole("button", { name: /^Copy / })).toHaveLength(2);
+    expect(quickstart.getAllByRole("button", { name: "Copy" })).toHaveLength(2);
   });
 
   test("shows no numbers and an alert when the summary is missing or malformed", async () => {

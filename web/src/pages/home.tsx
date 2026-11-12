@@ -4,6 +4,7 @@ import { getCatalogSummary } from "../api/client";
 import type { CatalogSummary } from "../catalog-stats";
 import { CommandBlock } from "../command-block";
 import { MODEL_TYPES } from "../model-types";
+import { controllerInstallCommand, sparkInstallCommand } from "./install";
 import { RollingNumber } from "../rolling-number";
 
 
@@ -201,8 +202,8 @@ export function HomePage() {
           </p>
         </div>
         <div className="quickstart-commands">
-          <CommandBlock label="1 · Controller, on your workstation">curl -fsSL https://install.vonkforge.ai/nas | sh</CommandBlock>
-          <CommandBlock label="2 · Each Spark, on the Spark">curl -fsSL https://install.vonkforge.ai/spark | VONK_CONTROLLER_ADDRESS=192.168.1.231 sh</CommandBlock>
+          <CommandBlock label="1 · Controller, on your workstation">{controllerInstallCommand}</CommandBlock>
+          <CommandBlock label="2 · Each Spark, on the Spark">{sparkInstallCommand}</CommandBlock>
         </div>
         <p className="quickstart-note">Replace the address with your Controller&apos;s reserved LAN address. <a className="text-link" href="/install">Full install guide</a> · <a className="text-link" href="/models#model-recipe-explainer">See how models, recipes, and your Controller fit together</a></p>
       </section>
