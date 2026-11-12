@@ -5,7 +5,7 @@ import { displayTitle, getStaticLibraryRelease, getStaticModel, getStaticRecipe,
 
 const index = {
   schema_version: 2,
-  contract_version: "3.0.0",
+  contract_version: "4.0.0",
   updated_at: "2026-09-28T20:04:06Z",
   kind: "recipe-library-index",
   repository: "CarstVaartjes/vonk-forge-recipes",
@@ -16,7 +16,7 @@ const index = {
     path_prefix: "packages/",
   },
   catalog_entities: [
-    { content_sha256: "3".repeat(64), document: { kind: "model", identity: { publisher: "qwen", slug: "qwen-fast-nvfp4", family: { publisher: "qwen", slug: "qwen" }, model: { publisher: "qwen", slug: "qwen-fast" }, version: "1.0", variant: "nvfp4" }, requires_token: false, dependencies: [], modalities: ["text"], source: { repository: "https://huggingface.co/Qwen/Qwen", revision: "c".repeat(40) }, format: { precision: "nvfp4", quantization: "nvfp4" }, license: { spdx: "Apache-2.0", url: "https://example.test/license", attribution: ["Qwen"] }, files: [{ id: "weights", path: "weights.safetensors", sha256: "b".repeat(64), size_bytes: 20, roles: ["weights"] }], capabilities: ["chat", "reasoning"] }, display: { kind: "model-display", family_title: "Qwen", model_title: "Qwen Fast", description: "Fast language model", tags: ["language"] } },
+    { content_sha256: "3".repeat(64), document: { kind: "model", identity: { publisher: "qwen", slug: "qwen-fast-nvfp4", family: { publisher: "qwen", slug: "qwen" }, model: { publisher: "qwen", slug: "qwen-fast" }, version: "1.0", variant: "nvfp4" }, requires_token: false, dependencies: [], source: { repository: "https://huggingface.co/Qwen/Qwen", revision: "c".repeat(40) }, format: { precision: "nvfp4", quantization: "nvfp4" }, files: [{ id: "weights", path: "weights.safetensors", sha256: "b".repeat(64), size_bytes: 20, roles: ["weights"] }] }, display: { kind: "model-display", capabilities: ["chat", "reasoning"], modalities: ["text"], license: { spdx: "Apache-2.0", url: "https://example.test/license", attribution: ["Qwen"] }, family_title: "Qwen", model_title: "Qwen Fast", description: "Fast language model", tags: ["language"] } },
   ],
   recipes: [
     {
@@ -61,7 +61,7 @@ const index = {
   ],
 };
 
-const release = { repository: "CarstVaartjes/vonk-forge-recipes", tag: "v3.0.0", contract_version: "3.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: "f".repeat(40) };
+const release = { repository: "CarstVaartjes/vonk-forge-recipes", tag: "v4.0.0", contract_version: "4.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: "f".repeat(40) };
 const indexUrl = "https://example.test/catalog/catalog-index.json";
 
 // Serve the verified release the Pages build writes: the index and its manifest.
@@ -237,6 +237,7 @@ describe("static recipe library adapter", () => {
         model_slug: "qwen-fast",
         requires_token: false,
         capabilities: ["chat", "reasoning"],
+        license: { spdx: "Apache-2.0", url: "https://example.test/license" },
         recipe_slugs: ["community/glm-dual", "vonk-forge/qwen-fast"],
       }],
     });
@@ -295,13 +296,13 @@ describe("static recipe library adapter", () => {
 
   test("rejects an index for another contract major", async () => {
     resetStaticCatalogCacheForTests();
-    serve({ ...index, contract_version: "2.8.1" });
+    serve({ ...index, contract_version: "3.2.0" });
     await expect(listStaticModels(indexUrl)).rejects.toThrow("unsupported catalog index");
   });
 
   test("reads the library version and update time from the release manifest alone", async () => {
     const fetchMock = serve(index);
-    await expect(getStaticLibraryRelease(indexUrl)).resolves.toEqual({ version: "v3.0.0", updated_at: "2026-09-28T20:04:06Z" });
+    await expect(getStaticLibraryRelease(indexUrl)).resolves.toEqual({ version: "v4.0.0", updated_at: "2026-09-28T20:04:06Z" });
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(["https://example.test/catalog/release.json"]);
   });
 
