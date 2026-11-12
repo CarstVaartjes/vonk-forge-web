@@ -110,6 +110,8 @@ development with the real catalog, run `npm --prefix web run catalog`
 ```bash
 npm --prefix web ci
 npm --prefix web audit --audit-level=high
+npm --prefix web run catalog      # fetch the release, generate the types
+npm --prefix web run typecheck
 npm --prefix web test -- --run
 npm --prefix web run build
 npm --prefix web run test:e2e   # builds, serves web/dist, and runs Playwright
