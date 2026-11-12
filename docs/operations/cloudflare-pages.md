@@ -135,7 +135,7 @@ Two related cases:
 - An additive minor that adds a required field reds pull-request CI through the test
   fixtures (`npm run typecheck`, run by CI on pull requests only), but never the deploy:
   the deploy build type-checks only shipped code (`web/tsconfig.build.json`) and the
-  dispatched or pushed CI run skips the fixture check.
+  push CI run skips the fixture check.
 
 Recipe updates arrive when the `vonk-forge-recipes` publish job dispatches
 `pages.yml` (`workflow_dispatch`, through the refresh GitHub App installed on this
