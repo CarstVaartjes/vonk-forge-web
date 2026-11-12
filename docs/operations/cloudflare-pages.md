@@ -86,9 +86,16 @@ push that passed it; they only poll for a new recipe release. The deploy job:
    source commit equal to the index's `source_commit`), checks every file in
    the tar against `SHA256SUMS` (all listed files present, nothing unsigned
    extra) and the index's package digests, requires the index's `contract_version` to have that major,
-   and writes `web/public/catalog/` (its `release.json` records the tag,
-   `contract_version` and `updated_at`);
-3. builds `web/dist` and uploads it as the production Pages deployment with
+   checks the index envelope (`kind`, `schema_version` and the package schema version)
+   against the constants of `catalog-index-v2.schema.json`, the JSON Schema the
+   release ships and signs, and writes `web/public/catalog/` (its `release.json`
+   records the tag, `contract_version` and `updated_at`);
+3. runs `web/scripts/generate-catalog-types.mjs`, which compiles that schema to
+   `web/src/api/catalog.generated.d.ts` (git-ignored; `npm --prefix web run catalog`
+   does steps 2 and 3 locally). The adapter and every test fixture read the index
+   through these types, so `tsc` (the first step of `npm run build`) fails when
+   either reads a field the release's contract does not have;
+4. builds `web/dist` and uploads it as the production Pages deployment with
    Wrangler. A scheduled run whose verified `release.json` equals the one
    already served at `https://<project>.pages.dev/catalog/release.json` skips
    the upload.
@@ -113,10 +120,10 @@ newer contract major than `web/src/contract-major.json` supports exists. That re
 scheduled deploy is the alarm that the site must follow the new major; the last
 good site stays online. Pull requests and pushes do not run this check.
 
-Recipe updates arrive through the hourly schedule. `vonk-forge-recipes`
-does not hold a token that could send a `repository_dispatch` to this
-repository, so polling is the deliberate choice; dispatch `pages.yml` manually
-to publish an update immediately. Pull requests run CI only; they do not
+Recipe updates arrive when the `vonk-forge-recipes` publish job dispatches
+`pages.yml` (`workflow_dispatch`, through the refresh GitHub App installed on this
+repository). The hourly schedule is only the backstop for a failed dispatch; you
+can also dispatch `pages.yml` manually. Pull requests run CI only; they do not
 publish production.
 
 The site has no per-recipe package download. Recipe pages link "View source"

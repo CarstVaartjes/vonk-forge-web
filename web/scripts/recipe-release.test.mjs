@@ -5,7 +5,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
-import { assertNoNewerMajor, parseChecksums, publishRecipeRelease, readBundle, selectReleaseTag } from "./recipe-release.mjs";
+import { catalogIndexFixture } from "../src/api/catalog.fixture.ts";
+import { SCHEMA_NAME, assertNoNewerMajor, parseChecksums, publishRecipeRelease, readBundle, selectReleaseTag } from "./recipe-release.mjs";
 
 // A minimal ustar writer, enough to build bundles the way the recipe library does.
 function tarMember(name, payload, { type = "0", prefix = "" } = {}) {
@@ -31,57 +32,60 @@ const tar = (members, options) => Buffer.concat([
 
 const sha256 = (bytes) => createHash("sha256").update(bytes).digest("hex");
 const commit = "a".repeat(40);
-const tag = "v4.0.0";
+const tag = "v4.8.0";
 const updatedAt = "2026-09-28T20:04:06Z";
 
-// One model and one verified recipe: the smallest catalog the site accepts.
-const modelDigest = "3".repeat(64);
-const fixtureModel = {
-  content_sha256: modelDigest,
-  document: {
-    kind: "model",
-    identity: { publisher: "qwen", slug: "qwen-fast-nvfp4", family: { publisher: "qwen", slug: "qwen" }, model: { publisher: "qwen", slug: "qwen-fast" } },
-  },
-  display: { capabilities: ["chat", "code-generation"], family_title: "Qwen", model_title: "Qwen Fast" },
-};
+// One model and one verified recipe: the smallest catalog the site accepts, taken from the
+// real entries the adapter tests share (the first recipe is Working and selects the first model).
+const [fixtureModel] = catalogIndexFixture.catalog_entities;
 const fixtureRecipe = (packageBytes, overrides = {}) => ({
-  content_sha256: "a".repeat(64),
-  source_path: "recipes/qwen-fast.json",
-  package: { path: "packages/qwen-fast-single.tar.gz", sha256: sha256(packageBytes), expected_bytes: packageBytes.length, media_type: "x", minimum_consumer_schema: 2, recipe_content_sha256: "a".repeat(64) },
-  qualification: { status: "Working" },
-  display: { title: "Qwen Fast" },
-  release: { version: "1.0.0", released_at: "2026-09-01" },
-  document: {
-    identity: { publisher: "vonk-forge", slug: "qwen-fast" },
-    models: [{ model: { kind: "model", publisher: "qwen", slug: "qwen-fast-nvfp4", content_sha256: modelDigest } }],
-    provenance: { source_reference: "https://huggingface.co/Qwen/Qwen-Fast" },
+  ...catalogIndexFixture.recipes[0],
+  package: {
+    ...catalogIndexFixture.recipes[0].package,
+    path: "packages/qwen-fast-single.tar.gz",
+    sha256: sha256(packageBytes),
+    expected_bytes: packageBytes.length,
   },
   ...overrides,
 });
 
+// The envelope constants of the schema the release ships, verbatim from catalog-index-v2.schema.json.
+const fixtureSchema = {
+  components: {
+    schemas: {
+      CatalogIndex: {
+        properties: {
+          schema_version: { const: 2, title: "Schema Version", type: "integer" },
+          kind: { const: "recipe-library-index", title: "Kind", type: "string" },
+        },
+      },
+      PackageContract: { properties: { schema_version: { const: 2, title: "Schema Version", type: "integer" } } },
+    },
+  },
+};
+
 // A fixture release shaped like vonk-forge-recipes publish.yml output.
-function fixtureRelease({ index: indexOverride = {}, checksums: checksumsOverride } = {}) {
+function fixtureRelease({ index: indexOverride = {}, checksums: checksumsOverride, schema: schemaOverride } = {}) {
   const packageBytes = Buffer.from("fixture package");
   const index = {
-    kind: "recipe-library-index",
-    schema_version: 2,
-    contract_version: "4.0.0",
+    ...catalogIndexFixture,
     updated_at: updatedAt,
-    repository: "CarstVaartjes/vonk-forge-recipes",
     source_commit: commit,
-    package_contract: { schema_version: 2, media_type: "application/vnd.vonk-forge.recipe-package.v2+tar+gzip", path_prefix: "packages/" },
     catalog_entities: [fixtureModel],
     recipes: [fixtureRecipe(packageBytes)],
     ...indexOverride,
   };
   const indexBytes = Buffer.from(JSON.stringify(index));
+  const schemaBytes = Buffer.from(JSON.stringify(schemaOverride ?? fixtureSchema));
   const assets = {
     "catalog-index.json": indexBytes,
+    [SCHEMA_NAME]: schemaBytes,
     "qwen-fast-single.tar.gz": packageBytes,
     "SHA256SUMS.sigstore.json": Buffer.from("{}"),
   };
   assets.SHA256SUMS = Buffer.from(checksumsOverride ?? [
     `${sha256(indexBytes)}  catalog-index.json`,
+    `${sha256(schemaBytes)}  ${SCHEMA_NAME}`,
     `${sha256(packageBytes)}  qwen-fast-single.tar.gz`,
     "",
   ].join("\n"));
@@ -135,10 +139,11 @@ describe("recipe release publication", () => {
     await publish(assets);
     expect(await readFile(path.join(outDir, "catalog-index.json"))).toEqual(assets["catalog-index.json"]);
     expect(await readFile(path.join(outDir, "SHA256SUMS"))).toEqual(assets.SHA256SUMS);
+    expect(await readFile(path.join(outDir, SCHEMA_NAME))).toEqual(assets[SCHEMA_NAME]);
     expect(JSON.parse(await readFile(path.join(outDir, "release.json"), "utf8"))).toEqual({
       repository: "CarstVaartjes/vonk-forge-recipes",
       tag,
-      contract_version: "4.0.0",
+      contract_version: catalogIndexFixture.contract_version,
       updated_at: updatedAt,
       source_commit: commit,
       sha256sums_sha256: sha256(assets.SHA256SUMS),
@@ -158,8 +163,8 @@ describe("recipe release publication", () => {
       verified: 1,
       families: 1,
       creators: 1,
-      topCreators: [{ name: "Qwen", verified: 1 }],
-      types: { language: 1, code: 1, vision: 0, image: 0, video: 0, audio: 0, "3d": 0 },
+      topCreators: [{ name: "NVIDIA", verified: 1 }],
+      types: { language: 1, code: 0, vision: 1, image: 0, video: 0, audio: 1, "3d": 0 },
     });
   });
 
@@ -172,6 +177,24 @@ describe("recipe release publication", () => {
 
   test("still refuses an index the adapter cannot parse, keeping the previous catalog", async () => {
     await expect(publish(fixtureRelease({ index: { catalog_entities: [] } }))).rejects.toThrow("unsupported catalog index");
+    await expectPreviousCatalogKept();
+  });
+
+  test("checks the envelope against the constants of the schema the release ships", async () => {
+    await expect(publish(fixtureRelease({ index: { schema_version: 3 } }))).rejects.toThrow("unsupported catalog index");
+    await expect(publish(fixtureRelease({ index: { kind: "something-else" } }))).rejects.toThrow("unsupported catalog index");
+    await expect(publish(fixtureRelease({ index: { package_contract: { ...catalogIndexFixture.package_contract, schema_version: 3 } } }))).rejects.toThrow("unsupported package contract");
+    await expect(publish(fixtureRelease({ schema: { components: { schemas: {} } } }))).rejects.toThrow("declares no envelope constants");
+    await expectPreviousCatalogKept();
+  });
+
+  test("refuses a release whose bundle lacks the signed schema", async () => {
+    const { [SCHEMA_NAME]: _schema, ...without } = fixtureRelease();
+    // SHA256SUMS still lists it, so the bundle is incomplete.
+    await expect(publish(without)).rejects.toThrow(`${SCHEMA_NAME} is listed in SHA256SUMS but missing`);
+    const unlisted = fixtureRelease();
+    unlisted.SHA256SUMS = Buffer.from(unlisted.SHA256SUMS.toString().split("\n").filter((line) => !line.includes(SCHEMA_NAME)).join("\n"));
+    await expect(publish(unlisted)).rejects.toThrow(`${SCHEMA_NAME} is in recipe-library.tar but not signed`);
     await expectPreviousCatalogKept();
   });
 

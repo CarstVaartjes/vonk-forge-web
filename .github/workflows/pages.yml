@@ -8,8 +8,9 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-  # Picks up new signed recipe-library releases. vonk-forge-recipes has no
-  # token that could dispatch this workflow, so the site polls instead.
+  # Backstop for new signed recipe-library releases. The recipes publish job
+  # dispatches this workflow (workflow_dispatch) as soon as it publishes; the
+  # hourly poll only covers a dispatch that failed.
   schedule:
     - cron: "17 * * * *"
 
@@ -67,6 +68,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VONK_RECIPE_RELEASE: ${{ vars.VONK_RECIPE_RELEASE }}
         run: node web/scripts/recipe-release.mjs
+      # Compile against the schema that release ships (see ci.yml).
+      - name: Generate the catalog types from the release schema
+        run: npm --prefix web run catalog:types
       - name: Build frontend
         run: |
           set -euo pipefail

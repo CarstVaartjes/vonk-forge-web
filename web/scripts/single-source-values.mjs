@@ -102,11 +102,9 @@ function checkMemory(files, entry, report) {
       } else {
         projections++;
         // The sole projection must use the contract field directly, with no arithmetic.
-        const call = node.parent;
-        const declaration = call.parent;
-        if (!ts.isCallExpression(call) || call.expression.getText(ast) !== "number"
-          || !ts.isVariableDeclaration(declaration) || declaration.initializer !== call) {
-          report(file, line, "project peak_bytes directly through number()");
+        const declaration = node.parent;
+        if (!ts.isVariableDeclaration(declaration) || declaration.initializer !== node) {
+          report(file, line, "project peak_bytes directly into a variable");
         }
       }
     });
@@ -128,7 +126,7 @@ function checkPublishedConstant(files, entry, report) {
   }
   const value = declared[1];
   for (const [file, text] of files) {
-    if (file === entry.owner.file || !/^web\/src\/.*\.(?:tsx?)$/.test(file) || /\.test\.tsx?$/.test(file)) continue;
+    if (file === entry.owner.file || !/^web\/src\/.*\.(?:tsx?)$/.test(file) || /\.(?:test|fixture)\.tsx?$/.test(file)) continue;
     const ast = syntax(file, text);
     visit(ast, (node) => {
       // String, template (with or without substitutions) and JSX text forms.
@@ -145,7 +143,7 @@ function checkPublishedConstant(files, entry, report) {
 function checkContractVersions(files, entry, report) {
   let owner;
   try { owner = JSON.parse(files.get(entry.owner.file) ?? ""); } catch { owner = undefined; }
-  for (const key of ["major", "index_schema_version", "package_schema_version"]) {
+  for (const key of ["major"]) {
     if (!Number.isInteger(owner?.[key])) report(entry.owner.file, 1, `owner must hold an integer ${key}`);
   }
   const numeric = (node) => node && ts.isNumericLiteral(node);

@@ -43,6 +43,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: node web/scripts/recipe-release.mjs
+      # Compile the site against the schema that release ships: `tsc` (the build
+      # below) fails when the adapter or a fixture reads a field it does not have.
+      - name: Generate the catalog types from the release schema
+        run: npm --prefix web run catalog:types
       - run: npm --prefix web test -- --run
       - run: npm --prefix web run build
       - run: npx --prefix web playwright install --with-deps chromium
