@@ -1432,10 +1432,10 @@ a {
   width: 100%;
   min-height: 2.75rem;
   padding: 0.65rem 0.75rem;
-  border: 1px solid var(--line-strong);
-  border-radius: 0.45rem;
+  border: 1px solid var(--line-control);
+  border-radius: var(--r2);
   color: var(--ink);
-  background: var(--bg);
+  background: var(--recess);
 }
 
 .catalog-intro { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(18rem, 1fr); align-items: end; gap: 2rem; }
@@ -1457,11 +1457,11 @@ a {
 .catalog-results-heading small { display: block; margin-top: 0.2rem; color: var(--faint); font-size: var(--t-label); }
 .catalog-local-note { justify-self: end; max-width: 34rem; font-size: var(--t-label); line-height: 1.5; text-align: right; }
 .catalog-local-note a { color: var(--green-text); }
-.catalog-clear { min-height: 2.5rem; padding: 0.5rem 0.7rem; border: 1px solid var(--line-strong); border-radius: 0.35rem; color: var(--green-text); background: var(--panel); font: inherit; font-size: var(--t-label); font-weight: 750; cursor: pointer; }
-.catalog-clear:hover { border-color: var(--green); color: var(--ink); }
+.catalog-clear { min-height: 2rem; padding: 0.25rem 0.7rem; border: 1px solid var(--line-control); border-radius: var(--r2); color: var(--green-text); background: transparent; font: inherit; font-size: var(--t-label); font-weight: 750; cursor: pointer; }
+.catalog-clear:hover { background: var(--raised); color: var(--ink); }
 .catalog-applied { display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--line); }
-.catalog-applied button { display: inline-flex; align-items: center; gap: 0.55rem; min-height: 2.2rem; padding: 0.4rem 0.65rem; border: 1px solid var(--line-strong); border-radius: 0.35rem; color: var(--muted); background: var(--panel); font: inherit; font-size: var(--t-label); cursor: pointer; }
-.catalog-applied button:hover { border-color: var(--green); color: var(--ink); }
+.catalog-applied button { display: inline-flex; align-items: center; gap: 0.55rem; min-height: 2rem; padding: 0.25rem 0.65rem; border: 1px solid var(--line-control); border-radius: var(--r2); color: var(--muted); background: transparent; font: inherit; font-size: var(--t-label); cursor: pointer; }
+.catalog-applied button:hover { background: var(--raised); color: var(--ink); }
 .catalog-applied button > span[aria-hidden="true"] { color: var(--green); font-size: var(--t-body); line-height: 1; }
 .catalog-empty { margin: 1.5rem; }
 .catalog-empty h2 { margin: 0; font-size: 2rem; }
@@ -1473,8 +1473,8 @@ a {
 .catalog-table-scroll { width: 100%; max-height: min(68vh, 48rem); overflow: auto; overscroll-behavior: contain; scrollbar-color: var(--green) var(--panel); scrollbar-gutter: stable; }
 .catalog-table-scroll:focus-visible { outline: 3px solid var(--green); outline-offset: -3px; }
 .catalog-table { width: 132rem; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: var(--t-label); }
-.catalog-table th { position: sticky; top: 0; z-index: 1; padding: 0.6rem; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line-strong); color: var(--faint); background: var(--panel); text-align: left; vertical-align: top; font-size: var(--t-label); font-weight: 800; letter-spacing: 0.045em; text-transform: uppercase; }
-.catalog-table th.is-filtered { background: rgb(118 185 0 / 8%); }
+.catalog-table th { position: sticky; top: 0; z-index: 1; padding: 0.6rem; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line-strong); color: var(--faint); background: var(--raised); text-align: left; vertical-align: top; font-size: var(--t-label); font-weight: 800; letter-spacing: 0.045em; text-transform: uppercase; }
+.catalog-table th.is-filtered { background: var(--green-wash); }
 .catalog-table th:nth-child(1) { width: 12rem; }
 .catalog-table th:nth-child(2) { width: 6.5rem; }
 .catalog-table th:nth-child(3) { width: 7rem; }
@@ -1500,12 +1500,13 @@ a {
 .catalog-column-order button.is-active { border-color: rgb(118 185 0 / 45%); color: var(--green-text); background: rgb(118 185 0 / 10%); }
 .catalog-column-order svg { width: 0.75rem; height: 0.75rem; fill: currentColor; }
 .catalog-column-filter { margin-top: 0.45rem; }
-.catalog-column-filter select, .catalog-column-filter input { width: 100%; min-width: 0; height: 2.35rem; padding: 0.45rem 1.65rem 0.45rem 0.5rem; border: 1px solid var(--line-strong); border-radius: 0.3rem; color: var(--ink); background-color: var(--bg); font: 650 var(--t-label)/1.2 Onest Variable, Helvetica Neue, sans-serif; letter-spacing: 0; text-transform: none; }
+.catalog-column-filter select, .catalog-column-filter input { width: 100%; min-width: 0; height: 2.35rem; padding: 0.45rem 1.65rem 0.45rem 0.5rem; border: 1px solid var(--line-control); border-radius: var(--r1); color: var(--ink); background-color: var(--bg); font: 650 var(--t-label)/1.2 Onest Variable, Helvetica Neue, sans-serif; letter-spacing: 0; text-transform: none; }
 .catalog-column-filter input { padding-right: 0.5rem; }
 .catalog-column-filter select:focus-visible, .catalog-column-filter input:focus-visible { border-color: var(--green); outline: 2px solid rgb(118 185 0 / 35%); outline-offset: 1px; }
 .catalog-column-filter option:disabled { color: var(--faint); }
-.catalog-table td { padding: 0.65rem; border-right: 1px solid rgb(48 45 38 / 65%); border-bottom: 1px solid var(--line); color: var(--muted); vertical-align: top; line-height: 1.4; overflow-wrap: anywhere; }
-.catalog-table tbody tr:hover { background: rgb(255 255 255 / 3%); }
+.catalog-table td { padding: 0.9rem 0.65rem; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); color: var(--muted); vertical-align: top; line-height: 1.4; overflow-wrap: anywhere; }
+.catalog-table tbody td { background: var(--panel); }
+.catalog-table tbody tr:hover td { background: var(--raised); }
 .catalog-table strong { color: var(--ink); }
 .catalog-table-model span, .catalog-table-recipe span { display: block; margin-top: 0.2rem; color: var(--faint); font: var(--t-label)/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; }
 .catalog-table-recipe h2 { margin: 0; font-size: var(--t-small); line-height: 1.25; }
@@ -1513,7 +1514,7 @@ a {
 .catalog-table-recipe a:hover { color: var(--green-text); text-decoration: underline; text-underline-offset: 0.2rem; }
 .catalog-table th:nth-child(1), .catalog-table td:nth-child(1) { position: sticky; left: 0; z-index: 2; background: var(--raised); box-shadow: 1px 0 0 var(--line-strong); }
 .catalog-table th:nth-child(1) { z-index: 4; }
-.catalog-table tbody tr:hover td:nth-child(1) { background: var(--hover); }
+.catalog-table tbody tr:hover td:nth-child(1) { background: var(--raised); }
 .catalog-table-substatus { display: block; margin-top: 0.35rem; color: var(--faint); font-size: var(--t-label); line-height: 1.35; }
 .catalog-table-number { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .catalog-table-date { white-space: nowrap; }
@@ -1562,7 +1563,7 @@ a {
 .models-intro > p { max-width: 38rem; color: var(--muted); line-height: 1.65; }
 .model-index-tools { display: grid; grid-template-columns: auto minmax(14rem, 1fr) auto minmax(8rem, 1fr) auto minmax(10rem, 1fr); align-items: center; gap: 0.75rem 1rem; padding: 1rem 1.25rem; border: 1px solid var(--line); border-radius: 0.55rem; background: var(--panel); }
 .model-index-tools label { color: var(--ink); font-size: var(--t-small); font-weight: 800; }
-.model-index-tools input { min-height: 2.6rem; padding: 0.5rem 0.7rem; border: 1px solid var(--line-strong); border-radius: 0.35rem; color: var(--ink); background: var(--bg); }
+.model-index-tools input { min-height: 2.75rem; padding: 0.5rem 0.7rem; border: 1px solid var(--line-control); border-radius: var(--r2); color: var(--ink); background: var(--bg); }
 .model-index-tools span { justify-self: end; color: var(--muted); font-size: var(--t-label); font-variant-numeric: tabular-nums; }
 .model-list { display: grid; margin: 1rem 0 0; padding: 0; border-top: 1px solid var(--line); list-style: none; }
 .model-list > li { min-width: 0; }
@@ -2671,7 +2672,7 @@ a {
 }
 
 .setup-tile[aria-pressed="true"] {
-  background: rgb(118 185 0 / 10%);
+  background: var(--green-wash);
   box-shadow: inset 0 0 0 1px var(--green);
 }
 
@@ -2716,16 +2717,17 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;
-  min-height: 2.2rem;
-  padding: 0.35rem 0.65rem;
-  border: 1px solid var(--line-strong);
-  border-radius: 0.2rem;
+  min-height: 2rem;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid var(--line-control);
+  border-radius: var(--r2);
   color: var(--ink);
-  background: var(--bg);
+  background: transparent;
   font: inherit;
   font-size: var(--t-small);
   font-weight: 650;
   cursor: pointer;
+  transition: background var(--fast) var(--ease);
 }
 
 .setup-chips button small {
@@ -2735,7 +2737,7 @@ a {
 }
 
 .setup-chips button:hover:not(:disabled) {
-  border-color: var(--green);
+  background: var(--raised);
 }
 
 .setup-chips button:disabled {
@@ -2746,7 +2748,7 @@ a {
 .setup-chips button[aria-pressed="true"] {
   border-color: var(--green);
   color: var(--green-text);
-  background: rgb(118 185 0 / 10%);
+  background: var(--green-wash);
 }
 
 .setup-chips select {
@@ -2882,11 +2884,11 @@ a {
 
 .type-tabs button small { color: var(--muted); font-size: var(--t-small); font-variant-numeric: tabular-nums; }
 .type-tabs button:hover:not([aria-disabled="true"]) { background: var(--raised); }
-.type-tabs button[aria-pressed="true"] { color: var(--bg); background: var(--green); }
-.type-tabs button[aria-pressed="true"] small { color: var(--bg); }
+.type-tabs button[aria-pressed="true"] { color: var(--green-ink); background: var(--green); }
+.type-tabs button[aria-pressed="true"] small { color: var(--green-ink); }
 .type-tabs button[aria-disabled="true"] { color: var(--faint); cursor: not-allowed; }
 .type-tabs button:focus-visible { outline: 2px solid var(--green-text); outline-offset: -4px; }
-.type-tabs button[aria-pressed="true"]:focus-visible { outline-color: var(--bg); }
+.type-tabs button[aria-pressed="true"]:focus-visible { outline-color: var(--green-ink); }
 
 .verified-toggle { display: flex; flex-wrap: wrap; align-items: center; gap: 0.2rem 0.7rem; margin: 0 0 1.25rem; cursor: pointer; }
 .verified-toggle input { width: 1.15rem; height: 1.15rem; margin: 0; }
@@ -3246,3 +3248,7 @@ a {
   .verdict { min-width: 0; }
 }
 
+/* Dense filter chips grow to 44px on touch and on a phone. */
+@media (pointer: coarse), (max-width: 42rem) {
+  .setup-chips button, .setup-chips select, .catalog-clear, .catalog-applied button { min-height: 2.75rem; }
+}
