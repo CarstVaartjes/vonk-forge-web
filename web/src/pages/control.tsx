@@ -39,7 +39,6 @@ export function ControlPage() {
         </div>
         <div className="control-path-grid">
           <article>
-            <span className="path-number">01</span>
             <h3>Web Controller</h3>
             <span className="guide-meta">Recommended for first use</span>
             <p>A guided interface with visual progress, search, filters, and clear next steps.</p>
@@ -51,7 +50,6 @@ export function ControlPage() {
             <a className="text-link" href="#web-controller">Use the Web Controller</a>
           </article>
           <article>
-            <span className="path-number">02</span>
             <h3>Local CLI</h3>
             <span className="guide-meta">For operators, scripts, and AI agents</span>
             <p>The same lists and choices in a terminal, with JSON output, read-only reviews, and meaningful exit codes.</p>

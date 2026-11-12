@@ -101,22 +101,7 @@ body {
   overflow-x: clip;
   background:
     radial-gradient(circle at 12% 5%, rgb(217 181 111 / 14%), transparent 26rem),
-    radial-gradient(circle at 88% 30%, rgb(234 207 154 / 6%), transparent 32rem),
     var(--bg);
-}
-
-body::before {
-  position: fixed;
-  z-index: -1;
-  inset: 0;
-  pointer-events: none;
-  content: "";
-  opacity: 0.32;
-  background-image:
-    linear-gradient(rgb(255 255 255 / 3%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 3%) 1px, transparent 1px);
-  background-size: 4rem 4rem;
-  mask-image: linear-gradient(to bottom, black, transparent 72%);
 }
 
 a {
@@ -531,16 +516,8 @@ a {
 }
 
 .section-kicker {
-  display: grid;
-  grid-template-columns: 3rem minmax(0, 1fr);
-  gap: 1rem;
+  display: block;
   margin-bottom: clamp(2.5rem, 6vw, 4rem);
-}
-
-.section-kicker > span {
-  padding-top: 0.25rem;
-  color: var(--gold);
-  font: 750 var(--t-label)/1 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 /* Compact mono metadata that follows a heading (step, path number, scope). */.guide-page .guide-meta {
@@ -750,7 +727,7 @@ a {
 
 .contract-intro {
   max-width: 51rem;
-  margin: -1.2rem 0 3rem 6.25rem;
+  margin: -1.2rem 0 3rem;
   color: var(--muted);
   font-size: var(--t-body);
   line-height: 1.75;
@@ -1868,7 +1845,6 @@ a {
   .filters label:first-child { grid-column: 1 / -1; }
   .scale-grid { grid-template-columns: 1fr; }
   .scale-grid article { min-height: 13rem; }
-  .contract-intro { margin-left: 0; }
   .contract-pipeline { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .contract-handoff { grid-template-columns: 1fr; }
   .guide-cta { align-items: flex-start; flex-direction: column; }
