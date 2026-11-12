@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 
 import { App } from "./app";
+import indexHtml from "../index.html?raw";
 
 
 // The footer reads the verified release manifest the Pages build writes.
@@ -278,4 +279,29 @@ test("shows the safe operating loop without hiding the private boundary", () => 
   }
   expect(screen.getByRole("heading", { name: /your controller, your choice/i })).toBeVisible();
   expect(screen.getByText(/A NAS is convenient, not compulsory/i)).toBeVisible();
+});
+
+
+test("each route sets its own tab title and description", () => {
+  const meta = (path: string) => {
+    window.history.replaceState({}, "", path);
+    const view = render(<App />);
+    const seen = [document.title, document.querySelector('meta[name="description"]')?.getAttribute("content")];
+    view.unmount();
+    return seen;
+  };
+  const pages = ["/recipes", "/install", "/control", "/architecture", "/publish", "/example-setup"].map(meta);
+
+  expect(pages.map(([title]) => title)).toEqual(
+    ["Recipes", "Install", "Control", "How it works", "Publish a recipe", "Example setup"].map((name) => `${name} · Vonk Forge`),
+  );
+  expect(new Set(pages.map(([, description]) => description)).size).toBe(pages.length);
+});
+
+
+test("shared links get a large card with the share image", () => {
+  const html = indexHtml;
+  expect(html).toContain('<meta name="twitter:card" content="summary_large_image" />');
+  expect(html).toContain('content="https://vonkforge.ai/og.png"');
+  expect(html).toContain('<link rel="icon" href="/favicon.svg"');
 });

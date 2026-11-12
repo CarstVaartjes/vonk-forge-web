@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { usePageMeta } from "../page-meta";
 
 import { getModel, listModels, type ModelSummary, type ModelVersionSummary } from "../api/client";
 import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
@@ -200,6 +201,7 @@ function initialFilters() {
 }
 
 export function ModelsPage() {
+  usePageMeta("Models", "Browse models with their exact versions, variants and the recipes that run them on DGX Spark.");
   const [models, setModels] = useState<ModelSummary[] | null>(null);
   const [filters, setFilters] = useState(initialFilters);
   const [error, setError] = useState(false);
@@ -243,7 +245,6 @@ export function ModelsPage() {
     window.history.replaceState({}, "", `/models${params.toString() ? `?${params}` : ""}`);
   }
   function clearFilters() { updateFilters({ type: "", verified: false, query: "", publisher: "", capability: "", recipes: "", family: "", engine: "", sparks: "", sort: "name" }); }
-  useEffect(() => { document.title = "Models · Vonk Forge"; }, []);
   return <main className="models-page">
     <header className="page-intro models-intro"><div><h1>Models, with their exact versions.</h1></div><p>Start with a model, then inspect its exact versions and variants and the recipes that bind them. Details come from the published catalog; local cache and running state stay in your Controller.</p></header>
     {models ? (
@@ -281,7 +282,7 @@ export function ModelDetailPage({ publisher, slug }: { publisher: string; slug: 
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => { const controller = new AbortController(); setError(false); getModel(publisher, slug, controller.signal).then(setModel).catch(() => { if (!controller.signal.aborted) setError(true); }); return () => controller.abort(); }, [publisher, slug, attempt]);
-  useEffect(() => { if (model) document.title = `${model.title} · Models · Vonk Forge`; }, [model]);
+  usePageMeta(model ? `${model.title} · Models` : "Model", model ? `${model.title}: published versions, variants and the recipes that run it on NVIDIA DGX Spark.` : "A model in the Vonk Forge catalog.");
   if (error) return <main className="status-panel error"><h1>Model unavailable</h1><p>This model is not present in the published index.</p><button className="button" type="button" onClick={() => { setModel(null); setAttempt((value) => value + 1); }}>Retry</button></main>;
   if (!model) return <main className="status-panel" role="status">Loading immutable model…</main>;
   return <main className="model-detail-page"><header className="page-intro"><h1>{model.title}</h1><p className="model-meta">{model.family ? `Model family · ${model.family}` : "Model"}</p><p className="recipe-path">{model.publisher}/{model.slug}</p><p className="model-detail-identity">Immutable model identity <code>{model.revision_id}</code></p><p>{model.description || "No description published."}</p></header><div className="model-detail-actions"><a className="button" href="/models">All models</a><a className="button" href={`/recipes?q=${encodeURIComponent(model.title)}`}>Compare recipes</a><a className="button primary" href="/control#library-import">Open Controller instructions</a></div><section className="model-detail-boundary"><div><h2>Versions and weight variants</h2><p>Each row is a published version and variant. Download size, source revision, format, license, access, and capabilities appear when the catalog declares them.</p></div><div className="model-version-list">{model.versions.map((version) => <VersionRow key={`${version.publisher}/${version.slug}-${version.revision_id}`} version={version} />)}</div></section></main>;
