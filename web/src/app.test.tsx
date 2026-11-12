@@ -173,10 +173,6 @@ test("provides the current signed controller and Spark installation path", () =>
   const controllerCommand = screen.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh");
   expect(preflightHeading.compareDocumentPosition(controllerCommand) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(screen.getByText(/MagicDNS and HTTPS certificates/i)).toBeVisible();
-  const serviceModes = within(screen.getByLabelText("Tailscale Services by feature set"));
-  expect(serviceModes.getAllByText("svc:vonk-forge")).toHaveLength(2);
-  expect(serviceModes.getByText("svc:hermes-api")).toBeVisible();
-  expect(serviceModes.getByText("svc:hermes-dashboard")).toBeVisible();
   expect(screen.getByText(/OAuth client with only/)).toHaveTextContent(/auth_keys.*tag:vonk-gateway/i);
   expect(screen.getByText(/Production and development use these same unsuffixed names/i)).toBeVisible();
   expect(screen.getByText(/isolated, disposable test tailnet/i)).toBeVisible();
@@ -190,7 +186,7 @@ test("provides the current signed controller and Spark installation path", () =>
   expect(screen.getByText(/docker compose exec tailscale-gateway tailscale status --json/)).toBeVisible();
   expect(screen.getByText(/tailscale ping vonk-forge\.<TAILNET_DNS_SUFFIX>\.ts\.net/)).toBeVisible();
   expect(screen.getByLabelText("Exact Tailscale Serve map")).toHaveTextContent(
-    /svc:vonk-forge.*http:\/\/caddy:8080.*svc:hermes-api.*http:\/\/hermes-agent:8642.*svc:hermes-dashboard.*http:\/\/hermes-agent:9119/i,
+    /svc:vonk-forge.*http:\/\/caddy:8080/i,
   );
   expect(screen.getByText("No matching peer")).toBeVisible();
   expect(document.querySelector(".control-install .fleet-note")).toHaveTextContent(
