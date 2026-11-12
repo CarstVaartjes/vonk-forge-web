@@ -230,6 +230,18 @@ test("documents two equivalent control paths and complete CLI setup", () => {
 });
 
 
+test("the install page links the removal runbook", () => {
+  window.history.replaceState({}, "", "/install");
+  render(<App />);
+
+  const section = document.querySelector("#uninstall") as HTMLElement;
+  expect(within(section).getByRole("link", { name: "removal runbook on GitHub" })).toHaveAttribute(
+    "href",
+    "https://github.com/CarstVaartjes/vonk-forge/blob/main/docs/operations/uninstall.md",
+  );
+  expect(within(section).getByText("sudo dpkg --purge vonk-forge-agent")).toBeVisible();
+});
+
 test("offers lab and secure remote install modes with current enrollment commands", () => {
   window.history.replaceState({}, "", "/install");
   render(<App />);
