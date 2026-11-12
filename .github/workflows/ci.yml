@@ -47,6 +47,8 @@ jobs:
       # below) fails when the adapter or a fixture reads a field it does not have.
       - name: Generate the catalog types from the release schema
         run: npm --prefix web run catalog:types
+      # Tests and fixtures are type-checked here; the deploy build checks only shipped code.
+      - run: npm --prefix web run typecheck
       - run: npm --prefix web test -- --run
       - run: npm --prefix web run build
       - run: npx --prefix web playwright install --with-deps chromium
