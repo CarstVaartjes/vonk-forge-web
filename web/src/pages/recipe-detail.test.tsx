@@ -29,6 +29,14 @@ test("a community recipe is not tagged official, and the creator links to the ho
   expect(screen.getByText("Community recipe")).not.toHaveClass("official");
 });
 
+test("the evidence line names the Spark count only when the library recorded one", async () => {
+  const verified = { ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"), evidence: { tested_at: "2026-11-04T08:00:00Z" } };
+  verified.catalog = { ...verified.catalog, qualification: "Working", verified: true };
+  getRecipe.mockResolvedValue(verified);
+  render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
+  expect(await screen.findByText(/Passed hardware checks, 4 Nov 2026\./)).toBeVisible();
+});
+
 test("an official recipe carries the official tag", async () => {
   getRecipe.mockResolvedValue(recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"));
   render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);

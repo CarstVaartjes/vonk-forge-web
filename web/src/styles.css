@@ -2788,7 +2788,7 @@ a {
 @media (max-width: 720px) { .showcase-columns { grid-template-columns: 1fr; } }
 @media (min-width: 721px) { .showcase-card:last-child:nth-child(odd) { grid-column: 1 / -1; } }
 
-.status-legend { margin: 1rem 0 0; padding: 0.85rem 1.1rem; border: 1px solid var(--line); background: var(--panel); }
+.status-legend { scroll-margin-top: 5rem; margin: 1rem 0 0; padding: 0.85rem 1.1rem; border: 1px solid var(--line); background: var(--panel); }
 .status-legend h3 { margin: 0; color: var(--ink); font-size: var(--t-body); }
 .status-legend p { margin: 0.75rem 0; color: var(--muted); font-size: var(--t-small); line-height: 1.6; }
 .status-legend-list { margin: 0.75rem 0 0; display: grid; gap: 0.6rem; }
