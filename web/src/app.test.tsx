@@ -66,53 +66,38 @@ test("states the four promises with the vonkctl command behind each", () => {
 });
 
 
-test("provides the catalog and publishing navigation", () => {
+test("top menu is Catalog, Install, Docs; Publish and Example setup live in the footer", () => {
   render(<App />);
 
-  const primaryNavigation = screen.getByRole("navigation", {
-    name: "Primary navigation",
-  });
+  const primaryNavigation = within(screen.getByRole("navigation", { name: "Primary navigation" }));
+  expect(primaryNavigation.getAllByRole("link").map((link) => link.textContent)).toEqual(["Catalog", "Install", "Docs"]);
+  expect(primaryNavigation.getByRole("link", { name: "Catalog" })).toHaveAttribute("href", "/recipes");
+  expect(primaryNavigation.getByRole("link", { name: "Install" })).toHaveAttribute("href", "/install");
+  expect(primaryNavigation.getByRole("link", { name: "Docs" })).toHaveAttribute("href", "/architecture");
 
-  expect(within(primaryNavigation).getByRole("link", { name: "Recipes" })).toHaveAttribute(
-    "href",
-    "/recipes",
-  );
-  expect(within(primaryNavigation).getByRole("link", { name: "Models" })).toHaveAttribute(
-    "href",
-    "/models",
-  );
-  expect(within(primaryNavigation).getByRole("link", { name: "Publish" })).toHaveAttribute(
-    "href",
-    "/publish",
-  );
-  expect(within(primaryNavigation).getByRole("link", { name: "How it works" })).toHaveAttribute(
-    "href",
-    "/architecture",
-  );
-  expect(within(primaryNavigation).getByRole("link", { name: "Install" })).toHaveAttribute(
-    "href",
-    "/install",
-  );
-  expect(within(primaryNavigation).getByRole("link", { name: "Control" })).toHaveAttribute(
-    "href",
-    "/control",
-  );
+  const footer = within(screen.getByRole("navigation", { name: "Footer navigation" }));
+  expect(footer.getByRole("link", { name: "Publish" })).toHaveAttribute("href", "/publish");
+  expect(footer.getByRole("link", { name: "Example setup" })).toHaveAttribute("href", "/example-setup");
 });
 
 
-test("marks the current top-level destination in the primary navigation", () => {
-  window.history.replaceState({}, "", "/recipes/vonk/qwen-fast");
-  const view = render(<App />);
-  const primaryNavigation = screen.getByRole("navigation", { name: "Primary navigation" });
+test("marks the current top-level destination, grouping the pages under it", () => {
+  const current = (path: string) => {
+    window.history.replaceState({}, "", path);
+    const view = render(<App />);
+    const links = within(screen.getByRole("navigation", { name: "Primary navigation" })).getAllByRole("link");
+    const marked = links.filter((link) => link.getAttribute("aria-current") === "page").map((link) => link.textContent);
+    view.unmount();
+    return marked;
+  };
 
-  expect(within(primaryNavigation).getByRole("link", { name: "Recipes" })).toHaveAttribute("aria-current", "page");
-  expect(within(primaryNavigation).getByRole("link", { name: "Install" })).not.toHaveAttribute("aria-current");
-
-  view.unmount();
-  window.history.replaceState({}, "", "/publish");
-  render(<App />);
-  expect(within(screen.getByRole("navigation", { name: "Primary navigation" })).getByRole("link", { name: "Publish" })).toHaveAttribute("aria-current", "page");
+  expect(current("/recipes/vonk/qwen-fast")).toEqual(["Catalog"]);
+  expect(current("/models")).toEqual(["Catalog"]);
+  expect(current("/install")).toEqual(["Install"]);
+  expect(current("/control")).toEqual(["Docs"]);
+  expect(current("/publish")).toEqual([]);
 });
+
 
 test("routes publishing to the repository guide without a browser authoring workspace", () => {
   window.history.replaceState({}, "", "/publish");
