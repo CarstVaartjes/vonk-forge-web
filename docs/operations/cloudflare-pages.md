@@ -74,7 +74,9 @@ push that passed it; they only poll for a new recipe release. The deploy job:
 2. runs `web/scripts/recipe-release.mjs`, which lists the
    [`vonk-forge-recipes`](https://github.com/CarstVaartjes/vonk-forge-recipes)
    releases and picks the newest non-draft release whose tag major equals
-   the supported contract major (`web/src/contract-major.json`). It downloads only
+   the supported contract major (`web/src/contract-major.json`). If a non-draft release of a
+   newer major exists, the step fails, so the scheduled deploy goes red (the last good site
+   stays online) until the site follows that major. It downloads only
    that release's `recipe-library.tar` (one uncompressed tar holding
    `SHA256SUMS`, `SHA256SUMS.sigstore.json` and every file `SHA256SUMS` lists,
    as flat names), rejects any member that is not a unique flat regular file

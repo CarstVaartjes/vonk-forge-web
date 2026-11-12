@@ -91,15 +91,21 @@ function semver(tag) {
 }
 
 // Pick the newest non-draft release whose tag major is the supported contract major.
+// A newer published major fails the build: a red scheduled deploy (the last good
+// site stays online) is the alarm that this site must follow the new contract.
 export function selectReleaseTag(releases, major = SUPPORTED_CONTRACT_MAJOR) {
   let best = null;
+  let newestMajor = major;
   for (const release of Array.isArray(releases) ? releases : []) {
     const version = semver(release?.tag_name);
-    if (release?.draft || !version || version[0] !== major) continue;
+    if (release?.draft || !version) continue;
+    newestMajor = Math.max(newestMajor, version[0]);
+    if (version[0] !== major) continue;
     if (!best || version[1] > best.version[1] || (version[1] === best.version[1] && version[2] > best.version[2])) {
       best = { tag: release.tag_name, version };
     }
   }
+  if (newestMajor > major) fail(`contract major ${newestMajor} is published but this site supports major ${major}; follow it in web/src/contract-major.json`);
   if (!best) fail(`no published release for contract major ${major}`);
   return best.tag;
 }
