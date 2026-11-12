@@ -44,13 +44,11 @@ function ProductShot({
   alt,
   title,
   body,
-  eager = false,
 }: {
   src: string;
   alt: string;
   title: string;
   body: string;
-  eager?: boolean;
 }) {
   return (
     <figure className="product-shot">
@@ -60,8 +58,7 @@ function ProductShot({
           alt={alt}
           width="1280"
           height="800"
-          loading={eager ? "eager" : "lazy"}
-          fetchPriority={eager ? "high" : "auto"}
+          loading="lazy"
         />
       </div>
       <figcaption>

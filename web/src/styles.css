@@ -1958,12 +1958,12 @@ a {
 
 .tour-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: clamp(1.5rem, 3vw, 2.5rem);
 }
 
-.tour-grid .product-shot {
-  grid-column: 1 / -1;
+.tour-grid .agent-session-frame {
+  aspect-ratio: auto;
 }
 
 .tour-grid .product-shot:last-child img {
