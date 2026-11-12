@@ -54,7 +54,7 @@ describe("home page", () => {
     const quickstart = within(await screen.findByRole("region", { name: /Start on the computer/ }));
     expect(quickstart.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
     expect(quickstart.getByText(/install\.vonkforge\.ai\/spark \| VONK_CONTROLLER_ADDRESS=/)).toBeVisible();
-    expect(quickstart.getAllByRole("button", { name: /^Copy / })).toHaveLength(2);
+    expect(quickstart.getAllByRole("button", { name: "Copy" })).toHaveLength(2);
   });
 
   test("calls the row updated, not new, and links the same count the catalog shows", async () => {
