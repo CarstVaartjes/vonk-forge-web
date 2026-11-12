@@ -224,7 +224,7 @@ describe("type-first filtering", () => {
 });
 
 
-test("explains each status shown, links every badge to the explanation, and never invents a meaning", async () => {
+test("explains each status shown, links every badge to the explanation, and lists only the published statuses", async () => {
   loadRecipeCatalog.mockResolvedValue([
     recipe,
     { ...recipe, slug: "odd", title: "Odd", catalog: { ...recipe.catalog, qualification: "Status from a newer library" } },
@@ -233,9 +233,8 @@ test("explains each status shown, links every badge to the explanation, and neve
   await screen.findByRole("heading", { name: "Odd" });
   const legend = within(document.getElementById("how-recipes-are-verified") as HTMLElement);
   expect(legend.getByText(/information to help you choose, never a gate/)).toBeInTheDocument();
-  expect(legend.getByText(/No hardware verdict yet/)).toBeInTheDocument();
   expect(legend.getAllByText("Status from a newer library")).toHaveLength(1);
-  expect(legend.getByText("Shown exactly as the recipe library published it.")).toBeInTheDocument();
+  expect(legend.getByRole("link", { name: "What each status means" })).toHaveAttribute("href", expect.stringContaining("vonk-forge-recipes/blob/main/docs/recipe-authoring.md"));
   expect(legend.queryByText("Working")).toBeNull();
   const badgeLinks = within(screen.getByRole("table")).getAllByTitle("What this status means");
   expect(badgeLinks).toHaveLength(2);

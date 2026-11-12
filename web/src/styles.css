@@ -3239,11 +3239,7 @@ a {
 @media (min-width: 721px) { .showcase-card:last-child:nth-child(odd) { grid-column: 1 / -1; } }
 
 .status-legend { margin: 1rem 0 0; padding: 0.85rem 1.1rem; border: 1px solid var(--line); background: var(--panel); }
-.status-legend summary { color: var(--ink); font-weight: 700; cursor: pointer; }
+.status-legend h3 { margin: 0; color: var(--ink); font-size: 1rem; }
 .status-legend p { margin: 0.75rem 0; color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
-.status-legend dl { display: grid; gap: 0.6rem; margin: 0; }
-.status-legend dl > div { display: grid; grid-template-columns: minmax(10rem, 14rem) minmax(0, 1fr); gap: 0.75rem; align-items: start; }
-.status-legend dt, .status-legend dd { margin: 0; }
-.status-legend dd { color: var(--muted); font-size: 0.86rem; line-height: 1.55; }
 .badge-link { text-decoration: none; }
-@media (max-width: 600px) { .status-legend dl > div { grid-template-columns: 1fr; gap: 0.25rem; } }
+@media (max-width: 600px) { 
