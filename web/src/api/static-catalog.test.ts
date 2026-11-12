@@ -196,10 +196,7 @@ describe("static recipe library adapter", () => {
     expect(recipe.title).toBe("SkinTokens / TokenRig pytorch-pipeline single Spark");
   });
 
-  test("rejects an index for another contract major or without catalog entities", async () => {
-    serve({ ...index, contract_version: "3.2.0" });
-    await expect(listStaticModels(indexUrl)).rejects.toThrow("unsupported catalog index");
-    resetStaticCatalogCacheForTests();
+  test("rejects an index without catalog entities", async () => {
     serve({ ...index, catalog_entities: [] });
     await expect(listStaticModels(indexUrl)).rejects.toThrow("unsupported catalog index");
   });

@@ -78,7 +78,7 @@ generates from its reviewed recipe and model documents and publishes as an
 asset of a signed GitHub release. Browsers cannot fetch release assets
 cross-origin, so the Pages build copies it:
 [`web/scripts/recipe-release.mjs`](web/scripts/recipe-release.mjs) downloads the
-newest release whose tag major matches the supported recipe contract major (or
+newest release, whatever its contract major (or
 the tag in `VONK_RECIPE_RELEASE`). It downloads only that release's single
 `recipe-library.tar` asset (an uncompressed tar of flat files: `SHA256SUMS`, its
 Sigstore bundle and every file `SHA256SUMS` lists), refuses any member that is

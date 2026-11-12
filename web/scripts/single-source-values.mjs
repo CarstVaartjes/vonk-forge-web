@@ -140,57 +140,12 @@ function checkPublishedConstant(files, entry, report) {
   }
 }
 
-function checkContractVersions(files, entry, report) {
-  let owner;
-  try { owner = JSON.parse(files.get(entry.owner.file) ?? ""); } catch { owner = undefined; }
-  for (const key of ["major"]) {
-    if (!Number.isInteger(owner?.[key])) report(entry.owner.file, 1, `owner must hold an integer ${key}`);
-  }
-  const numeric = (node) => node && ts.isNumericLiteral(node);
-  const comparison = new Set([
-    ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken,
-    ts.SyntaxKind.LessThanToken, ts.SyntaxKind.LessThanEqualsToken, ts.SyntaxKind.GreaterThanToken, ts.SyntaxKind.GreaterThanEqualsToken,
-  ]);
-  // Match the leaf name only: property name, callee name, or the indexed object.
-  const versionName = /^semver$|(?:major|contract_?version|schema_?version)$/i;
-  const leaf = (expression) => {
-    if (ts.isParenthesizedExpression(expression) || ts.isNonNullExpression(expression) || ts.isAsExpression(expression)) return leaf(expression.expression);
-    if (ts.isPropertyAccessExpression(expression)) return expression.name.text;
-    if (ts.isCallExpression(expression)) return leaf(expression.expression);
-    if (ts.isElementAccessExpression(expression)) return ts.isStringLiteralLike(expression.argumentExpression) ? expression.argumentExpression.text : leaf(expression.expression);
-    return ts.isIdentifier(expression) ? expression.text : "";
-  };
-  for (const [file, text] of files) {
-    if (file === entry.owner.file || !/^web\/(?:src|scripts)\/.*\.(?:[cm]?js|tsx?)$/.test(file) || /\.test\.[cm]?[jt]sx?$/.test(file)) continue;
-    const ast = syntax(file, text);
-    visit(ast, (node) => {
-      const line = ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1;
-      const flag = (what) => report(file, line, `${what}; read it from ${entry.owner.file}`);
-      // A named contract major/version (or MAJOR) initialised with a number.
-      if ((ts.isVariableDeclaration(node) || ts.isPropertyAssignment(node) || ts.isPropertyDeclaration(node)) && numeric(node.initializer)
-        && versionName.test(node.name.getText(ast))) flag(`${node.name.getText(ast)} initialised with a literal`);
-      // A type literal such as `schema_version: 2`.
-      if (ts.isPropertySignature(node) && node.type && ts.isLiteralTypeNode(node.type) && numeric(node.type.literal)
-        && /^(?:schema_version|major)$/.test(node.name.getText(ast))) flag(`${node.name.getText(ast)} typed as a literal`);
-      // Equality or relational comparison of a version-like expression with a number.
-      if (ts.isBinaryExpression(node) && comparison.has(node.operatorToken.kind)) {
-        for (const [side, other] of [[node.left, node.right], [node.right, node.left]]) {
-          if (numeric(other) && versionName.test(leaf(side))) flag(`${side.getText(ast)} compared with a literal`);
-        }
-      }
-      if (ts.isCaseClause(node) && numeric(node.expression) && versionName.test(leaf(node.parent.parent.expression))) flag("version switch on a literal case");
-      // A tag regex that fixes a major, such as /^v3\./.
-      if (ts.isRegularExpressionLiteral(node) && /^\/\^v\d/.test(node.text)) flag(`tag regex ${node.text} fixes a major`);
-    });
-  }
-}
-
 export function checkSingleSources(files, entries = registrations(files)) {
   const errors = [];
   const ids = new Set();
   const owners = new Set();
   const classes = new Set();
-  const kinds = { "node-version": checkNode, "memory-projection": checkMemory, "published-constant": checkPublishedConstant, "contract-versions": checkContractVersions };
+  const kinds = { "node-version": checkNode, "memory-projection": checkMemory, "published-constant": checkPublishedConstant };
   for (const entry of entries) {
     const owner = `${entry.owner?.file}#${entry.owner?.selector}`;
     const report = (file, line, detail) => errors.push(`${entry.id}: ${file}:${line}: ${detail}; owner ${owner}; ${entry.derive}`);
