@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 
 // The one command block on the site: a label, the command in a strip that
-// scrolls inside itself, and a Copy button whose text turns to "Copied", announced politely.
-export function CommandBlock({ children, label }: { children: string; label: string }) {
+// scrolls inside itself behind a drawn "$" prompt (off for code that is not a shell
+// command), and a Copy button whose text turns to "Copied", announced politely.
+export function CommandBlock({ children, label, prompt = true }: { children: string; label: string; prompt?: boolean }) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<number | undefined>(undefined);
   useEffect(() => () => window.clearTimeout(timer.current), []);
@@ -24,7 +25,7 @@ export function CommandBlock({ children, label }: { children: string; label: str
         </button>
         <span className="visually-hidden" role="status">{copied ? "Copied" : ""}</span>
       </div>
-      <pre tabIndex={0}><code>{children}</code></pre>
+      <pre tabIndex={0}><code className={prompt ? "prompted" : undefined}>{children}</code></pre>
     </div>
   );
 }

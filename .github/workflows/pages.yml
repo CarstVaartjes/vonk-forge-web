@@ -36,7 +36,9 @@ jobs:
   deploy:
     needs: [ci]
     # Fan-in: deploy after CI passed, or when CI was skipped (schedule and dispatch).
-    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') }}
+    # Only from main: the production environment has no branch policy, so a dispatch
+    # from another ref must not publish its code.
+    if: ${{ github.ref == 'refs/heads/main' && !cancelled() && !contains(needs.*.result, 'failure') }}
     permissions:
       contents: read
       deployments: write

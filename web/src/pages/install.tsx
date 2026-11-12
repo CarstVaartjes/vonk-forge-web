@@ -6,6 +6,7 @@ export const sparkInstallCommand = "curl -fsSL https://install.vonkforge.ai/spar
 
 const repository = "https://github.com/CarstVaartjes/vonk-forge/blob/main";
 const tailscaleRunbook = `${repository}/docs/runbooks/tailscale.md`;
+const uninstallRunbook = `${repository}/docs/operations/uninstall.md`;
 
 
 
@@ -201,6 +202,17 @@ vonkctl fleet enrollment status GRANT_UUID`}</CommandBlock>
         <p className="fleet-note">Running the Spark installer again on an installed node performs an in-place agent upgrade. A certificate replacement uses Fleet re-enrollment in the browser or <code>vonkctl fleet re-enroll Atlas --output atlas-replacement.json --yes</code>.</p>
       </section>
 
+      <section id="uninstall" className="fleet-install" aria-labelledby="uninstall-title">
+        <div className="section-heading compact"><h2 id="uninstall-title">What it installs, and how to remove it.</h2><span className="guide-meta">Uninstall</span></div>
+        <p className="lane-intro">
+          The controller is one Docker Compose project in a <code>vonk-forge/</code> directory
+          (<code>.env</code>, <code>secrets/</code>, backups) with named volumes for its database,
+          model cache and registry. A Spark gets the <code>vonk-forge-agent</code> package: a
+          service account, systemd units, firewall rules, configuration and a local model cache.
+        </p>
+        <p className="fleet-note">The <a href={uninstallRunbook}>removal runbook on GitHub</a> lists the removal steps, what is kept by default, and how to remove the data, model caches and Tailscale entries too.</p>
+      </section>
+
       <section className="secret-boundary" aria-labelledby="secrets-title">
         <div><h2 id="secrets-title">Private controller. Outbound agents.</h2><span className="guide-meta">Authority boundary</span></div>
         <ul>
@@ -215,6 +227,7 @@ vonkctl fleet enrollment status GRANT_UUID`}</CommandBlock>
         <a href={`${repository}/README.md`}>Canonical installation README on GitHub</a>
         <a href={tailscaleRunbook}>Canonical Tailscale runbook on GitHub</a>
         <a href={`${repository}/docs/runbooks/vonkctl.md`}>Complete CLI reference on GitHub</a>
+        <a href={uninstallRunbook}>Removal runbook on GitHub</a>
       </div>
     </main>
   );

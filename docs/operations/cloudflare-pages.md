@@ -70,7 +70,9 @@ on manual dispatch and hourly (at minute 17). Push runs first call
 Scheduled and dispatched runs skip CI, since the code has not changed since the last main
 push that passed it; they only pick up a new recipe release, and the deploy build
 still type-checks the shipped code against it. A release dispatch is therefore not
-blocked by CI checks that look at other branches. The deploy job:
+blocked by CI checks that look at other branches. The deploy job runs only on
+`refs/heads/main` (the `production` environment has no branch policy), so a dispatch
+from another ref runs nothing. The deploy job:
 
 1. installs the locked frontend dependencies;
 2. runs `web/scripts/recipe-release.mjs`, which asks for the

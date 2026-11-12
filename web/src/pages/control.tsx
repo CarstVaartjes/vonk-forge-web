@@ -39,7 +39,6 @@ export function ControlPage() {
         </div>
         <div className="control-path-grid">
           <article>
-            <span className="path-number">01</span>
             <h3>Web Controller</h3>
             <span className="guide-meta">Recommended for first use</span>
             <p>A guided interface with visual progress, search, filters, and clear next steps.</p>
@@ -51,7 +50,6 @@ export function ControlPage() {
             <a className="text-link" href="#web-controller">Use the Web Controller</a>
           </article>
           <article>
-            <span className="path-number">02</span>
             <h3>Local CLI</h3>
             <span className="guide-meta">For operators, scripts, and AI agents</span>
             <p>The same lists and choices in a terminal, with JSON output, read-only reviews, and meaningful exit codes.</p>
@@ -212,7 +210,7 @@ export OPENAI_BASE_URL='https://vonk-forge.example.ts.net/v1'`}</CommandBlock>
   -H "Authorization: Bearer $OPENAI_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"model":"qwen-code","messages":[{"role":"user","content":"Hello"}]}'`}</CommandBlock>
-        <CommandBlock label="Python">{String.raw`from openai import OpenAI
+        <CommandBlock label="Python" prompt={false}>{String.raw`from openai import OpenAI
 
 client = OpenAI()
 response = client.chat.completions.create(

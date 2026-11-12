@@ -25,7 +25,6 @@ export function ArchitecturePage() {
 
       <section className="architecture-section" aria-labelledby="placement-title">
         <div className="section-kicker">
-          <span>01</span>
           <div><h2 id="placement-title">What runs where</h2></div>
         </div>
 
@@ -75,7 +74,6 @@ export function ArchitecturePage() {
 
       <section className="architecture-section" aria-labelledby="scale-title">
         <div className="section-kicker">
-          <span>02</span>
           <div><h2 id="scale-title">Scale changes placement, not trust.</h2></div>
         </div>
         <div className="scale-grid">
@@ -87,7 +85,6 @@ export function ArchitecturePage() {
 
       <section className="architecture-section runtime-contract" aria-labelledby="contract-title">
         <div className="section-kicker">
-          <span>03</span>
           <div><h2 id="contract-title">One contract. Any reviewed runtime.</h2></div>
         </div>
         <p className="contract-intro">
@@ -172,7 +169,6 @@ export function ArchitecturePage() {
 
       <section className="architecture-section trust-boundaries" aria-labelledby="trust-title">
         <div className="section-kicker">
-          <span>04</span>
           <div><h2 id="trust-title">Authority stays narrow.</h2></div>
         </div>
         <div className="trust-boundary-grid">
