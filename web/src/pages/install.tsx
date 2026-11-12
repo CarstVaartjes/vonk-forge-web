@@ -1,15 +1,8 @@
+import { CommandBlock } from "../command-block";
+
 const repository = "https://github.com/CarstVaartjes/vonk-forge/blob/main";
 const tailscaleRunbook = `${repository}/docs/runbooks/tailscale.md`;
 
-
-function CommandBlock({ children, label }: { children: string; label: string }) {
-  return (
-    <div className="command-block">
-      <span>{label}</span>
-      <pre><code>{children}</code></pre>
-    </div>
-  );
-}
 
 
 export function InstallPage() {

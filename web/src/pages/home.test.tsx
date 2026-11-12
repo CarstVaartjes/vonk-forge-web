@@ -48,6 +48,15 @@ describe("home page", () => {
     expect(tiles.getByRole("link", { name: /3D\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=3d&verified=0");
   });
 
+  test("shows the two install commands, each with a Copy button", async () => {
+    getCatalogSummary.mockResolvedValue(summary());
+    render(<HomePage />);
+    const quickstart = within(await screen.findByRole("region", { name: /Start on the computer/ }));
+    expect(quickstart.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
+    expect(quickstart.getByText(/install\.vonkforge\.ai\/spark \| VONK_CONTROLLER_ADDRESS=/)).toBeVisible();
+    expect(quickstart.getAllByRole("button", { name: /^Copy / })).toHaveLength(2);
+  });
+
   test("calls the row updated, not new, and links the same count the catalog shows", async () => {
     getCatalogSummary.mockResolvedValue(summary());
     render(<HomePage />);
