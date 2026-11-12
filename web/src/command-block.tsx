@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 
 // The one command block on the site: a label, the command in a strip that
-// scrolls inside itself, and a Copy button that announces "Copied" politely.
+// scrolls inside itself, and a Copy button whose text turns to "Copied", announced politely.
 export function CommandBlock({ children, label }: { children: string; label: string }) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<number | undefined>(undefined);
@@ -19,8 +19,8 @@ export function CommandBlock({ children, label }: { children: string; label: str
     <div className="command-block">
       <div className="command-block-head">
         <span>{label}</span>
-        <button type="button" className="command-copy" onClick={copy} aria-label={`Copy ${label.toLowerCase()} command`}>
-          Copy
+        <button type="button" className="command-copy" onClick={copy}>
+          {copied ? "Copied" : "Copy"}
         </button>
         <span className="visually-hidden" role="status">{copied ? "Copied" : ""}</span>
       </div>
