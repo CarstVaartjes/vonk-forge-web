@@ -200,7 +200,7 @@ uv tool uninstall vonk-cluster-profiles`}</CommandBlock>
         <p className="lane-intro">
           Everything your fleet serves sits behind one OpenAI-compatible address on
           your Controller, <code>https://&lt;controller&gt;/v1</code>. Give each model an
-          alias you choose, such as <code>chat</code> or <code>code</code>, and point
+          alias you choose, such as <code>assistant</code> or <code>coder</code>, and point
           your editor, agent or script at that alias. Switching the model behind it
           changes nothing in the tool. The Controller shows the same examples with your own
           address and alias filled in.

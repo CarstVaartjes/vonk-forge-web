@@ -185,7 +185,6 @@ function checkPublishedVocabulary(files, entry, report) {
         || ts.isTemplateMiddle(node) || ts.isTemplateTail(node) ? node.text
         : ts.isJsxText(node) ? node.text.trim() : undefined;
       if (written === undefined || !values.has(written)) return;
-      if (entry.exempt?.some((item) => item.file === file && item.value === written && item.reason)) return;
       const line = ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1;
       report(file, line, `read ${JSON.stringify(written)} from the release vocabulary instead of writing it`);
     });

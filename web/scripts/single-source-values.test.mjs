@@ -117,12 +117,6 @@ describe("single source values", () => {
         ["web/src/y.tsx", 'const a = "chatty"; const b = <p>Working on it</p>;'])).toBe("");
     });
 
-    test("a named, reasoned exemption allows one literal in one file", () => {
-      const exempt = { ...entry, exempt: [{ file: "web/src/x.tsx", value: "chat", reason: "an example alias name in prose" }] };
-      expect(checkSingleSources(new Map([["web/src/api/catalog.fixture.ts", owner], ["web/src/x.tsx", "const a = <code>chat</code>; const b = <code>Working</code>;"]]), [exempt]).join()).toContain('read "Working"');
-      expect(checkSingleSources(new Map([["web/src/api/catalog.fixture.ts", owner], ["web/src/x.tsx", "const a = <code>chat</code>;"]]), [exempt])).toEqual([]);
-    });
-
     test("needs an owner that holds a vocabulary", () => {
       expect(checkSingleSources(new Map([["web/src/api/catalog.fixture.ts", "export const a = 1;"]]), [entry]).join()).toContain("expected a vocabulary object");
     });
