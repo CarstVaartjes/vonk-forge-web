@@ -138,13 +138,6 @@ function Hero({ state }: { state: CatalogState }) {
           <li>Open source · MIT</li>
         </ul>
       </div>
-      <ProductShot
-        src="/product/controller-library.webp"
-        alt="Vonk Forge Library showing model and recipe lists from illustrative fixture data"
-        title="The real Web Controller"
-        body="Fixture-backed product screen · no live fleet data"
-        eager
-      />
     </section>
   );
 }
