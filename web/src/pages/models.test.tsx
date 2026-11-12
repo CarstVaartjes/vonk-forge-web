@@ -2,14 +2,19 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { ModelPage, ModelSummary } from "../api/client";
+import { typesOf } from "../vocabulary";
+import { vocabularyFixture } from "../vocabulary.fixture";
 import { ModelDetailPage, ModelsPage } from "./models";
 
-const { getModel, listModels } = vi.hoisted(() => ({ getModel: vi.fn(), listModels: vi.fn<() => Promise<ModelPage>>() }));
+const { getModel, getVocabulary, listModels } = vi.hoisted(() => ({ getModel: vi.fn(), getVocabulary: vi.fn(), listModels: vi.fn<() => Promise<ModelPage>>() }));
 
 vi.mock("../api/client", () => ({
   getModel,
+  getVocabulary,
   listModels,
 }));
+
+beforeEach(() => getVocabulary.mockResolvedValue(vocabularyFixture));
 
 function model(number: number, publisher = "publisher"): ModelSummary {
   const runs = number % 2 ? { spark_counts: [1], engines: ["vllm"], creators: ["eugr"] } : { spark_counts: [2, 4], engines: ["sglang"], creators: [] };
@@ -23,6 +28,7 @@ function model(number: number, publisher = "publisher"): ModelSummary {
     verified_runs: runs,
     verified_recipe_count: number % 2,
     tags: [],
+    types: typesOf(vocabularyFixture, [number % 2 ? "ocr" : "chat"]),
     revision_id: String(number).padStart(64, "0"),
     recipe_count: number % 2,
     versions: [{
@@ -155,7 +161,7 @@ describe("type-first model filtering", () => {
   const none = { spark_counts: [], engines: [], creators: [] };
   function typed(slug: string, capabilities: string[], verified: boolean): ModelSummary {
     const base = model(1);
-    return { ...base, slug, title: slug, runs: verifiedRuns, verified_runs: verified ? verifiedRuns : none, versions: [{ ...base.versions[0]!, slug: `${slug}-v1`, capabilities, format: { quantization: "nvfp4" } }] };
+    return { ...base, slug, title: slug, types: typesOf(vocabularyFixture, capabilities), runs: verifiedRuns, verified_runs: verified ? verifiedRuns : none, versions: [{ ...base.versions[0]!, slug: `${slug}-v1`, capabilities, format: { quantization: "nvfp4" } }] };
   }
 
   beforeEach(() => {

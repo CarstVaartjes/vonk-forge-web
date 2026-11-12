@@ -1,6 +1,5 @@
 import type { SparkFilter } from "./catalog-filters";
 import { SPARK_OPTIONS } from "./catalog-filters";
-import { MODEL_TYPES, type ModelTypeId } from "./model-types";
 
 
 // The entry point of both catalog pages: say what you have, see what runs on
@@ -101,17 +100,19 @@ export function FacetStrip({ label, options, value, onChange, max = 10 }: {
 // The first choice on both catalog pages: what kind of model. A group of toggle
 // buttons (each a native button, so Tab and Enter/Space work); "All" clears it.
 // Counts come from the list with every other filter applied.
-export function TypeTabs({ value, counts, total, noun, onChange }: {
-  value: ModelTypeId | "";
-  counts: Record<ModelTypeId, number>;
+export function TypeTabs({ types, value, counts, total, noun, onChange }: {
+  // The release vocabulary's categories.
+  types: ReadonlyArray<{ id: string; label: string }>;
+  value: string;
+  counts: Record<string, number>;
   total: number;
   noun: string;
-  onChange: (value: ModelTypeId | "") => void;
+  onChange: (value: string) => void;
 }) {
   const number = new Intl.NumberFormat("en");
-  const options: Array<{ id: ModelTypeId | ""; label: string; count: number }> = [
+  const options: Array<{ id: string; label: string; count: number }> = [
     { id: "", label: "All", count: total },
-    ...MODEL_TYPES.map((type) => ({ id: type.id, label: type.label, count: counts[type.id] })),
+    ...types.map((type) => ({ id: type.id, label: type.label, count: counts[type.id] ?? 0 })),
   ];
   return (
     <div className="type-tabs" role="group" aria-label="Model type">

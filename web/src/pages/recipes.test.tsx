@@ -2,10 +2,11 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 
 import type { RecipeSummary } from "../api/client";
 import { RecipesPage } from "./recipes";
+import { catalogFacts, vocabularyFixture } from "../vocabulary.fixture";
 
 
-const { loadRecipeCatalog } = vi.hoisted(() => ({ loadRecipeCatalog: vi.fn() }));
-vi.mock("../api/client", () => ({ loadRecipeCatalog }));
+const { loadRecipeCatalog, getVocabulary } = vi.hoisted(() => ({ loadRecipeCatalog: vi.fn(), getVocabulary: vi.fn() }));
+vi.mock("../api/client", () => ({ loadRecipeCatalog, getVocabulary }));
 
 
 const recipe: RecipeSummary = {
@@ -24,7 +25,7 @@ const recipe: RecipeSummary = {
   },
   moderation_warning: null,
   facts: { source_bundle_observed: true },
-  catalog: {
+  catalog: catalogFacts({
     description: "",
     tags: ["openai.chat"],
     model_publisher: "vonk",
@@ -46,13 +47,14 @@ const recipe: RecipeSummary = {
     quantizations: [],
     node_count: 1,
     expected_download_bytes: 0,
-  },
+  }),
 };
 
 
 beforeEach(() => {
   window.history.replaceState(null, "", "/recipes?runtime=vllm&verified=0");
   loadRecipeCatalog.mockReset().mockResolvedValue([recipe]);
+  getVocabulary.mockReset().mockResolvedValue(vocabularyFixture);
 });
 
 
@@ -122,7 +124,7 @@ test("sorts the list from any column and preserves the selected direction", asyn
 
 
 function verifiedCoder(): RecipeSummary {
-  return { ...recipe, slug: "coder", title: "Coder", catalog: { ...recipe.catalog, model_family: "Coder", model_version_slug: "coder", model_version_title: "coder", capabilities: ["code-generation"], qualification: "Working", qualification_reason: null } };
+  return { ...recipe, slug: "coder", title: "Coder", catalog: catalogFacts({ ...recipe.catalog, model_family: "Coder", model_version_slug: "coder", model_version_title: "coder", capabilities: ["code-generation"], qualification: "Working", qualification_reason: null }) };
 }
 
 describe("type-first filtering", () => {
@@ -149,7 +151,7 @@ describe("type-first filtering", () => {
     render(<RecipesPage />);
     expect(await screen.findByRole("heading", { name: "Coder" })).toBeVisible();
     const types = screen.getByRole("group", { name: "Model type" });
-    expect(within(types).getAllByRole("button").map((button) => button.textContent)).toEqual(["All1", "Language0", "Code1", "Vision0", "Image0", "Video0", "Audio0", "3D0"]);
+    expect(within(types).getAllByRole("button").map((button) => button.textContent)).toEqual(["All1", "Language0", "Code1", "Vision0", "Image0", "Video0", "Audio0", "3D0", "Other0"]);
     expect(within(types).getByRole("button", { name: "Code: 1 recipes" })).toHaveAttribute("aria-pressed", "true");
     // The type row precedes the setup refinements in the page order.
     expect(types.compareDocumentPosition(screen.getByRole("group", { name: "How many Sparks do you have?" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -168,7 +170,7 @@ describe("type-first filtering", () => {
 
   function variant(slug: string, owner: string, nodes: number, capabilities: string[]): RecipeSummary {
     const base = verifiedCoder();
-    return { ...base, slug, title: slug, catalog: { ...base.catalog, model_family: slug, model_version_slug: slug, model_version_title: slug, source_owner: owner, node_count: nodes, capabilities } };
+    return { ...base, slug, title: slug, catalog: catalogFacts({ ...base.catalog, model_family: slug, model_version_slug: slug, model_version_title: slug, source_owner: owner, node_count: nodes, capabilities }) };
   }
 
   test("Sparks and Creator refinements change the type counts, and an empty type chip is aria-disabled", async () => {
@@ -224,7 +226,7 @@ describe("type-first filtering", () => {
 });
 
 
-test("explains each status shown, links every badge to the explanation, and lists only the published statuses", async () => {
+test("explains each status shown with the release's meaning, links every badge to the explanation, and lists only the published statuses", async () => {
   loadRecipeCatalog.mockResolvedValue([
     recipe,
     { ...recipe, slug: "odd", title: "Odd", catalog: { ...recipe.catalog, qualification: "Status from a newer library" } },
@@ -233,10 +235,15 @@ test("explains each status shown, links every badge to the explanation, and list
   await screen.findByRole("heading", { name: "Odd" });
   const legend = within(document.getElementById("how-recipes-are-verified") as HTMLElement);
   expect(legend.getByText(/information to help you choose, never a gate/)).toBeInTheDocument();
+  // The vocabulary's meaning, exactly as published; a status it has no entry for is listed by name alone.
   expect(legend.getAllByText("Status from a newer library")).toHaveLength(1);
-  expect(legend.getByRole("link", { name: "What each status means" })).toHaveAttribute("href", expect.stringContaining("vonk-forge-recipes/blob/main/docs/recipe-authoring.md"));
+  expect(legend.getByText("No hardware verdict yet; the reason is shown under the badge.")).toBeInTheDocument();
   expect(legend.queryByText("Working")).toBeNull();
-  const badgeLinks = within(screen.getByRole("table")).getAllByTitle("What this status means");
-  expect(badgeLinks).toHaveLength(2);
-  badgeLinks.forEach((link) => expect(link).toHaveAttribute("href", "#how-recipes-are-verified"));
+  expect(legend.queryByRole("link")).toBeNull();
+  const table = within(screen.getByRole("table"));
+  const known = table.getByRole("link", { name: "Not yet verified" });
+  const unknown = table.getByRole("link", { name: "Status from a newer library" });
+  expect(known).toHaveAttribute("title", "No hardware verdict yet; the reason is shown under the badge.");
+  expect(unknown).not.toHaveAttribute("title");
+  [known, unknown].forEach((link) => expect(link).toHaveAttribute("href", "#how-recipes-are-verified"));
 });

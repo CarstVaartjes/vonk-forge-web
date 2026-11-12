@@ -1,0 +1,8 @@
+[
+  {
+    "id": "catalog.vocabulary",
+    "kind": "published-vocabulary",
+    "owner": { "file": "web/src/api/catalog.fixture.ts", "selector": "vocabulary" },
+    "derive": "read the capability and status words from the release's CatalogIndex.vocabulary (src/vocabulary.ts); never write a contract capability name or status string as a literal in web/src outside tests and fixtures. The owner file holds a real copy of that vocabulary, which is what the guard compares against"
+  }
+]

@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePageMeta } from "../page-meta";
 
-import { getModel, listModels, type ModelSummary, type ModelVersionSummary } from "../api/client";
+import { getModel, getVocabulary, listModels, type ModelSummary, type ModelVersionSummary } from "../api/client";
 import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
-import { CAPABILITY_OPTIONS, SPARK_OPTIONS, engineLabel, nodeCountMatches, type SparkFilter } from "../catalog-filters";
-import { MODEL_TYPES, hasModelType, isModelTypeId, type ModelTypeId } from "../model-types";
+import { SPARK_OPTIONS, engineLabel, nodeCountMatches, type SparkFilter } from "../catalog-filters";
+import { capabilityLabel, type Vocabulary } from "../vocabulary";
 import { CatalogTabs } from "../catalog-tabs";
 
 const PAGE_SIZE = 12;
@@ -20,10 +20,6 @@ function bytes(value?: number | null): string {
 
 function modelCapabilities(model: ModelSummary): string[] {
   return Array.from(new Set(model.versions.flatMap((version) => version.capabilities)));
-}
-
-function filterLabel(value: string): string {
-  return CAPABILITY_OPTIONS.find((option) => option.value === value)?.label ?? value;
 }
 
 function accessLabel(version?: ModelVersionSummary): string {
@@ -59,11 +55,11 @@ function compactRevision(value: string): string {
   return /^[0-9a-f]{40,64}$/i.test(value) ? `${value.slice(0, 8)}…` : value;
 }
 
-function CapabilityFacts({ version }: { version: ModelVersionSummary }) {
+function CapabilityFacts({ version, vocabulary }: { version: ModelVersionSummary; vocabulary: Vocabulary }) {
   if (!version.capabilities.length) {
     return <p className="model-unknown">No capabilities declared for this model version.</p>;
   }
-  return <ul className="model-capability-facts" aria-label="Declared capabilities">{version.capabilities.map((name) => <li key={name}><strong>{filterLabel(name)}</strong></li>)}</ul>;
+  return <ul className="model-capability-facts" aria-label="Declared capabilities">{version.capabilities.map((name) => <li key={name}><strong>{capabilityLabel(vocabulary, name)}</strong></li>)}</ul>;
 }
 
 function PublicCatalogExplainer() {
@@ -139,7 +135,7 @@ function PublicCatalogExplainer() {
   </details>;
 }
 
-function VersionRow({ version }: { version: ModelVersionSummary }) {
+function VersionRow({ version, vocabulary }: { version: ModelVersionSummary; vocabulary: Vocabulary }) {
   return <article className="model-version" aria-labelledby={`version-${version.publisher}-${version.slug}`}>
     <div className="model-version-heading">
       <div><h3 id={`version-${version.publisher}-${version.slug}`}>{version.title}</h3><span className="model-meta">Model version</span><code>{version.publisher}/{version.slug}</code></div>
@@ -154,7 +150,7 @@ function VersionRow({ version }: { version: ModelVersionSummary }) {
       <div><dt>Source</dt><dd>{version.source_repository ? <a href={version.source_repository}>Pinned source repository</a> : "Not declared"}{version.source_revision ? <code title={version.source_revision} aria-label={`Source revision ${version.source_revision}`}>{compactRevision(version.source_revision)}</code> : null}</dd></div>
       <div><dt>Recipes</dt><dd>{version.recipe_slugs.length ? <span className="model-recipe-links">{version.recipe_slugs.map((path) => <a key={path} href={`/recipes?q=${encodeURIComponent(path)}`}>{path}</a>)}</span> : "No public recipe"}</dd></div>
     </dl>
-    <div className="model-version-capabilities"><strong>Capabilities</strong><CapabilityFacts version={version} /></div>
+    <div className="model-version-capabilities"><strong>Capabilities</strong><CapabilityFacts version={version} vocabulary={vocabulary} /></div>
     {version.license?.spdx ? <p className="model-license">License: <a href={version.license.url}>{version.license.spdx}</a></p> : null}
   </article>;
 }
@@ -191,26 +187,27 @@ function baseMatches(model: ModelSummary, filters: ModelFilters, omit: "type" | 
   const capabilities = modelCapabilities(model);
   const matchesText = !needle || [model.title, model.publisher, model.slug, model.family, ...model.tags].join(" ").toLowerCase().includes(needle);
   const matchesRecipes = !filters.recipes || filters.recipes === "all" || (filters.recipes === "recipes" ? recipeCount(model, filters) > 0 : recipeCount(model, filters) === 0);
-  return matchesText && (omit === "type" || !filters.type || hasModelType(capabilities, filters.type)) && (!filters.publisher || model.publisher === filters.publisher) && (!filters.capability || capabilities.includes(filters.capability)) && matchesRecipes;
+  return matchesText && (omit === "type" || !filters.type || model.types.includes(filters.type)) && (!filters.publisher || model.publisher === filters.publisher) && (!filters.capability || capabilities.includes(filters.capability)) && matchesRecipes;
 }
 
 function initialFilters() {
   const params = new URLSearchParams(window.location.search);
   const sparks = params.get("sparks") ?? "";
   const type = params.get("type") ?? "";
-  return { type: (isModelTypeId(type) ? type : "") as ModelTypeId | "", verified: params.get("verified") !== "0", query: params.get("q") ?? "", publisher: params.get("publisher") ?? "", capability: params.get("capability") ?? "", recipes: params.get("recipes") ?? "", family: params.get("family") ?? "", engine: params.get("engine") ?? "", sparks: (SPARK_OPTIONS.some((option) => option.value === sparks) ? sparks : "") as SparkFilter, sort: params.get("sort") ?? "name", page: Math.max(1, Number(params.get("page")) || 1) };
+  return { type, verified: params.get("verified") !== "0", query: params.get("q") ?? "", publisher: params.get("publisher") ?? "", capability: params.get("capability") ?? "", recipes: params.get("recipes") ?? "", family: params.get("family") ?? "", engine: params.get("engine") ?? "", sparks: (SPARK_OPTIONS.some((option) => option.value === sparks) ? sparks : "") as SparkFilter, sort: params.get("sort") ?? "name", page: Math.max(1, Number(params.get("page")) || 1) };
 }
 
 export function ModelsPage() {
   usePageMeta("Models", "Browse models with their exact versions, variants and the recipes that run them on DGX Spark.");
   const [models, setModels] = useState<ModelSummary[] | null>(null);
+  const [vocabulary, setVocabulary] = useState<Vocabulary | null>(null);
   const [filters, setFilters] = useState(initialFilters);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
     setError(false);
-    listModels(controller.signal).then((page) => setModels(page.items)).catch(() => { if (!controller.signal.aborted) setError(true); });
+    Promise.all([listModels(controller.signal), getVocabulary(controller.signal)]).then(([page, words]) => { setModels(page.items); setVocabulary(words); }).catch(() => { if (!controller.signal.aborted) setError(true); });
     return () => controller.abort();
   }, [attempt]);
   const publishers = useMemo(() => Array.from(new Set((models ?? []).map((model) => model.publisher))).sort(), [models]);
@@ -220,8 +217,8 @@ export function ModelsPage() {
   }, [filters, models]);
   // Counts for the setup picker: every other filter applied, the picked facet left open.
   const facetCount = (omit: SetupFacet, predicate: (model: ModelSummary) => boolean) => (models ?? []).filter((model) => predicate(model) && baseMatches(model, filters) && setupMatches(model, filters, omit)).length;
-  const typeCount = (predicate: (capabilities: string[]) => boolean) => (models ?? []).filter((model) => predicate(modelCapabilities(model)) && baseMatches(model, filters, "type") && setupMatches(model, filters, null)).length;
-  const typeCounts = Object.fromEntries(MODEL_TYPES.map((type) => [type.id, typeCount((capabilities) => hasModelType(capabilities, type.id))])) as Record<ModelTypeId, number>;
+  const typeCount = (predicate: (model: ModelSummary) => boolean) => (models ?? []).filter((model) => predicate(model) && baseMatches(model, filters, "type") && setupMatches(model, filters, null)).length;
+  const typeCounts = Object.fromEntries((vocabulary?.categories ?? []).map((type) => [type.id, typeCount((model) => model.types.includes(type.id))]));
   const sparkCounts = Object.fromEntries([...SPARK_OPTIONS.map((option) => option.value), ""].map((value) => [value, facetCount("sparks", (model) => runsOn(model, filters, value as SparkFilter))])) as Record<SparkFilter, number>;
   const families = useMemo(() => Array.from(new Set((models ?? []).map((model) => model.family ?? "Model"))).sort(), [models]);
   const engines = useMemo(() => Array.from(new Set((models ?? []).flatMap((model) => model.runs.engines))).sort(), [models]);
@@ -252,7 +249,7 @@ export function ModelsPage() {
     {models ? (
       <section className="catalog-type" aria-labelledby="model-type-title">
         <h2 id="model-type-title">What kind of model?</h2>
-        <TypeTabs value={filters.type} noun="models" counts={typeCounts} total={typeCount(() => true)} onChange={(value) => updateFilters({ type: value })} />
+        <TypeTabs types={vocabulary?.categories ?? []} value={filters.type} noun="models" counts={typeCounts} total={typeCount(() => true)} onChange={(value) => updateFilters({ type: value })} />
       </section>
     ) : null}
     {models ? (
@@ -269,23 +266,24 @@ export function ModelsPage() {
         </div>
       </section>
     ) : null}
-    <section className="model-index-tools" aria-label="Model index controls"><label htmlFor="model-search">Find a model</label><input id="model-search" type="search" value={filters.query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder="Search model, family, publisher, or tag" /><label htmlFor="model-publisher">Publisher</label><select id="model-publisher" value={filters.publisher} onChange={(event) => updateFilters({ publisher: event.target.value })}><option value="">All publishers</option>{publishers.map((publisher) => <option key={publisher} value={publisher}>{publisher}</option>)}</select><label htmlFor="model-capability">Capability</label><select id="model-capability" value={filters.capability} onChange={(event) => updateFilters({ capability: event.target.value })}><option value="">All declared capabilities</option>{CAPABILITY_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select><label htmlFor="model-recipes">Recipe support</label><select id="model-recipes" value={filters.recipes} onChange={(event) => updateFilters({ recipes: event.target.value, ...(event.target.value === "none" ? { verified: false } : {}) })}><option value="">All models</option><option value="recipes">Has public recipes</option><option value="none">No public recipes</option></select><label htmlFor="model-sort">Sort</label><select id="model-sort" value={filters.sort} onChange={(event) => updateFilters({ sort: event.target.value })}><option value="name">Name</option><option value="versions">Most versions</option><option value="recipes">Most recipes</option></select><span aria-live="polite">{models ? `${filtered.length} of ${models.length} models` : error ? "Model index unavailable" : "Loading models…"}</span>{(filters.type || filters.query || filters.publisher || filters.capability || filters.recipes || filters.family || filters.engine || filters.sparks || filters.sort !== "name") ? <button className="text-button" type="button" onClick={clearFilters}>Clear filters</button> : null}</section>
+    <section className="model-index-tools" aria-label="Model index controls"><label htmlFor="model-search">Find a model</label><input id="model-search" type="search" value={filters.query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder="Search model, family, publisher, or tag" /><label htmlFor="model-publisher">Publisher</label><select id="model-publisher" value={filters.publisher} onChange={(event) => updateFilters({ publisher: event.target.value })}><option value="">All publishers</option>{publishers.map((publisher) => <option key={publisher} value={publisher}>{publisher}</option>)}</select><label htmlFor="model-capability">Capability</label><select id="model-capability" value={filters.capability} onChange={(event) => updateFilters({ capability: event.target.value })}><option value="">All declared capabilities</option>{(vocabulary?.capabilities ?? []).map((option) => <option key={option.name} value={option.name} title={option.description}>{option.label}</option>)}</select><label htmlFor="model-recipes">Recipe support</label><select id="model-recipes" value={filters.recipes} onChange={(event) => updateFilters({ recipes: event.target.value, ...(event.target.value === "none" ? { verified: false } : {}) })}><option value="">All models</option><option value="recipes">Has public recipes</option><option value="none">No public recipes</option></select><label htmlFor="model-sort">Sort</label><select id="model-sort" value={filters.sort} onChange={(event) => updateFilters({ sort: event.target.value })}><option value="name">Name</option><option value="versions">Most versions</option><option value="recipes">Most recipes</option></select><span aria-live="polite">{models ? `${filtered.length} of ${models.length} models` : error ? "Model index unavailable" : "Loading models…"}</span>{(filters.type || filters.query || filters.publisher || filters.capability || filters.recipes || filters.family || filters.engine || filters.sparks || filters.sort !== "name") ? <button className="text-button" type="button" onClick={clearFilters}>Clear filters</button> : null}</section>
     <PublicCatalogExplainer />
     {error ? <div className="status-panel error" role="alert"><h2>Models are temporarily unavailable.</h2><p>The public model index could not be loaded. Try again when the catalog source is reachable.</p><button className="button" type="button" onClick={() => { setModels(null); setAttempt((value) => value + 1); }}>Retry</button></div> : null}
     {!models && !error ? <div className="status-panel" role="status">Loading immutable model index…</div> : null}
     {models && filtered.length === 0 ? <div className="status-panel"><h2>No matching models.</h2><p>{filters.verified ? "Verified on Spark is on, so models without a recipe that passed hardware checks on a DGX Spark are hidden. " : ""}Try a broader family, publisher, or capability.</p>{filters.verified ? <button className="button" type="button" onClick={() => updateFilters({ verified: false })}>Include models not yet verified</button> : null}<button className="button" type="button" onClick={clearFilters}>Show all models</button></div> : null}
-    {models && visible.length ? <ul className="model-list" aria-label="Models">{visible.map((model) => { const capabilities = modelCapabilities(model); const key = `${model.publisher}/${model.slug}`; return <li key={key}><a className="model-row" href={`/models/${model.publisher}/${model.slug}`}><span className="model-row-main"><strong>{model.title}</strong>{model.family && model.family !== model.title ? <span className="model-meta">Family · {model.family}</span> : null}<code>{model.publisher}/{model.slug}</code></span><span className="model-row-facts"><RowFact label="Runs on" value={model.runs.spark_counts.length ? model.runs.spark_counts.map((count) => `${count} Spark${count === 1 ? "" : "s"}`).join(" · ") : "No public recipe"} /><RowFact label="Engines" value={model.runs.engines.length ? model.runs.engines.map(engineLabel).join(" · ") : "—"} /><RowFact label={model.versions.length === 1 ? "Version" : "Versions"} value={versionsLabel(model)} /></span><span className="model-row-capabilities" aria-label="Declared capabilities">{model.versions.some((item) => item.requires_token) ? <span className="model-row-token">Token required</span> : null}{capabilities.slice(0, 3).map((capability) => <span key={capability}>{filterLabel(capability)}</span>)}{!capabilities.length ? <span>No capabilities declared</span> : null}</span><span className="model-row-action"><span>{recipeCount(model, filters)} {filters.verified ? "verified " : ""}{recipeCount(model, filters) === 1 ? "recipe" : "recipes"}</span><span className="button primary">View versions</span></span></a></li>; })}</ul> : null}
+    {models && visible.length ? <ul className="model-list" aria-label="Models">{visible.map((model) => { const capabilities = modelCapabilities(model); const key = `${model.publisher}/${model.slug}`; return <li key={key}><a className="model-row" href={`/models/${model.publisher}/${model.slug}`}><span className="model-row-main"><strong>{model.title}</strong>{model.family && model.family !== model.title ? <span className="model-meta">Family · {model.family}</span> : null}<code>{model.publisher}/{model.slug}</code></span><span className="model-row-facts"><RowFact label="Runs on" value={model.runs.spark_counts.length ? model.runs.spark_counts.map((count) => `${count} Spark${count === 1 ? "" : "s"}`).join(" · ") : "No public recipe"} /><RowFact label="Engines" value={model.runs.engines.length ? model.runs.engines.map(engineLabel).join(" · ") : "—"} /><RowFact label={model.versions.length === 1 ? "Version" : "Versions"} value={versionsLabel(model)} /></span><span className="model-row-capabilities" aria-label="Declared capabilities">{model.versions.some((item) => item.requires_token) ? <span className="model-row-token">Token required</span> : null}{capabilities.slice(0, 3).map((capability) => <span key={capability}>{vocabulary ? capabilityLabel(vocabulary, capability) : capability}</span>)}{!capabilities.length ? <span>No capabilities declared</span> : null}</span><span className="model-row-action"><span>{recipeCount(model, filters)} {filters.verified ? "verified " : ""}{recipeCount(model, filters) === 1 ? "recipe" : "recipes"}</span><span className="button primary">View versions</span></span></a></li>; })}</ul> : null}
     {models && filtered.length > PAGE_SIZE ? <nav className="model-pagination" aria-label="Model pages"><button className="button" type="button" disabled={page <= 1} onClick={() => updateFilters({ page: page - 1 })}>Previous</button><span aria-live="polite">Page {page} of {pageCount}</span><button className="button" type="button" disabled={page >= pageCount} onClick={() => updateFilters({ page: page + 1 })}>Next</button></nav> : null}
   </main>;
 }
 
 export function ModelDetailPage({ publisher, slug }: { publisher: string; slug: string }) {
   const [model, setModel] = useState<ModelSummary | null>(null);
+  const [detailVocabulary, setDetailVocabulary] = useState<Vocabulary | null>(null);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  useEffect(() => { const controller = new AbortController(); setError(false); getModel(publisher, slug, controller.signal).then(setModel).catch(() => { if (!controller.signal.aborted) setError(true); }); return () => controller.abort(); }, [publisher, slug, attempt]);
+  useEffect(() => { const controller = new AbortController(); setError(false); Promise.all([getModel(publisher, slug, controller.signal), getVocabulary(controller.signal)]).then(([found, words]) => { setModel(found); setDetailVocabulary(words); }).catch(() => { if (!controller.signal.aborted) setError(true); }); return () => controller.abort(); }, [publisher, slug, attempt]);
   usePageMeta(model ? `${model.title} · Models` : "Model", model ? `${model.title}: published versions, variants and the recipes that run it on NVIDIA DGX Spark.` : "A model in the Vonk Forge catalog.");
   if (error) return <main className="status-panel error"><h1>Model unavailable</h1><p>This model is not present in the published index.</p><button className="button" type="button" onClick={() => { setModel(null); setAttempt((value) => value + 1); }}>Retry</button></main>;
-  if (!model) return <main className="status-panel" role="status">Loading immutable model…</main>;
-  return <main className="model-detail-page"><header className="page-intro"><h1>{model.title}</h1><p className="model-meta">{model.family ? `Model family · ${model.family}` : "Model"}</p><p className="recipe-path">{model.publisher}/{model.slug}</p><p className="model-detail-identity">Immutable model identity <code>{model.revision_id}</code></p><p>{model.description || "No description published."}</p></header><div className="model-detail-actions"><a className="button" href="/models">All models</a><a className="button" href={`/recipes?q=${encodeURIComponent(model.title)}`}>Compare recipes</a><a className="button primary" href="/control#library-import">Open Controller instructions</a></div><section className="model-detail-boundary"><div><h2>Versions and weight variants</h2><p>Each row is a published version and variant. Download size, source revision, format, license, access, and capabilities appear when the catalog declares them.</p></div><div className="model-version-list">{model.versions.map((version) => <VersionRow key={`${version.publisher}/${version.slug}-${version.revision_id}`} version={version} />)}</div></section></main>;
+  if (!model || !detailVocabulary) return <main className="status-panel" role="status">Loading immutable model…</main>;
+  return <main className="model-detail-page"><header className="page-intro"><h1>{model.title}</h1><p className="model-meta">{model.family ? `Model family · ${model.family}` : "Model"}</p><p className="recipe-path">{model.publisher}/{model.slug}</p><p className="model-detail-identity">Immutable model identity <code>{model.revision_id}</code></p><p>{model.description || "No description published."}</p></header><div className="model-detail-actions"><a className="button" href="/models">All models</a><a className="button" href={`/recipes?q=${encodeURIComponent(model.title)}`}>Compare recipes</a><a className="button primary" href="/control#library-import">Open Controller instructions</a></div><section className="model-detail-boundary"><div><h2>Versions and weight variants</h2><p>Each row is a published version and variant. Download size, source revision, format, license, access, and capabilities appear when the catalog declares them.</p></div><div className="model-version-list">{model.versions.map((version) => <VersionRow key={`${version.publisher}/${version.slug}-${version.revision_id}`} version={version} vocabulary={detailVocabulary} />)}</div></section></main>;
 }

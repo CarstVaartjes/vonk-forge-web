@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePageMeta } from "../page-meta";
 
-import { loadRecipeCatalog, type RecipeSummary } from "../api/client";
-import { MODEL_TYPES, hasModelType, modelTypeLabel } from "../model-types";
-import { WORKING_STATUS } from "../qualification-status";
+import { getVocabulary, loadRecipeCatalog, type RecipeSummary } from "../api/client";
+import { capabilityLabel, statusMeaning, typeLabel, type Vocabulary } from "../vocabulary";
 import { CatalogTabs } from "../catalog-tabs";
 import { STATUS_LEGEND_ID, StatusLegend } from "../status-legend";
 import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
 import {
-  CAPABILITY_OPTIONS,
   READINESS_OPTIONS,
   SPARK_OPTIONS,
   engineLabel,
@@ -36,10 +34,6 @@ const PAGE_SIZE = 24;
 
 function sizeKey(value: number | undefined): string {
   return value === undefined ? "unknown" : String(value);
-}
-
-function capabilityLabel(value: string): string {
-  return CAPABILITY_OPTIONS.find((option) => option.value === value)?.label ?? humanize(value);
 }
 
 function updatedLabel(value: string): string {
@@ -84,7 +78,10 @@ type ActiveFilter = { key: string; label: string; remove: () => void };
 export function RecipesPage() {
   usePageMeta("Recipes", "Browse recipes for NVIDIA DGX Spark, each shown with whether it passed hardware checks, its memory and Spark count.");
   const [parameters, setParameters] = useState(() => new URLSearchParams(window.location.search));
-  const [catalog, setCatalog] = useState<RecipeSummary[] | null>(null);
+  // The recipes and the words of the release they came from, loaded together.
+  const [loaded, setLoaded] = useState<{ recipes: RecipeSummary[]; vocabulary: Vocabulary } | null>(null);
+  const catalog = loaded?.recipes ?? null;
+  const vocabulary = loaded?.vocabulary ?? null;
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
   const filters = filtersFromParameters(parameters);
@@ -93,7 +90,7 @@ export function RecipesPage() {
   useEffect(() => {
     const controller = new AbortController();
     setError(null);
-    loadRecipeCatalog(controller.signal).then(setCatalog).catch((reason: unknown) => {
+    Promise.all([loadRecipeCatalog(controller.signal), getVocabulary(controller.signal)]).then(([recipes, words]) => setLoaded({ recipes, vocabulary: words })).catch((reason: unknown) => {
       if (!controller.signal.aborted) {
         setError(reason instanceof Error ? reason.message : "The public recipe index could not be loaded.");
       }
@@ -180,14 +177,15 @@ export function RecipesPage() {
   const disks = useMemo(() => distinctSizes(available.map((recipe) => recipe.capacity?.maximum_installed_bytes_per_node)), [available]);
   const memories = useMemo(() => distinctSizes(available.map((recipe) => recipe.capacity?.maximum_runtime_memory_bytes_per_node)), [available]);
 
-  const typeCounts = Object.fromEntries(MODEL_TYPES.map((type) => [type.id, count("type", (recipe) => hasModelType(recipe.catalog.capabilities, type.id))])) as Record<(typeof MODEL_TYPES)[number]["id"], number>;
+  const typeCounts = Object.fromEntries((vocabulary?.categories ?? []).map((type) => [type.id, count("type", (recipe) => recipe.catalog.types.includes(type.id))]));
+  const capabilityName = (name: string) => vocabulary ? capabilityLabel(vocabulary, name) : humanize(name);
   const sparkCounts = Object.fromEntries([...SPARK_OPTIONS.map((option) => option.value), ""].map((value) => [value, count("sparks", (recipe) => nodeCountMatches(recipe.catalog.node_count, value as typeof filters.sparks))])) as Record<typeof filters.sparks, number>;
 
   const applied: ActiveFilter[] = [];
   const addApplied = (key: string, label: string, parameter: string) => applied.push({ key, label, remove: () => update(parameter, "") });
   if (filters.verified) applied.push({ key: "verified", label: "Verified on Spark", remove: () => setVerified(false) });
   if (filters.query) addApplied("query", `Search: ${filters.query}`, "q");
-  if (filters.type) addApplied("type", `Type: ${modelTypeLabel(filters.type)}`, "type");
+  if (filters.type) addApplied("type", `Type: ${vocabulary ? typeLabel(vocabulary, filters.type) : filters.type}`, "type");
   if (filters.modelFamily) addApplied("modelFamily", `Model family: ${filters.modelFamily}`, "model_family");
   if (filters.model) addApplied("model", `Model: ${models.find(([value]) => value === filters.model)?.[1] ?? filters.model}`, "model");
   if (filters.quantization) addApplied("quantization", `Format: ${filters.quantization}`, "quantization");
@@ -196,7 +194,7 @@ export function RecipesPage() {
   if (filters.sourceOwner) addApplied("sourceOwner", `Creator: ${filters.sourceOwner}`, "creator");
   if (filters.updated) addApplied("updated", `Updated: last ${filters.updated} days`, "updated");
   if (filters.readiness) addApplied("readiness", `Readiness: ${READINESS_OPTIONS.find((option) => option.value === filters.readiness)?.label ?? filters.readiness}`, "readiness");
-  for (const capability of filters.capabilities) applied.push({ key: `capability:${capability}`, label: `Capability: ${capabilityLabel(capability)}`, remove: () => toggleCapability(capability) });
+  for (const capability of filters.capabilities) applied.push({ key: `capability:${capability}`, label: `Capability: ${capabilityName(capability)}`, remove: () => toggleCapability(capability) });
   if (filters.qualification) addApplied("qualification", `Qualification: ${filters.qualification}`, "qualification");
   if (filters.repository) addApplied("repository", `Repository: ${sourceLabel(filters.repository)}`, "repository");
   if (filters.runtime) addApplied("runtime", `Runtime: ${humanize(filters.runtime)}`, "runtime");
@@ -218,21 +216,21 @@ export function RecipesPage() {
         <p>Compare immutable catalog facts, then open a recipe for its install contract. Your Controller shows this same library filtered to what fits your Sparks; local installation state stays there.</p>
       </header>
 
-      {catalog ? (
+      {catalog && vocabulary ? (
         <section className="catalog-type" aria-labelledby="recipe-type-title">
           <h2 id="recipe-type-title">What kind of model?</h2>
-          <TypeTabs value={filters.type} noun="recipes" counts={typeCounts} total={count("type", () => true)} onChange={(value) => update("type", value)} />
+          <TypeTabs types={vocabulary.categories} value={filters.type} noun="recipes" counts={typeCounts} total={count("type", () => true)} onChange={(value) => update("type", value)} />
         </section>
       ) : null}
 
-      {catalog ? (
+      {catalog && vocabulary ? (
         <section className="catalog-setup" aria-labelledby="recipe-setup-title">
           <div className="catalog-setup-heading">
             <h2 id="recipe-setup-title">Then narrow it to your setup.</h2>
             <p>Pick what you have. The list narrows to recipes with a complete placement for it; your Controller makes the same check against the live capacity of your Sparks.</p>
           </div>
           <VerifiedToggle checked={filters.verified} onChange={setVerified} />
-          <StatusLegend statuses={qualifications} />
+          <StatusLegend statuses={qualifications} vocabulary={vocabulary} />
           <SparkPicker
             value={filters.sparks}
             noun="recipes"
@@ -274,7 +272,7 @@ export function RecipesPage() {
               <ColumnHeader label="Creator" sort="creator" filtered={Boolean(filters.sourceOwner)} {...columnProps}><select aria-label="Filter by recipe creator" value={filters.sourceOwner} onChange={(event) => update("creator", event.target.value)}><option value="">All</option>{sourceOwners.map((value) => <option key={value} value={value} disabled={count("sourceOwner", (recipe) => sameCreator(recipe.catalog.source_owner, value)) === 0}>{value}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Updated" sort="catalog" filtered={Boolean(filters.updated)} {...columnProps}><select aria-label="Filter by updated date" value={filters.updated} onChange={(event) => update("updated", event.target.value)}><option value="">Any</option>{(["7", "30", "90", "365"] as UpdatedFilter[]).map((value) => <option key={value} value={value} disabled={count("updated", (recipe) => updatedMatches(recipe, value)) === 0}>Last {value} days</option>)}</select></ColumnHeader>
               <ColumnHeader label="Readiness" sort="readiness" filtered={Boolean(filters.readiness)} {...columnProps}><select aria-label="Filter by execution readiness" value={filters.readiness} onChange={(event) => update("readiness", event.target.value)}><option value="">Any</option>{READINESS_OPTIONS.map((option) => <option key={option.value} value={option.value} disabled={count("readiness", (recipe) => recipe.catalog.execution_readiness === option.value) === 0}>{option.label}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Capabilities" sort="capability" filtered={filters.capabilities.length > 0} {...columnProps}><select aria-label="Filter by capability" value="" onChange={(event) => toggleCapability(event.target.value)}><option value="">{filters.capabilities.length ? `${filters.capabilities.length} selected · add…` : "Any capability"}</option>{CAPABILITY_OPTIONS.map((option) => <option key={option.value} value={option.value} disabled={capabilityCount(option.value) === 0 && !filters.capabilities.includes(option.value)}>{filters.capabilities.includes(option.value) ? `Remove ${option.label}` : option.label}</option>)}</select></ColumnHeader>
+              <ColumnHeader label="Capabilities" sort="capability" filtered={filters.capabilities.length > 0} {...columnProps}><select aria-label="Filter by capability" value="" onChange={(event) => toggleCapability(event.target.value)}><option value="">{filters.capabilities.length ? `${filters.capabilities.length} selected · add…` : "Any capability"}</option>{(vocabulary?.capabilities ?? []).map((option) => <option key={option.name} value={option.name} title={option.description} disabled={capabilityCount(option.name) === 0 && !filters.capabilities.includes(option.name)}>{filters.capabilities.includes(option.name) ? `Remove ${option.label}` : option.label}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Qualification" sort="qualification" filtered={Boolean(filters.qualification)} {...columnProps}><select aria-label="Filter by qualification" value={filters.qualification} onChange={(event) => update("qualification", event.target.value)}><option value="">Any</option>{qualifications.map((status) => <option key={status} value={status} disabled={count("qualification", (recipe) => recipe.catalog.qualification === status) === 0}>{status}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Repository" sort="repository" filtered={Boolean(filters.repository)} {...columnProps}><select aria-label="Filter by original repository" value={filters.repository} onChange={(event) => update("repository", event.target.value)}><option value="">All</option>{repositories.map((value) => <option key={value} value={value} disabled={count("repository", (recipe) => recipe.catalog.source_repository === value) === 0}>{sourceLabel(value)}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Download" sort="download" filtered={Boolean(filters.download)} {...columnProps}><select aria-label="Filter by download size" value={filters.download} onChange={(event) => update("download", event.target.value)}><option value="">Any</option>{downloads.map((value) => <option key={sizeKey(value)} value={sizeKey(value)}>{gibLabel(value)}</option>)}</select></ColumnHeader>
@@ -295,8 +293,8 @@ export function RecipesPage() {
                 <td>{facts.source_owner ?? "—"}</td>
                 <td className="catalog-table-date">{updatedLabel(recipe.published_at)}</td>
                 <td><span className={`catalog-readiness readiness-${facts.execution_readiness}`}>{READINESS_OPTIONS.find((option) => option.value === facts.execution_readiness)?.label ?? humanize(facts.execution_readiness)}</span></td>
-                <td>{facts.capabilities.length ? facts.capabilities.map(capabilityLabel).join(" · ") : "—"}</td>
-                <td><a className="badge-link" href={`#${STATUS_LEGEND_ID}`} title="What this status means"><span className={`badge ${facts.qualification === WORKING_STATUS ? "accepted" : "candidate"}`}>{facts.qualification}</span></a><span className="catalog-table-substatus">{recipe.facts?.source_bundle_observed ? "Source verified" : "Source pending"}{facts.qualification_reason ? ` · ${facts.qualification_reason}` : ""}</span></td>
+                <td>{facts.capabilities.length ? facts.capabilities.map(capabilityName).join(" · ") : "—"}</td>
+                <td><a className="badge-link" href={`#${STATUS_LEGEND_ID}`} title={vocabulary ? statusMeaning(vocabulary, facts.qualification) : undefined}><span className={`badge ${facts.verified ? "accepted" : "candidate"}`}>{facts.qualification}</span></a><span className="catalog-table-substatus">{recipe.facts?.source_bundle_observed ? "Source verified" : "Source pending"}{facts.qualification_reason ? ` · ${facts.qualification_reason}` : ""}</span></td>
                 <td>{facts.source_repository ? <a className="catalog-source-link" href={facts.source_repository}>{sourceLabel(facts.source_repository)}</a> : "—"}</td>
                 <td className="catalog-table-number">{gibLabel(facts.expected_download_bytes)}</td>
                 <td>{recipeIsAbliterated(recipe) ? "True" : "False"}</td>

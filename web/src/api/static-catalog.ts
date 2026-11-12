@@ -6,6 +6,7 @@ import type { LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSu
 import contract from "../contract-major.json" with { type: "json" };
 import { parseCatalogSummary, type CatalogSummary } from "../catalog-stats.ts";
 import { isVerified } from "../qualification-status.ts";
+import { isVerifiedStatus, typesOf, type Vocabulary } from "../vocabulary.ts";
 import type { CatalogIndex, CatalogModelEntry, CatalogRecipeEntry } from "./catalog-types.ts";
 
 
@@ -224,6 +225,7 @@ function mapModels(index: LibraryIndex): ModelSummary[] {
       verified_runs: runsOf(verifiedRecipes),
       verified_recipe_count: verifiedRecipes.length,
       tags: lowerTags(display.tags),
+      types: typesOf(index.vocabulary, versionRows.flatMap((version) => version.capabilities)),
       revision_id: first.content_sha256,
       versions: versionRows,
       recipe_count: new Set(versionRows.flatMap((version) => version.recipe_slugs)).size,
@@ -238,6 +240,7 @@ function publicMetadata(item: CatalogRecipeEntry, index: LibraryIndex, artifacts
   const source = canonicalSource(document.provenance.source_reference ?? "");
   const modelEntity = selectedEntity(document, index);
   const quantization = modelEntity?.document.format.quantization ?? "";
+  const capabilities = modelEntity ? declaredCapabilities(modelEntity) : [];
   return {
     description: display.description,
     tags: recipeTags,
@@ -251,8 +254,10 @@ function publicMetadata(item: CatalogRecipeEntry, index: LibraryIndex, artifacts
     source_owner: source?.owner ?? null,
     source_repository: source?.repository ?? null,
     alignment: display.alignment ?? "unspecified",
-    capabilities: modelEntity ? declaredCapabilities(modelEntity) : [],
+    capabilities,
+    types: typesOf(index.vocabulary, capabilities),
     qualification: item.qualification.status,
+    verified: isVerifiedStatus(index.vocabulary, item.qualification.status),
     qualification_reason: item.qualification.reason ?? null,
     execution_readiness: executionReadiness(recipeTags),
     runtime_distribution: document.runtime.engine || "unknown",
@@ -378,7 +383,7 @@ async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryInde
 export function parseLibraryIndex(rawBody: unknown, rawRelease: unknown): LibraryIndex {
   const body = rawBody as Partial<LibraryIndex>;
   const release = record(rawRelease) as Partial<ReleaseManifest>;
-  if (contractMajor(body.contract_version) !== SUPPORTED_CONTRACT_MAJOR || !Array.isArray(body.catalog_entities) || body.catalog_entities.length === 0 || !Array.isArray(body.recipes) || !body.package_contract) {
+  if (contractMajor(body.contract_version) !== SUPPORTED_CONTRACT_MAJOR || !Array.isArray(body.catalog_entities) || body.catalog_entities.length === 0 || !Array.isArray(body.recipes) || !body.package_contract || !body.vocabulary) {
     throw new Error("Recipe library returned an unsupported catalog index");
   }
   if (typeof release.tag !== "string" || !/^v\d+\.\d+\.\d+$/.test(release.tag) || release.repository !== body.repository || release.source_commit !== body.source_commit) {
@@ -413,6 +418,11 @@ export function recipesFromIndex(index: LibraryIndex): RecipeSummary[] {
 // (catalog-summary.json beside release.json). The home page reads only this.
 export async function getStaticCatalogSummary(url: string, signal?: AbortSignal): Promise<CatalogSummary> {
   return parseCatalogSummary(await readJson(new URL("catalog-summary.json", new URL(url, globalThis.location?.href)).toString(), signal));
+}
+
+// The words of the release the pages show, from the same index (one load).
+export async function getStaticVocabulary(url: string, signal?: AbortSignal): Promise<Vocabulary> {
+  return (await loadIndex(url, signal)).vocabulary;
 }
 
 export async function listStaticRecipeCatalog(url: string, signal?: AbortSignal): Promise<RecipeSummary[]> {

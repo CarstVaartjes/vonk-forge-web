@@ -3,8 +3,8 @@
 // and reads it. Loaded under Node by the release build, so runtime imports use .ts.
 import type { RecipeSummary } from "./api/client";
 import { foldCreators, modelFamilyTitle } from "./catalog-filters.ts";
-import { MODEL_TYPES, hasModelType, isModelTypeId, type ModelTypeId } from "./model-types.ts";
 import { isVerified } from "./qualification-status.ts";
+import type { Vocabulary } from "./vocabulary.ts";
 
 export interface CreatorCount {
   name: string;
@@ -17,17 +17,15 @@ export interface CatalogStats {
   families: number;
   creators: number;
   topCreators: CreatorCount[];
-  // Verified recipes per model type.
-  types: Record<ModelTypeId, number>;
+  // Verified recipes per model type, with the label the release vocabulary gives it.
+  types: Array<{ id: string; label: string; verified: number }>;
 }
 
-export function deriveCatalogStats(recipes: RecipeSummary[]): CatalogStats {
+export function deriveCatalogStats(recipes: RecipeSummary[], vocabulary: Vocabulary): CatalogStats {
   const verified = recipes.filter(isVerified);
   const creators = foldCreators(verified.map((recipe) => recipe.catalog.source_owner));
   const families = new Set(verified.map((recipe) => modelFamilyTitle(recipe).trim().toLowerCase()).filter(Boolean));
-  const types = Object.fromEntries(
-    MODEL_TYPES.map((type) => [type.id, verified.filter((recipe) => hasModelType(recipe.catalog.capabilities, type.id)).length]),
-  ) as Record<ModelTypeId, number>;
+  const types = vocabulary.categories.map(({ id, label }) => ({ id, label, verified: verified.filter((recipe) => recipe.catalog.types.includes(id)).length }));
   return {
     verified: verified.length,
     families: families.size,
@@ -56,8 +54,7 @@ export function parseCatalogSummary(value: unknown): CatalogSummary {
   const fail = (): never => { throw new Error("Recipe library returned an unsupported catalog summary"); };
   if (!isRecord(value) || value.summary_version !== 1 || !isText(value.release) || !/^v\d+\.\d+\.\d+$/.test(value.release) || !isText(value.catalog_index_sha256)) return fail();
   if (!isCount(value.verified) || !isCount(value.families) || !isCount(value.creators)) return fail();
-  const types = value.types;
-  if (!isRecord(types) || MODEL_TYPES.some((type) => !isCount(types[type.id])) || Object.keys(types).some((key) => !isModelTypeId(key))) return fail();
+  if (!Array.isArray(value.types) || value.types.some((type) => !isRecord(type) || !isText(type.id) || !isText(type.label) || !isCount(type.verified))) return fail();
   if (!Array.isArray(value.topCreators) || value.topCreators.some((item) => !isRecord(item) || !isText(item.name) || !isCount(item.verified))) return fail();
   return value as unknown as CatalogSummary;
 }

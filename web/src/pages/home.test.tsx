@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 import { deriveCatalogStats } from "../catalog-stats";
 import type { RecipeSummary } from "../api/client";
 import { HomePage } from "./home";
+import { catalogFacts, vocabularyFixture } from "../vocabulary.fixture";
 
 const { getCatalogSummary, listModels, loadRecipeCatalog } = vi.hoisted(() => ({ getCatalogSummary: vi.fn(), listModels: vi.fn(), loadRecipeCatalog: vi.fn() }));
 
@@ -12,7 +13,7 @@ vi.mock("../api/client", () => ({ getCatalogSummary, listModels, loadRecipeCatal
 function recipe(slug: string, owner: string, status: string, capabilities: string[], family: string, updated = "2026-01-01"): RecipeSummary {
   return {
     publisher: "vonk-forge", slug, title: slug, official: true, content_sha256: slug.padEnd(64, "0"), published_at: updated, runtime: {},
-    catalog: { description: "", tags: [], model_publisher: "m", model_slug: slug, model_title: slug, model_version_publisher: "m", model_version_slug: slug, model_version_title: slug, model_family: family, source_owner: owner, source_repository: null, alignment: "standard", capabilities, qualification: status, qualification_reason: null, execution_readiness: "executable", runtime_distribution: "vllm", precision: null, quantizations: [], node_count: 1, expected_download_bytes: 0 },
+    catalog: catalogFacts({ description: "", tags: [], model_publisher: "m", model_slug: slug, model_title: slug, model_version_publisher: "m", model_version_slug: slug, model_version_title: slug, model_family: family, source_owner: owner, source_repository: null, alignment: "standard", capabilities, qualification: status, qualification_reason: null, execution_readiness: "executable", runtime_distribution: "vllm", precision: null, quantizations: [], node_count: 1, expected_download_bytes: 0 }),
   };
 }
 
@@ -22,7 +23,7 @@ const summary = () => ({
   ...deriveCatalogStats([
     recipe("a", "NVIDIA", "Working", ["chat"], "Qwen", today), recipe("b", "nvidia", "Working", ["code-generation"], "GLM"),
     recipe("d", "NVIDIA", "Not yet verified", ["chat"], "Hidden"), recipe("c", "eugr", "Not yet verified", ["chat"], "Hidden"),
-  ]),
+  ], vocabularyFixture),
 });
 
 beforeEach(() => {
@@ -44,7 +45,7 @@ describe("home page", () => {
     expect(loadRecipeCatalog).not.toHaveBeenCalled();
     expect(listModels).not.toHaveBeenCalled();
     const tiles = within(screen.getByRole("region", { name: "What can you run?" }));
-    expect(tiles.getByRole("link", { name: /Language & chat\s*1 verified/ })).toHaveAttribute("href", "/recipes?type=language");
+    expect(tiles.getByRole("link", { name: /Language\s*1 verified/ })).toHaveAttribute("href", "/recipes?type=language");
     expect(tiles.getByRole("link", { name: /Code\s*1 verified/ })).toBeVisible();
     expect(tiles.getByRole("link", { name: /3D\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=3d&verified=0");
   });

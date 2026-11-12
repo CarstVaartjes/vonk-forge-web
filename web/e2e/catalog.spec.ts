@@ -104,7 +104,7 @@ test("home page shows the live numbers from the build-time summary and loads not
   await expect(proof.locator(".rolling-number")).toHaveCount(3);
 
   const tiles = page.getByRole("region", { name: "What can you run?" });
-  await expect(tiles.getByRole("link", { name: /Language & chat\s*3 verified/ })).toHaveAttribute("href", "/recipes?type=language");
+  await expect(tiles.getByRole("link", { name: /Language\s*3 verified/ })).toHaveAttribute("href", "/recipes?type=language");
   await expect(tiles.getByRole("link", { name: /Code\s*1 verified/ })).toHaveAttribute("href", "/recipes?type=code");
   await expect(tiles.getByRole("link", { name: /Vision\s*1 verified/ })).toBeVisible();
   await expect(tiles.getByRole("link", { name: /3D\s*1 verified/ })).toBeVisible();
@@ -340,8 +340,11 @@ test("publisher navigation points to repository authoring without an upload work
 test("the model type is the first choice on the recipes and models pages", async ({ page }) => {
   await page.goto("/recipes?type=code");
   const types = page.getByRole("group", { name: "Model type" });
-  await expect(types.getByRole("button")).toHaveText(["All4", "Language3", "Code1", "Vision1", "Image0", "Video0", "Audio0", "3D1"]);
+  await expect(types.getByRole("button")).toHaveText(["All4", "Language3", "Code1", "Vision1", "Image0", "Video0", "Audio0", "3D1", "Other0"]);
   await expect(types.getByRole("button", { name: /^Code/ })).toHaveAttribute("aria-pressed", "true");
+  // The words come from the release vocabulary: all 26 capabilities are offered, and the legend gives a status its published meaning.
+  await expect(page.getByLabel("Filter by capability").locator("option")).toHaveCount(27);
+  await expect(page.locator("#how-recipes-are-verified")).toContainText("Passed on a real DGX Spark for this exact recipe, runtime image and model.");
   await expect(page.getByRole("link", { name: "Acme Coder" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Acme Vision" })).toHaveCount(0);
   // The type row sits above the other refinements.

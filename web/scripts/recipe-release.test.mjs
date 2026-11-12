@@ -164,7 +164,11 @@ describe("recipe release publication", () => {
       families: 1,
       creators: 1,
       topCreators: [{ name: "NVIDIA", verified: 1 }],
-      types: { language: 1, code: 0, vision: 1, image: 0, video: 0, audio: 1, "3d": 0 },
+      types: [
+        { id: "language", label: "Language", verified: 1 }, { id: "code", label: "Code", verified: 0 }, { id: "vision", label: "Vision", verified: 1 },
+        { id: "image", label: "Image", verified: 0 }, { id: "video", label: "Video", verified: 0 }, { id: "audio", label: "Audio", verified: 1 },
+        { id: "3d", label: "3D", verified: 0 }, { id: "other", label: "Other", verified: 0 },
+      ],
     });
   });
 

@@ -92,7 +92,7 @@ type, the top creators and the most recently updated recipes). The build derives
 the verified index with the same adapter, type mapping (`web/src/model-types.ts`) and
 derivation the pages use (`web/src/catalog-summary.ts`), validates it with the browser's own
 check, and fails if the index is refused or nothing in it is verified. The home page reads
-only that file, never the full index; there is no hard-coded count. The browser reads only those same-origin files. `npm --prefix web run catalog` then compiles the release schema to `web/src/api/catalog.generated.d.ts`, and the adapter and every fixture are typed against it. The site offers no package
+only that file, never the full index; there is no hard-coded count. The browser reads only those same-origin files. `npm --prefix web run catalog` then compiles the release schema to `web/src/api/catalog.generated.d.ts`, and the adapter and every fixture are typed against it. Capability labels, model types and status meanings are read from the release's `vocabulary`, not typed in the site. The site offers no package
 download (packages are not copied to Pages: some exceed its 25 MiB per-file limit); recipe
 pages link "View source" (and "View adapter source") to the recipe files in the library
 repository, pinned to the verified release's source commit.

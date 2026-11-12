@@ -1,27 +1,7 @@
 import type { RecipeSummary } from "./api/client";
 // Loaded under Node by the release build (via catalog-summary.ts): runtime imports use .ts.
-import { hasModelType, isModelTypeId, type ModelTypeId } from "./model-types.ts";
 import { isVerified } from "./qualification-status.ts";
 
-
-export const CAPABILITY_OPTIONS = [
-  { value: "chat", label: "Chat" },
-  { value: "text-generation", label: "Text generation" },
-  { value: "text-understanding", label: "Text understanding" },
-  { value: "reasoning", label: "Reasoning" },
-  { value: "tool-use", label: "Tool use" },
-  { value: "code-generation", label: "Code generation" },
-  { value: "ocr", label: "OCR" },
-  { value: "image-generation", label: "Image generation" },
-  { value: "image-understanding", label: "Image understanding" },
-  { value: "image-editing", label: "Image editing" },
-  { value: "video-generation", label: "Video generation" },
-  { value: "video-understanding", label: "Video understanding" },
-  { value: "audio-generation", label: "Audio generation" },
-  { value: "audio-understanding", label: "Audio understanding" },
-  { value: "embeddings", label: "Embeddings" },
-  { value: "3d-generation", label: "3D generation" },
-] as const;
 
 export const READINESS_OPTIONS = [
   { value: "executable", label: "Executable contract" },
@@ -69,7 +49,8 @@ export type FilterFacet = "type" | "verified" | "modelFamily" | "model" | "ablit
 
 interface CatalogFilters {
   query: string;
-  type: ModelTypeId | "";
+  // A model type (capability category) id from the release vocabulary; "" is every type.
+  type: string;
   // "Verified on Spark": on unless turned off (verified=0) or an explicit qualification is chosen.
   verified: boolean;
   modelFamily: string;
@@ -119,7 +100,6 @@ const VALID_SORTS = new Set<string>(["catalog", "recipe", "modelFamily", "model"
 const VALID_DIRECTIONS = new Set<string>(["asc", "desc"]);
 
 const VALID_READINESS = new Set<string>(READINESS_OPTIONS.map((option) => option.value));
-const VALID_CAPABILITIES = new Set<string>(CAPABILITY_OPTIONS.map((option) => option.value));
 const VALID_UPDATED = new Set<string>(["7", "30", "90", "365"]);
 
 export function filtersFromParameters(parameters: URLSearchParams): CatalogFilters {
@@ -132,7 +112,7 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
   const direction = parameters.get("direction") ?? (sort === "catalog" ? "desc" : "asc");
   return {
     query: parameters.get("q") ?? "",
-    type: isModelTypeId(parameters.get("type") ?? "") ? parameters.get("type") as ModelTypeId : "",
+    type: parameters.get("type") ?? "",
     verified: parameters.get("verified") !== "0" && !qualification,
     modelFamily: parameters.get("model_family") ?? "",
     model: parameters.get("model") ?? "",
@@ -150,7 +130,7 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
     memory: parameters.get("memory") ?? "",
     sort,
     direction: VALID_DIRECTIONS.has(direction) ? direction as SortDirection : sort === "catalog" ? "desc" : "asc",
-    capabilities: Array.from(new Set(parameters.getAll("capability").filter((value) => VALID_CAPABILITIES.has(value as typeof CAPABILITY_OPTIONS[number]["value"])))),
+    capabilities: Array.from(new Set(parameters.getAll("capability").filter(Boolean))),
   };
 }
 
@@ -236,7 +216,7 @@ export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, om
   ].some((value) => value.toLocaleLowerCase().includes(normalized));
   return queryMatches
     && (omitted === "verified" || !filters.verified || isVerified(recipe))
-    && (omitted === "type" || !filters.type || hasModelType(facts.capabilities, filters.type))
+    && (omitted === "type" || !filters.type || facts.types.includes(filters.type))
     && (omitted === "modelFamily" || !filters.modelFamily || modelFamilyTitle(recipe) === filters.modelFamily)
     && (omitted === "model" || !filters.model || modelVersionKey(recipe) === filters.model)
     && (omitted === "abliterated" || !filters.abliterated || recipeIsAbliterated(recipe) === (filters.abliterated === "true"))
