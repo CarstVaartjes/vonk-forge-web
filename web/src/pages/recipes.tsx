@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { usePageMeta } from "../page-meta";
 
 import { loadRecipeCatalog, type RecipeSummary } from "../api/client";
 import { MODEL_TYPES, hasModelType, modelTypeLabel } from "../model-types";
@@ -80,6 +81,7 @@ function ColumnHeader({ label, sort, activeSort, direction, filtered, onSort, ch
 type ActiveFilter = { key: string; label: string; remove: () => void };
 
 export function RecipesPage() {
+  usePageMeta("Recipes", "Browse recipes for NVIDIA DGX Spark, each shown with whether it passed hardware checks, its memory and Spark count.");
   const [parameters, setParameters] = useState(() => new URLSearchParams(window.location.search));
   const [catalog, setCatalog] = useState<RecipeSummary[] | null>(null);
   const [error, setError] = useState<string | null>(null);

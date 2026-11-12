@@ -1,4 +1,5 @@
 import { CommandBlock } from "../command-block";
+import { usePageMeta } from "../page-meta";
 
 const repository = "https://github.com/CarstVaartjes/vonk-forge";
 
@@ -7,6 +8,7 @@ const repository = "https://github.com/CarstVaartjes/vonk-forge";
 // Every command on this page comes from the vonk-forge vonkctl runbook
 // (docs/runbooks/vonkctl.md). Keep them in step with it.
 export function ControlPage() {
+  usePageMeta("Control", "Drive your Vonk Forge fleet from the Web Controller or from vonkctl, the JSON-first CLI built for scripts and AI agents.");
   return (
     <main className="guide-page control-page">
       <section className="guide-hero" aria-labelledby="control-title">

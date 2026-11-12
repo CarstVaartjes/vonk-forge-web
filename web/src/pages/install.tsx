@@ -2,6 +2,7 @@ import { CommandBlock } from "../command-block";
 
 export const controllerInstallCommand = "curl -fsSL https://install.vonkforge.ai/nas | sh";
 export const sparkInstallCommand = "curl -fsSL https://install.vonkforge.ai/spark | VONK_CONTROLLER_ADDRESS=192.168.1.231 sh";
+import { usePageMeta } from "../page-meta";
 
 const repository = "https://github.com/CarstVaartjes/vonk-forge/blob/main";
 const tailscaleRunbook = `${repository}/docs/runbooks/tailscale.md`;
@@ -9,6 +10,7 @@ const tailscaleRunbook = `${repository}/docs/runbooks/tailscale.md`;
 
 
 export function InstallPage() {
+  usePageMeta("Install", "Install the Vonk Forge Controller on a laptop, NAS or local server with one signed command, then enroll your DGX Sparks.");
   return (
     <main className="guide-page install-page">
       <section className="guide-hero" aria-labelledby="install-title">
