@@ -3,6 +3,7 @@ import { afterEach, beforeEach, vi } from "vitest";
 
 import { App } from "./app";
 import indexHtml from "../index.html?raw";
+import { InstallPage } from "./pages/install";
 
 
 // The footer reads the verified release manifest the Pages build writes.
@@ -198,6 +199,16 @@ test("documents two equivalent control paths and complete CLI setup", () => {
   expect(screen.getByText(/closed pipe/)).toBeVisible();
 });
 
+
+test("the install page links the removal runbook", () => {
+  render(<InstallPage />);
+
+  const section = document.querySelector("#uninstall") as HTMLElement;
+  expect(within(section).getByRole("link", { name: "removal runbook on GitHub" })).toHaveAttribute(
+    "href",
+    "https://github.com/CarstVaartjes/vonk-forge/blob/main/docs/operations/uninstall.md",
+  );
+});
 
 test("offers lab and secure remote install modes with current enrollment commands", () => {
   window.history.replaceState({}, "", "/install");
