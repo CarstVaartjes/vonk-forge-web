@@ -112,22 +112,15 @@ function Hero({ state }: { state: CatalogState }) {
           mix you need in a few clicks or one <code>vonkctl</code> command your
           agents can drive.
         </p>
-        {showCounts ? (
-          <p className="hero-proof" aria-label="Catalog counts" aria-busy={summary ? undefined : true}>
-            <span className="hero-stat"><RollingNumber value={summary?.verified ?? null} /> recipes verified on DGX Spark</span>
-            <span className="hero-stat"><RollingNumber value={summary?.families ?? null} placeholderDigits={2} /> model families</span>
-            <span className="hero-stat"><RollingNumber value={summary?.creators ?? null} placeholderDigits={2} /> creators</span>
-          </p>
-        ) : null}
+        <div className="hero-actions">
+          <a className="button primary" href="/install">Install</a>
+          <a className="button secondary" href="/recipes">Browse what runs</a>
+        </div>
         {top.length ? (
           <p className="home-creators">
             Recipes from {joinNames(top)} and more, each shown with whether it passed hardware checks on a DGX Spark.
           </p>
         ) : null}
-        <div className="hero-actions">
-          <a className="button primary" href="/install">Install</a>
-          <a className="button secondary" href="/recipes">Browse what runs</a>
-        </div>
         <p className="hero-cli"><a className="text-link" href="/control#local-cli">See the agent-friendly CLI</a></p>
         <ul className="home-facts" aria-label="Product facts">
           <li><StateDot /> Runs on infrastructure you own</li>
@@ -135,6 +128,13 @@ function Hero({ state }: { state: CatalogState }) {
           <li>Open source · MIT</li>
         </ul>
       </div>
+      {showCounts ? (
+        <p className="hero-proof" aria-label="Catalog counts" aria-busy={summary ? undefined : true}>
+          <span className="hero-stat"><RollingNumber value={summary?.verified ?? null} /> recipes verified on DGX Spark</span>
+          <span className="hero-stat"><RollingNumber value={summary?.families ?? null} placeholderDigits={2} /> model families</span>
+          <span className="hero-stat"><RollingNumber value={summary?.creators ?? null} placeholderDigits={2} /> creators</span>
+        </p>
+      ) : null}
     </section>
   );
 }
