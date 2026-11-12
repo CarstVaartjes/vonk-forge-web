@@ -131,8 +131,9 @@ Two related cases:
   `recipe-release.mjs` then fails the fetch step ("is missing from SHA256SUMS"), so CI and
   the deploy are red until `SCHEMA_NAME` follows the new name in the fix pull request.
 - An additive minor that adds a required field reds pull-request CI through the test
-  fixtures (`npm run typecheck`), but never the deploy: the deploy build type-checks only
-  shipped code (`web/tsconfig.build.json`).
+  fixtures (`npm run typecheck`, run by CI on pull requests only), but never the deploy:
+  the deploy build type-checks only shipped code (`web/tsconfig.build.json`) and the
+  dispatched or pushed CI run skips the fixture check.
 
 Recipe updates arrive when the `vonk-forge-recipes` publish job dispatches
 `pages.yml` (`workflow_dispatch`, through the refresh GitHub App installed on this

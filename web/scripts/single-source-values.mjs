@@ -156,7 +156,7 @@ function checkContractVersions(files, entry, report) {
     return ts.isIdentifier(expression) ? expression.text : "";
   };
   for (const [file, text] of files) {
-    if (file === entry.owner.file || !/^web\/(?:src|scripts)\/.*\.(?:[cm]?js|tsx?)$/.test(file) || /\.test\.[cm]?[jt]sx?$/.test(file)) continue;
+    if (!/^web\/(?:src|scripts)\/.*\.(?:[cm]?js|tsx?)$/.test(file) || /\.test\.[cm]?[jt]sx?$/.test(file)) continue;
     const ast = syntax(file, text);
     visit(ast, (node) => {
       const line = ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1;
