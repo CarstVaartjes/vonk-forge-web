@@ -64,6 +64,8 @@ there, with no baseline allowance.
 ```bash
 npm --prefix web ci
 npm --prefix web audit --audit-level=high
+npm --prefix web run catalog      # fetch the release, generate the types
+npm --prefix web run typecheck
 npm --prefix web test -- --run
 git ls-files -z | node web/scripts/check-single-sources.mjs
 npm --prefix web run build
