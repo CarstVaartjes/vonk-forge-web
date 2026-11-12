@@ -267,10 +267,12 @@ export function sortRecipes(recipes: RecipeSummary[], sort: RecipeSort, directio
 }
 
 // Memory and disk sizes in GiB, as the catalog tables and the showcase show them.
-export function gibLabel(value: number | undefined): string {
+// `decimals` fixes the digits after the point (the recipe page shows one); without it a size of
+// 10 GiB or more is a whole number.
+export function gibLabel(value: number | undefined, decimals?: number): string {
   if (value === undefined) return "Not declared";
   const gib = value / 1024 ** 3;
-  return `${gib >= 10 ? gib.toFixed(0) : gib.toFixed(1)} GiB`;
+  return `${gib.toFixed(decimals ?? (gib >= 10 ? 0 : 1))} GiB`;
 }
 
 export function humanize(value: string): string {

@@ -285,6 +285,12 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
     ? item.package.path.slice(index.package_contract.path_prefix.length)
     : item.package.path;
   const contextPath = build.context.path;
+  const lastPass = item.qualification.last_pass;
+  const api = item.api?.api;
+  // Only a chat-shaped API has endpoints and streaming facts.
+  const chat = api && "endpoints" in api ? api : null;
+  const settings = document.settings;
+  const modelEntity = selectedEntity(document, index);
 
   return {
     publisher,
@@ -324,6 +330,13 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
       media_type: item.package.media_type,
     },
     catalog: publicMetadata(item, index, artifacts),
+    evidence: lastPass ? { tested_at: lastPass.tested_at, spark_count: lastPass.platform.spark_count ?? item.qualification.required_sparks } : null,
+    chat_api: chat ? { endpoints: chat.endpoints, streaming: chat.streaming, structured_output: chat.structured_output, image_input: chat.input_modalities.image, audio_input: chat.input_modalities.audio } : undefined,
+    settings: {
+      context_tokens: "context_tokens" in settings ? settings.context_tokens.value : undefined,
+      concurrency: "concurrency" in settings ? settings.concurrency?.value : undefined,
+    },
+    license: { spdx: modelEntity?.display.license.spdx || undefined, url: modelEntity?.display.license.url || undefined },
     latest_revision: {
       content_sha256: item.content_sha256,
       document,

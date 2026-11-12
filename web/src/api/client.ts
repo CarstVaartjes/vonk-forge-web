@@ -63,6 +63,13 @@ export interface RecipeSummary {
 }
 
 export interface RecipeDetail extends RecipeSummary {
+  // The newest hardware pass the library recorded for this recipe: when, and on how many Sparks.
+  evidence: { tested_at: string; spark_count: number } | null;
+  // What the recipe's chat API serves; absent for a recipe that is not a chat API.
+  chat_api?: { endpoints: string[]; streaming: boolean; structured_output: boolean; image_input: boolean; audio_input: boolean };
+  // The recipe's own defaults for the settings the page shows.
+  settings: { context_tokens?: number; concurrency?: number };
+  license: { spdx?: string; url?: string };
   latest_revision: {
     content_sha256: string;
     document: Record<string, unknown>;

@@ -138,6 +138,14 @@ describe("static recipe library adapter", () => {
     await expect(getStaticRecipe(indexUrl, "vonk-forge", "missing")).rejects.toThrow("Recipe not found");
   });
 
+  test("detail carries the newest hardware pass, the chat API, the setting defaults and the licence from the index", async () => {
+    const recipe = await getStaticRecipe(indexUrl, "vonk-forge", nvidia);
+    expect(recipe.evidence).toEqual({ tested_at: "2026-11-03T23:29:07.790267Z", spark_count: 1 });
+    expect(recipe.chat_api).toEqual({ endpoints: ["/v1/chat/completions", "/v1/completions", "/v1/responses", "/v1/messages"], streaming: true, structured_output: true, image_input: true, audio_input: true });
+    expect(recipe.settings).toEqual({ context_tokens: 131072 });
+    expect(recipe.license).toEqual({ spdx: "Apache-2.0", url: "https://ai.google.dev/gemma/docs/gemma_4_license" });
+  });
+
   test("links model versions to recipes and preserves declared capabilities, licence and file sizes", async () => {
     const page = await listStaticModels(indexUrl);
     expect(page.items.map((item) => `${item.publisher}/${item.slug}`)).toEqual(["google/gemma-4-e2b", "ggml-org/gemma-4-e2b", "thinkingmachines/inkling-975b-a41b", "vast-ai/skintokens"]);
