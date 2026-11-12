@@ -217,11 +217,8 @@ vonkctl fleet enrollment status GRANT_UUID`}</CommandBlock>
           (<code>.env</code>, <code>secrets/</code>, backups) with named volumes for its database,
           model cache and registry. A Spark gets the <code>vonk-forge-agent</code> package: a
           service account, systemd units, firewall rules, configuration and a local model cache.
-          Removal is a short list of commands; the large model caches are kept unless you choose to remove them.
         </p>
-        <CommandBlock label="Controller host, inside vonk-forge/ (keeps volumes)">sudo docker compose down --remove-orphans --rmi all</CommandBlock>
-        <CommandBlock label="Spark (administrator account)">sudo dpkg --purge vonk-forge-agent</CommandBlock>
-        <p className="fleet-note">These are the first step of each part. The <a href={uninstallRunbook}>removal runbook on GitHub</a> lists the remaining steps, what is kept by default, and how to remove the data, model caches and Tailscale entries too.</p>
+        <p className="fleet-note">The <a href={uninstallRunbook}>removal runbook on GitHub</a> lists the removal steps, what is kept by default, and how to remove the data, model caches and Tailscale entries too.</p>
       </section>
 
       <section className="secret-boundary" aria-labelledby="secrets-title">
