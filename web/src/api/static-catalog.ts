@@ -117,13 +117,14 @@ function tags(display: JsonRecord): string[] {
   return array(display.tags).map((value) => text(value).toLowerCase()).filter(Boolean);
 }
 
-// A model declares the capabilities it supports as a plain list of names.
-function declaredCapabilities(document: JsonRecord): string[] {
-  return Array.from(new Set(array(document.capabilities).map((value) => text(value)).filter(Boolean)));
+// Contract major 4 keeps a model's capabilities and licence in its display
+// document, not its execution document. They are a plain list of names.
+function declaredCapabilities(display: JsonRecord): string[] {
+  return Array.from(new Set(array(display.capabilities).map((value) => text(value)).filter(Boolean)));
 }
 
-function publicCapabilities(document: JsonRecord): string[] {
-  const values = new Set(declaredCapabilities(document));
+function publicCapabilities(display: JsonRecord): string[] {
+  const values = new Set(declaredCapabilities(display));
   return PUBLIC_CAPABILITIES.filter((value) => values.has(value));
 }
 
@@ -257,7 +258,8 @@ function mapModelVersion(
   const logicalModel = modelIdentity(document);
   const source = record(document.source);
   const format = record(document.format);
-  const license = record(document.license);
+  const display = record(entity.display);
+  const license = record(display.license);
   const recipeSlugs = recipes
     .filter((recipe) => recipeModels(recipe).some((candidate) => sameReference(candidate, entity)))
     .map((recipe) => `${recipe.publisher}/${recipe.slug}`)
@@ -276,7 +278,7 @@ function mapModelVersion(
     format: { precision: text(format.precision) || undefined, quantization: text(format.quantization) || undefined },
     sizes: { download_bytes: modelSize(document, true), installed_bytes: modelSize(document, false) },
     license: { spdx: text(license.spdx) || undefined, url: text(license.url) || undefined },
-    capabilities: declaredCapabilities(document),
+    capabilities: declaredCapabilities(display),
     recipe_slugs: recipeSlugs,
   };
 }
@@ -373,7 +375,7 @@ function publicMetadata(item: LibraryRecipe, document: JsonRecord, index: Librar
     source_owner: source?.owner ?? null,
     source_repository: source?.repository ?? null,
     alignment,
-    capabilities: modelEntity ? publicCapabilities(modelEntity.document) : [],
+    capabilities: modelEntity ? publicCapabilities(record(modelEntity.display)) : [],
     qualification: published.status,
     qualification_reason: published.reason,
     execution_readiness: executionReadiness(recipeTags),

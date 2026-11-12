@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
 import { buildCatalogSummary } from "../src/catalog-summary.ts";
 
 
-const releaseTag = "v3.0.0";
+const releaseTag = "v4.0.0";
 const sourceCommit = "f".repeat(40);
 const recipeDigest = "a".repeat(64);
 const modelDigest = "3".repeat(64);
@@ -30,9 +30,8 @@ function modelEntity(options: { digest: string; slug: string; logical: string; p
       requires_token: false,
       format: { precision: "nvfp4", quantization: "nvfp4" },
       files: [{ id: "weights", path: "weights.safetensors", sha256: options.fileDigest, size_bytes: 20_000_000_000, roles: ["weights"] }],
-      capabilities: options.capabilities,
     },
-    display: { kind: "model-display", family_title: options.family, model_title: options.title, description: `${options.title} model`, tags: options.tags ?? [] },
+    display: { kind: "model-display", capabilities: options.capabilities, family_title: options.family, model_title: options.title, description: `${options.title} model`, tags: options.tags ?? [] },
   };
 }
 
@@ -72,7 +71,7 @@ function recipeEntry(options: { digest: string; slug: string; title: string; mod
 // static build is exercised end to end without reaching GitHub.
 const catalogIndex = {
   schema_version: 2,
-  contract_version: "3.0.0",
+  contract_version: "4.0.0",
   updated_at: "2026-09-28T20:04:06Z",
   kind: "recipe-library-index",
   repository: "CarstVaartjes/vonk-forge-recipes",
@@ -100,7 +99,7 @@ const catalogIndex = {
 
 
 
-const release = { repository: "CarstVaartjes/vonk-forge-recipes", tag: releaseTag, contract_version: "3.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: sourceCommit, catalog_index_sha256: "d".repeat(64) };
+const release = { repository: "CarstVaartjes/vonk-forge-recipes", tag: releaseTag, contract_version: "4.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: sourceCommit, catalog_index_sha256: "d".repeat(64) };
 // What the Pages build writes beside release.json, derived by the same code from the same index.
 const catalogSummary = buildCatalogSummary(catalogIndex, release);
 const HEADLINE = /4\s*recipes verified on DGX Spark\.\s*3\s*model families\.\s*2\s*creators\./;
