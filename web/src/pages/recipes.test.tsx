@@ -233,7 +233,7 @@ test("explains each status shown, links every badge to the explanation, and neve
   await screen.findByRole("heading", { name: "Odd" });
   const legend = within(document.getElementById("how-recipes-are-verified") as HTMLElement);
   expect(legend.getByText(/information to help you choose, never a gate/)).toBeInTheDocument();
-  expect(legend.getByText(/No passing hardware run on record/)).toBeInTheDocument();
+  expect(legend.getByText(/No hardware verdict yet/)).toBeInTheDocument();
   expect(legend.getAllByText("Status from a newer library")).toHaveLength(1);
   expect(legend.getByText("Shown exactly as the recipe library published it.")).toBeInTheDocument();
   expect(legend.queryByText("Working")).toBeNull();
