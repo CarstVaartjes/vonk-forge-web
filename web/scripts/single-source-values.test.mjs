@@ -95,34 +95,30 @@ describe("single source values", () => {
     expect(checkSingleSources(files, [memoryOwner]).join()).toContain("independent memory projection");
   });
 
-  describe("published constants", () => {
-    const entry = {
-      id: "catalog.working-status", kind: "published-constant", owner: { file: "web/src/status.ts", selector: "WORKING_STATUS" },
-      derive: "import WORKING_STATUS",
-      source: { repository: "o/r", revision: "a".repeat(40), file: "schema.json", selector: "properties.status.enum[0]" },
-    };
-    const owner = 'export const WORKING_STATUS = "Working";';
-    const check = (extra, registered = entry) => checkSingleSources(new Map([["web/src/status.ts", owner], ...extra]), [registered]).join("\n");
+  describe("published vocabulary", () => {
+    const entry = { id: "catalog.vocabulary", kind: "published-vocabulary", owner: { file: "web/src/api/catalog.fixture.ts", selector: "vocabulary" }, derive: "read index.vocabulary" };
+    const owner = 'export const catalogIndexFixture = { "vocabulary": { "capabilities": [{ "name": "chat", "label": "Chat" }], "statuses": [{ "status": "Working", "meaning": "m", "verified": true }] } };';
+    const check = (...extra) => checkSingleSources(new Map([["web/src/api/catalog.fixture.ts", owner], ...extra]), [entry]).join("\n");
 
     test.each([
-      ["double quotes", 'const a = "Working";', "web/src/x.tsx"],
-      ["single quotes", "const a = 'Working';", "web/src/x.ts"],
-      ["template literal", "const a = `Working`;", "web/src/x.ts"],
-      ["template head", "const a = `Working ${b}`.length; const c = `${b}Working`;", "web/src/x.ts"],
-      ["JSX text", "const a = <span>Working</span>;", "web/src/x.tsx"],
-      ["JSX attribute", 'const a = <span title="Working" />;', "web/src/x.tsx"],
-    ])("rejects a written literal: %s", (_name, source, file) => {
-      const errors = check([[file, source]]);
-      expect(errors).toContain(`${file}:`);
-      expect(errors).toContain("import WORKING_STATUS instead of writing");
+      ['const a = "chat";', "chat"],
+      ["const a = `Working`;", "Working"],
+      ['const options = [{ value: "chat", label: "Chat" }];', "chat"],
+      ["const a = 'Working';", "Working"],
+      ["const a = `Working ${b}`.length; const c = `${b}Working`;", "Working"],
+      ["const a = <span>Working</span>;", "Working"],
+      ['const a = <span title="Working" />;', "Working"],
+    ])("rejects an added literal: %s", (source, value) => {
+      expect(check(["web/src/x.tsx", source])).toContain(`read "${value}" from the release vocabulary`);
     });
 
-    test("allows imports, test files and longer text", () => {
-      expect(check([["web/src/x.tsx", 'import { WORKING_STATUS } from "./status"; const a = <b>Working on it</b>;'], ["web/src/x.test.tsx", 'const a = "Working";'], ["web/src/x.fixture.ts", 'const a = "Working";']])).toBe("");
+    test("allows tests, fixtures, generated types and longer text", () => {
+      expect(check(["web/src/x.test.ts", 'const a = "chat";'], ["web/src/x.fixture.ts", 'const a = "Working";'], ["web/src/api/catalog.generated.d.ts", 'type A = "chat";'],
+        ["web/src/y.tsx", 'const a = "chatty"; const b = <p>Working on it</p>;'])).toBe("");
     });
 
-    test.each(["", "abc123", "A".repeat(40)])("rejects a missing or short source revision %j", (revision) => {
-      expect(check([], { ...entry, source: { ...entry.source, revision } })).toContain("published constant needs a pinned source");
+    test("needs an owner that holds a vocabulary", () => {
+      expect(checkSingleSources(new Map([["web/src/api/catalog.fixture.ts", "export const a = 1;"]]), [entry]).join()).toContain("expected a vocabulary object");
     });
   });
 

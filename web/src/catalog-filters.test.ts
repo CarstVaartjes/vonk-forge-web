@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 
 import type { RecipeSummary } from "./api/client";
 import { EMPTY_FILTERS, filtersFromParameters, recipeMatches, sortRecipes } from "./catalog-filters";
+import { catalogFacts } from "./vocabulary.fixture";
 
 
 function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["catalog"]>> = {}): RecipeSummary {
@@ -13,7 +14,7 @@ function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["cata
     content_sha256: slug.padEnd(64, "0").slice(0, 64),
     published_at: new Date().toISOString().slice(0, 10),
     runtime: { adapter: "vllm" },
-    catalog: {
+    catalog: catalogFacts({
       description: "",
       tags: [],
       model_publisher: "models",
@@ -36,7 +37,7 @@ function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["cata
       node_count: 1,
       expected_download_bytes: 100,
       ...overrides,
-    },
+    }),
   };
 }
 
@@ -46,8 +47,8 @@ describe("public catalog Controller-parity filters", () => {
     expect(filters).toMatchObject({ modelFamily: "GLM 5.3 Flash", model: "models/both-v1", abliterated: "true", sourceOwner: "owner", quantization: "NVFP4", updated: "30", sparks: "4+", capabilities: ["chat", "reasoning"], download: "100", disk: "unknown", memory: "200", sort: "download", direction: "desc" });
     expect(filtersFromParameters(new URLSearchParams("abliterated=unknown&sort=bogus")).abliterated).toBe("");
     expect(filtersFromParameters(new URLSearchParams("type=code")).type).toBe("code");
-    expect(filtersFromParameters(new URLSearchParams("type=everything")).type).toBe("");
-    expect(filtersFromParameters(new URLSearchParams("capability=video-generation&capability=ocr&capability=video")).capabilities).toEqual(["video-generation", "ocr"]);
+    // Type and capability names are the release vocabulary's, so the URL parser keeps them as given.
+    expect(filtersFromParameters(new URLSearchParams("capability=video-generation&capability=ocr&capability=ocr")).capabilities).toEqual(["video-generation", "ocr"]);
   });
 
   test("requires every selected capability and combines model, readiness, and Spark facets", () => {

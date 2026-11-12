@@ -39,6 +39,13 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   real entries the tests share), so a field the contract lacks fails `tsc`.
   Reject an index the adapter does not understand instead of rendering an empty
   or defaulted catalog.
+- The words belong to the contract too. Capability labels and descriptions, model
+  types (the capability categories), and what a qualification status means and
+  whether it counts as verified come from the release's `CatalogIndex.vocabulary`
+  (`web/src/vocabulary.ts` reads it; the home summary carries the type labels the
+  build derived from it). Never type a contract capability name or status string in
+  `web/src` outside tests and fixtures: `check-single-sources` rejects an added
+  literal (`web/src/vocabulary.single-source.json`).
 - The public site never builds or executes a container, accepts model weights,
   stores visitor data, or holds controller authority. Weights stay at immutable
   origins; container layers stay in registries; runtime authority, secrets, and

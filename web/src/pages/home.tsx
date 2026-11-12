@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { getCatalogSummary } from "../api/client";
 import type { CatalogSummary } from "../catalog-stats";
 import { CommandBlock } from "../command-block";
-import { MODEL_TYPES } from "../model-types";
 import { controllerInstallCommand, sparkInstallCommand } from "./install";
 import { RollingNumber } from "../rolling-number";
 
@@ -148,13 +147,13 @@ function TypeTiles({ summary }: { summary: CatalogSummary }) {
         <p>Pick a kind of model. Each count is recipes that passed hardware checks on a DGX Spark, and the catalog opens on that type with "Verified on Spark" on.</p>
       </div>
       <ul className="type-grid">
-        {MODEL_TYPES.map((type) => {
-          const verified = summary.types[type.id];
+        {summary.types.map((type) => {
+          const { verified } = type;
           const href = verified > 0 ? `/recipes?type=${type.id}` : `/recipes?type=${type.id}&verified=0`;
           return (
             <li key={type.id}>
               <a href={href}>
-                <strong>{type.tile}</strong>
+                <strong>{type.label}</strong>
                 <span className="type-count">{verified > 0 ? <><b>{number.format(verified)}</b> verified</> : "None verified yet"}</span>
               </a>
             </li>

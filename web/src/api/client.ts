@@ -1,5 +1,6 @@
 import type { CatalogSummary } from "../catalog-stats";
-import { getStaticCatalogSummary, getStaticLibraryRelease, getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog } from "./static-catalog";
+import type { Vocabulary } from "../vocabulary";
+import { getStaticCatalogSummary, getStaticLibraryRelease, getStaticModel, getStaticRecipe, getStaticVocabulary, listStaticModels, listStaticRecipeCatalog } from "./static-catalog";
 
 
 export interface RecipeSummary {
@@ -45,8 +46,12 @@ export interface RecipeSummary {
     // As published (standard, abliterated, ...); a value a newer contract adds is shown as is.
     alignment: string;
     capabilities: string[];
+    // The model types (capability categories) of those capabilities, in vocabulary order.
+    types: string[];
     // Published by the recipe library, shown as written.
     qualification: string;
+    // The release vocabulary says this status counts as verified on a Spark.
+    verified: boolean;
     qualification_reason: string | null;
     execution_readiness: "executable" | "integration-required" | "not-executable" | "not-declared";
     runtime_distribution: string;
@@ -101,6 +106,8 @@ export interface ModelSummary {
   // The same facts for recipes that passed hardware checks on a DGX Spark.
   verified_runs: ModelRuns;
   tags: string[];
+  // The model types of all its versions' capabilities.
+  types: string[];
   revision_id: string;
   versions: ModelVersionSummary[];
   recipe_count: number;
@@ -135,6 +142,10 @@ export function listModels(signal?: AbortSignal): Promise<ModelPage> {
 
 export function getModel(publisher: string, slug: string, signal?: AbortSignal): Promise<ModelSummary> {
   return getStaticModel(RECIPE_LIBRARY_INDEX_URL, publisher, slug, signal);
+}
+
+export function getVocabulary(signal?: AbortSignal): Promise<Vocabulary> {
+  return getStaticVocabulary(RECIPE_LIBRARY_INDEX_URL, signal);
 }
 
 export function getCatalogSummary(signal?: AbortSignal): Promise<CatalogSummary> {

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
 import { catalogIndexFixture } from "./catalog.fixture";
 import type { CatalogIndex } from "./catalog-types";
-import { displayTitle, getStaticLibraryRelease, getStaticModel, getStaticRecipe, listStaticModels, listStaticRecipeCatalog, resetStaticCatalogCacheForTests } from "./static-catalog";
+import { displayTitle, getStaticLibraryRelease, getStaticModel, getStaticVocabulary, getStaticRecipe, listStaticModels, listStaticRecipeCatalog, resetStaticCatalogCacheForTests } from "./static-catalog";
 
 
 // Real entries of the signed library (see catalog.fixture.ts): two single-Spark Working
@@ -92,7 +92,9 @@ describe("static recipe library adapter", () => {
         source_repository: "https://github.com/NVIDIA/dgx-spark-playbooks",
         alignment: "unspecified",
         capabilities: ["audio-understanding", "chat", "image-understanding", "reasoning", "text-generation", "tool-use"],
+        types: ["language", "vision", "audio"],
         qualification: "Working",
+        verified: true,
         qualification_reason: null,
         execution_readiness: "executable",
         runtime_distribution: "vllm",
@@ -105,7 +107,7 @@ describe("static recipe library adapter", () => {
   test("an eight-Spark recipe keeps the largest role peak and its published reason", async () => {
     const recipe = (await listStaticRecipeCatalog(indexUrl)).find((item) => item.slug === eight)!;
     expect(recipe.capacity).toMatchObject({ profile_node_counts: [8], maximum_runtime_memory_bytes_per_node: 119000000000, maximum_installed_bytes_per_node: 1916112011354 });
-    expect(recipe.catalog).toMatchObject({ node_count: 8, runtime_distribution: "sglang", qualification: "Not yet verified", qualification_reason: "needs more Sparks" });
+    expect(recipe.catalog).toMatchObject({ node_count: 8, runtime_distribution: "sglang", qualification: "Not yet verified", verified: false, qualification_reason: "needs more Sparks" });
     expect(recipe.runtime.adapter).toBe("sglang");
   });
 
@@ -164,6 +166,14 @@ describe("static recipe library adapter", () => {
     expect(inkling).toMatchObject({ recipe_count: 1, verified_recipe_count: 0, verified_runs: { spark_counts: [], engines: [], creators: [] }, runs: { spark_counts: [8] } });
     expect(inkling.versions[0]!.sizes).toEqual({ download_bytes: expect.any(Number), installed_bytes: expect.any(Number) });
     await expect(getStaticModel(indexUrl, "google", "missing")).rejects.toThrow("Model not found");
+  });
+
+  test("reads the words of the release from the same index", async () => {
+    const fetchMock = serve(index);
+    await listStaticRecipeCatalog(indexUrl);
+    await expect(getStaticVocabulary(indexUrl)).resolves.toEqual(index.vocabulary);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect((await listStaticModels(indexUrl)).items.map((item) => item.types)).toEqual([["language", "vision", "audio"], ["language", "vision", "audio"], ["language", "vision", "audio"], ["3d"]]);
   });
 
   test("keeps published model entities visible when no recipe selects them", async () => {
