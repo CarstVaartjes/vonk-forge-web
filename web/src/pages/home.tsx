@@ -4,6 +4,7 @@ import { getCatalogSummary } from "../api/client";
 import type { CatalogSummary } from "../catalog-stats";
 import { CommandBlock } from "../command-block";
 import { controllerInstallCommand, sparkInstallCommand } from "./install";
+import { TypeIcon } from "../icons";
 import { RollingNumber } from "../rolling-number";
 
 
@@ -148,14 +149,26 @@ function TypeTiles({ summary }: { summary: CatalogSummary }) {
         <p>Pick a kind of model. Each count is recipes that passed hardware checks on a DGX Spark, and the catalog opens on that type with "Verified on Spark" on.</p>
       </div>
       <ul className="type-grid">
+        <li>
+          <a href="/recipes">
+            <TypeIcon id="all" />
+            <span className="type-text">
+              <strong>All verified</strong>
+              <span className="type-count"><b>{number.format(summary.verified)}</b> recipes</span>
+            </span>
+          </a>
+        </li>
         {summary.types.map((type) => {
           const { verified } = type;
           const href = verified > 0 ? `/recipes?type=${type.id}` : `/recipes?type=${type.id}&verified=0`;
           return (
             <li key={type.id}>
               <a href={href}>
-                <strong>{type.label}</strong>
-                <span className="type-count">{verified > 0 ? <><b>{number.format(verified)}</b> verified</> : "None verified yet"}</span>
+                <TypeIcon id={type.id} />
+                <span className="type-text">
+                  <strong>{type.label}</strong>
+                  <span className="type-count">{verified > 0 ? <><b>{number.format(verified)}</b> verified</> : "None verified yet"}</span>
+                </span>
               </a>
             </li>
           );

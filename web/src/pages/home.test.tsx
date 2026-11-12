@@ -50,6 +50,14 @@ describe("home page", () => {
     expect(tiles.getByRole("link", { name: /3D\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=3d&verified=0");
   });
 
+  test("the type tiles start with All verified and carry a decorative icon, so the link name is the text", async () => {
+    getCatalogSummary.mockResolvedValue(summary());
+    render(<HomePage />);
+    const tiles = within(await screen.findByRole("region", { name: "What can you run?" }));
+    expect(tiles.getByRole("link", { name: /All verified\s*2 recipes/ })).toHaveAttribute("href", "/recipes");
+    for (const link of tiles.getAllByRole("link")) expect(link.querySelector("svg.type-icon")).toHaveAttribute("aria-hidden", "true");
+  });
+
   test("shows the two install commands, each with a Copy button", async () => {
     getCatalogSummary.mockResolvedValue(summary());
     render(<HomePage />);
