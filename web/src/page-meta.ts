@@ -13,11 +13,11 @@ function descriptionTag(): HTMLMetaElement {
 }
 
 // Each route names itself: the tab title ("Install · Vonk Forge") and the
-// description a search result or a pasted link may show. The home page passes
-// no page name and keeps the site-wide title from index.html.
-export function usePageMeta(page: string | null, description: string) {
+// description a search result or a pasted link may show. The home page does not
+// call it: index.html owns the site-wide title and description.
+export function usePageMeta(page: string, description: string) {
   useEffect(() => {
-    if (page) document.title = `${page} · ${SITE_NAME}`;
+    document.title = `${page} · ${SITE_NAME}`;
     descriptionTag().content = description;
   }, [page, description]);
 }

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { usePageMeta } from "../page-meta";
 
 import { getCatalogSummary } from "../api/client";
 import { updatedThisWeek, type CatalogSummary } from "../catalog-stats";
@@ -347,7 +346,6 @@ function CatalogSections({ state, retry }: { state: CatalogState; retry: () => v
 
 
 export function HomePage() {
-  usePageMeta(null, "Vonk Forge shows which models fit your NVIDIA DGX Sparks, keeps up with new models and recipes for you, and runs the mix you need in a few clicks or one agent-friendly vonkctl command.");
   const [state, retry] = useCatalogSummary();
   return (
     <main className="home-page">
