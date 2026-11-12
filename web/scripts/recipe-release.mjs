@@ -104,7 +104,7 @@ export function selectReleaseTag(releases, major = SUPPORTED_CONTRACT_MAJOR) {
   return best.tag;
 }
 
-export async function resolveReleaseTag(fetchImpl = fetch, token = process.env.GH_TOKEN) {
+async function listReleases(fetchImpl, token) {
   const releases = [];
   for (let page = 1; ; page += 1) {
     const response = await fetchImpl(`https://api.github.com/repos/${RECIPE_REPOSITORY}/releases?per_page=100&page=${page}`, {
@@ -116,7 +116,27 @@ export async function resolveReleaseTag(fetchImpl = fetch, token = process.env.G
     releases.push(...batch);
     if (batch.length < 100) break;
   }
-  return selectReleaseTag(releases);
+  return releases;
+}
+
+export async function resolveReleaseTag(fetchImpl = fetch, token = process.env.GH_TOKEN) {
+  return selectReleaseTag(await listReleases(fetchImpl, token));
+}
+
+// The scheduled Pages deploy runs this: a non-draft release of a newer contract
+// major than the site supports turns that run red (the last good site stays
+// online) until web/src/contract-major.json follows it. Pull requests never run it.
+export function assertNoNewerMajor(releases, major = SUPPORTED_CONTRACT_MAJOR) {
+  for (const release of Array.isArray(releases) ? releases : []) {
+    const version = semver(release?.tag_name);
+    if (!release?.draft && version && version[0] > major) {
+      fail(`contract major ${version[0]} is published but this site supports major ${major}; follow it in web/src/contract-major.json`);
+    }
+  }
+}
+
+export async function checkNoNewerMajor(fetchImpl = fetch, token = process.env.GH_TOKEN) {
+  assertNoNewerMajor(await listReleases(fetchImpl, token));
 }
 
 // Stream the release's single bundle asset to `destination`, bounded in size.
@@ -279,6 +299,11 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
 async function main() {
   const webRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
   const outDir = path.join(webRoot, "public", "catalog");
+  if (process.argv.includes("--check-newer-major")) {
+    await checkNoNewerMajor();
+    console.log(`No newer contract major than ${SUPPORTED_CONTRACT_MAJOR} is published`);
+    return;
+  }
   const tag = process.env.VONK_RECIPE_RELEASE || await resolveReleaseTag();
   await publishRecipeRelease({ tag, outDir, download: downloadBundle() });
   console.log(`Verified ${RECIPE_REPOSITORY} ${tag} and wrote ${path.relative(process.cwd(), outDir)}`);

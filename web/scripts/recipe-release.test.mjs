@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
-import { parseChecksums, publishRecipeRelease, readBundle, selectReleaseTag } from "./recipe-release.mjs";
+import { assertNoNewerMajor, parseChecksums, publishRecipeRelease, readBundle, selectReleaseTag } from "./recipe-release.mjs";
 
 // A minimal ustar writer, enough to build bundles the way the recipe library does.
 function tarMember(name, payload, { type = "0", prefix = "" } = {}) {
@@ -277,6 +277,12 @@ describe("recipe release publication", () => {
     ];
     expect(selectReleaseTag(releases)).toBe("v4.9.3");
     expect(() => selectReleaseTag([{ tag_name: "v1.0.0", draft: false }])).toThrow("no published release");
+  });
+
+  test("the scheduled check fails on a published newer contract major, naming both majors", () => {
+    const published = (tag, draft = false) => ({ tag_name: tag, draft });
+    expect(() => assertNoNewerMajor([published("v3.2.0"), published("v4.0.0")], 3)).toThrow(/major 4.*supports major 3/);
+    expect(() => assertNoNewerMajor([published("v3.2.0"), published("v4.0.0", true), published("v2.9.0")], 3)).not.toThrow();
   });
 
   test("parses only well-formed checksum manifests", () => {
