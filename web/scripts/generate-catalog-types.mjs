@@ -11,7 +11,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import openapiTS, { astToString } from "openapi-typescript";
 
-export const SCHEMA_FILE = "catalog-index-v2.schema.json";
+import { SCHEMA_NAME } from "./recipe-release.mjs";
 
 export async function generateCatalogTypes(schemaPath, outputPath) {
   const schema = JSON.parse(await readFile(schemaPath, "utf8"));
@@ -23,7 +23,7 @@ export async function generateCatalogTypes(schemaPath, outputPath) {
 async function main() {
   const webRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
   const output = path.join(webRoot, "src", "api", "catalog.generated.d.ts");
-  await generateCatalogTypes(path.join(webRoot, "public", "catalog", SCHEMA_FILE), output);
+  await generateCatalogTypes(path.join(webRoot, "public", "catalog", SCHEMA_NAME), output);
   console.log(`Wrote ${path.relative(process.cwd(), output)}`);
 }
 

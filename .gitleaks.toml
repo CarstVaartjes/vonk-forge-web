@@ -3,9 +3,12 @@ title = "Vonk Forge web"
 [extend]
 useDefault = true
 
-# web/src/api/catalog.fixture.ts holds real entries of the public signed recipe library.
-# Its `build_key` fields are public SHA-256 image build identities, which the default
-# generic-api-key rule reads as keys. Only that one generated data file is exempt.
-[allowlist]
-description = "build_key digests in the real catalog fixture"
-paths = ['''web/src/api/catalog\.fixture\.ts''']
+# web/src/api/catalog.fixture.ts holds an excerpt of the public signed recipe library. Its
+# `build_key` fields are public SHA-256 image build identities, which the default
+# generic-api-key rule reads as keys. Only that rule, only that one file.
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "build_key digests in the catalog fixture"
+paths = ['''^web/src/api/catalog\.fixture\.ts$''']
