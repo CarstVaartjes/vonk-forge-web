@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { loadRecipeCatalog, type RecipeSummary } from "../api/client";
 import { MODEL_TYPES, hasModelType, modelTypeLabel } from "../model-types";
 import { WORKING_STATUS } from "../qualification-status";
+import { STATUS_LEGEND_ID, StatusLegend } from "../status-legend";
 import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
 import {
   CAPABILITY_OPTIONS,
@@ -227,6 +228,7 @@ export function RecipesPage() {
             <p>Pick what you have. The list narrows to recipes with a complete placement for it; your Controller makes the same check against the live capacity of your Sparks.</p>
           </div>
           <VerifiedToggle checked={filters.verified} onChange={setVerified} />
+          <StatusLegend statuses={qualifications} />
           <SparkPicker
             value={filters.sparks}
             noun="recipes"
@@ -290,7 +292,7 @@ export function RecipesPage() {
                 <td className="catalog-table-date">{updatedLabel(recipe.published_at)}</td>
                 <td><span className={`catalog-readiness readiness-${facts.execution_readiness}`}>{READINESS_OPTIONS.find((option) => option.value === facts.execution_readiness)?.label ?? humanize(facts.execution_readiness)}</span></td>
                 <td>{facts.capabilities.length ? facts.capabilities.map(capabilityLabel).join(" · ") : "—"}</td>
-                <td><span className={`badge ${facts.qualification === WORKING_STATUS ? "accepted" : "candidate"}`}>{facts.qualification}</span><span className="catalog-table-substatus">{recipe.facts?.source_bundle_observed ? "Source verified" : "Source pending"}{facts.qualification_reason ? ` · ${facts.qualification_reason}` : ""}</span></td>
+                <td><a className="badge-link" href={`#${STATUS_LEGEND_ID}`} title="What this status means"><span className={`badge ${facts.qualification === WORKING_STATUS ? "accepted" : "candidate"}`}>{facts.qualification}</span></a><span className="catalog-table-substatus">{recipe.facts?.source_bundle_observed ? "Source verified" : "Source pending"}{facts.qualification_reason ? ` · ${facts.qualification_reason}` : ""}</span></td>
                 <td>{facts.source_repository ? <a className="catalog-source-link" href={facts.source_repository}>{sourceLabel(facts.source_repository)}</a> : "—"}</td>
                 <td className="catalog-table-number">{gibLabel(facts.expected_download_bytes)}</td>
                 <td>{recipeIsAbliterated(recipe) ? "True" : "False"}</td>
