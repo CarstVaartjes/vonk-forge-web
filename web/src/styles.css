@@ -1001,21 +1001,8 @@ a {
 .preflight-checks h3 { margin: 0 0 0.75rem; font-size: 1.18rem; }
 .preflight-checks p { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.65; }
 .preflight-checks code,
-.preflight-boundary code,
-.service-mode-grid code { color: var(--ink); overflow-wrap: anywhere; }
+.preflight-boundary code { color: var(--ink); overflow-wrap: anywhere; }
 
-.service-mode-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1px;
-  margin-top: 1px;
-  padding: 1px;
-  background: var(--line);
-}
-
-.service-mode-grid article { display: flex; min-width: 0; flex-wrap: wrap; gap: 0.6rem 1.25rem; padding: 1.25rem 1.5rem; background: var(--panel-raised); }
-.service-mode-grid strong { width: 100%; font-size: 0.86rem; }
-.service-mode-grid code { color: var(--green-soft); font-size: 0.78rem; }
 
 .preflight-boundary {
   display: grid;
@@ -1703,7 +1690,6 @@ a {
   .install-prerequisites > div,
   .install-prerequisites > div.three-up,
   .preflight-checks,
-  .service-mode-grid,
   .verification-grid,
   .runbook-links,
   .fleet-choice { grid-template-columns: 1fr; }

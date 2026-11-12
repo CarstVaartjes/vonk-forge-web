@@ -79,8 +79,8 @@ export function InstallPage() {
           <li>
             <span>02</span>
             <div>
-              <h3>Define only the Services you use</h3>
-              <p>Every install needs <code>svc:vonk-forge</code> on <code>tcp:443</code>. Add <code>svc:hermes-api</code> and <code>svc:hermes-dashboard</code>, also on <code>tcp:443</code>, only when Hermes is enabled.</p>
+              <h3>Define the Service</h3>
+              <p>Define one Service, <code>svc:vonk-forge</code>, on <code>tcp:443</code>.</p>
             </div>
           </li>
           <li>
@@ -92,10 +92,6 @@ export function InstallPage() {
             <div><h3>Create one machine credential</h3><p>Create a Tailscale OAuth client with only <code>auth_keys</code> write scope and only <code>tag:vonk-gateway</code>. Keep its raw ID and secret ready for the hidden prompts.</p></div>
           </li>
         </ol>
-        <div className="service-mode-grid" aria-label="Tailscale Services by feature set">
-          <article><strong>Hermes disabled · 1 Service</strong><code>svc:vonk-forge</code></article>
-          <article><strong>Hermes enabled · 3 Services</strong><code>svc:vonk-forge</code><code>svc:hermes-api</code><code>svc:hermes-dashboard</code></article>
-        </div>
         <div className="preflight-boundary">
           <strong>Production and development use these same unsuffixed names.</strong>
           <p>Never add development, acceptance, or test suffixes to an operator tailnet. Full-tailnet acceptance belongs only in an isolated, disposable test tailnet with separate credentials and policy, removed after the run.</p>
@@ -134,8 +130,6 @@ export function InstallPage() {
             <p>Both gateway containers must be healthy. The exact Serve map must use HTTPS 443, and <code>Self.PrimaryRoutes</code> must contain each Service TailVIP route.</p>
             <ul className="serve-map" aria-label="Exact Tailscale Serve map">
               <li><code>svc:vonk-forge</code><span>HTTPS 443 → <code>http://caddy:8080</code></span></li>
-              <li><code>svc:hermes-api</code><span>HTTPS 443 → <code>http://hermes-agent:8642</code></span></li>
-              <li><code>svc:hermes-dashboard</code><span>HTTPS 443 → <code>http://hermes-agent:9119</code></span></li>
             </ul>
             <CommandBlock label="Controller host terminal">{`docker compose ps --all
 docker compose logs --no-color --tail 100 tailscale-gateway tailscale-configurator
