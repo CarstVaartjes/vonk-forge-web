@@ -52,6 +52,7 @@ function ProductShot({
   return (
     <figure className="product-shot">
       <div className="product-shot-frame">
+        <div className="product-shot-bar" aria-hidden="true"><i /><i /><i /><span>https://controller.fixture.invalid/fleet</span></div>
         <img
           src={src}
           alt={alt}
