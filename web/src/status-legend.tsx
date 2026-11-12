@@ -2,7 +2,7 @@ import { isVerifiedStatus, statusMeaning, type Vocabulary } from "./vocabulary";
 
 export const STATUS_LEGEND_ID = "how-recipes-are-verified";
 
-// Every status badge links here. A plain section, so an anchor link always lands on visible text.
+// Every status links here. A plain section, so an anchor link always lands on visible text.
 // The meanings are the release vocabulary's, shown as published; a status this release has no
 // entry for is listed by name.
 export function StatusLegend({ statuses, vocabulary }: { statuses: string[]; vocabulary: Vocabulary }) {
@@ -16,7 +16,7 @@ export function StatusLegend({ statuses, vocabulary }: { statuses: string[]; voc
       <dl className="status-legend-list">
         {statuses.map((status) => (
           <div key={status}>
-            <dt><span className={`badge ${isVerifiedStatus(vocabulary, status) ? "accepted" : "candidate"}`}>{status}</span></dt>
+            <dt><span className={`status ${isVerifiedStatus(vocabulary, status) ? "ok" : "off"}`}>{status}</span></dt>
             <dd>{statusMeaning(vocabulary, status)}</dd>
           </div>
         ))}

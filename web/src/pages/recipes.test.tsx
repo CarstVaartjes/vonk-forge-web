@@ -64,7 +64,7 @@ test("shows sizing, immutable identity, and evidence provenance", async () => {
   expect(screen.getByRole("cell", { name: "20 GiB" })).toBeVisible();
   expect(screen.getByRole("cell", { name: "48 GiB" })).toBeVisible();
   expect(screen.getByText(/Source verified/)).toBeVisible();
-  expect(within(screen.getByRole("table")).getByText(/Not yet verified/, { selector: ".badge" })).toBeVisible();
+  expect(within(screen.getByRole("table")).getByText(/Not yet verified/, { selector: ".status" })).toBeVisible();
   expect(screen.getByText(/never tested/)).toBeVisible();
   expect(screen.getByText(/not a Vonk endorsement/i)).toBeVisible();
   expect(screen.getByText(/aaaaaaaaaa…/)).toBeVisible();

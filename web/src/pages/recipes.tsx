@@ -294,7 +294,7 @@ export function RecipesPage() {
                 <td className="catalog-table-date">{updatedLabel(recipe.published_at)}</td>
                 <td><span className={`catalog-readiness readiness-${facts.execution_readiness}`}>{READINESS_OPTIONS.find((option) => option.value === facts.execution_readiness)?.label ?? humanize(facts.execution_readiness)}</span></td>
                 <td>{facts.capabilities.length ? facts.capabilities.map(capabilityName).join(" · ") : "—"}</td>
-                <td><a className="badge-link" href={`#${STATUS_LEGEND_ID}`} title={vocabulary ? statusMeaning(vocabulary, facts.qualification) : undefined}><span className={`badge ${facts.verified ? "accepted" : "candidate"}`}>{facts.qualification}</span></a><span className="catalog-table-substatus">{recipe.facts?.source_bundle_observed ? "Source verified" : "Source pending"}{facts.qualification_reason ? ` · ${facts.qualification_reason}` : ""}</span></td>
+                <td><a className="badge-link" href={`#${STATUS_LEGEND_ID}`} title={vocabulary ? statusMeaning(vocabulary, facts.qualification) : undefined}><span className={`status ${facts.verified ? "ok" : "off"}`}>{facts.qualification}</span></a><span className="catalog-table-substatus">{recipe.facts?.source_bundle_observed ? "Source verified" : "Source pending"}{facts.qualification_reason ? ` · ${facts.qualification_reason}` : ""}</span></td>
                 <td>{facts.source_repository ? <a className="catalog-source-link" href={facts.source_repository}>{sourceLabel(facts.source_repository)}</a> : "—"}</td>
                 <td className="catalog-table-number">{gibLabel(facts.expected_download_bytes)}</td>
                 <td>{recipeIsAbliterated(recipe) ? "True" : "False"}</td>

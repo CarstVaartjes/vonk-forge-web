@@ -293,7 +293,7 @@ export function HomePage() {
           <p>Install the local controller, add one Spark, and let it show you what fits.</p>
         </div>
         <div className="hero-actions">
-          <a className="button primary" href="/install">Install Vonk Forge</a>
+          <a className="button" href="/install">Install Vonk Forge</a>
           <a className="button secondary" href="/models">Browse models and recipes</a>
         </div>
       </section>
