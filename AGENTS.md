@@ -20,9 +20,10 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
 - Start from current `origin/main` in an isolated branch or worktree. Preserve
   other agents' changes.
 - Maintain one current catalog source and one current execution path. The
-  catalog is the index of the newest signed recipe-library release whose tag
-  major is the supported contract major (or the tag in the optional
-  `VONK_RECIPE_RELEASE` variable). `web/scripts/recipe-release.mjs`
+  catalog is the index of the newest signed recipe-library release, whatever
+  its contract major (or the tag in the optional `VONK_RECIPE_RELEASE`
+  variable). The site keeps no copy of the contract version: it follows the
+  release and compiles against the schema that release ships. `web/scripts/recipe-release.mjs`
   verifies it at build time and writes it to `/catalog/` on this site; the
   browser reads only that same-origin copy, and package links point at the
   signed release assets. Do not add a second reader, a runtime GitHub lookup, or

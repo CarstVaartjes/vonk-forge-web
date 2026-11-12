@@ -114,11 +114,6 @@ function checkMemory(files, entry, report) {
 }
 
 function checkContractVersions(files, entry, report) {
-  let owner;
-  try { owner = JSON.parse(files.get(entry.owner.file) ?? ""); } catch { owner = undefined; }
-  for (const key of ["major"]) {
-    if (!Number.isInteger(owner?.[key])) report(entry.owner.file, 1, `owner must hold an integer ${key}`);
-  }
   const numeric = (node) => node && ts.isNumericLiteral(node);
   const comparison = new Set([
     ts.SyntaxKind.EqualsEqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsEqualsToken, ts.SyntaxKind.EqualsEqualsToken, ts.SyntaxKind.ExclamationEqualsToken,
@@ -134,7 +129,7 @@ function checkContractVersions(files, entry, report) {
     return ts.isIdentifier(expression) ? expression.text : "";
   };
   for (const [file, text] of files) {
-    if (file === entry.owner.file || !/^web\/(?:src|scripts)\/.*\.(?:[cm]?js|tsx?)$/.test(file) || /\.test\.[cm]?[jt]sx?$/.test(file)) continue;
+    if (!/^web\/(?:src|scripts)\/.*\.(?:[cm]?js|tsx?)$/.test(file) || /\.test\.[cm]?[jt]sx?$/.test(file)) continue;
     const ast = syntax(file, text);
     visit(ast, (node) => {
       const line = ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1;
@@ -152,6 +147,9 @@ function checkContractVersions(files, entry, report) {
         }
       }
       if (ts.isCaseClause(node) && numeric(node.expression) && versionName.test(leaf(node.parent.parent.expression))) flag("version switch on a literal case");
+      // A prefix test that fixes a major, such as contract_version.startsWith("4.").
+      if (ts.isCallExpression(node) && ts.isPropertyAccessExpression(node.expression) && node.expression.name.text === "startsWith"
+        && ts.isStringLiteralLike(node.arguments[0]) && /^v?\d+\./.test(node.arguments[0].text)) flag(`${node.getText(ast)} fixes a major`);
       // A tag regex that fixes a major, such as /^v3\./.
       if (ts.isRegularExpressionLiteral(node) && /^\/\^v\d/.test(node.text)) flag(`tag regex ${node.text} fixes a major`);
     });

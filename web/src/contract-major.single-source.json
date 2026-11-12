@@ -1,8 +1,0 @@
-[
-  {
-    "id": "catalog.contract-versions",
-    "kind": "contract-versions",
-    "owner": { "file": "web/src/contract-major.json", "selector": "major" },
-    "derive": "read web/src/contract-major.json; never write the contract major as a literal; the index and package schema versions are the constants of the schema the release ships (recipe-release.mjs reads them)"
-  }
-]

@@ -1,9 +1,10 @@
 name: Deploy frontend to Cloudflare Pages
 
 # One workflow per main commit: CI runs first (ci.yml) and the deploy needs it.
-# Scheduled runs skip CI: the code has not changed since the last main push
-# that passed it, and the deploy job re-verifies the recipe release itself.
-# Manual dispatches run CI, so a hand-started deploy is also gated.
+# Scheduled and dispatched runs skip CI: the code has not changed since the last
+# main push that passed it, and the deploy job re-verifies the recipe release and
+# runs tsc against it itself. A release dispatch must not be blocked by checks that
+# scan unrelated branches (gitleaks reads every ref).
 on:
   workflow_dispatch:
   push:
@@ -26,7 +27,7 @@ jobs:
   # Called workflow: its security job uploads SARIF, so the caller must grant
   # security-events: write or every run fails at startup.
   ci:
-    if: ${{ github.event_name != 'schedule' }}
+    if: ${{ github.event_name == 'push' }}
     permissions:
       contents: read
       security-events: write
@@ -34,7 +35,7 @@ jobs:
 
   deploy:
     needs: [ci]
-    # Fan-in: deploy after CI passed, or when CI was skipped (schedule).
+    # Fan-in: deploy after CI passed, or when CI was skipped (schedule and dispatch).
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') }}
     permissions:
       contents: read
@@ -50,16 +51,8 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - name: Install frontend dependencies
         run: npm --prefix web ci
-      # Only the scheduled run goes red when a newer contract major is published;
-      # pull requests and pushes are never blocked by it. A pinned release skips it.
-      - name: Check no newer contract major is published
-        if: github.event_name == 'schedule' && vars.VONK_RECIPE_RELEASE == ''
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: node web/scripts/recipe-release.mjs --check-newer-major
-      # Downloads the newest signed recipe-library release for the supported
-      # contract major (or the tag in the
-      # optional VONK_RECIPE_RELEASE variable), verifies SHA256SUMS against its
+      # Downloads the newest signed recipe-library release, whatever its contract
+      # major (or the tag in the optional VONK_RECIPE_RELEASE variable), verifies SHA256SUMS against its
       # Sigstore attestation from publish.yml and every file against
       # SHA256SUMS, and writes web/public/catalog. Any failure stops the job, so
       # the previous deployment stays live.

@@ -43,7 +43,8 @@ export interface RecipeSummary {
     model_family: string;
     source_owner: string | null;
     source_repository: string | null;
-    alignment: "standard" | "abliterated" | "derisked" | "other-modified" | "unspecified";
+    // As published (standard, abliterated, ...); a value a newer contract adds is shown as is.
+    alignment: string;
     capabilities: string[];
     // The model types (capability categories) of those capabilities, in vocabulary order.
     types: string[];
