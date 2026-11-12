@@ -102,7 +102,7 @@ const catalogIndex = {
 const release = { repository: "CarstVaartjes/vonk-forge-recipes", tag: releaseTag, contract_version: "4.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: sourceCommit, catalog_index_sha256: "d".repeat(64) };
 // What the Pages build writes beside release.json, derived by the same code from the same index.
 const catalogSummary = buildCatalogSummary(catalogIndex, release);
-const HEADLINE = /4\s*recipes verified on DGX Spark\.\s*3\s*model families\.\s*2\s*creators\./;
+const PROOF = /4\s*recipes verified on DGX Spark\s*3\s*model families\s*2\s*creators/;
 
 
 test.beforeEach(async ({ page }) => {
@@ -117,24 +117,20 @@ test.beforeEach(async ({ page }) => {
 test("platform story stays navigable and bounded", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: HEADLINE })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Models that fit your Sparks, kept current." })).toBeVisible();
+  await expect(page.locator(".hero-proof")).toHaveText(PROOF);
   await expect(page.getByText(/Vonk Forge is the open-source Controller for NVIDIA DGX Spark/)).toBeVisible();
   await expect(page.getByText(/Recipes from Acme and Qwen and more/)).toBeVisible();
   await expect(page.getByRole("link", { name: "See the agent-friendly CLI" })).toBeVisible();
   await expect(page.locator(".home-hero").getByRole("link", { name: "Install", exact: true })).toHaveAttribute("href", "/install");
   await expect(page.getByRole("link", { name: "Browse what runs" })).toHaveAttribute("href", "/recipes");
-  await expect(page.getByRole("heading", { name: "Know what fits your setup." })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Stay current without the chase." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Know what fits." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Stay current." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Run the mix you need." })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Click it, or script it." })).toBeVisible();
   await expect(page.getByText("vonkctl recipe library --fits-fleet --json")).toBeVisible();
   await expect(page.getByRole("heading", { name: "Catalog + verified releases", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Vonk Forge controller", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "DGX Spark fleet", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Install the controller" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Connect your Sparks" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Choose a model or recipe" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Prepare, run, switch" })).toBeVisible();
 
   await page.keyboard.press("Tab");
   const skipLink = page.getByRole("link", { name: "Skip to content" });
@@ -190,9 +186,9 @@ test("home page shows the live numbers from the build-time summary and loads not
   await page.goto("/");
 
   // Once the roll has finished the headline is the plain true numbers.
-  const title = page.getByRole("heading", { level: 1 });
-  await expect(title).toHaveText(HEADLINE);
-  await expect(title.locator(".rolling-number")).toHaveCount(3);
+  const proof = page.locator(".hero-proof");
+  await expect(proof).toHaveText(PROOF);
+  await expect(proof.locator(".rolling-number")).toHaveCount(3);
 
   const tiles = page.getByRole("region", { name: "What can you run?" });
   await expect(tiles.getByRole("link", { name: /Language & chat\s*3 verified/ })).toHaveAttribute("href", "/recipes?type=language");
@@ -201,28 +197,9 @@ test("home page shows the live numbers from the build-time summary and loads not
   await expect(tiles.getByRole("link", { name: /3D\s*1 verified/ })).toBeVisible();
   await expect(tiles.getByRole("link", { name: /Video\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=video&verified=0");
 
-  const creators = page.getByRole("region", { name: /Built by the people who run these models/ });
-  await expect(creators.getByRole("link")).toHaveCount(2);
-  await expect(creators.getByRole("link").first()).toHaveText(/Acme\s*3 verified/);
-  await expect(creators.getByRole("link", { name: /Qwen/ })).toHaveAttribute("href", "/recipes?creator=Qwen");
-
-  // Called "updated": the library moves released_at on every refresh.
-  const fresh = page.getByRole("region", { name: "Updated this week." });
-  await expect(fresh.getByRole("link", { name: /Acme Coder/ })).toBeVisible();
-  await expect(fresh.getByRole("link", { name: /Qwen Fast/ })).toHaveCount(0);
-  await expect(page.getByText(/New this week/)).toHaveCount(0);
-
   // The home page reads the summary, never the full catalog index.
   expect(requests).toContain("/catalog/catalog-summary.json");
   expect(requests).not.toContain("/catalog/catalog-index.json");
-
-  // The updated link matches its count under the verified default: it turns the default off,
-  // because the count covers recipes of every status.
-  await fresh.getByRole("link", { name: /See all 1 updated recipes/ }).click();
-  await expect(page).toHaveURL(/\/recipes\?updated=7&verified=0$/);
-  await expect(page.getByText(/^1 of 5 recipes/)).toBeVisible();
-  await expect(page.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked();
-  await page.goBack();
 
   // A type tile lands on the catalog already filtered to that type.
   await tiles.getByRole("link", { name: /Code/ }).click();
@@ -253,7 +230,7 @@ test("home page never shows numbers when the summary is missing, malformed or em
   // A release with nothing verified is valid, and shows no numbers.
   await expect(page.getByRole("status").filter({ hasText: "no numbers to show" })).toBeVisible();
   await expect(page.locator(".rolling-number")).toHaveCount(0);
-  await expect(page.getByRole("heading", { level: 1 })).not.toContainText("0 recipes");
+  await expect(page.locator(".hero-proof")).toHaveCount(0);
 });
 
 
@@ -268,7 +245,7 @@ test("the number roll starts from blank, ends at the final value, and is silent 
   }
   // And it always ends on the true number, with no strips left over.
   await expect(first).toHaveAttribute("data-phase", "final", { timeout: 5000 });
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(HEADLINE);
+  await expect(page.locator(".hero-proof")).toHaveText(PROOF);
   await expect(page.locator(".rolling-strip")).toHaveCount(0);
 });
 
@@ -280,7 +257,7 @@ test("rolling numbers do not animate under reduced motion", async ({ page }) => 
   await page.waitForTimeout(500);
   await expect(page.locator(".rolling-strip")).toHaveCount(0);
   await expect(page.locator(".rolling-number .visually-hidden")).toHaveCount(0);
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(HEADLINE);
+  await expect(page.locator(".hero-proof")).toHaveText(PROOF);
 });
 
 
@@ -289,7 +266,8 @@ test("minimum supported viewport does not overflow", async ({ page }) => {
     await page.setViewportSize({ width, height: 800 });
     await page.goto("/");
 
-    await expect(page.getByRole("heading", { name: HEADLINE })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Models that fit your Sparks, kept current." })).toBeVisible();
+  await expect(page.locator(".hero-proof")).toHaveText(PROOF);
     const horizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );

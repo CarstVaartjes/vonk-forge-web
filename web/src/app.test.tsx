@@ -30,39 +30,27 @@ test("shows the recipe library version and when it was last updated", async () =
 test("defines the product and puts installation first", () => {
   render(<App />);
 
-  expect(
-    screen.getByRole("heading", { name: /recipes verified on DGX Spark/i }),
-  ).toBeVisible();
+  expect(screen.getByRole("heading", { level: 1, name: "Models that fit your Sparks, kept current." })).toBeVisible();
   expect(screen.getByText(/Vonk Forge is the open-source Controller for NVIDIA DGX Spark/)).toBeVisible();
   expect(screen.getByRole("link", { name: "See the agent-friendly CLI" })).toHaveAttribute("href", "/control#local-cli");
   expect(screen.getAllByRole("link", { name: "Install" })[0]).toHaveAttribute("href", "/install");
   expect(screen.getByRole("link", { name: "Browse what runs" })).toHaveAttribute("href", "/recipes");
   expect(screen.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
   expect(screen.getByText(/install\.vonkforge\.ai\/spark \| VONK_CONTROLLER_ADDRESS=/)).toBeVisible();
-  expect(screen.getByText("The real Web Controller")).toBeVisible();
-  expect(screen.getByAltText(/Vonk Forge Library showing model and recipe lists/i)).toBeVisible();
+  expect(screen.getByAltText(/Vonk Forge Fleet showing an illustrative Spark roster/i)).toBeVisible();
 });
 
 
-test("states the four promises with the vonkctl command behind each", () => {
+test("tells one story: what it does, with the vonkctl session behind it", () => {
   render(<App />);
 
-  const promises = screen.getByRole("heading", { name: "What Vonk Forge does for you." }).closest("section");
-  expect(promises).not.toBeNull();
-  const section = within(promises as HTMLElement);
-  const expected: Array<[string, string]> = [
-    ["Know what fits your setup.", "vonkctl recipe library --fits-fleet"],
-    ["Stay current without the chase.", "vonkctl recipe update --all"],
-    ["Run the mix you need.", "vonkctl --profile 2 profile load"],
-    ["Click it, or script it.", 'vonkctl run "Qwen Code" --yes --json'],
-  ];
-  for (const [title, command] of expected) {
-    expect(section.getByRole("heading", { name: title })).toBeVisible();
-    expect(section.getByText(command)).toBeVisible();
+  for (const title of ["Know what fits.", "Stay current.", "Run the mix you need."]) {
+    expect(screen.getByRole("heading", { name: title })).toBeVisible();
   }
-  expect(section.getByText(/syncs the signed library on its own/i)).toBeVisible();
-  expect(document.body.textContent).not.toMatch(/15 minutes/);
+  expect(screen.getByText("vonkctl recipe library --fits-fleet --json")).toBeVisible();
   expect(screen.getByText("vonkctl --profile 2 profile load --yes --json")).toBeVisible();
+  expect(document.body.textContent).not.toMatch(/15 minutes/);
+  expect(document.querySelectorAll("main section").length).toBeLessThanOrEqual(7);
 });
 
 
@@ -248,17 +236,6 @@ test("maps the public catalog to operator-owned control and execution", () => {
   expect(screen.getByText("Runtime secrets")).toBeVisible();
   expect(screen.getByRole("link", { name: "Tour the Web Controller" })).toBeVisible();
   expect(screen.getByRole("link", { name: "See the CLI" })).toBeVisible();
-});
-
-
-test("shows the safe operating loop without hiding the private boundary", () => {
-  render(<App />);
-
-  for (const name of ["Install the controller", "Connect your Sparks", "Choose a model or recipe", "Prepare, run, switch"]) {
-    expect(screen.getByRole("heading", { name })).toBeVisible();
-  }
-  expect(screen.getByRole("heading", { name: /your controller, your choice/i })).toBeVisible();
-  expect(screen.getByText(/A NAS is convenient, not compulsory/i)).toBeVisible();
 });
 
 

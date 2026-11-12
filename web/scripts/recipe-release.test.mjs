@@ -160,8 +160,6 @@ describe("recipe release publication", () => {
       creators: 1,
       topCreators: [{ name: "Qwen", verified: 1 }],
       types: { language: 1, code: 1, vision: 0, image: 0, video: 0, audio: 0, "3d": 0 },
-      updatedByDate: { "2026-09-01": 1 },
-      newest: [{ publisher: "vonk-forge", slug: "qwen-fast", title: "Qwen Fast", creator: "Qwen", status: "Working", date: "2026-09-01" }],
     });
   });
 
@@ -169,7 +167,7 @@ describe("recipe release publication", () => {
     const packageBytes = Buffer.from("fixture package");
     const assets = fixtureRelease({ index: { recipes: [fixtureRecipe(packageBytes, { qualification: { status: "Not yet verified" } })] } });
     await publish(assets);
-    expect(JSON.parse(await readFile(path.join(outDir, "catalog-summary.json"), "utf8"))).toMatchObject({ verified: 0, families: 0, creators: 0, topCreators: [], newest: [{ status: "Not yet verified" }] });
+    expect(JSON.parse(await readFile(path.join(outDir, "catalog-summary.json"), "utf8"))).toMatchObject({ verified: 0, families: 0, creators: 0, topCreators: [] });
   });
 
   test("still refuses an index the adapter cannot parse, keeping the previous catalog", async () => {
