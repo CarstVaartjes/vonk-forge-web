@@ -1,0 +1,8 @@
+[
+  {
+    "id": "catalog.contract-versions",
+    "kind": "contract-versions",
+    "owner": { "file": "web/scripts/recipe-release.mjs", "selector": "SCHEMA_NAME" },
+    "derive": "the index and package schema versions are the constants of the schema the release ships and the contract version is the release tag; recipe-release.mjs reads them. Never write a contract major, schema version or version prefix as a literal check elsewhere"
+  }
+]

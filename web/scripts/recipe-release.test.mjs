@@ -6,7 +6,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
 import { catalogIndexFixture } from "../src/api/catalog.fixture.ts";
-import { SCHEMA_NAME, assertNoNewerMajor, parseChecksums, publishRecipeRelease, readBundle, selectReleaseTag } from "./recipe-release.mjs";
+import { SCHEMA_NAME, latestReleaseTag, parseChecksums, publishRecipeRelease, readBundle, resolveReleaseTag } from "./recipe-release.mjs";
 
 // A minimal ustar writer, enough to build bundles the way the recipe library does.
 function tarMember(name, payload, { type = "0", prefix = "" } = {}) {
@@ -284,28 +284,20 @@ describe("recipe release publication", () => {
     await expectPreviousCatalogKept();
   });
 
-  test("rejects a release or index for another contract major", async () => {
-    await expect(publish(fixtureRelease(), { releaseTag: "v3.2.0" })).rejects.toThrow("contract major 4");
-    await expect(publish(fixtureRelease({ index: { contract_version: "3.2.0" } }))).rejects.toThrow("unsupported contract version");
-    await expectPreviousCatalogKept();
+  test("follows a release of any contract major, and requires the index to match its tag", async () => {
+    await publish(fixtureRelease({ index: { contract_version: "5.0.0" } }), { releaseTag: "v5.0.0" });
+    expect(JSON.parse(await readFile(path.join(outDir, "release.json"), "utf8"))).toMatchObject({ tag: "v5.0.0", contract_version: "5.0.0" });
+    await expect(publish(fixtureRelease(), { releaseTag: "v5.0.0" })).rejects.toThrow(`index contract_version "${catalogIndexFixture.contract_version}" is not release v5.0.0`);
   });
 
-  test("follows the newest non-draft release within the supported contract major", () => {
-    const releases = [
-      { tag_name: "v4.10.0", draft: true },
-      { tag_name: "v4.2.0", draft: false },
-      { tag_name: "v4.10.1-rc", draft: false },
-      { tag_name: "v4.9.3", draft: false },
-      { tag_name: "v3.2.0", draft: false },
-    ];
-    expect(selectReleaseTag(releases)).toBe("v4.9.3");
-    expect(() => selectReleaseTag([{ tag_name: "v1.0.0", draft: false }])).toThrow("no published release");
-  });
-
-  test("the scheduled check fails on a published newer contract major, naming both majors", () => {
-    const published = (tag, draft = false) => ({ tag_name: tag, draft });
-    expect(() => assertNoNewerMajor([published("v3.2.0"), published("v4.0.0")], 3)).toThrow(/major 4.*supports major 3/);
-    expect(() => assertNoNewerMajor([published("v3.2.0"), published("v4.0.0", true), published("v2.9.0")], 3)).not.toThrow();
+  test("resolves the library's latest release, which publish marks --latest", async () => {
+    const asked = [];
+    const answer = (body, ok = true) => async (url) => { asked.push(url); return { ok, status: ok ? 200 : 503, json: async () => body }; };
+    await expect(resolveReleaseTag(answer({ tag_name: "v5.0.0", draft: false, prerelease: false }), "token")).resolves.toBe("v5.0.0");
+    expect(asked).toEqual(["https://api.github.com/repos/CarstVaartjes/vonk-forge-recipes/releases/latest"]);
+    await expect(resolveReleaseTag(answer({}, false))).rejects.toThrow("returned 503");
+    expect(() => latestReleaseTag({ tag_name: "main" })).toThrow("not a published release tag");
+    expect(() => latestReleaseTag({ tag_name: "v4.9.0", draft: true })).toThrow("not a published release tag");
   });
 
   test("parses only well-formed checksum manifests", () => {

@@ -127,9 +127,9 @@ describe("single source values", () => {
   });
 
   describe("contract versions", () => {
-    const entry = { id: "catalog.contract-versions", kind: "contract-versions", owner: { file: "web/src/contract-major.json", selector: "major" }, derive: "read the owner" };
-    const owner = '{ "major": 3 }';
-    const check = (source, file = "web/src/x.ts", ownerText = owner) => checkSingleSources(new Map([["web/src/contract-major.json", ownerText], [file, source]]), [entry]).join("\n");
+    const entry = { id: "catalog.contract-versions", kind: "contract-versions", owner: { file: "web/scripts/recipe-release.mjs", selector: "SCHEMA_NAME" }, derive: "read the owner" };
+    const owner = 'export const SCHEMA_NAME = "x";';
+    const check = (source, file = "web/src/x.ts", ownerText = owner) => checkSingleSources(new Map([["web/scripts/recipe-release.mjs", ownerText], [file, source]]), [entry]).join("\n");
 
     test.each([
       "const SUPPORTED_CONTRACT_MAJOR = 3;",
@@ -171,8 +171,8 @@ describe("single source values", () => {
       expect(check("const SUPPORTED_CONTRACT_MAJOR = 3;", "web/src/x.test.ts")).toBe("");
     });
 
-    test("requires integer owner keys", () => {
-      expect(check("", "web/src/x.ts", '{ "major": "3" }')).toContain("owner must hold an integer");
+    test.each(['release.contract_version.startsWith("4.")', 'tag.startsWith("v4.")'])("rejects a prefix check that fixes a major: %s", (source) => {
+      expect(check(`if (${source}) {}`)).toContain("fixes a major");
     });
   });
 });

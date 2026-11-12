@@ -15,7 +15,7 @@
 // unverified data.
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { createWriteStream, readFileSync } from "node:fs";
+import { createWriteStream } from "node:fs";
 import { chmod, mkdir, mkdtemp, open, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -30,10 +30,10 @@ export const RECIPE_REPOSITORY = "CarstVaartjes/vonk-forge-recipes";
 export const RECIPE_REPOSITORY_ID = "1336002555";
 export const SIGNER_WORKFLOW = `${RECIPE_REPOSITORY}/.github/workflows/publish.yml`;
 export const SIGNER_REF = "refs/heads/main";
-// The recipe/model contract major this site renders. The library's release tag
-// is the contract version; recipe updates replace that release's assets in place.
-const CONTRACT = JSON.parse(readFileSync(new URL("../src/contract-major.json", import.meta.url), "utf8"));
-export const SUPPORTED_CONTRACT_MAJOR = CONTRACT.major;
+// The site follows the library's newest release, whatever its contract major: the release tag
+// is the contract version, and recipe updates replace that release's assets in place. A breaking
+// major turns CI and the deploy red at `tsc`, against the schema that release ships, until the
+// fix lands (docs/operations/cloudflare-pages.md).
 
 // The release ships the JSON Schema of its own catalog-index.json (an OpenAPI components
 // document). Its constants are the envelope checks, and web/scripts/generate-catalog-types.mjs
@@ -90,58 +90,20 @@ export async function verifyWithGh(checksumsPath, bundlePath) {
   return results[0].verificationResult.signature.certificate;
 }
 
-function semver(tag) {
-  const match = typeof tag === "string" ? tag.match(/^v(\d+)\.(\d+)\.(\d+)$/) : null;
-  return match ? match.slice(1).map(Number) : null;
-}
-
-// Pick the newest non-draft release whose tag major is the supported contract major.
-export function selectReleaseTag(releases, major = SUPPORTED_CONTRACT_MAJOR) {
-  let best = null;
-  for (const release of Array.isArray(releases) ? releases : []) {
-    const version = semver(release?.tag_name);
-    if (release?.draft || !version || version[0] !== major) continue;
-    if (!best || version[1] > best.version[1] || (version[1] === best.version[1] && version[2] > best.version[2])) {
-      best = { tag: release.tag_name, version };
-    }
+// The library marks its newest published release `--latest`; GitHub's "latest release" is that one.
+export function latestReleaseTag(release) {
+  if (release?.draft || release?.prerelease || typeof release?.tag_name !== "string" || !TAG.test(release.tag_name)) {
+    fail(`latest release ${JSON.stringify(release?.tag_name)} is not a published release tag`);
   }
-  if (!best) fail(`no published release for contract major ${major}`);
-  return best.tag;
-}
-
-async function listReleases(fetchImpl, token) {
-  const releases = [];
-  for (let page = 1; ; page += 1) {
-    const response = await fetchImpl(`https://api.github.com/repos/${RECIPE_REPOSITORY}/releases?per_page=100&page=${page}`, {
-      headers: { Accept: "application/vnd.github+json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    });
-    if (!response.ok) fail(`release listing returned ${response.status}`);
-    const batch = await response.json();
-    if (!Array.isArray(batch)) fail("release listing is not a list");
-    releases.push(...batch);
-    if (batch.length < 100) break;
-  }
-  return releases;
+  return release.tag_name;
 }
 
 export async function resolveReleaseTag(fetchImpl = fetch, token = process.env.GH_TOKEN) {
-  return selectReleaseTag(await listReleases(fetchImpl, token));
-}
-
-// The scheduled Pages deploy runs this: a non-draft release of a newer contract
-// major than the site supports turns that run red (the last good site stays
-// online) until web/src/contract-major.json follows it. Pull requests never run it.
-export function assertNoNewerMajor(releases, major = SUPPORTED_CONTRACT_MAJOR) {
-  for (const release of Array.isArray(releases) ? releases : []) {
-    const version = semver(release?.tag_name);
-    if (!release?.draft && version && version[0] > major) {
-      fail(`contract major ${version[0]} is published but this site supports major ${major}; follow it in web/src/contract-major.json`);
-    }
-  }
-}
-
-export async function checkNoNewerMajor(fetchImpl = fetch, token = process.env.GH_TOKEN) {
-  assertNoNewerMajor(await listReleases(fetchImpl, token));
+  const response = await fetchImpl(`https://api.github.com/repos/${RECIPE_REPOSITORY}/releases/latest`, {
+    headers: { Accept: "application/vnd.github+json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+  });
+  if (!response.ok) fail(`latest release lookup returned ${response.status}`);
+  return latestReleaseTag(await response.json());
 }
 
 // Stream the release's single bundle asset to `destination`, bounded in size.
@@ -238,7 +200,6 @@ function envelopeConstants(schema) {
  */
 export async function publishRecipeRelease({ tag, outDir, download, verifySignature = verifyWithGh }) {
   if (typeof tag !== "string" || !TAG.test(tag)) fail(`invalid release tag ${JSON.stringify(tag)}`);
-  if (semver(tag)[0] !== SUPPORTED_CONTRACT_MAJOR) fail(`release ${tag} is not for contract major ${SUPPORTED_CONTRACT_MAJOR}`);
   const parent = path.dirname(path.resolve(outDir));
   await mkdir(parent, { recursive: true });
   const staging = await mkdtemp(path.join(parent, ".catalog-staging-"));
@@ -278,7 +239,7 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
     const constants = envelopeConstants(JSON.parse(schemaBytes.toString("utf8")));
     const index = JSON.parse(indexBytes.toString("utf8"));
     if (index.kind !== constants.kind || index.schema_version !== constants.schemaVersion) fail("unsupported catalog index");
-    if (semver(`v${index.contract_version}`)?.[0] !== SUPPORTED_CONTRACT_MAJOR) fail(`unsupported contract version ${JSON.stringify(index.contract_version)}`);
+    if (`v${index.contract_version}` !== tag) fail(`index contract_version ${JSON.stringify(index.contract_version)} is not release ${tag}`);
     if (typeof index.updated_at !== "string" || Number.isNaN(Date.parse(index.updated_at))) fail("index has no updated_at");
     if (index.repository !== RECIPE_REPOSITORY) fail(`index names repository ${index.repository}`);
     if (index.source_commit !== signedCommit) fail("index source_commit differs from the signed commit");
@@ -322,11 +283,6 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
 async function main() {
   const webRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
   const outDir = path.join(webRoot, "public", "catalog");
-  if (process.argv.includes("--check-newer-major")) {
-    await checkNoNewerMajor();
-    console.log(`No newer contract major than ${SUPPORTED_CONTRACT_MAJOR} is published`);
-    return;
-  }
   const tag = process.env.VONK_RECIPE_RELEASE || await resolveReleaseTag();
   await publishRecipeRelease({ tag, outDir, download: downloadBundle() });
   console.log(`Verified ${RECIPE_REPOSITORY} ${tag} and wrote ${path.relative(process.cwd(), outDir)}`);

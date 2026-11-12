@@ -73,10 +73,10 @@ still type-checks the shipped code against it. A release dispatch is therefore n
 blocked by CI checks that look at other branches. The deploy job:
 
 1. installs the locked frontend dependencies;
-2. runs `web/scripts/recipe-release.mjs`, which lists the
+2. runs `web/scripts/recipe-release.mjs`, which asks for the
    [`vonk-forge-recipes`](https://github.com/CarstVaartjes/vonk-forge-recipes)
-   releases and picks the newest non-draft release whose tag major equals
-   the supported contract major (`web/src/contract-major.json`). It downloads only
+   latest release (the one its publish job marks `--latest`), whatever its
+   contract major. It downloads only
    that release's `recipe-library.tar` (one uncompressed tar holding
    `SHA256SUMS`, `SHA256SUMS.sigstore.json` and every file `SHA256SUMS` lists,
    as flat names), rejects any member that is not a unique flat regular file
@@ -87,7 +87,7 @@ blocked by CI checks that look at other branches. The deploy job:
    `refs/heads/main`, repository ID `1336002555`, GitHub-hosted runner, and a
    source commit equal to the index's `source_commit`), checks every file in
    the tar against `SHA256SUMS` (all listed files present, nothing unsigned
-   extra) and the index's package digests, requires the index's `contract_version` to have that major,
+   extra) and the index's package digests, requires the index's `contract_version` to equal the release tag,
    checks the index envelope (`kind`, `schema_version` and the package schema version)
    against the constants of `catalog-index-v2.schema.json`, the JSON Schema the
    release ships and signs, and writes `web/public/catalog/` (its `release.json`
@@ -116,12 +116,26 @@ download fails and the next run heals it.
 To pin a release instead of following the newest one, set the `production`
 environment (or repository) variable `VONK_RECIPE_RELEASE` to an exact tag such
 as `v4.0.0` and dispatch the workflow; clear it to follow the newest release
-again. A pin skips release resolution, and with it the newer-major check below.
+again. A pin skips release resolution.
 
-The scheduled run also fails, before the fetch step, when a non-draft release of a
-newer contract major than `web/src/contract-major.json` supports exists. That red
-scheduled deploy is the alarm that the site must follow the new major; the last
-good site stays online. Pull requests and pushes do not run this check.
+## Following a breaking contract major
+
+The site keeps no copy of the contract major. It always compiles against the schema
+that the newest release ships, so a breaking major (a field the adapter or a fixture
+reads is renamed, moved or removed) turns the `tsc` step red in every pull request and
+push, and in the scheduled and dispatched deploys, until a web fix pull request lands.
+The last good site stays online during that gap, and the fix pull request is the only
+change needed: nothing in this repository names a major to bump.
+
+Two related cases:
+
+- A new index schema version renames the schema file (`catalog-index-v3.schema.json`).
+  `recipe-release.mjs` then fails the fetch step ("is missing from SHA256SUMS"), so CI and
+  the deploy are red until `SCHEMA_NAME` follows the new name in the fix pull request.
+- An additive minor that adds a required field reds pull-request CI through the test
+  fixtures (`npm run typecheck`, run by CI on pull requests only), but never the deploy:
+  the deploy build type-checks only shipped code (`web/tsconfig.build.json`) and the
+  push CI run skips the fixture check.
 
 Recipe updates arrive when the `vonk-forge-recipes` publish job dispatches
 `pages.yml` (`workflow_dispatch`, through the refresh GitHub App installed on this

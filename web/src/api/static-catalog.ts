@@ -2,8 +2,7 @@ import type { LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSu
 
 
 // The release build (web/scripts/recipe-release.mjs) loads this module under Node, so
-// its runtime imports carry explicit .ts extensions and the JSON import its attribute.
-import contract from "../contract-major.json" with { type: "json" };
+// its runtime imports carry explicit .ts extensions.
 import { parseCatalogSummary, type CatalogSummary } from "../catalog-stats.ts";
 import { isVerified } from "../qualification-status.ts";
 import type { CatalogIndex, CatalogModelEntry, CatalogRecipeEntry } from "./catalog-types.ts";
@@ -15,10 +14,6 @@ import type { CatalogIndex, CatalogModelEntry, CatalogRecipeEntry } from "./cata
 export type LibraryIndex = CatalogIndex;
 type RecipeDefinition = CatalogRecipeEntry["document"];
 type ModelDefinition = CatalogModelEntry["document"];
-
-// The recipe/model contract major this site renders (web/scripts/recipe-release.mjs
-// selects the matching library release).
-const SUPPORTED_CONTRACT_MAJOR = contract.major;
 
 const cachedIndexes = new Map<string, Promise<LibraryIndex>>();
 
@@ -339,11 +334,6 @@ interface ReleaseManifest {
   source_commit: string;
 }
 
-function contractMajor(version: unknown): number | null {
-  const match = /^(\d+)\.\d+\.\d+$/.exec(text(version));
-  return match ? Number(match[1]) : null;
-}
-
 // The Pages build writes the verified release's index and a manifest naming
 // that release beside it; both are read from this site's own origin.
 async function readJson(url: string, signal?: AbortSignal): Promise<unknown> {
@@ -369,16 +359,15 @@ async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryInde
   return parseLibraryIndex(rawBody, rawRelease);
 }
 
-// Accepts an index only when it is the major this site renders, has the shape the
-// pages need, and belongs to the named release; anything else is refused rather than
-// defaulted. The envelope's version and kind were checked against the release's own
-// schema when the build verified the bundle (recipe-release.mjs), so they are not
-// repeated here. The build (which derives the home summary) and the browser both read
+// Accepts an index only when it has the shape the pages need and belongs to the named
+// release; anything else is refused rather than defaulted. The envelope's version and
+// kind were checked against the release's own schema, and the index's contract version
+// against the release tag, when the build verified the bundle (recipe-release.mjs). The build (which derives the home summary) and the browser both read
 // through this.
 export function parseLibraryIndex(rawBody: unknown, rawRelease: unknown): LibraryIndex {
   const body = rawBody as Partial<LibraryIndex>;
   const release = record(rawRelease) as Partial<ReleaseManifest>;
-  if (contractMajor(body.contract_version) !== SUPPORTED_CONTRACT_MAJOR || !Array.isArray(body.catalog_entities) || body.catalog_entities.length === 0 || !Array.isArray(body.recipes) || !body.package_contract) {
+  if (!Array.isArray(body.catalog_entities) || body.catalog_entities.length === 0 || !Array.isArray(body.recipes) || !body.package_contract) {
     throw new Error("Recipe library returned an unsupported catalog index");
   }
   if (typeof release.tag !== "string" || !/^v\d+\.\d+\.\d+$/.test(release.tag) || release.repository !== body.repository || release.source_commit !== body.source_commit) {

@@ -51,16 +51,8 @@ jobs:
           cache-dependency-path: web/package-lock.json
       - name: Install frontend dependencies
         run: npm --prefix web ci
-      # Only the scheduled run goes red when a newer contract major is published;
-      # pull requests and pushes are never blocked by it. A pinned release skips it.
-      - name: Check no newer contract major is published
-        if: github.event_name == 'schedule' && vars.VONK_RECIPE_RELEASE == ''
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: node web/scripts/recipe-release.mjs --check-newer-major
-      # Downloads the newest signed recipe-library release for the supported
-      # contract major (or the tag in the
-      # optional VONK_RECIPE_RELEASE variable), verifies SHA256SUMS against its
+      # Downloads the newest signed recipe-library release, whatever its contract
+      # major (or the tag in the optional VONK_RECIPE_RELEASE variable), verifies SHA256SUMS against its
       # Sigstore attestation from publish.yml and every file against
       # SHA256SUMS, and writes web/public/catalog. Any failure stops the job, so
       # the previous deployment stays live.
