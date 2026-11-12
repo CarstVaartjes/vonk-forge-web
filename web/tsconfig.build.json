@@ -1,0 +1,6 @@
+{
+  // The deploy type-checks only what ships. Tests and fixtures are checked by `npm run typecheck`
+  // (CI), so an additive contract minor can never block a deploy.
+  "extends": "./tsconfig.json",
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/**/*.fixture.ts", "e2e"]
+}

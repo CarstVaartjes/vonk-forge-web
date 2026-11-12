@@ -20,8 +20,8 @@ describe.runIf(Object.keys(files).length > 0 || import.meta.env.CI)("the verifie
     for (const entry of index.recipes) {
       const entity = index.catalog_entities.find((candidate) => candidate.content_sha256 === entry.document.models[0]!.model.content_sha256)!;
       const recipe = mapped.get(`${entry.document.identity.publisher}/${entry.document.identity.slug}`)!;
-      // A model that declares capabilities shows at least one on its recipes.
-      if (entity.display.capabilities.length > 0) expect(recipe.catalog.capabilities.length).toBeGreaterThan(0);
+      // Every capability the model declares is on its recipes.
+      expect(recipe.catalog.capabilities).toEqual(expect.arrayContaining(entity.display.capabilities));
     }
   });
 });

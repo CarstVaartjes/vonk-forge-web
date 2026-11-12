@@ -95,7 +95,7 @@ push that passed it; they only poll for a new recipe release. The deploy job:
    does steps 2 and 3 locally). The adapter and every test fixture read the index
    through these types, so `tsc` (the first step of `npm run build`) fails when
    either reads a field the release's contract does not have;
-4. builds `web/dist` and uploads it as the production Pages deployment with
+4. builds `web/dist` (`npm run build` type-checks only shipped code through `web/tsconfig.build.json`; tests and fixtures are checked by `npm run typecheck` in CI. An additive contract minor with a new required field therefore reds PR CI, through the fixtures, but never the deploy) and uploads it as the production Pages deployment with
    Wrangler. A scheduled run whose verified `release.json` equals the one
    already served at `https://<project>.pages.dev/catalog/release.json` skips
    the upload.
