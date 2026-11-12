@@ -1,6 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import type { CatalogIndex } from "./catalog-types";
+import { typesOf } from "../vocabulary";
 import { parseLibraryIndex, recipesFromIndex } from "./static-catalog";
 
 // The release the CI step fetched and verified (web/public/catalog), read through the
@@ -22,6 +23,14 @@ describe.runIf(Object.keys(files).length > 0 || import.meta.env.CI)("the verifie
       const recipe = mapped.get(`${entry.document.identity.publisher}/${entry.document.identity.slug}`)!;
       // Every capability the model declares is on its recipes.
       expect(recipe.catalog.capabilities).toEqual(expect.arrayContaining(entity.display.capabilities));
+    }
+  });
+
+  test("every capability the release publishes is reachable through a model type", () => {
+    const types = new Set(index.vocabulary.categories.map((category) => category.id));
+    for (const capability of index.vocabulary.capabilities) {
+      expect(types.has(capability.category)).toBe(true);
+      expect(typesOf(index.vocabulary, [capability.name])).toEqual([capability.category]);
     }
   });
 });

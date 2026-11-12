@@ -104,13 +104,23 @@ describe("single source values", () => {
       ['const a = "chat";', "chat"],
       ["const a = `Working`;", "Working"],
       ['const options = [{ value: "chat", label: "Chat" }];', "chat"],
+      ["const a = 'Working';", "Working"],
+      ["const a = `Working ${b}`.length; const c = `${b}Working`;", "Working"],
+      ["const a = <span>Working</span>;", "Working"],
+      ['const a = <span title="Working" />;', "Working"],
     ])("rejects an added literal: %s", (source, value) => {
-      expect(check(["web/src/x.ts", source])).toContain(`read "${value}" from the release vocabulary`);
+      expect(check(["web/src/x.tsx", source])).toContain(`read "${value}" from the release vocabulary`);
     });
 
-    test("allows tests, fixtures, generated types, other words and JSX text", () => {
+    test("allows tests, fixtures, generated types and longer text", () => {
       expect(check(["web/src/x.test.ts", 'const a = "chat";'], ["web/src/x.fixture.ts", 'const a = "Working";'], ["web/src/api/catalog.generated.d.ts", 'type A = "chat";'],
         ["web/src/y.tsx", 'const a = "chatty"; const b = <p>Working on it</p>;'])).toBe("");
+    });
+
+    test("a named, reasoned exemption allows one literal in one file", () => {
+      const exempt = { ...entry, exempt: [{ file: "web/src/x.tsx", value: "chat", reason: "an example alias name in prose" }] };
+      expect(checkSingleSources(new Map([["web/src/api/catalog.fixture.ts", owner], ["web/src/x.tsx", "const a = <code>chat</code>; const b = <code>Working</code>;"]]), [exempt]).join()).toContain('read "Working"');
+      expect(checkSingleSources(new Map([["web/src/api/catalog.fixture.ts", owner], ["web/src/x.tsx", "const a = <code>chat</code>;"]]), [exempt])).toEqual([]);
     });
 
     test("needs an owner that holds a vocabulary", () => {

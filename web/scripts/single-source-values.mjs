@@ -180,9 +180,14 @@ function checkPublishedVocabulary(files, entry, report) {
     if (file === entry.owner.file || !/^web\/src\/.*\.(?:tsx?)$/.test(file) || /\.(?:test|fixture|d)\.tsx?$/.test(file)) continue;
     const ast = syntax(file, text);
     visit(ast, (node) => {
-      if (!(ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) || !values.has(node.text)) return;
+      // String, template (with or without substitutions) and JSX text forms.
+      const written = ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node) || ts.isTemplateHead(node)
+        || ts.isTemplateMiddle(node) || ts.isTemplateTail(node) ? node.text
+        : ts.isJsxText(node) ? node.text.trim() : undefined;
+      if (written === undefined || !values.has(written)) return;
+      if (entry.exempt?.some((item) => item.file === file && item.value === written && item.reason)) return;
       const line = ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1;
-      report(file, line, `read ${JSON.stringify(node.text)} from the release vocabulary instead of writing it`);
+      report(file, line, `read ${JSON.stringify(written)} from the release vocabulary instead of writing it`);
     });
   }
 }
