@@ -303,6 +303,10 @@ One small bar chart for a date series from the summary (`BarSeries`): a single s
 
 The ticket for one hardware pass (`EvidenceReceipt`): status (shape and word), the evidence sentence, then only the fields the catalog holds for that pass (hardware class and Spark count, measured memory peak, recipe digest, runtime image digest, evidence record). A field the release does not carry is left out, never filled in. Home shows one, chosen by rule (the newest verified multi-Spark recipe with a measured peak); the recipe page uses the same component.
 
+### Creators Ledger
+
+The ten creators with the most verified recipes, from the summary's `topCreators`: the name (gold, a link to the catalog filtered to that creator), a `role="meter"` bar scaled to the largest count, the count, then "and N more creators". Credit is the product, so the ledger sits above the install commands. The home page runs in this order: hero (sentence, picker, wall), kept current, verified on hardware, run the mix (Controller screenshot beside the `vonkctl` session with a caret, then the three points), creators, install, security boundary, closing. The three hero count stats are gone: the picker's answer is the one number in the hero.
+
 ### Role Colours
 
 Five tokens in `:root`, `--role-coder`, `--role-image`, `--role-three-d`, `--role-audio` and `--role-video`, are used only by the example-setup page (`/example-setup`); the architecture diagram's two lane colours (`--lane-public`, `--lane-network`) are the same kind of identity token. They tell model roles apart, always sit beside a text role label and a legend, and are never status or action colours.

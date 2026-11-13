@@ -270,8 +270,7 @@ test("maps the public catalog to operator-owned control and execution", () => {
   expect(screen.getByRole("heading", { name: "Vonk Forge controller" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "DGX Spark fleet" })).toBeVisible();
   expect(screen.getByText("Runtime secrets")).toBeVisible();
-  expect(screen.getByRole("link", { name: "Tour the Web Controller" })).toBeVisible();
-  expect(screen.getByRole("link", { name: "See the CLI" })).toBeVisible();
+  expect(screen.getByRole("link", { name: "See the agent-friendly CLI" })).toHaveAttribute("href", "/control#local-cli");
 });
 
 

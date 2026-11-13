@@ -7,12 +7,13 @@ import { fitsPick, useMySparks, type MySparks } from "../my-sparks";
 import { FitAnswerView, FitResults, SparkSegments, TypeChips } from "../spark-picker";
 import { CommandBlock } from "../command-block";
 import { controllerInstallCommand, sparkInstallCommand } from "./install";
-import { RollingNumber } from "../rolling-number";
 import { KeptCurrent, VerifiedOnHardware } from "../home-evidence";
 
 
 // What the Controller does for a Spark owner, in one sentence each. The
 // vonkctl calls that do the same things are the agent session below.
+const number = new Intl.NumberFormat("en");
+
 const points = [
   {
     title: "Know what fits.",
@@ -103,8 +104,7 @@ function joinNames(names: string[]): string {
 function Hero({ state, pick, setPick }: { state: CatalogState; pick: MySparks; setPick: (next: Partial<MySparks>) => void }) {
   const summary = state.status === "ready" ? state.summary : null;
   const top = summary ? summary.topCreators.slice(0, 3).map((creator) => creator.name) : [];
-  const showCounts = state.status === "loading" || state.status === "ready";
-  const showWall = showCounts;
+  const showWall = state.status === "loading" || state.status === "ready";
   return (
     <section className={`home-hero${showWall ? " has-wall" : ""}`} aria-labelledby="home-title">
       <div className="home-hero-copy">
@@ -139,13 +139,6 @@ function Hero({ state, pick, setPick }: { state: CatalogState; pick: MySparks; s
           <li>Open source · MIT</li>
         </ul>
       </div>
-      {showCounts ? (
-        <p className="hero-proof" aria-label="Catalog counts" aria-busy={summary ? undefined : true}>
-          <span className="hero-stat"><RollingNumber value={summary?.verified ?? null} /> recipes verified on DGX Spark</span>
-          <span className="hero-stat"><RollingNumber value={summary?.families ?? null} placeholderDigits={2} /> model families</span>
-          <span className="hero-stat"><RollingNumber value={summary?.creators ?? null} placeholderDigits={2} /> creators</span>
-        </p>
-      ) : null}
       {showWall ? <div className="wall-slot">{summary ? (
         <CatalogWall
           summary={summary}
@@ -174,6 +167,81 @@ function CatalogSections({ state, retry }: { state: CatalogState; retry: () => v
 }
 
 
+// Section 4: the same Controller from the browser and from a terminal (a scripted screenshot arrives with
+// the dashboard; until then the current Fleet screenshot stands), then the three things it does for you.
+function RunTheMix() {
+  return (
+    <section className="home-section" aria-labelledby="mix-title">
+      <div className="home-section-heading">
+        <h2 id="mix-title">Click it, or hand it to your agent.</h2>
+        <p>
+          The Controller shows what fits, what will change, what is running and
+          what needs attention. <code>vonkctl</code> gives scripts and agents the
+          same facts and the same actions, with nothing hidden behind a prompt.
+        </p>
+      </div>
+      <div className="tour-grid">
+        <ProductShot
+          src="/product/controller-fleet.webp"
+          alt="Vonk Forge Fleet showing an illustrative Spark roster, workloads, and attention state"
+          title="Fleet shows reality, including blockers"
+          body="Fixture-backed fleet view · illustrative test data"
+        />
+        <figure className="agent-session">
+          <div className="agent-session-frame" aria-label="Example vonkctl session">
+            <span className="agent-session-label">vonkctl · the same Controller, from a terminal or an agent</span>
+            <pre><code>{agentSession.map((line) => (
+              <span key={line.command} className="agent-session-step">
+                <span className="agent-session-comment"># {line.comment}</span>{"\n"}
+                <span className="agent-session-command">{line.command}</span>{"\n\n"}
+              </span>
+            ))}<span className="agent-session-command"><i className="caret" aria-hidden="true" /></span></code></pre>
+          </div>
+          <figcaption>
+            <strong>Built for scripts and AI agents</strong>
+            <span>Stable JSON, a read-only review of every change, explicit consent, meaningful exit codes</span>
+          </figcaption>
+        </figure>
+      </div>
+      <ul className="tour-points">
+        {points.map((point) => (
+          <li key={point.title}><h3>{point.title}</h3><p>{point.body}</p></li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+// Section 5: credit is the product. The ten creators with the most verified recipes, each linking to the
+// catalog filtered to them, then how many more there are.
+function Creators({ summary }: { summary: CatalogSummary }) {
+  const most = Math.max(...summary.topCreators.map((creator) => creator.verified));
+  return (
+    <section className="home-section" aria-labelledby="creators-title">
+      <div className="home-section-heading">
+        <h2 id="creators-title">{number.format(summary.creators)} creators. One catalog. {number.format(summary.verified)} recipes proven on real Sparks.</h2>
+        <p>
+          The people who tune models for DGX Spark publish their recipes, across {number.format(summary.families)} model families so far.
+          Vonk Forge packages each one, tests it on real DGX Sparks, shows the result, and keeps their name and source on it.
+        </p>
+      </div>
+      <ul className="creators">
+        {summary.topCreators.map((creator) => (
+          <li key={creator.name}>
+            <a className="src" href={`/recipes?creator=${encodeURIComponent(creator.name)}`}>{creator.name}</a>
+            <span className="meter" role="meter" aria-label={`${creator.name}: verified recipes`} aria-valuenow={creator.verified} aria-valuemin={0} aria-valuemax={most}>
+              <i style={{ width: `${(creator.verified / most) * 100}%` }} />
+            </span>
+            <span className="creator-count">{number.format(creator.verified)}</span>
+          </li>
+        ))}
+      </ul>
+      {summary.creators > summary.topCreators.length ? <p className="chart-sub">and {number.format(summary.creators - summary.topCreators.length)} more creators, each credited on every recipe with a link to their source.</p> : null}
+    </section>
+  );
+}
+
+
 export function HomePage() {
   const [state, retry] = useCatalogSummary();
   const [pick, setPick] = useMySparks();
@@ -182,6 +250,9 @@ export function HomePage() {
       <Hero state={state} pick={pick} setPick={setPick} />
       <CatalogSections state={state} retry={retry} />
       {state.status === "ready" ? <><KeptCurrent summary={state.summary} /><VerifiedOnHardware summary={state.summary} /></> : null}
+
+      <RunTheMix />
+      {state.status === "ready" ? <Creators summary={state.summary} /> : null}
 
       <section className="quickstart" aria-labelledby="quickstart-title">
         <div className="quickstart-heading">
@@ -198,50 +269,6 @@ export function HomePage() {
           <CommandBlock label="2 · Each Spark, on the Spark">{sparkInstallCommand}</CommandBlock>
         </div>
         <p className="quickstart-note">Replace the address with your Controller&apos;s reserved LAN address. <a className="text-link" href="/install">Full install guide</a> · <a className="text-link" href="/models#model-recipe-explainer">See how models, recipes, and your Controller fit together</a></p>
-      </section>
-
-      <section id="product-tour" className="product-tour" aria-labelledby="tour-title">
-        <div className="home-section-heading">
-          <h2 id="tour-title">Click it, or script it. One Controller.</h2>
-          <p>
-            The browser shows what fits, what will change, what is running, and
-            what needs attention. The CLI exposes the same facts and the same
-            actions to scripts and agents, with nothing hidden behind a prompt.
-          </p>
-        </div>
-        <div className="tour-grid">
-          <ProductShot
-            src="/product/controller-fleet.webp"
-            alt="Vonk Forge Fleet showing an illustrative Spark roster, workloads, and attention state"
-            title="Fleet shows reality, including blockers"
-            body="Fixture-backed fleet view · illustrative test data"
-          />
-          <figure className="agent-session">
-            <div className="agent-session-frame" aria-label="Example vonkctl session">
-              <span className="agent-session-label">vonkctl · the same Controller, from a terminal or an agent</span>
-              <pre><code>{agentSession.map((line, index) => (
-                <span key={line.command} className="agent-session-step">
-                  {index > 0 ? "\n" : ""}
-                  <span className="agent-session-comment"># {line.comment}</span>{"\n"}
-                  <span className="agent-session-command">{line.command}</span>{"\n"}
-                </span>
-              ))}</code></pre>
-            </div>
-            <figcaption>
-              <strong>Built for scripts and AI agents</strong>
-              <span>Stable JSON, a read-only review of every change, explicit consent, meaningful exit codes</span>
-            </figcaption>
-          </figure>
-        </div>
-        <ul className="tour-points">
-          {points.map((point) => (
-            <li key={point.title}><h3>{point.title}</h3><p>{point.body}</p></li>
-          ))}
-        </ul>
-        <div className="control-paths">
-          <div><strong>Guided in the browser</strong><span>Best for first use and visual review.</span><a href="/control#web-controller">Tour the Web Controller</a></div>
-          <div><strong>Repeatable in <code>vonkctl</code></strong><span>The same controller API, with explicit apply and JSON output.</span><a href="/control#local-cli">See the CLI</a></div>
-        </div>
       </section>
 
       <section className="security-section" aria-labelledby="security-title">

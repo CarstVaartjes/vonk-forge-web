@@ -37,8 +37,8 @@ describe("home page", () => {
     getCatalogSummary.mockResolvedValue(summary());
     render(<HomePage />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Models that fit your Sparks, kept current.");
-    const proof = await screen.findByLabelText("Catalog counts");
-    await waitFor(() => expect(proof.textContent).toBe("2 recipes verified on DGX Spark2 model families1 creators"));
+    await waitFor(() => expect(document.querySelector(".answer")?.textContent).toBe("2recipes verified on a real DGX Spark, out of 4 in the catalog."));
+    expect(screen.queryByLabelText("Catalog counts")).toBeNull();
     expect(screen.getByText(/Vonk Forge is the open-source Controller for NVIDIA DGX Spark/)).toBeVisible();
     expect(screen.getByText(/Recipes from nvidia and more/i)).toBeVisible();
     expect(screen.getByRole("link", { name: "See the agent-friendly CLI" })).toHaveAttribute("href", "/control#local-cli");
@@ -47,6 +47,15 @@ describe("home page", () => {
     const wall = await screen.findByRole("group", { name: /The recipe catalog/ });
     expect(within(wall).getAllByRole("link")).toHaveLength(4);
     expect(screen.queryByRole("region", { name: "What can you run?" })).toBeNull();
+  });
+
+  test("the creators ledger links each creator to their catalog and says how many more there are", async () => {
+    getCatalogSummary.mockResolvedValue({ ...summary(), creators: 3 });
+    render(<HomePage />);
+    const ledger = within(await screen.findByRole("region", { name: /creators\. One catalog\./ }));
+    expect(ledger.getByRole("link", { name: "NVIDIA" })).toHaveAttribute("href", "/recipes?creator=NVIDIA");
+    expect(ledger.getByRole("meter", { name: "NVIDIA: verified recipes" })).toHaveAttribute("aria-valuenow", "2");
+    expect(ledger.getByText(/^and 2 more creators/)).toBeVisible();
   });
 
   test("shows the two install commands, each with a Copy button", async () => {

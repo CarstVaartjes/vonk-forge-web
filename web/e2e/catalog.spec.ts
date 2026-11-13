@@ -16,7 +16,8 @@ const recipeImportUri = `vonk://catalog/vonk-forge/qwen-fast@sha256:${recipeDige
 const release = { repository: catalogIndex.repository, tag: releaseTag, contract_version: catalogIndex.contract_version, updated_at: catalogIndex.updated_at, source_commit: sourceCommit, catalog_index_sha256: "d".repeat(64) };
 // What the Pages build writes beside release.json, derived by the same code from the same index.
 const catalogSummary = buildCatalogSummary(catalogIndex, release);
-const PROOF = /4\s*recipes verified on DGX Spark\s*3\s*model families\s*2\s*creators/;
+// The picker's answer with nothing picked: every verified recipe, out of the whole catalog.
+const ANSWER = new RegExp(`^4\\s*recipes verified on a real DGX Spark, out of ${catalogSummary.total} in the catalog\\.$`);
 
 
 test.beforeEach(async ({ page }) => {
@@ -32,7 +33,7 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   await page.goto("/");
 
   await expect(page.getByRole("heading", { level: 1, name: "Models that fit your Sparks, kept current." })).toBeVisible();
-  await expect(page.locator(".hero-proof")).toHaveText(PROOF);
+  await expect(page.locator(".answer")).toHaveText(ANSWER);
   await expect(page.getByText(/Vonk Forge is the open-source Controller for NVIDIA DGX Spark/)).toBeVisible();
   await expect(page.getByText(/Recipes from Acme and qwen and more/)).toBeVisible();
   await expect(page.getByRole("link", { name: "See the agent-friendly CLI" })).toBeVisible();
@@ -102,10 +103,8 @@ test("home page shows the live numbers from the build-time summary and loads not
   page.on("request", (request) => requests.push(new URL(request.url()).pathname));
   await page.goto("/");
 
-  // Once the roll has finished the headline is the plain true numbers.
-  const proof = page.locator(".hero-proof");
-  await expect(proof).toHaveText(PROOF);
-  await expect(proof.locator(".rolling-number")).toHaveCount(3);
+  // Once the roll has finished the answer is the plain true number.
+  await expect(page.locator(".answer")).toHaveText(ANSWER);
 
   const chips = page.getByRole("group", { name: "Model type" });
   await expect(chips.getByRole("button", { name: "Language: 3" })).toBeVisible();
@@ -135,6 +134,25 @@ test("home page shows the live numbers from the build-time summary and loads not
 });
 
 
+test("a recipe opens from the picker's results, and a creator opens the catalog filtered to them", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "2 Sparks" }).click();
+  const result = page.locator(".fit-results li a").first();
+  const title = (await result.textContent())!;
+  await result.click();
+  await expect(page).toHaveURL(/\/recipes\/[^/]+\/[^/]+$/);
+  await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
+
+  await page.goto("/");
+  const creator = page.locator(".creators a").first();
+  const name = (await creator.textContent())!;
+  await expect(page.getByRole("meter", { name: `${name}: verified recipes` })).toBeVisible();
+  await creator.click();
+  await expect(page).toHaveURL(/\/recipes\?creator=/);
+  await expect(page.getByText(`Creator: ${name}`)).toBeVisible();
+});
+
+
 test("the summary the build wrote is small enough to read on the home page", () => {
   // The real build output (the catalog the CI step verified), not the fixture.
   test.skip(!existsSync("public/catalog/catalog-summary.json"), "no fetched release: run `node web/scripts/recipe-release.mjs` (needs an authenticated gh) to check the real summary size");
@@ -156,14 +174,14 @@ test("home page never shows numbers when the summary is missing, malformed or em
   // A release with nothing verified is valid, and shows no numbers.
   await expect(page.getByRole("status").filter({ hasText: "no numbers to show" })).toBeVisible();
   await expect(page.locator(".rolling-number")).toHaveCount(0);
-  await expect(page.locator(".hero-proof")).toHaveCount(0);
+  await expect(page.locator(".answer")).toHaveCount(0);
 });
 
 
 test("the number roll starts from blank, ends at the final value, and is silent for screen readers", async ({ page }) => {
   await page.goto("/");
-  await page.locator(".hero-proof").scrollIntoViewIfNeeded();
-  const first = page.locator(".hero-proof .rolling-number").first();
+  const first = page.locator(".answer .rolling-number");
+  await first.scrollIntoViewIfNeeded();
   // While rolling: moving digits hidden from assistive technology, one visually hidden final value.
   await expect(first).toHaveAttribute("data-phase", /armed|playing/, { timeout: 2000 }).catch(() => undefined);
   if ((await first.getAttribute("data-phase")) !== "final") {
@@ -172,8 +190,8 @@ test("the number roll starts from blank, ends at the final value, and is silent 
   }
   // And it always ends on the true number, with no strips left over.
   await expect(first).toHaveAttribute("data-phase", "final", { timeout: 5000 });
-  await expect(page.locator(".hero-proof")).toHaveText(PROOF);
-  await expect(page.locator(".hero-proof .rolling-strip")).toHaveCount(0);
+  await expect(page.locator(".answer")).toHaveText(ANSWER);
+  await expect(page.locator(".answer .rolling-strip")).toHaveCount(0);
 });
 
 
@@ -182,9 +200,9 @@ test("rolling numbers do not animate under reduced motion", async ({ page }) => 
   await page.goto("/");
   await expect(page.locator(".rolling-number").first()).toHaveAttribute("data-phase", "final");
   await page.waitForTimeout(500);
-  await expect(page.locator(".hero-proof .rolling-strip")).toHaveCount(0);
+  await expect(page.locator(".answer .rolling-strip")).toHaveCount(0);
   await expect(page.locator(".rolling-number .visually-hidden")).toHaveCount(0);
-  await expect(page.locator(".hero-proof")).toHaveText(PROOF);
+  await expect(page.locator(".answer")).toHaveText(ANSWER);
 });
 
 
@@ -194,7 +212,7 @@ test("minimum supported viewport does not overflow", async ({ page }) => {
     await page.goto("/");
 
     await expect(page.getByRole("heading", { level: 1, name: "Models that fit your Sparks, kept current." })).toBeVisible();
-  await expect(page.locator(".hero-proof")).toHaveText(PROOF);
+  await expect(page.locator(".answer")).toHaveText(ANSWER);
     const horizontalOverflow = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );
