@@ -117,9 +117,10 @@ describe("public model browse", () => {
     expect(screen.getByRole("group", { name: "How many Sparks do you have?" })).toBeVisible();
     const oneSpark = screen.getByRole("button", { name: "1 Spark: 7 models" });
     expect(oneSpark).toHaveAttribute("aria-pressed", "false");
-    expect(screen.getByRole("button", { name: "2 Sparks: 6 models" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "3 Sparks: 0 models" })).toBeDisabled();
-    expect(screen.getByRole("button", { name: "4 or more: 6 models" })).toBeVisible();
+    // A count means "that many Sparks or fewer", so every model with a recipe for two or fewer shows under 2.
+    expect(screen.getByRole("button", { name: "2 Sparks: 13 models" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "3 Sparks: 13 models" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "4 or more: 13 models" })).toBeVisible();
     fireEvent.click(oneSpark);
     expect(window.location.search).toBe("?sparks=1");
     expect(screen.getByText("7 of 13 models")).toBeVisible();

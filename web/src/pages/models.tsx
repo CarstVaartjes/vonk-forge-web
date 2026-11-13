@@ -256,7 +256,7 @@ export function ModelsPage() {
       <section className="catalog-setup" aria-labelledby="model-setup-title">
         <div className="catalog-setup-heading">
           <h2 id="model-setup-title">Then narrow it to your setup.</h2>
-          <p>Pick what you have. A model stays in the list while at least one of its public recipes runs on that many Sparks and that engine.</p>
+          <p>Pick what you have. A model stays in the list while at least one of its public recipes runs on that many Sparks or fewer, with that engine.</p>
         </div>
         <VerifiedToggle checked={filters.verified} onChange={(checked) => updateFilters({ verified: checked })} />
         <SparkPicker value={filters.sparks} noun="models" counts={sparkCounts} onChange={(value) => updateFilters({ sparks: value })} />

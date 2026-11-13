@@ -12,8 +12,8 @@ export const READINESS_OPTIONS = [
 type BooleanFilter = "" | "true" | "false";
 export type SparkFilter = "" | "1" | "2" | "3" | "4+";
 
-// The Spark-count choices a visitor starts from. "4+" covers four- and
-// eight-Spark recipes; the library has no other counts.
+// The Spark counts a visitor says they have. A count matches recipes that need that many or fewer
+// (nodeCountMatches); "4+" matches every recipe, the library having none for more than eight.
 export const SPARK_OPTIONS: ReadonlyArray<{ value: Exclude<SparkFilter, "">; numeral: string; label: string }> = [
   { value: "1", numeral: "1", label: "1 Spark" },
   { value: "2", numeral: "2", label: "2 Sparks" },
@@ -21,9 +21,11 @@ export const SPARK_OPTIONS: ReadonlyArray<{ value: Exclude<SparkFilter, "">; num
   { value: "4+", numeral: "4+", label: "4 or more" },
 ];
 
+// "I have N Sparks" matches every recipe that needs N or fewer; "4+" matches them all (the library
+// has no recipe for more than eight). One function for the home picker and the catalog filter.
 export function nodeCountMatches(nodes: number, sparks: SparkFilter): boolean {
-  if (!sparks) return true;
-  return sparks === "4+" ? nodes >= 4 : nodes === Number(sparks);
+  if (!sparks || sparks === "4+") return true;
+  return nodes <= Number(sparks);
 }
 
 const ENGINE_LABELS: Record<string, string> = {

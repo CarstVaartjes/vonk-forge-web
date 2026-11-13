@@ -5,12 +5,12 @@ colors:
   forge-ivory: "#f2efe8"
   ash-muted: "#aaa396"
   ash-faint: "#958e80"
-  workbench-black: "#0a0b0a"
+  workbench-black: "#090a09"
   recess-black: "#060706"
-  iron-panel: "#111311"
-  raised-iron: "#181a17"
-  rule-dark: "#2c2f2a"
-  rule-bright: "#454940"
+  iron-panel: "#121412"
+  raised-iron: "#1a1d19"
+  rule-dark: "#262924"
+  rule-bright: "#3a3e36"
   rule-control: "#666b5f"
   action-green: "#76b900"
   ready-green: "#a3d93a"
@@ -33,13 +33,13 @@ colors:
 typography:
   display:
     fontFamily: "Onest Variable, Helvetica Neue, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(2.6rem, 5.6vw, 4.75rem)"
+    fontSize: "clamp(2.5rem, 5.2vw, 4.5rem)"
     fontWeight: 700
     lineHeight: 0.95
     letterSpacing: "-0.045em"
   headline:
     fontFamily: "Onest Variable, Helvetica Neue, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "clamp(1.75rem, 3.2vw, 2.6rem)"
+    fontSize: "clamp(1.75rem, 3vw, 2.5rem)"
     fontWeight: 700
     lineHeight: 1.02
     letterSpacing: "-0.035em"
@@ -66,14 +66,15 @@ typography:
     lineHeight: 1.5
   label:
     fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace"
-    fontSize: "0.72rem"
+    fontSize: "0.6875rem"
     fontWeight: 700
     lineHeight: 1.4
     letterSpacing: "0.05em"
 rounded:
   square: "0"
-  tight: "0.25rem"
-  control: "0.45rem"
+  card: "1rem"
+  inner: "0.625rem"
+  control: "0.5rem"
   pill: "999px"
 spacing:
   s1: "0.25rem"
@@ -84,7 +85,7 @@ spacing:
   s6: "2rem"
   s7: "3rem"
   s8: "4rem"
-  section: "clamp(4rem, 8vw, 7rem)"
+  section: "clamp(3rem, 5.5vw, 4.75rem)"
 components:
   button-primary:
     backgroundColor: "{colors.action-green}"
@@ -112,12 +113,12 @@ components:
   workbench-card:
     backgroundColor: "{colors.iron-panel}"
     textColor: "{colors.forge-ivory}"
-    rounded: "{rounded.tight}"
+    rounded: "{rounded.card}"
     padding: "1.5rem"
   source-row:
     backgroundColor: "{colors.raised-iron}"
     textColor: "{colors.forge-ivory}"
-    rounded: "{rounded.square}"
+    rounded: "{rounded.inner}"
     padding: "1.5rem"
 ---
 
@@ -139,12 +140,14 @@ Eyebrows and kickers, thick side-tab borders, generic Unicode icons, and Space G
 - Bold, tightly set Onest headings and plain-spoken supporting copy.
 - NVIDIA green for action, private readiness, and confirmed local state.
 - Spark champagne gold only for public source, library facts, and hardware material.
-- Fine one-pixel rules, mostly square containers, and restrained depth.
+- Fine one-pixel rules, rounded cards (the Controller dashboard's shape), and restrained depth.
 - Real operational structure instead of decorative infrastructure imagery.
 
 ## Colors
 
-The palette is taken from the DGX Spark itself: a graphite dark system with NVIDIA green as the one functional action voice and the chassis champagne gold as one tightly bounded public-source exception. Light surfaces were considered and rejected: the controller screenshots are dark interfaces and the gold accent reads as premium on graphite and muddy on white.
+The palette is taken from the DGX Spark itself: a graphite dark system with NVIDIA green as the one functional action voice and the chassis champagne gold as one tightly bounded public-source exception. The tokens are the Controller dashboard's, same names and values, so the site and the product are one family. Dark is the default; a designed light theme (`:root[data-theme="light"]`, warm paper `#f3f1ea`, white cards, near-black ink) follows `prefers-color-scheme` until the visitor picks with the header switch (see Navigation). Light is a selected theme, not an inversion: `green-text` and `gold-soft` darken for text, the model ink flips to near-black, and `styles.test.ts` measures every text and mark pair in both themes (4.5:1 for text, 3:1 for marks such as `--lit` and the control rule; `--cool` is a dim state, exempt from 3:1, and only has to stay visible against the panel at 1.2:1).
+
+The catalog wall adds three tokens: `--lit` (a verified Spark cell), `--cool` (a dimmed cell) and the cell size and gap (`--cell`, `--cell-gap`).
 
 ### Primary
 
@@ -209,34 +212,34 @@ The stylesheet uses these sizes and only these (`--t-display`, `--t-h2`, `--t-h3
 
 ## Layout
 
-The site sits in a centered maximum-width work area (1220px) with fluid horizontal gutters (`clamp(2rem, 5vw, 5rem)`). Pages use strong two-column relationships for definition plus evidence, heading plus explanation, or choice plus choice. One-pixel borders frequently complete the grid, so adjacent modules read as a connected system rather than floating cards.
+The site sits in a centered maximum-width work area (1220px) with fluid horizontal gutters (`clamp(2rem, 5vw, 5rem)`). Pages use strong two-column relationships for definition plus evidence, heading plus explanation, or choice plus choice. Cards are rounded slabs; tables keep square shared rules.
 
 Spacing follows a compact 1rem base rhythm inside components, with 1.5–2rem internal padding for primary structures and `section` spacing between major regions. The layout can be information-dense, but every dense block needs a clear alignment axis and a dominant reading order.
 
 At 1040px, evidence-heavy two-column compositions stack. At 720px, paired headings, paths, and choices resolve to one column and secondary table data may collapse. At 480px, controls become full-width, complex previews simplify, and card grids become a single reading stream. The system remains usable at 320px.
 
-**The Connected Grid Rule.** Prefer shared rules and one-pixel gaps over isolated floating tiles; related items should visibly belong to one operating system.
+**The Connected Grid Rule.** Inside a table or a grid of related cells, prefer shared rules and one-pixel gaps over isolated floating tiles; related items should visibly belong to one operating system.
 
 ## Elevation & Depth
 
-The system is flat by default. Tonal changes and crisp one-pixel boundaries carry most depth; the background may hold an extremely restrained heat atmosphere. Shadows are reserved for a primary evidence surface or a high-value action, never applied to every card.
+Tonal changes and crisp one-pixel boundaries carry most depth. Cards take the one `--shadow` token (a 1px top highlight plus a soft drop in dark, a faint warm drop in light); the background may hold an extremely restrained heat atmosphere.
 
 ### Shadow Vocabulary
 
-- **Evidence Lift** (`0 2.2rem 5rem rgb(0 0 0 / 38%)`): Grounds a large controller or system preview above the workbench.
+- **Card Shadow** (`--shadow`): Cards, the controller preview and the agent session.
 - **Action Heat** (`0 0.85rem 2.5rem rgb(76 120 0 / 18%)`): A quiet green lift under the principal local action.
 
 ### Named Rules
 
-**The Flat Workbench Rule.** Ordinary content surfaces remain flat. Add a shadow only when a control or evidence panel must cross a clear interaction or narrative plane.
+**The One Shadow Rule.** Surfaces use `--shadow` or none; do not invent a third depth.
 
 ## Shapes
 
-The form language is rectilinear and precise. Connected content regions use square corners; embedded controller views use a barely softened tight corner (`tight`), and ordinary controls use a compact functional radius (`control`). Larger rounding does not belong on workbench structures. Circular geometry is reserved for status dots and the established forge mark.
+The form language is the Controller dashboard's: cards are rounded slabs (`card`, 1rem), inner wells are `inner` (0.625rem), controls and command blocks use `control` (0.5rem), wall cells are 4px, and pills are for status and the release label. Tables keep square shared rules. Circular geometry is also used for status dots and the established forge mark.
 
 Borders are one pixel. Do not create thick side tabs, decorative rails, or oversized pills as substitutes for hierarchy. Clipping should reinforce a contained tool surface, not add ornamental silhouettes.
 
-**The Tool, Not Toy Rule.** Round only what benefits touch or status recognition; keep the system's main structures square and aligned.
+**The Tool, Not Toy Rule.** Radii come from the three shape tokens; do not add a one-off radius.
 
 ## Components
 
@@ -256,23 +259,25 @@ Components feel firm, precise, and ready for real operation.
 
 ### Cards / Containers
 
-- **Corner Style:** Square for connected grids; `tight` only for a self-contained tool preview.
+- **Corner Style:** `card` for cards, `inner` for wells inside them; square only inside tables.
 - **Background:** Iron Panel at rest, Raised Iron for selected or exceptional rows.
-- **Shadow Strategy:** Flat by default; only the principal evidence surface uses Evidence Lift.
+- **Shadow Strategy:** `--shadow` on cards; nothing else.
 - **Border:** One-pixel Dark Rule, raised to Bright Rule or a quiet green-tinted boundary when state matters.
 - **Internal Padding:** 1.5rem by default, rising to 2rem for major choice surfaces.
 
 ### Navigation
 
-Navigation is compact Onest text on the workbench ground. Default links use Ash Muted and become Forge Ivory on hover. The installation action is the one persistent green-outlined exception. Mobile navigation wraps into a scannable row without icons or a novelty menu glyph.
+Navigation is compact Onest text on the workbench ground: Catalog, Models, Controller, Docs. Default links use Ash Muted and become Forge Ivory on hover. On the right sit the release pill ("Catalog v4.8.0 · updated 12 Nov", read from `release.json` and left out when it cannot be read), the theme switch and Install, the one persistent green-outlined exception. Below 64rem the links collapse behind a Menu button and the pill is hidden (the footer carries the tag, the first 12 characters of the index digest and the date).
+
+**The Theme Switch Rule.** The theme follows `prefers-color-scheme` until the visitor picks; the pick is remembered in `localStorage` (`vonk-theme`). `public/theme-init.js` sets `data-theme` before first paint (an external script, CSP stays `script-src 'self'`), and `src/theme.ts` owns the same rule in the app.
 
 ### Command Strip
 
-A command strip is a square, one-pixel green-bounded surface. Its environment label is small neutral metadata; the command itself uses the monospace role in Ready Green and scrolls horizontally rather than wrapping into an invalid command.
+A command strip is a one-pixel green-bounded surface with the `control` radius. Its environment label is small neutral metadata; the command itself uses the monospace role in Ready Green and scrolls horizontally rather than wrapping into an invalid command.
 
 ### Controller Preview
 
-The controller preview is the signature evidence component: a tight rectangular window, explicit local-authority label, one connected internal grid, green applied/connected states, and restrained Evidence Lift. It must look like a plausible operator surface, not dashboard decoration.
+The controller preview is the signature evidence component: a rounded window, explicit local-authority label, one connected internal grid, green applied/connected states, and the Card Shadow. It must look like a plausible operator surface, not dashboard decoration.
 
 ### Promise Grid
 
@@ -280,7 +285,15 @@ The home page opens its argument with four promises in one connected grid: know 
 
 ### Agent Session
 
-The terminal counterpart of the controller preview: the same tight rectangular frame and Evidence Lift, a mono label, muted comment lines, and Ready Green commands behind a Spark gold prompt. It shows real `vonkctl` invocations only, never invented output.
+The terminal counterpart of the controller preview: the same rounded frame and Card Shadow, a mono label, muted comment lines, and Ready Green commands behind a Spark gold prompt. It shows real `vonkctl` invocations only, never invented output.
+
+### Catalog Wall
+
+The home hero's signature: one mark per recipe from `catalog-summary.json`, in shelves by Spark count (a recipe on two Sparks is one focusable item drawn as two joined marks), newest release first. A mark has three states derived from two catalog facts only, the vocabulary's `verified` flag and whether a hardware pass is on record, never from a status word: filled (`--lit`), amber outline with a dot (passed before, not verified now), dashed hollow (no pass yet). Shape carries the state and the legend names it with counts; the exact status word is always in the details card under the wall. The wall is one tab stop with arrow-key movement; on touch a tap selects the nearest mark. Speed is never drawn: the wall shows what runs, not how fast.
+
+### Spark Picker
+
+"How many Sparks do you have?" is a segmented control with the catalog page's choices (1, 2, 3, 4+); type chips come from the summary. The pick means "needs that many Sparks or fewer" (4+ matches every recipe), in one function (`nodeCountMatches`) used by the home picker, the catalog and the models page. The answer (a rolling number, one sentence, a breakdown by Spark count) sits in an `aria-live="polite"` region and counts recipes only: nothing on the page claims a memory fit, and the line says the Controller checks memory and disk. Non-matching wall marks are dimmed. The state lives in the URL (`?sparks=2&type=code`) and in `localStorage`, and the catalog link carries it.
 
 ### Role Colours
 
@@ -293,7 +306,7 @@ Five tokens in `:root`, `--role-coder`, `--role-image`, `--role-three-d`, `--rol
 - **Do** use Onest Variable for all display and body hierarchy.
 - **Do** make local actions and ready private state green, with a text label alongside any status dot.
 - **Do** use Spark gold only to identify public source, library facts, or controlled forge heat.
-- **Do** join related cards with shared one-pixel rules and consistent alignment.
+- **Do** keep related cards on one alignment axis; join cells inside tables with shared one-pixel rules.
 - **Do** preserve 320px usability, visible focus, and reduced-motion behavior.
 - **Do** show real operational structures, commands, ownership labels, and states.
 
@@ -304,4 +317,4 @@ Five tokens in `:root`, `--role-coder`, `--role-image`, `--role-three-d`, `--rol
 - **Don't** reintroduce Space Grotesk; Onest Variable is canonical.
 - **Don't** use thick side-tab borders, generic Unicode icons, or ornamental pills.
 - **Don't** turn gold into a general action color or let it compete with green.
-- **Don't** apply large radii and shadows to every surface; the workbench is flat and precise.
+- **Don't** add radii or shadows outside the tokens.

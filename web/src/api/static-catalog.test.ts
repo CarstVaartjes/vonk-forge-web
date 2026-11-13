@@ -8,7 +8,7 @@ import { displayTitle, getStaticLibraryRelease, getStaticModel, getStaticVocabul
 // Real entries of the signed library (see catalog.fixture.ts): two single-Spark Working
 // gemma recipes, a Working 3D recipe and an eight-Spark recipe that needs more Sparks.
 const index = catalogIndexFixture as CatalogIndex;
-const release = { repository: index.repository, tag: "v4.8.0", contract_version: index.contract_version, updated_at: index.updated_at, source_commit: index.source_commit };
+const release = { repository: index.repository, tag: "v4.8.0", contract_version: index.contract_version, updated_at: index.updated_at, source_commit: index.source_commit, catalog_index_sha256: "a".repeat(64) };
 const indexUrl = "https://example.test/catalog/catalog-index.json";
 const nvidia = "gemma-4-e2b-it-nvidia-vllm-single";
 const eight = "inkling-975b-a41b-nvfp4-sglang-eight";
@@ -138,9 +138,21 @@ describe("static recipe library adapter", () => {
     await expect(getStaticRecipe(indexUrl, "vonk-forge", "missing")).rejects.toThrow("Recipe not found");
   });
 
+  test("a recipe with measured memory carries the largest role peak per node; one without carries none", async () => {
+    const measured = index.recipes.find((item) => item.measured_memory)!;
+    const peak = Math.max(...measured.measured_memory!.roles.map((role) => role.measured_peak_bytes));
+    const recipes = await listStaticRecipeCatalog(indexUrl);
+    expect(recipes.find((item) => item.slug === measured.document.identity.slug)!.capacity?.measured_memory_bytes_per_node).toBe(peak);
+    expect(recipes.filter((item) => item.capacity?.measured_memory_bytes_per_node !== undefined)).toHaveLength(index.recipes.filter((item) => item.measured_memory).length);
+  });
+
   test("detail carries the newest hardware pass, the chat API, the setting defaults and the licence from the index", async () => {
     const recipe = await getStaticRecipe(indexUrl, "vonk-forge", nvidia);
-    expect(recipe.evidence).toEqual({ tested_at: "2026-11-03T23:29:07.790267Z", spark_count: 1 });
+    const pass = index.recipes[0]!.qualification.last_pass!;
+    expect(recipe.evidence).toEqual({
+      tested_at: "2026-11-03T23:29:07.790267Z", spark_count: 1, hardware_class: pass.platform.hardware_class,
+      evidence_ref: pass.evidence_refs![0], image_digest: pass.identity.runtime_image!.image_digest,
+    });
     expect(recipe.chat_api).toEqual({ endpoints: ["/v1/chat/completions", "/v1/completions", "/v1/responses", "/v1/messages"], streaming: true, structured_output: true, image_input: true, audio_input: true });
     expect(recipe.settings).toEqual({ context_tokens: 131072 });
     expect(recipe.license).toEqual({ spdx: "Apache-2.0", url: "https://ai.google.dev/gemma/docs/gemma_4_license" });
@@ -221,7 +233,7 @@ describe("static recipe library adapter", () => {
 
   test("reads the library version and update time from the release manifest alone", async () => {
     const fetchMock = serve(index);
-    await expect(getStaticLibraryRelease(indexUrl)).resolves.toEqual({ version: "v4.8.0", updated_at: index.updated_at });
+    await expect(getStaticLibraryRelease(indexUrl)).resolves.toEqual({ version: "v4.8.0", updated_at: index.updated_at, index_sha256: "a".repeat(64) });
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(["https://example.test/catalog/release.json"]);
   });
 });
