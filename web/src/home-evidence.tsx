@@ -9,7 +9,8 @@ const number = new Intl.NumberFormat("en");
 const short = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 const DAY = 86_400_000;
 const label = (day: string) => short.format(new Date(day));
-const weekRange = (start: string) => `${label(start)} to ${label(new Date(Date.parse(start) + 6 * DAY).toISOString())}`;
+const weekEnd = (start: string) => new Date(Date.parse(start) + 6 * DAY).toISOString();
+const weekRange = (start: string) => `${label(start)} to ${label(weekEnd(start))}`;
 
 function Newest({ row }: { row: RecipeRow }) {
   return (
@@ -37,9 +38,9 @@ export function KeptCurrent({ summary }: { summary: CatalogSummary }) {
       </div>
       <div className="home-pair">
         <div className="card">
-          <p className="fig"><RollingNumber value={lastWeek} /> <small>recipes released in the last 7 days</small></p>
+          <p className="fig"><RollingNumber value={lastWeek} /> <small>{lastWeek === 1 ? "recipe" : "recipes"} released in the 7 days to {label(weekEnd(summary.releasedPerWeek.at(-1)!.start))}</small></p>
           <p className="chart-sub">Recipes by release date, per week, last {weeks.length} weeks.</p>
-          <BarSeries title="Recipes released per week" noun="recipes" points={weeks} axis={[`week of ${label(summary.releasedPerWeek[0]!.start)}`, `week of ${label(summary.releasedPerWeek.at(-1)!.start)}`]} />
+          <BarSeries title="Recipes released per week" noun={["recipe", "recipes"]} points={weeks} axis={[`week of ${label(summary.releasedPerWeek[0]!.start)}`, `week of ${label(summary.releasedPerWeek.at(-1)!.start)}`]} />
         </div>
         <div className="card fresh">
           <div className="fit-results-head"><h3>Newest verified recipes</h3><a className="text-link" href="/recipes">All recipes</a></div>
@@ -77,7 +78,7 @@ export function VerifiedOnHardware({ summary }: { summary: CatalogSummary }) {
             ))}
           </ul>
           <p className="chart-title">{dailyTitle}</p>
-          <BarSeries title={dailyTitle} noun="recipes" points={days} axis={[label(summary.passesPerDay[0]!.day), label(summary.passesPerDay.at(-1)!.day)]} />
+          <BarSeries title={dailyTitle} noun={["recipe", "recipes"]} points={days} axis={[label(summary.passesPerDay[0]!.day), label(summary.passesPerDay.at(-1)!.day)]} />
         </div>
         {summary.receipt ? <EvidenceReceipt facts={summary.receipt} verified /> : null}
       </div>
