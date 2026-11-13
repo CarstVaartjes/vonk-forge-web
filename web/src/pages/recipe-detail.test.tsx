@@ -18,6 +18,8 @@ function recipe(publisher: string, sourceRepository: string, sourceOwner: string
   };
 }
 
+afterEach(() => vi.restoreAllMocks());
+
 beforeEach(() => {
   getVocabulary.mockResolvedValue(vocabularyFixture);
   loadRecipeCatalog.mockResolvedValue([]);
@@ -79,7 +81,14 @@ test("a recipe without a pass shows the status meaning, no receipt and no measur
   expect(screen.getByRole("region", { name: "What it needs" }).textContent).not.toContain("easured");
 });
 
-test("the about text is clamped until Read all", async () => {
+// jsdom does no layout: stand in for a description the clamp cuts (scrollHeight above clientHeight) or not.
+function layout(scrollHeight: number, clientHeight: number) {
+  vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(scrollHeight);
+  vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(clientHeight);
+}
+
+test("a description the clamp cuts is clamped until Read all", async () => {
+  layout(200, 100);
   getRecipe.mockResolvedValue(recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"));
   render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
   const button = await screen.findByRole("button", { name: "Read all" });
@@ -87,6 +96,14 @@ test("the about text is clamped until Read all", async () => {
   fireEvent.click(button);
   expect(screen.getByText("A recipe.")).not.toHaveClass("clamped");
   expect(screen.getByRole("button", { name: "Show less" })).toHaveAttribute("aria-expanded", "true");
+});
+
+test("a short description has no Read all", async () => {
+  layout(100, 100);
+  getRecipe.mockResolvedValue(recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"));
+  render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
+  await screen.findByText("A recipe.");
+  expect(screen.queryByRole("button", { name: /Read all|Show less/ })).toBeNull();
 });
 
 test("the family matrix lists the other recipes and marks this one", async () => {

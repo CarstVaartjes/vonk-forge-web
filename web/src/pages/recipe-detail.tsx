@@ -26,6 +26,8 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
     loadRecipeCatalog(controller.signal).then(setAllRecipes).catch(() => undefined);
     return () => controller.abort();
   }, []);
+  // "Read all" is offered only when the clamp actually hides text.
+  const [aboutCut, setAboutCut] = useState(false);
   // The release words for capabilities and statuses. Without them the page still shows the raw names.
   const [vocabulary, setVocabulary] = useState<Vocabulary | null>(null);
   useEffect(() => {
@@ -112,8 +114,8 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
           </section>
           <section className="card detail-block" aria-labelledby="about-title">
             <h2 id="about-title" className="receipt-label">About this recipe</h2>
-            <p className={`desc${aboutOpen ? "" : " clamped"}`}>{catalog.description}</p>
-            <button className="text-link" type="button" aria-expanded={aboutOpen} onClick={() => setAboutOpen(!aboutOpen)}>{aboutOpen ? "Show less" : "Read all"}</button>
+            <p className={`desc${aboutOpen ? "" : " clamped"}`} ref={(element) => { if (element && !aboutOpen) setAboutCut(element.scrollHeight > element.clientHeight); }}>{catalog.description}</p>
+            {aboutCut ? <button className="text-link" type="button" aria-expanded={aboutOpen} onClick={() => setAboutOpen(!aboutOpen)}>{aboutOpen ? "Show less" : "Read all"}</button> : null}
           </section>
         </div>
         <section className="card detail-block" aria-labelledby="can-do-title">
