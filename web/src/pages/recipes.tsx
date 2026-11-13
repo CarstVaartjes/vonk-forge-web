@@ -234,7 +234,7 @@ export function RecipesPage() {
       {catalog && vocabulary ? (
         <section className="catalog-type" aria-labelledby="recipe-type-title">
           <h2 id="recipe-type-title">What kind of model?</h2>
-          <TypeTabs types={vocabulary.categories} value={filters.type} noun="recipes" counts={typeCounts} total={count("type", () => true)} onChange={(value) => update("type", value)} />
+          <TypeTabs types={vocabulary.categories} value={filters.type} counts={typeCounts} total={count("type", () => true)} onChange={(value) => update("type", value)} />
         </section>
       ) : null}
 

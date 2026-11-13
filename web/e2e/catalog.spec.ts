@@ -125,13 +125,13 @@ test("the Spark count picked on the home page is the catalog's first filter, and
   await page.getByRole("button", { name: "1 Spark", exact: true }).click();
   await page.goto("/recipes?verified=0");
   const sparks = page.getByRole("group", { name: "How many Sparks do you have?" });
-  await expect(sparks.getByRole("button", { name: /^1 Spark:/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(sparks.getByRole("button", { name: /^1 Spark \d/ })).toHaveAttribute("aria-pressed", "true");
   const all = page.getByRole("region", { name: "Recipe results" }).getByText(/of \d+ recipes/);
   const narrowed = await all.textContent();
-  await sparks.getByRole("button", { name: /^Any count/ }).click();
+  await sparks.getByRole("button", { name: /^Every count/ }).click();
   await expect(all).not.toHaveText(narrowed!);
   await page.reload();
-  await expect(sparks.getByRole("button", { name: /^1 Spark:/ })).toHaveAttribute("aria-pressed", "false");
+  await expect(sparks.getByRole("button", { name: /^1 Spark \d/ })).toHaveAttribute("aria-pressed", "false");
 });
 
 
@@ -379,7 +379,7 @@ test("publisher navigation points to repository authoring without an upload work
 test("the model type is the first choice on the recipes and models pages", async ({ page }) => {
   await page.goto("/recipes?type=code");
   const types = page.getByRole("group", { name: "Model type" });
-  await expect(types.getByRole("button")).toHaveText(["All4", "Language3", "Code1", "Vision1", "Image0", "Video0", "Audio0", "3D1", "Other0"]);
+  await expect(types.getByRole("button")).toHaveText(["All 4", "Language 3", "Code 1", "Vision 1", "Image 0", "Video 0", "Audio 0", "3D 1", "Other 0"]);
   await expect(types.getByRole("button", { name: /^Code/ })).toHaveAttribute("aria-pressed", "true");
   // The words come from the release vocabulary: all 26 capabilities are offered, and the legend gives a status its published meaning.
   await expect(page.getByLabel("Filter by capability").locator("option")).toHaveCount(27);

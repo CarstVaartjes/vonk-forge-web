@@ -2604,6 +2604,9 @@ a {
   box-shadow: inset 0 0 0 1px var(--green);
 }
 
+.setup-tile[aria-pressed="true"] small {
+  color: var(--muted);
+}
 .setup-tile[aria-pressed="true"] strong {
   color: var(--green-text);
 }
@@ -3275,7 +3278,7 @@ a {
   .wall-cell i, .wall-cell i::after { transition: background-color var(--base) var(--ease), box-shadow var(--base) var(--ease), border-color var(--base) var(--ease); }
   .wall[data-ignite="playing"] .wall-cell i, .wall[data-ignite="playing"] .wall-cell i::after { transition-duration: 300ms; transition-delay: calc(var(--i) / var(--n) * 1100ms); }
   .wall-card { animation: card-in var(--fast) var(--ease); }
-  .caret { animation: caret-blink 1.1s steps(1) infinite; }
+  .caret { animation: caret-blink 1.1s steps(1) 4; }
 }
 @keyframes card-in { from { opacity: 0; } }
 @keyframes caret-blink { 50% { opacity: 0; } }

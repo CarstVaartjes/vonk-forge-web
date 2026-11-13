@@ -119,12 +119,12 @@ describe("public model browse", () => {
     render(<ModelsPage />);
     await waitFor(() => expect(screen.getByText("13 of 13 models")).toBeVisible());
     expect(screen.getByRole("group", { name: "How many Sparks do you have?" })).toBeVisible();
-    const oneSpark = screen.getByRole("button", { name: "1 Spark: 7 models" });
+    const oneSpark = screen.getByRole("button", { name: "1 Spark 7 models" });
     expect(oneSpark).toHaveAttribute("aria-pressed", "false");
     // A count means "that many Sparks or fewer", so every model with a recipe for two or fewer shows under 2.
-    expect(screen.getByRole("button", { name: "2 Sparks: 13 models" })).toBeVisible();
-    expect(screen.getByRole("button", { name: "3 Sparks: 13 models" })).toBeEnabled();
-    expect(screen.getByRole("button", { name: "4 or more: 13 models" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "2 Sparks 13 models" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "3 Sparks 13 models" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "4 or more 13 models" })).toBeVisible();
     fireEvent.click(oneSpark);
     expect(window.location.search).toBe("?sparks=1");
     expect(screen.getByText("7 of 13 models")).toBeVisible();
@@ -177,9 +177,9 @@ describe("type-first model filtering", () => {
   test("type chips come first, count with the other filters applied, and live in the URL", async () => {
     render(<ModelsPage />);
     const types = await screen.findByRole("group", { name: "Model type" });
-    expect(within(types).getByRole("button", { name: "All: 2 models" })).toBeVisible();
-    expect(within(types).getByRole("button", { name: "Code: 1 models" })).toBeVisible();
-    fireEvent.click(within(types).getByRole("button", { name: "Code: 1 models" }));
+    expect(within(types).getByRole("button", { name: "All 2" })).toBeVisible();
+    expect(within(types).getByRole("button", { name: "Code 1" })).toBeVisible();
+    fireEvent.click(within(types).getByRole("button", { name: "Code 1" }));
     await waitFor(() => expect(window.location.search).toBe("?type=code"));
     expect(screen.getByText("1 of 3 models")).toBeVisible();
     expect(screen.getByRole("link", { name: /coder/ })).toBeVisible();
@@ -223,7 +223,7 @@ describe("type-first model filtering", () => {
     render(<ModelsPage />);
     await screen.findByRole("group", { name: "Model type" });
     expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument();
-    fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "Code: 1 models" }));
+    fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "Code 1" }));
     await waitFor(() => expect(window.location.search).toBe("?type=code"));
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
     await waitFor(() => expect(window.location.search).toBe("?verified=0"));

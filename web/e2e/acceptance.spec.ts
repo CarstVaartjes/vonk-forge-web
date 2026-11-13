@@ -5,7 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { routeRelease } from "./release-fixture.ts";
 
-const PAGES = ["/", "/recipes/vonk-forge/qwen-fast"];
+const PAGES = ["/", "/recipes", "/recipes/vonk-forge/qwen-fast"];
 
 test.beforeEach(({ page }) => routeRelease(page));
 
@@ -17,7 +17,7 @@ async function load(page: Page, path: string, errors: string[]): Promise<void> {
 
 for (const width of [1440, 400]) {
   for (const scheme of ["dark", "light"] as const) {
-    test(`home and a recipe page at ${width}px in ${scheme}: no horizontal overflow, no console error`, async ({ page }) => {
+    test(`home, the catalog and a recipe page at ${width}px in ${scheme}: no horizontal overflow, no console error`, async ({ page }) => {
       const errors: string[] = [];
       await page.setViewportSize({ width, height: 900 });
       await page.emulateMedia({ colorScheme: scheme });
@@ -31,7 +31,7 @@ for (const width of [1440, 400]) {
   }
 }
 
-test("an accessibility scan of home and a recipe page reports no serious issue, in both themes", async ({ page }) => {
+test("an accessibility scan of home, the catalog and a recipe page reports no serious issue, in both themes", async ({ page }) => {
   for (const scheme of ["dark", "light"] as const) {
     await page.emulateMedia({ colorScheme: scheme });
     for (const path of PAGES) {

@@ -250,7 +250,7 @@ export function ModelsPage() {
     {models ? (
       <section className="catalog-type" aria-labelledby="model-type-title">
         <h2 id="model-type-title">What kind of model?</h2>
-        <TypeTabs types={vocabulary?.categories ?? []} value={filters.type} noun="models" counts={typeCounts} total={typeCount(() => true)} onChange={(value) => updateFilters({ type: value })} />
+        <TypeTabs types={vocabulary?.categories ?? []} value={filters.type} counts={typeCounts} total={typeCount(() => true)} onChange={(value) => updateFilters({ type: value })} />
       </section>
     ) : null}
     {models ? (
