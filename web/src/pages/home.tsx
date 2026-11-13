@@ -45,13 +45,11 @@ function StateDot({ tone = "ready" }: { tone?: "ready" | "source" }) {
 
 function ProductShot({
   src,
-  narrowSrc,
   alt,
   title,
   body,
 }: {
   src: string;
-  narrowSrc: string;
   alt: string;
   title: string;
   body: string;
@@ -60,16 +58,23 @@ function ProductShot({
     <figure className="product-shot">
       <div className="product-shot-frame">
         <div className="product-shot-bar" aria-hidden="true"><i /><i /><i /><span>https://controller.fixture.invalid/overview</span></div>
-        <picture>
-          <source media="(max-width: 30rem)" srcSet={narrowSrc} width="400" height="800" />
-          <img
-            src={src}
-            alt={alt}
-            width="1280"
-            height="800"
-            loading="lazy"
-          />
-        </picture>
+        {(["dark", "light"] as const).map((theme) => (
+          <picture key={theme} className={`shot-${theme}`}>
+            <source
+              media="(max-width: 30rem)"
+              srcSet={`${src}-400-${theme}.webp 1x, ${src}-400-${theme}@2x.webp 2x`}
+              width="400"
+              height="800"
+            />
+            <img
+              src={`${src}-1280-${theme}.webp`}
+              alt={alt}
+              width="1280"
+              height="800"
+              loading="lazy"
+            />
+          </picture>
+        ))}
       </div>
       <figcaption>
         <strong>{title}</strong>
@@ -186,8 +191,7 @@ function RunTheMix() {
       </div>
       <div className="tour-grid">
         <ProductShot
-          src="/product/controller-overview-1280.webp"
-          narrowSrc="/product/controller-overview-400.webp"
+          src="/product/controller-overview"
           alt="Controller Overview on an example fleet: Spark cards with memory use, running workloads, and what needs attention"
           title="Overview shows the fleet as it is, blockers included"
           body="Example fleet · scripted screenshot, no live data"

@@ -14,7 +14,7 @@ local controller without pretending the public website is the controller.
 
 | Overview: capacity, placement, and blockers | Workloads: what is running and why |
 | --- | --- |
-| ![Vonk Forge Controller Overview](web/public/product/controller-overview-1280.webp) | ![Vonk Forge Controller Workloads](web/public/product/controller-workloads-1280.webp) |
+| ![Vonk Forge Controller Overview](web/public/product/controller-overview-1280-dark.webp) | ![Vonk Forge Controller Workloads](web/public/product/controller-workloads-1280-dark.webp) |
 
 These are scripted screenshots of the private Web Controller implemented in
 `vonk-forge`, taken on an example fleet; they contain no live fleet data.

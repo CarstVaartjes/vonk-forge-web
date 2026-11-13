@@ -2950,6 +2950,9 @@ a {
   white-space: nowrap;
 }
 
+:root[data-theme="dark"] .shot-light,
+:root[data-theme="light"] .shot-dark { display: none; }
+
 .product-shot img {
   display: block;
   width: 100%;
