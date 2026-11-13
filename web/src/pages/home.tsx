@@ -8,6 +8,7 @@ import { FitAnswerView, FitResults, SparkSegments, TypeChips } from "../spark-pi
 import { CommandBlock } from "../command-block";
 import { controllerInstallCommand, sparkInstallCommand } from "./install";
 import { RollingNumber } from "../rolling-number";
+import { KeptCurrent, VerifiedOnHardware } from "../home-evidence";
 
 
 // What the Controller does for a Spark owner, in one sentence each. The
@@ -180,6 +181,7 @@ export function HomePage() {
     <main className="home-page">
       <Hero state={state} pick={pick} setPick={setPick} />
       <CatalogSections state={state} retry={retry} />
+      {state.status === "ready" ? <><KeptCurrent summary={state.summary} /><VerifiedOnHardware summary={state.summary} /></> : null}
 
       <section className="quickstart" aria-labelledby="quickstart-title">
         <div className="quickstart-heading">

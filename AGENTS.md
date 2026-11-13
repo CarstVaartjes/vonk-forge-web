@@ -53,7 +53,9 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
 - The home page reads one file, `catalog-summary.json` (`summary_version: 2`),
   which the same Pages build derives from the verified index with the code the pages
   use (`web/src/catalog-stats.ts`): totals, statuses in vocabulary order, shelves per
-  Spark count, one row per recipe, and the weekly and daily series. Home never loads
+  Spark count, one row per recipe, the weekly and daily series, each status with its vocabulary
+  meaning, and the one receipt the home page shows (`receiptFacts` in the same file builds it for the
+  recipe page too). Home never loads
   `catalog-index.json`; the browser accepts version 2 only and refuses anything else
   (error state with Retry). There is no second summary file and no reader for an
   older version: the bump ships atomically with the reader in one Pages build.

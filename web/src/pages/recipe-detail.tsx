@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { getRecipe, getVocabulary, type RecipeDetail } from "../api/client";
 import { CommandBlock } from "../command-block";
 import { engineLabel, gibLabel, sourceLabel } from "../catalog-filters";
+import { receiptFacts } from "../catalog-stats";
+import { evidenceLine } from "../evidence-receipt";
 import { usePageMeta } from "../page-meta";
 import { STATUS_LEGEND_ID } from "../status-legend";
 import { capabilityLabel, statusMeaning, type Vocabulary } from "../vocabulary";
@@ -71,7 +73,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
         <div className={`verdict ${catalog.verified ? "ok" : ""}`}>
           <span className={`status ${catalog.verified ? "ok" : "off"}`}>{catalog.qualification}</span>
           <small>
-            {catalog.verified && evidence ? evidenceLine(evidence) : (meaning ?? catalog.qualification_reason ?? "")}{" "}
+            {catalog.verified && evidence ? evidenceLine(receiptFacts(recipe, null)!) : (meaning ?? catalog.qualification_reason ?? "")}{" "}
             <a href={`/recipes#${STATUS_LEGEND_ID}`}>What this means</a>
           </small>
         </div>
@@ -145,17 +147,6 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
 }
 
 const check = <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false"><path d="M3 8.5l3.2 3L13 4.5" /></svg>;
-
-// When the library recorded no Spark count, the line says only when the recipe passed.
-function evidenceLine({ spark_count: sparks, tested_at: testedAt }: NonNullable<RecipeDetail["evidence"]>): string {
-  const date = dateLabel(testedAt);
-  return sparks === undefined ? `Passed hardware checks, ${date}.` : `Passed hardware checks on ${sparks} DGX Spark${sparks === 1 ? "" : "s"}, ${date}.`;
-}
-
-function dateLabel(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(date);
-}
 
 // The title is the selector `vonkctl run` takes; quote it so any title pastes as one argument.
 function shellQuote(title: string): string {

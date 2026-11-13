@@ -34,10 +34,45 @@ export interface RecipeRow {
   tested: string | null;
 }
 
+// The facts of one hardware pass, as the receipt shows them. Every field is optional in the
+// catalog, so each is null when the release does not carry it and the receipt then leaves it out.
+export interface ReceiptFacts {
+  title: string;
+  creator: string | null;
+  status: string;
+  tested: string;
+  sparks: number | null;
+  hardwareClass: string | null;
+  measuredBytes: number | null;
+  contentSha256: string;
+  imageDigest: string | null;
+  evidenceRef: string | null;
+}
+
+// A recipe's newest hardware pass as a receipt; null for a recipe with no pass on record. One owner:
+// the home page's receipt and the recipe page's both come from here.
+export function receiptFacts(recipe: StatsRecipe, creator: string | null): ReceiptFacts | null {
+  const { evidence } = recipe;
+  if (!evidence) return null;
+  return {
+    title: recipe.title,
+    creator,
+    status: recipe.catalog.qualification,
+    tested: evidence.tested_at,
+    sparks: evidence.spark_count ?? null,
+    hardwareClass: evidence.hardware_class ?? null,
+    measuredBytes: recipe.capacity?.measured_memory_bytes_per_node ?? null,
+    contentSha256: recipe.content_sha256,
+    imageDigest: evidence.image_digest ?? null,
+    evidenceRef: evidence.evidence_ref ?? null,
+  };
+}
+
 export interface CatalogStats {
   total: number;
-  // Every status present in the release, with its count, in vocabulary order.
-  statuses: Array<{ status: string; count: number }>;
+  // Every status present in the release, with its count, in vocabulary order; `verified` is the
+  // vocabulary's flag and `meaning` the sentence it publishes for the status.
+  statuses: Array<{ status: string; count: number; verified: boolean; meaning: string }>;
   // Recipes per number of Sparks they need, ascending, with how many are verified.
   bySparks: Array<{ sparks: number; total: number; verified: number }>;
   recipes: RecipeRow[];
@@ -45,6 +80,9 @@ export interface CatalogStats {
   releasedPerWeek: Array<{ start: string; count: number }>;
   // Recipes whose newest hardware pass ran on each of the last 28 days, oldest first.
   passesPerDay: Array<{ day: string; count: number }>;
+  // The receipt shown on the home page: the newest verified recipe on more than one Spark that has a
+  // measured peak (chosen by that rule, not by name); null when no recipe qualifies.
+  receipt: ReceiptFacts | null;
   // The three counts below are over verified recipes (published as Working).
   verified: number;
   families: number;
@@ -71,6 +109,13 @@ function windows(end: string, count: number, span: number): Array<{ start: strin
     const from = to - (span - 1) * DAY;
     return { start: dayKey(from), from, to };
   });
+}
+
+function newestReceipt(verified: StatsRecipe[], nameOf: (owner: string | null | undefined) => string | null): ReceiptFacts | null {
+  const candidates = verified
+    .filter((recipe) => recipe.catalog.node_count > 1 && recipe.capacity?.measured_memory_bytes_per_node !== undefined && recipe.evidence)
+    .sort((left, right) => right.evidence!.tested_at.localeCompare(left.evidence!.tested_at) || left.title.localeCompare(right.title));
+  return candidates[0] ? receiptFacts(candidates[0], nameOf(candidates[0].catalog.source_owner)) : null;
 }
 
 export function deriveCatalogStats(recipes: StatsRecipe[], vocabulary: Vocabulary, updatedAt: string): CatalogStats {
@@ -111,13 +156,14 @@ export function deriveCatalogStats(recipes: StatsRecipe[], vocabulary: Vocabular
   return {
     total: recipes.length,
     statuses: vocabulary.statuses
-      .map(({ status }) => ({ status, count: recipes.filter((recipe) => recipe.catalog.qualification === status).length }))
+      .map(({ status, verified, meaning }) => ({ status, count: recipes.filter((recipe) => recipe.catalog.qualification === status).length, verified, meaning }))
       .filter(({ count }) => count > 0),
     bySparks: Array.from(new Set(rows.map((row) => row.sparks))).sort((left, right) => left - right)
       .map((sparks) => ({ sparks, total: rows.filter((row) => row.sparks === sparks).length, verified: rows.filter((row) => row.sparks === sparks && row.verified).length })),
     recipes: rows,
     releasedPerWeek: perWeek.map(({ start, from, to }) => ({ start, count: releasedTimes.filter((time) => time >= from && time <= to).length })),
     passesPerDay: perDay.map(({ start, from }) => ({ day: start, count: testedTimes.filter((time) => time === from).length })),
+    receipt: newestReceipt(verified, nameOf),
     verified: verified.length,
     families: families.size,
     creators: creators.size,
@@ -143,6 +189,10 @@ const isRow = (row: Record<string, unknown>): boolean =>
   && isText(row.status) && typeof row.verified === "boolean" && typeof row.passedBefore === "boolean"
   && Array.isArray(row.types) && row.types.every(isText) && isNullable(row.engine, isText)
   && isNullable(row.memoryBytes, isCount) && isNullable(row.measuredBytes, isCount) && isText(row.released) && isNullable(row.tested, isText);
+const isReceipt = (receipt: Record<string, unknown>): boolean =>
+  isText(receipt.title) && isNullable(receipt.creator, isText) && isText(receipt.status) && isText(receipt.tested) && isNullable(receipt.sparks, isCount)
+  && isNullable(receipt.hardwareClass, isText) && isNullable(receipt.measuredBytes, isCount) && isText(receipt.contentSha256)
+  && isNullable(receipt.imageDigest, isText) && isNullable(receipt.evidenceRef, isText);
 const isText = (value: unknown): value is string => typeof value === "string" && value.length > 0;
 
 // Accepts only a summary this site understands; a missing or malformed one is an
@@ -152,11 +202,12 @@ export function parseCatalogSummary(value: unknown): CatalogSummary {
   const fail = (): never => { throw new Error("Recipe library returned an unsupported catalog summary"); };
   if (!isRecord(value) || value.summary_version !== 2 || !isText(value.release) || !/^v\d+\.\d+\.\d+$/.test(value.release) || !isText(value.catalog_index_sha256)) return fail();
   if (!isCount(value.verified) || !isCount(value.families) || !isCount(value.creators)) return fail();
-  if (!isCount(value.total) || !isList(value.statuses, (item) => isText(item.status) && isCount(item.count))) return fail();
+  if (!isCount(value.total) || !isList(value.statuses, (item) => isText(item.status) && isCount(item.count) && typeof item.verified === "boolean" && isText(item.meaning))) return fail();
   if (!isList(value.bySparks, (item) => isCount(item.sparks) && isCount(item.total) && isCount(item.verified))) return fail();
   if (!isList(value.releasedPerWeek, (item) => isText(item.start) && isCount(item.count))) return fail();
   if (!isList(value.passesPerDay, (item) => isText(item.day) && isCount(item.count))) return fail();
   if (!isList(value.recipes, isRow) || (value.recipes as unknown[]).length !== value.total) return fail();
+  if (!isNullable(value.receipt, (receipt) => isRecord(receipt) && isReceipt(receipt))) return fail();
   if (!Array.isArray(value.types) || value.types.some((type) => !isRecord(type) || !isText(type.id) || !isText(type.label) || !isCount(type.verified))) return fail();
   if (!Array.isArray(value.topCreators) || value.topCreators.some((item) => !isRecord(item) || !isText(item.name) || !isCount(item.verified))) return fail();
   return value as unknown as CatalogSummary;

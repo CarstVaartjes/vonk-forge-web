@@ -58,11 +58,24 @@ describe("home page", () => {
     expect(quickstart.getAllByRole("button", { name: "Copy" })).toHaveLength(2);
   });
 
+  test("kept current and verified sections draw only summary facts, with no receipt when no recipe qualifies", async () => {
+    getCatalogSummary.mockResolvedValue(summary());
+    render(<HomePage />);
+    const current = within(await screen.findByRole("region", { name: /New models and recipe revisions/ }));
+    expect(current.getByRole("group", { name: /^Recipes released per week: 1 recipes/ })).toBeVisible();
+    expect(current.getAllByRole("listitem").map((item) => item.querySelector("a")?.textContent)).toEqual(["a", "b"]);
+    const proof = within(screen.getByRole("region", { name: /Ran, on a real DGX Spark/ }));
+    expect(proof.getByText("Passed on a real DGX Spark for this exact recipe, runtime image and model.")).toBeVisible();
+    expect(proof.getByRole("table", { name: "Most recent hardware pass per recipe, by day, last 28 days" })).toBeInTheDocument();
+    expect(proof.queryByLabelText("Hardware evidence")).toBeNull();
+  });
+
   test("a release with nothing verified shows the empty state and no wall", async () => {
     getCatalogSummary.mockResolvedValue({ ...summary(), verified: 0 });
     render(<HomePage />);
     expect(await screen.findByText(/No recipe in this release has passed hardware checks/)).toBeVisible();
     expect(screen.queryByRole("group", { name: /The recipe catalog/ })).toBeNull();
+    expect(screen.queryByRole("region", { name: /Ran, on a real DGX Spark/ })).toBeNull();
   });
 
   test("shows no numbers and an alert when the summary is missing or malformed", async () => {

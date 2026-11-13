@@ -295,6 +295,14 @@ The home hero's signature: one mark per recipe from `catalog-summary.json`, in s
 
 "How many Sparks do you have?" is a segmented control with the catalog page's choices (1, 2, 3, 4+); type chips come from the summary. The pick means "needs that many Sparks or fewer" (4+ matches every recipe), in one function (`nodeCountMatches`) used by the home picker, the catalog and the models page. The answer (a rolling number, one sentence, a breakdown by Spark count) sits in an `aria-live="polite"` region and counts recipes only: nothing on the page claims a memory fit, and the line says the Controller checks memory and disk. Non-matching wall marks are dimmed. The state lives in the URL (`?sparks=2&type=code`) and in `localStorage`, and the catalog link carries it.
 
+### Bar Series
+
+One small bar chart for a date series from the summary (`BarSeries`): a single series with no legend (the title names it), neutral bars with the newest in `--model-ink`, a direct label on the peak and the newest bar only, and a range-and-count tooltip on hover. The bars are drawn for the eye; the group's `aria-label` carries the totals and a visually hidden table carries every bar. Home uses it twice: recipes released per week and the most recent hardware pass per recipe by day.
+
+### Evidence Receipt
+
+The ticket for one hardware pass (`EvidenceReceipt`): status (shape and word), the evidence sentence, then only the fields the catalog holds for that pass (hardware class and Spark count, measured memory peak, recipe digest, runtime image digest, evidence record). A field the release does not carry is left out, never filled in. Home shows one, chosen by rule (the newest verified multi-Spark recipe with a measured peak); the recipe page uses the same component.
+
 ### Role Colours
 
 Five tokens in `:root`, `--role-coder`, `--role-image`, `--role-three-d`, `--role-audio` and `--role-video`, are used only by the example-setup page (`/example-setup`); the architecture diagram's two lane colours (`--lane-public`, `--lane-network`) are the same kind of identity token. They tell model roles apart, always sit beside a text role label and a legend, and are never status or action colours.
