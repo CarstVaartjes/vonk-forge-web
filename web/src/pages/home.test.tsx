@@ -37,8 +37,8 @@ describe("home page", () => {
     getCatalogSummary.mockResolvedValue(summary());
     render(<HomePage />);
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Models that fit your Sparks, kept current.");
-    const proof = await screen.findByLabelText("Catalog counts");
-    await waitFor(() => expect(proof.textContent).toBe("2 recipes verified on DGX Spark2 model families1 creators"));
+    await waitFor(() => expect(document.querySelector(".answer")?.textContent).toBe("2recipes verified on a real DGX Spark, out of 4 in the catalog."));
+    expect(screen.queryByLabelText("Catalog counts")).toBeNull();
     expect(screen.getByText(/Vonk Forge is the open-source Controller for NVIDIA DGX Spark/)).toBeVisible();
     expect(screen.getByText(/Recipes from nvidia and more/i)).toBeVisible();
     expect(screen.getByRole("link", { name: "See the agent-friendly CLI" })).toHaveAttribute("href", "/control#local-cli");
@@ -47,6 +47,15 @@ describe("home page", () => {
     const wall = await screen.findByRole("group", { name: /The recipe catalog/ });
     expect(within(wall).getAllByRole("link")).toHaveLength(4);
     expect(screen.queryByRole("region", { name: "What can you run?" })).toBeNull();
+  });
+
+  test("the creators ledger links each creator to their catalog and says how many more there are", async () => {
+    getCatalogSummary.mockResolvedValue({ ...summary(), creators: 3 });
+    render(<HomePage />);
+    const ledger = within(await screen.findByRole("region", { name: /creators\. One catalog\./ }));
+    expect(ledger.getByRole("link", { name: "NVIDIA" })).toHaveAttribute("href", "/recipes?creator=NVIDIA");
+    expect(ledger.getByRole("meter", { name: "NVIDIA: verified recipes" })).toHaveAttribute("aria-valuenow", "2");
+    expect(ledger.getByText(/^and 2 more creators/)).toBeVisible();
   });
 
   test("shows the two install commands, each with a Copy button", async () => {
@@ -58,11 +67,24 @@ describe("home page", () => {
     expect(quickstart.getAllByRole("button", { name: "Copy" })).toHaveLength(2);
   });
 
+  test("kept current and verified sections draw only summary facts, with no receipt when no recipe qualifies", async () => {
+    getCatalogSummary.mockResolvedValue(summary());
+    render(<HomePage />);
+    const current = within(await screen.findByRole("region", { name: /New models and recipe revisions/ }));
+    expect(current.getByRole("group", { name: /^Recipes released per week: 1 recipe,/ })).toBeVisible();
+    expect(current.getAllByRole("listitem").map((item) => item.querySelector("a")?.textContent)).toEqual(["a", "b"]);
+    const proof = within(screen.getByRole("region", { name: /Ran, on a real DGX Spark/ }));
+    expect(proof.getByText("Passed on a real DGX Spark for this exact recipe, runtime image and model.")).toBeVisible();
+    expect(proof.getByRole("table", { name: "Most recent hardware pass per recipe, by day, last 28 days" })).toBeInTheDocument();
+    expect(proof.queryByLabelText("Hardware evidence")).toBeNull();
+  });
+
   test("a release with nothing verified shows the empty state and no wall", async () => {
     getCatalogSummary.mockResolvedValue({ ...summary(), verified: 0 });
     render(<HomePage />);
     expect(await screen.findByText(/No recipe in this release has passed hardware checks/)).toBeVisible();
     expect(screen.queryByRole("group", { name: /The recipe catalog/ })).toBeNull();
+    expect(screen.queryByRole("region", { name: /Ran, on a real DGX Spark/ })).toBeNull();
   });
 
   test("shows no numbers and an alert when the summary is missing or malformed", async () => {

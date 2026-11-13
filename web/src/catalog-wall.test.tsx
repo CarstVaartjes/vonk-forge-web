@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
-import { expect, test } from "vitest";
+import { act } from "react";
+import { afterEach, expect, test, vi } from "vitest";
 
 import { summaryFixture } from "./catalog-summary.fixture";
 import { CatalogWall, cellState } from "./catalog-wall";
@@ -60,4 +61,37 @@ test("marks that do not match the pick are dimmed, the rest are not", () => {
   render(<CatalogWall summary={summary} match={(row) => row.sparks === 1} />);
   const dimmed = document.querySelectorAll("a.wall-cell[data-dim]").length;
   expect(dimmed).toBe(summary.recipes.filter((row) => row.sparks !== 1).length);
+});
+
+// The ignition: dimmed until the wall scrolls into view, lit by the CSS transition, then the plain wall.
+function stubObserver(reducedMotion: boolean) {
+  let reveal = () => undefined as void;
+  vi.stubGlobal("IntersectionObserver", class { constructor(callback: (entries: Array<{ isIntersecting: boolean }>) => void) { reveal = () => callback([{ isIntersecting: true }]); } observe() {} disconnect() {} });
+  vi.stubGlobal("matchMedia", (query: string) => ({ matches: reducedMotion && query.includes("reduce"), media: query }));
+  vi.stubGlobal("requestAnimationFrame", (callback: () => void) => { callback(); return 0; });
+  return () => act(reveal);
+}
+
+afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
+
+test("the wall ignites once: dimmed and armed, playing when it scrolls into view, then the plain wall", () => {
+  vi.useFakeTimers();
+  const reveal = stubObserver(false);
+  const { container } = render(<CatalogWall summary={summary} />);
+  const wall = container.querySelector(".wall")!;
+  expect(wall).toHaveAttribute("data-ignite", "armed");
+  expect(container.querySelectorAll("a.wall-cell[data-dim]")).toHaveLength(summary.total);
+  reveal();
+  expect(wall).toHaveAttribute("data-ignite", "playing");
+  expect(container.querySelectorAll("a.wall-cell[data-dim]")).toHaveLength(0);
+  expect(linkOf(summary.recipes[0]!).getAttribute("style")).toContain("--i");
+  act(() => { vi.advanceTimersByTime(1800); });
+  expect(wall).toHaveAttribute("data-ignite", "done");
+});
+
+test("under reduced motion the wall is in its final state from the first paint", () => {
+  stubObserver(true);
+  const { container } = render(<CatalogWall summary={summary} />);
+  expect(container.querySelector(".wall")).toHaveAttribute("data-ignite", "done");
+  expect(container.querySelectorAll("a.wall-cell[data-dim]")).toHaveLength(0);
 });

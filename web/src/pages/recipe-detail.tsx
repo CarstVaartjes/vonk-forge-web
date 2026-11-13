@@ -1,8 +1,12 @@
 import { useEffect, useState } from "react";
 
-import { getRecipe, getVocabulary, type RecipeDetail } from "../api/client";
+import { getRecipe, getVocabulary, loadRecipeCatalog, type RecipeDetail } from "../api/client";
 import { CommandBlock } from "../command-block";
-import { engineLabel, gibLabel, sourceLabel } from "../catalog-filters";
+import { engineLabel, gibLabel, modelFamilyTitle, sourceLabel } from "../catalog-filters";
+import { WaysMatrix } from "../ways-matrix";
+import { receiptFacts } from "../catalog-stats";
+import { EvidenceReceipt } from "../evidence-receipt";
+import { SparkUnit } from "../spark-unit";
 import { usePageMeta } from "../page-meta";
 import { STATUS_LEGEND_ID } from "../status-legend";
 import { capabilityLabel, statusMeaning, type Vocabulary } from "../vocabulary";
@@ -14,6 +18,16 @@ const recipeAuthoringGuide = "https://github.com/CarstVaartjes/vonk-forge-recipe
 export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug: string }) {
   const [recipe, setRecipe] = useState<RecipeDetail | null>(null);
   const [error, setError] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
+  // Every recipe, for the matrix of other ways to run this family. If it cannot be read the matrix is not shown.
+  const [allRecipes, setAllRecipes] = useState<RecipeDetail[]>([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    loadRecipeCatalog(controller.signal).then(setAllRecipes).catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+  // "Read all" is offered only when the clamp actually hides text.
+  const [aboutCut, setAboutCut] = useState(false);
   // The release words for capabilities and statuses. Without them the page still shows the raw names.
   const [vocabulary, setVocabulary] = useState<Vocabulary | null>(null);
   useEffect(() => {
@@ -44,8 +58,9 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
   }, [recipe]);
   if (error) return <main className="status-panel error"><h1>Recipe unavailable</h1><p>It may be hidden, removed from listings, or the catalog may be offline.</p></main>;
   if (!recipe) return <main className="status-panel" role="status">Loading immutable recipe…</main>;
-  const { catalog, capacity, evidence, chat_api: chat, settings, license } = recipe;
+  const { catalog, capacity, chat_api: chat, settings, license } = recipe;
   const sparks = catalog.node_count;
+  const receipt = receiptFacts(recipe, catalog.source_owner);
   const sparksLabel = sparks === 1 ? "single Spark" : `${sparks} Sparks`;
   const meaning = vocabulary ? statusMeaning(vocabulary, catalog.qualification) : undefined;
   const capabilities = catalog.capabilities.map((name) => (vocabulary ? capabilityLabel(vocabulary, name) : name));
@@ -67,58 +82,56 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
             {recipe.version ? <span className="tag">v{recipe.version}</span> : null}
             {recipe.published_at ? <span>released {recipe.published_at}</span> : null}
           </p>
+          <section className="run" aria-labelledby="run-title">
+            <h2 id="run-title">Run it</h2>
+            <CommandBlock label="Workstation terminal">{`vonkctl run ${shellQuote(recipe.title)}`}</CommandBlock>
+            <div className="run-note">
+              <p>Or open Library in your Controller and choose this recipe. Your Controller checks the memory and disk it needs against your Sparks before it runs anything.</p>
+              <p>No Controller yet? <a className="text-link" href="/install">Install in two commands</a></p>
+            </div>
+          </section>
         </div>
-        <div className={`verdict ${catalog.verified ? "ok" : ""}`}>
-          <span className={`status ${catalog.verified ? "ok" : "off"}`}>{catalog.qualification}</span>
-          <small>
-            {catalog.verified && evidence ? evidenceLine(evidence) : (meaning ?? catalog.qualification_reason ?? "")}{" "}
-            <a href={`/recipes#${STATUS_LEGEND_ID}`}>What this means</a>
-          </small>
-        </div>
+        {receipt && catalog.verified ? <div className="detail-receipt"><EvidenceReceipt facts={receipt} verified /><a className="text-link" href={`/recipes#${STATUS_LEGEND_ID}`}>What this means</a></div> : (
+          <section className="card receipt" aria-label="Hardware status">
+            <div className="receipt-top"><span className="receipt-label">Hardware status</span><span className="status off">{catalog.qualification}</span></div>
+            <p className="receipt-meaning">{meaning ?? catalog.qualification_reason ?? ""} <a href={`/recipes#${STATUS_LEGEND_ID}`}>What this means</a></p>
+          </section>
+        )}
       </header>
       {recipe.moderation_warning ? <div className="warning" role="alert">{recipe.moderation_warning}</div> : null}
 
-      <dl className="facts">
-        <div><dt>Sparks</dt><dd>{sparks}<small>{sparksLabel}</small></dd></div>
-        <div><dt>Engine</dt><dd>{engineLabel(catalog.runtime_distribution)}</dd></div>
-        <div><dt>Memory per Spark</dt><dd>{gibLabel(capacity?.maximum_runtime_memory_bytes_per_node, 1)}<small>declared by the recipe</small></dd></div>
-        <div><dt>Disk per Spark</dt><dd>{gibLabel(capacity?.maximum_installed_bytes_per_node, 1)}<small>{gibLabel(catalog.expected_download_bytes || undefined, 1)} model files</small></dd></div>
-      </dl>
-
-      <section className="run" aria-labelledby="run-title">
-        <div>
-          <h2 id="run-title">Run it</h2>
-          <CommandBlock label="Workstation terminal">{`vonkctl run ${shellQuote(recipe.title)}`}</CommandBlock>
-        </div>
-        <div className="run-note">
-          <p>Or open Library in your Controller and choose this recipe. Your Controller checks the memory and disk it needs against your Sparks before it runs anything.</p>
-          <p>No Controller yet? <a className="text-link" href="/install">Install in two commands</a></p>
-        </div>
-      </section>
-
       <div className="detail-columns">
         <div>
-          <section className="detail-block">
-            <h2>What it can do</h2>
-            <ul className="caps">
-              {capabilities.map((label) => <li key={label}>{check}{label}</li>)}
-              {chat?.streaming ? <li>{check}Streaming</li> : null}
-              {chat?.structured_output ? <li>{check}Structured output</li> : null}
-              {chat && !chat.image_input ? <li className="no">No image input</li> : null}
-              {chat && !chat.audio_input ? <li className="no">No audio input</li> : null}
-            </ul>
+          <section className="card detail-block" aria-labelledby="needs-title">
+            <h2 id="needs-title" className="receipt-label">What it needs</h2>
+            <SparkUnit model={catalog.model_title} sparks={sparks} measuredBytes={capacity?.measured_memory_bytes_per_node ?? null} declaredBytes={capacity?.maximum_runtime_memory_bytes_per_node ?? null} />
+            <dl className="facts">
+              <div><dt>Sparks</dt><dd>{sparks}<small>{sparksLabel}</small></dd></div>
+              <div><dt>Disk per Spark</dt><dd>{gibLabel(capacity?.maximum_installed_bytes_per_node, 1)}<small>{gibLabel(catalog.expected_download_bytes || undefined, 1)} model files</small></dd></div>
+              <div><dt>Context</dt><dd>{settings.context_tokens === undefined ? "Not declared" : settings.context_tokens.toLocaleString("en")}<small>tokens, recipe default</small></dd></div>
+              <div><dt>Concurrent requests</dt><dd>{settings.concurrency === undefined ? "Not declared" : settings.concurrency}<small>recipe default</small></dd></div>
+            </dl>
           </section>
-          <section className="detail-block">
-            <h2>About this recipe</h2>
-            <p className="desc">{catalog.description}</p>
+          <section className="card detail-block" aria-labelledby="about-title">
+            <h2 id="about-title" className="receipt-label">About this recipe</h2>
+            <p className={`desc${aboutOpen ? "" : " clamped"}`} ref={(element) => { if (element && !aboutOpen) setAboutCut(element.scrollHeight > element.clientHeight); }}>{catalog.description}</p>
+            {aboutCut ? <button className="text-link" type="button" aria-expanded={aboutOpen} onClick={() => setAboutOpen(!aboutOpen)}>{aboutOpen ? "Show less" : "Read all"}</button> : null}
           </section>
         </div>
-        <section className="detail-block">
-          <h2>Details</h2>
+        <section className="card detail-block" aria-labelledby="can-do-title">
+          <h2 id="can-do-title" className="receipt-label">What it can do</h2>
+          <ul className="caps">
+            {capabilities.map((label) => <li key={label}>{check}{label}</li>)}
+            {chat?.streaming ? <li>{check}Streaming</li> : null}
+            {chat?.structured_output ? <li>{check}Structured output</li> : null}
+            {chat && !chat.image_input ? <li className="no">No image input</li> : null}
+            {chat && !chat.audio_input ? <li className="no">No audio input</li> : null}
+          </ul>
           <dl className="kv">
             <div><dt>Model</dt><dd>{model || "Not declared"}</dd></div>
+            <div><dt>Engine</dt><dd>{engineLabel(catalog.runtime_distribution)}</dd></div>
             {chat ? <div><dt>API</dt><dd>{chat.endpoints.join(" · ")}</dd></div> : null}
-            <div><dt>Context</dt><dd>{settings.context_tokens === undefined ? "Not declared" : `${settings.context_tokens.toLocaleString("en")} tokens${settings.concurrency === undefined ? "" : ` · ${settings.concurrency} concurrent requests`} (recipe defaults)`}</dd></div>
+            {recipe.served_names.length ? <div><dt>Served as</dt><dd>{recipe.served_names.join(" · ")}</dd></div> : null}
             <div>
               <dt>Licence</dt>
               <dd>
@@ -127,6 +140,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
               </dd>
             </div>
             <div><dt>Source</dt><dd>{catalog.source_repository ? <a href={catalog.source_repository}>{sourceLabel(catalog.source_repository)}</a> : "Not declared"}</dd></div>
+            {recipe.credits.length ? <div><dt>Credit</dt><dd>{creditLine(recipe.credits)}</dd></div> : null}
           </dl>
           <details className="provenance">
             <summary>Provenance</summary>
@@ -140,22 +154,17 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
           </details>
         </section>
       </div>
+      <WaysMatrix recipes={allRecipes} family={modelFamilyTitle(recipe)} current={{ publisher, slug }} />
     </main>
   );
 }
 
+// The first three credits by name, then how many more.
+function creditLine(credits: string[]): string {
+  return credits.length <= 3 ? credits.join(", ") : `${credits.slice(0, 3).join(", ")} and ${credits.length - 3} more`;
+}
+
 const check = <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false"><path d="M3 8.5l3.2 3L13 4.5" /></svg>;
-
-// When the library recorded no Spark count, the line says only when the recipe passed.
-function evidenceLine({ spark_count: sparks, tested_at: testedAt }: NonNullable<RecipeDetail["evidence"]>): string {
-  const date = dateLabel(testedAt);
-  return sparks === undefined ? `Passed hardware checks, ${date}.` : `Passed hardware checks on ${sparks} DGX Spark${sparks === 1 ? "" : "s"}, ${date}.`;
-}
-
-function dateLabel(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(date);
-}
 
 // The title is the selector `vonkctl run` takes; quote it so any title pastes as one argument.
 function shellQuote(title: string): string {

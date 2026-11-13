@@ -2,6 +2,9 @@ import type { SparkFilter } from "./catalog-filters";
 import { SPARK_OPTIONS } from "./catalog-filters";
 
 
+// "1 recipe", "2 recipes": the nouns here are the plural "recipes" and "models".
+const countOf = (count: number, noun: string): string => `${new Intl.NumberFormat("en").format(count)} ${count === 1 ? noun.slice(0, -1) : noun}`;
+
 // The entry point of both catalog pages: say what you have, see what runs on
 // it. Counts come from the loaded index with the other filters applied, so a
 // tile never promises more than the list below can show.
@@ -25,20 +28,19 @@ export function SparkPicker({ value, counts, noun, onChange }: {
               type="button"
               className="setup-tile"
               aria-pressed={pressed}
-              aria-label={`${option.label}: ${number.format(count)} ${noun}`}
               disabled={count === 0 && !pressed}
               onClick={() => onChange(pressed ? "" : option.value)}
             >
-              <strong>{option.numeral}</strong>
-              <span>{option.label}</span>
-              <small>{number.format(count)} {noun}</small>
+              <strong aria-hidden="true">{option.numeral}</strong>
+              <span>{option.label}</span>{" "}
+              <small>{countOf(count, noun)}</small>
             </button>
           );
         })}
-        <button type="button" className="setup-tile setup-tile-any" aria-pressed={value === ""} aria-label={`Any count: ${number.format(counts[""])} ${noun}`} onClick={() => onChange("")}>
-          <strong>Any</strong>
-          <span>Every count</span>
-          <small>{number.format(counts[""])} {noun}</small>
+        <button type="button" className="setup-tile setup-tile-any" aria-pressed={value === ""} onClick={() => onChange("")}>
+          <strong aria-hidden="true">Any</strong>
+          <span>Every count</span>{" "}
+          <small>{countOf(counts[""], noun)}</small>
         </button>
       </div>
     </fieldset>
@@ -82,7 +84,7 @@ export function FacetStrip({ label, options, value, onChange, max = 10 }: {
             disabled={option.count === 0 && value !== option.value}
             onClick={() => onChange(value === option.value ? "" : option.value)}
           >
-            {option.label}<small>{number.format(option.count)}</small>
+            {option.label} <small>{number.format(option.count)}</small>
           </button>
         ))}
         {rest.length ? (
@@ -100,13 +102,12 @@ export function FacetStrip({ label, options, value, onChange, max = 10 }: {
 // The first choice on both catalog pages: what kind of model. A group of toggle
 // buttons (each a native button, so Tab and Enter/Space work); "All" clears it.
 // Counts come from the list with every other filter applied.
-export function TypeTabs({ types, value, counts, total, noun, onChange }: {
+export function TypeTabs({ types, value, counts, total, onChange }: {
   // The release vocabulary's categories.
   types: ReadonlyArray<{ id: string; label: string }>;
   value: string;
   counts: Record<string, number>;
   total: number;
-  noun: string;
   onChange: (value: string) => void;
 }) {
   const number = new Intl.NumberFormat("en");
@@ -121,11 +122,10 @@ export function TypeTabs({ types, value, counts, total, noun, onChange }: {
           key={option.id || "all"}
           type="button"
           aria-pressed={value === option.id}
-          aria-label={`${option.label}: ${number.format(option.count)} ${noun}`}
           aria-disabled={option.count === 0 && value !== option.id ? true : undefined}
           onClick={() => { if (option.count > 0 || value === option.id) onChange(option.id); }}
         >
-          {option.label}<small>{number.format(option.count)}</small>
+          {option.label} <small>{number.format(option.count)}</small>
         </button>
       ))}
     </div>

@@ -1,4 +1,4 @@
-import { useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from "react";
+import { useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 
 import { newestFirst, type CatalogSummary, type RecipeRow } from "./catalog-stats";
 import { gibLabel } from "./catalog-filters";
@@ -39,6 +39,37 @@ function WallCard({ row }: { row: RecipeRow | null }) {
   );
 }
 
+// The wall lights up once, in release order, when it first scrolls into view: "armed" draws every mark
+// dimmed, "playing" lets the CSS transition (delayed by each mark's index) light them, "done" is the
+// plain wall. Under reduced motion, or without IntersectionObserver, it is "done" from the first paint.
+type Ignition = "armed" | "playing" | "done";
+
+function useIgnition(wall: React.RefObject<HTMLDivElement | null>): Ignition {
+  const [phase, setPhase] = useState<Ignition>("done");
+  useLayoutEffect(() => {
+    const element = wall.current;
+    const reduced = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!element || reduced || typeof IntersectionObserver === "undefined") return;
+    setPhase("armed");
+    let timer: number | undefined;
+    const observer = new IntersectionObserver((entries) => {
+      if (!entries.some((entry) => entry.isIntersecting)) return;
+      observer.disconnect();
+      // Two frames: the dim state must paint before the transition starts.
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        setPhase("playing");
+        timer = window.setTimeout(() => setPhase("done"), 1800);
+      }));
+    });
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(timer);
+    };
+  }, [wall]);
+  return phase;
+}
+
 // The whole catalog at a glance: shelves by Spark count, a mark per recipe (a joined mark per Spark),
 // one tab stop with arrow-key movement, Enter opens the recipe. The details of the hovered, focused or
 // tapped mark show in a reserved panel under the wall, so nothing moves when they change.
@@ -49,6 +80,8 @@ export function CatalogWall({ summary, match = () => true, before, after }: { su
   const [shown, setShown] = useState<number | null>(null);
   const cells = useRef<Array<HTMLAnchorElement | null>>([]);
   const touch = useRef(false);
+  const wall = useRef<HTMLDivElement>(null);
+  const ignition = useIgnition(wall);
 
   const counts = { verified: 0, before: 0, none: 0 };
   for (const row of ordered) counts[cellState(row)] += 1;
@@ -108,7 +141,7 @@ export function CatalogWall({ summary, match = () => true, before, after }: { su
 
   let index = -1;
   return (
-    <div className="wall">
+    <div className="wall" ref={wall} data-ignite={ignition} style={{ "--n": ordered.length } as React.CSSProperties}>
       {before}
       <p id="wall-summary" className="visually-hidden">
         {number.format(ordered.length)} recipes: {number.format(counts.verified)} {verifiedLabel}, {number.format(counts.before)} passed before and are not verified now, {number.format(counts.none)} with no hardware pass yet.
@@ -127,9 +160,10 @@ export function CatalogWall({ summary, match = () => true, before, after }: { su
                     ref={(element) => { cells.current[mine] = element; }}
                     className="wall-cell"
                     data-state={cellState(row)}
-                    data-dim={match(row) ? undefined : ""}
+                    data-dim={match(row) && ignition !== "armed" ? undefined : ""}
                     data-shown={shown === mine ? "" : undefined}
                     href={recipeHref(row)}
+                    style={{ "--i": mine } as React.CSSProperties}
                     tabIndex={active === mine ? 0 : -1}
                     aria-label={`${row.title}${row.creator ? `, ${row.creator}` : ""}, ${row.status}, ${row.sparks === 1 ? "1 Spark" : `${row.sparks} Sparks`}`}
                     onFocus={() => select(mine, false)}
@@ -143,7 +177,7 @@ export function CatalogWall({ summary, match = () => true, before, after }: { su
           </section>
         ))}
       </div>
-      <WallCard row={shown === null ? null : ordered[shown] ?? null} />
+      <WallCard key={shown ?? "none"} row={shown === null ? null : ordered[shown] ?? null} />
       <ul className="wall-legend" aria-label="What the marks mean">
         <li><span className="wall-key" data-state="verified" aria-hidden="true" />{verifiedLabel} <b>{number.format(counts.verified)}</b></li>
         <li><span className="wall-key" data-state="before" aria-hidden="true" />Passed before, not verified now <b>{number.format(counts.before)}</b></li>
