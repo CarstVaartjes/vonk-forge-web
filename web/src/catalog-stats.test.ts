@@ -67,6 +67,15 @@ describe("home page numbers", () => {
     expect(stats.topCreators).toEqual([{ name: "NVIDIA", verified: 3 }, { name: "eugr", verified: 1 }]);
   });
 
+  test("the ledger and the rows spell a creator the same, even when its commonest spelling is on unverified recipes", () => {
+    const stats = deriveCatalogStats([
+      recipe("a", { owner: "nvidia" }),
+      recipe("b", { owner: "NVIDIA", status: "Not yet verified" }), recipe("c", { owner: "NVIDIA", status: "Not yet verified" }),
+    ], vocabularyFixture, UPDATED);
+    expect(stats.topCreators).toEqual([{ name: "NVIDIA", verified: 1 }]);
+    expect(stats.recipes.map((row) => row.creator)).toEqual(["NVIDIA", "NVIDIA", "NVIDIA"]);
+  });
+
   test("ranks creators by verified recipes and leaves out those with none", () => {
     const stats = deriveCatalogStats([
       recipe("a", { owner: "many", status: "Not yet verified" }), recipe("b", { owner: "many", status: "Not yet verified" }),

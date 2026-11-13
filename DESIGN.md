@@ -145,7 +145,7 @@ Eyebrows and kickers, thick side-tab borders, generic Unicode icons, and Space G
 
 ## Colors
 
-The palette is taken from the DGX Spark itself: a graphite dark system with NVIDIA green as the one functional action voice and the chassis champagne gold as one tightly bounded public-source exception. The tokens are the Controller dashboard's, same names and values, so the site and the product are one family. Dark is the default; a designed light theme (`:root[data-theme="light"]`, warm paper `#f3f1ea`, white cards, near-black ink) follows `prefers-color-scheme` until the visitor picks with the header switch (see Navigation). Light is a selected theme, not an inversion: `green-text` and `gold-soft` darken for text, the model ink flips to near-black, and `styles.test.ts` measures every text and mark pair in both themes (4.5:1 text, 3:1 marks).
+The palette is taken from the DGX Spark itself: a graphite dark system with NVIDIA green as the one functional action voice and the chassis champagne gold as one tightly bounded public-source exception. The tokens are the Controller dashboard's, same names and values, so the site and the product are one family. Dark is the default; a designed light theme (`:root[data-theme="light"]`, warm paper `#f3f1ea`, white cards, near-black ink) follows `prefers-color-scheme` until the visitor picks with the header switch (see Navigation). Light is a selected theme, not an inversion: `green-text` and `gold-soft` darken for text, the model ink flips to near-black, and `styles.test.ts` measures every text and mark pair in both themes (4.5:1 for text, 3:1 for marks such as `--lit` and the control rule; `--cool` is a dim state, exempt from 3:1, and only has to stay visible against the panel at 1.2:1).
 
 The catalog wall adds three tokens: `--lit` (a verified Spark cell), `--cool` (a dimmed cell) and the cell size and gap (`--cell`, `--cell-gap`).
 
@@ -289,7 +289,7 @@ The terminal counterpart of the controller preview: the same rounded frame and C
 
 ### Catalog Wall
 
-The home hero's signature: one mark per recipe from `catalog-summary.json`, in shelves by Spark count (a recipe on two Sparks is one focusable item drawn as two joined marks), newest release first. A mark has three states derived from two catalog facts only, the vocabulary's `verified` flag and whether a hardware pass is on record, never from a status word: filled (`--lit`), amber outline (passed before, not verified now), hollow (no pass yet). Shape carries the state and the legend names it with counts; the exact status word is always in the details card under the wall. The wall is one tab stop with arrow-key movement; on touch a tap selects the nearest mark. Speed is never drawn: the wall shows what runs, not how fast.
+The home hero's signature: one mark per recipe from `catalog-summary.json`, in shelves by Spark count (a recipe on two Sparks is one focusable item drawn as two joined marks), newest release first. A mark has three states derived from two catalog facts only, the vocabulary's `verified` flag and whether a hardware pass is on record, never from a status word: filled (`--lit`), amber outline with a dot (passed before, not verified now), dashed hollow (no pass yet). Shape carries the state and the legend names it with counts; the exact status word is always in the details card under the wall. The wall is one tab stop with arrow-key movement; on touch a tap selects the nearest mark. Speed is never drawn: the wall shows what runs, not how fast.
 
 ### Spark Picker
 

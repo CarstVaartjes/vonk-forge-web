@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from "react";
+import { useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 
 import type { CatalogSummary, RecipeRow } from "./catalog-stats";
 import { gibLabel } from "./catalog-filters";
@@ -135,7 +135,6 @@ export function CatalogWall({ summary, match = () => true, before, after }: { su
                     href={recipeHref(row)}
                     tabIndex={active === mine ? 0 : -1}
                     aria-label={`${row.title}${row.creator ? `, ${row.creator}` : ""}, ${row.status}, ${row.sparks === 1 ? "1 Spark" : `${row.sparks} Sparks`}`}
-                    style={{ "--span": row.sparks } as CSSProperties}
                     onFocus={() => select(mine, false)}
                     onMouseEnter={() => setShown(mine)}
                   >
