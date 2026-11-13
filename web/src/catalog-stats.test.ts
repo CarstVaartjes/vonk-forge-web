@@ -8,7 +8,7 @@ const UPDATED = "2026-11-13T00:05:47Z";
 
 function recipe(slug: string, options: { owner?: string | null; status?: string; capabilities?: string[]; updated?: string; family?: string; nodes?: number; tested?: string; measured?: number } = {}): StatsRecipe {
   return {
-    evidence: options.tested ? { tested_at: options.tested } : null,
+    evidence: options.tested ? { tested_at: options.tested, spark_count: options.nodes ?? 1, hardware_class: "GB10", evidence_ref: "e".repeat(64), image_digest: `sha256:${"f".repeat(64)}` } : null,
     capacity: options.measured ? { measured_memory_bytes_per_node: options.measured } : undefined,
     publisher: "vonk-forge",
     slug,
@@ -113,7 +113,11 @@ describe("per-recipe rows and series", () => {
   });
 
   test("statuses in vocabulary order and shelves per Spark count", () => {
-    expect(stats.statuses).toEqual([{ status: "Working", count: 1 }, { status: "Re-check: worked before", count: 1 }, { status: "Not yet verified", count: 1 }]);
+    expect(stats.statuses).toEqual([
+      { status: "Working", count: 1, verified: true, meaning: "Passed on a real DGX Spark for this exact recipe, runtime image and model." },
+      { status: "Re-check: worked before", count: 1, verified: false, meaning: "Passed before, but the recipe, image or model has changed since." },
+      { status: "Not yet verified", count: 1, verified: false, meaning: "No hardware verdict yet; the reason is shown under the badge." },
+    ]);
     expect(stats.bySparks).toEqual([{ sparks: 1, total: 1, verified: 0 }, { sparks: 2, total: 2, verified: 1 }]);
   });
 
@@ -124,6 +128,28 @@ describe("per-recipe rows and series", () => {
     expect(stats.releasedPerWeek.reduce((total, week) => total + week.count, 0)).toBe(2);
     expect(stats.passesPerDay).toHaveLength(28);
     expect(stats.passesPerDay.find((day) => day.day === "2026-11-12")).toEqual({ day: "2026-11-12", count: 2 });
+  });
+});
+
+describe("the home receipt", () => {
+  const measured = { nodes: 2, measured: 7, tested: "2026-11-10T10:00:00Z" };
+  const receiptOf = (recipes: StatsRecipe[]) => deriveCatalogStats(recipes, vocabularyFixture, UPDATED).receipt;
+
+  test("is the newest verified recipe on more than one Spark that has a measured peak, by rule", () => {
+    expect(receiptOf([
+      recipe("older", { ...measured, tested: "2026-11-01T10:00:00Z" }),
+      recipe("newest", measured),
+      recipe("newer-single-spark", { nodes: 1, measured: 7, tested: "2026-11-12T10:00:00Z" }),
+      recipe("newer-unmeasured", { nodes: 2, tested: "2026-11-12T10:00:00Z" }),
+      recipe("newer-unverified", { ...measured, status: "Re-check: worked before", tested: "2026-11-12T10:00:00Z" }),
+    ])).toEqual({
+      title: "newest", creator: "owner", status: "Working", tested: "2026-11-10T10:00:00Z", sparks: 2, hardwareClass: "GB10", measuredBytes: 7,
+      contentSha256: `newest${"0".repeat(58)}`, imageDigest: `sha256:${"f".repeat(64)}`, evidenceRef: "e".repeat(64),
+    });
+  });
+
+  test("is null when no recipe qualifies, and the summary still parses", () => {
+    expect(receiptOf([recipe("single", { nodes: 1, measured: 7, tested: "2026-11-10T10:00:00Z" })])).toBeNull();
   });
 });
 
@@ -145,6 +171,8 @@ describe("catalog summary file", () => {
     ["rows that do not add up to the total", { ...good, total: 5 }],
     ["a row without a status", { ...good, recipes: [{ ...good.recipes[0], status: "" }] }],
     ["a week without a count", { ...good, releasedPerWeek: [{ start: "2026-11-01" }] }],
+    ["a status without its meaning", { ...good, statuses: [{ status: "Working", count: 1, verified: true }] }],
+    ["a receipt without its recipe digest", { ...good, receipt: { title: "a", creator: null, status: "Working", tested: "2026-11-10", sparks: 2, hardwareClass: null, measuredBytes: 7, imageDigest: null, evidenceRef: null } }],
     ["a missing count", { ...good, families: undefined }],
     ["a fractional count", { ...good, creators: 1.5 }],
     ["types that are not a list", { ...good, types: { language: 1 } }],

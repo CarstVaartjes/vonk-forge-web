@@ -293,7 +293,31 @@ The home hero's signature: one mark per recipe from `catalog-summary.json`, in s
 
 ### Spark Picker
 
-"How many Sparks do you have?" is a segmented control with the catalog page's choices (1, 2, 3, 4+); type chips come from the summary. The pick means "needs that many Sparks or fewer" (4+ matches every recipe), in one function (`nodeCountMatches`) used by the home picker, the catalog and the models page. The answer (a rolling number, one sentence, a breakdown by Spark count) sits in an `aria-live="polite"` region and counts recipes only: nothing on the page claims a memory fit, and the line says the Controller checks memory and disk. Non-matching wall marks are dimmed. The state lives in the URL (`?sparks=2&type=code`) and in `localStorage`, and the catalog link carries it.
+"How many Sparks do you have?" is a segmented control with the catalog page's choices (1, 2, 3, 4+); type chips come from the summary. The pick means "needs that many Sparks or fewer" (4+ matches every recipe), in one function (`nodeCountMatches`) used by the home picker, the catalog and the models page. The answer (a rolling number, one sentence, a breakdown by Spark count) sits in an `aria-live="polite"` region and counts recipes only: nothing on the page claims a memory fit, and the line says the Controller checks memory and disk. Non-matching wall marks are dimmed. The state lives in the URL (`?sparks=2&type=code`) and in `localStorage`, and the catalog link carries it. The catalog page opens with this same Spark picker as its first filter (My Sparks), pre-filled from the remembered pick when its URL has none, and its cards, tiles, chips and table take the dashboard radii.
+
+### Bar Series
+
+One small bar chart for a date series from the summary (`BarSeries`): a single series with no legend (the title names it), neutral bars with the newest in `--model-ink`, a direct label on the peak and the newest bar only, and a range-and-count tooltip on hover. The bars are drawn for the eye; the group's `aria-label` carries the totals and a visually hidden table carries every bar. Home uses it twice: recipes released per week and the most recent hardware pass per recipe by day.
+
+### Evidence Receipt
+
+The ticket for one hardware pass (`EvidenceReceipt`): status (shape and word), the evidence sentence, then only the fields the catalog holds for that pass (hardware class and Spark count, measured memory peak, recipe digest, runtime image digest, evidence record). A field the release does not carry is left out, never filled in. Home shows one, chosen by rule (the newest verified multi-Spark recipe with a measured peak); the recipe page uses the same component.
+
+### Creators Ledger
+
+The ten creators with the most verified recipes, from the summary's `topCreators`: the name (gold, a link to the catalog filtered to that creator), a `role="meter"` bar scaled to the largest count, the count, then "and N more creators". Credit is the product, so the ledger sits above the install commands. The home page runs in this order: hero (sentence, picker, wall), kept current, verified on hardware, run the mix (Controller screenshot beside the `vonkctl` session with a caret, then the three points), creators, install, security boundary, closing. The three hero count stats are gone: the picker's answer is the one number in the hero.
+
+### Spark Unit
+
+"What it needs" on the recipe page draws one model across its Sparks (`SparkUnit`): the model name over a bracket that joins one slab per Spark, each slab with the peak a hardware run measured and the memory the recipe declares, on one shared scale. Only what the catalog carries is drawn: a recipe with no measured peak shows the declared value and never the word "measured". The receipt on the right is shown only for a verified recipe (its digests are those of the recipe that passed); any other status shows its vocabulary meaning and no receipt rows. Facts below the slabs: Sparks, disk per Spark, context, concurrent requests.
+
+### Ways Matrix
+
+"Every way to run {family}" (`WaysMatrix`), on the recipe page and the model page: creators as rows (most recipes first), Spark counts as columns, one chip per recipe with the wall's mark (filled, outlined dot, dashed) and its status word for assistive technology. The current recipe has a heavier outline and `aria-current`. The scope is the recipe's family as `modelFamilyTitle` gives it; a family with one recipe draws nothing. Below 44rem each creator becomes a block with the Spark count as a label. The page reads the full recipe list (already loaded for the recipe); if it cannot be read the matrix is not shown.
+
+### Motion
+
+All of it sits inside `prefers-reduced-motion: no-preference`; with reduced motion the page is in its final state on first paint. The wall ignites once, in release order, when it first scrolls into view (marks start dimmed, then a CSS transition delayed by each mark's index lights them in about 1.4 s); marks cool and relight in 240 ms when the picker changes; the wall's detail card fades in over 120 ms; the terminal caret blinks. There is no parallax, no scroll-driven animation and no autoplay.
 
 ### Role Colours
 

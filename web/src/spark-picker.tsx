@@ -37,7 +37,7 @@ export function TypeChips({ summary, pick, onChange }: { summary: CatalogSummary
   return (
     <div className="type-chips" role="group" aria-label="Model type">
       {chips.map((chip) => (
-        <button key={chip.id || "all"} type="button" aria-pressed={pick.type === chip.id} aria-label={`${chip.label}: ${number.format(chip.count)}`} aria-disabled={chip.count === 0 && pick.type !== chip.id ? true : undefined}
+        <button key={chip.id || "all"} type="button" aria-pressed={pick.type === chip.id} aria-disabled={chip.count === 0 && pick.type !== chip.id ? true : undefined}
           onClick={() => { if (chip.count > 0 || pick.type === chip.id) onChange(pick.type === chip.id ? "" : chip.id); }}>
           {chip.id ? <TypeIcon id={chip.id} /> : null}{chip.label}<small>{number.format(chip.count)}</small>
         </button>

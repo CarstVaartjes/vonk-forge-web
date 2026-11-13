@@ -12,17 +12,16 @@ type Phase = "final" | "armed" | "playing";
 // real digit count. While rolling, the moving digits are aria-hidden and a
 // visually hidden copy of the final number stands in, so assistive technology
 // reads the value once. Nothing animates under prefers-reduced-motion or
-// without IntersectionObserver. `null` is the not-yet-loaded placeholder: blank
-// columns, no text.
-export function RollingNumber({ value, placeholderDigits = 3 }: { value: number | null; placeholderDigits?: number }) {
+// without IntersectionObserver.
+export function RollingNumber({ value }: { value: number }) {
   const root = useRef<HTMLSpanElement>(null);
   const [phase, setPhase] = useState<Phase>("final");
-  const characters = value === null ? Array.from({ length: placeholderDigits }, () => " ") : FORMAT.format(value).split("");
+  const characters = FORMAT.format(value).split("");
 
   useLayoutEffect(() => {
     const element = root.current;
     const reduced = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (value === null || !element || reduced || typeof IntersectionObserver === "undefined") return;
+    if (!element || reduced || typeof IntersectionObserver === "undefined") return;
     setPhase("armed");
     let timer: number | undefined;
     const observer = new IntersectionObserver((entries) => {
@@ -41,10 +40,9 @@ export function RollingNumber({ value, placeholderDigits = 3 }: { value: number 
     };
   }, [value]);
 
-  const rolling = value !== null && phase !== "final";
+  const rolling = phase !== "final";
   let column = 0;
   const digits = characters.map((character, position) => {
-    if (character === " ") return <span className="rolling-column" key={position} />;
     if (!/\d/.test(character)) return <span className="rolling-separator" key={position}>{character}</span>;
     const digit = Number(character);
     // At rest a column is just its digit as text; while rolling it holds blank, 0..digit.
@@ -60,7 +58,7 @@ export function RollingNumber({ value, placeholderDigits = 3 }: { value: number 
   return (
     <span className="rolling-number" data-phase={phase} ref={root}>
       {rolling ? <span className="visually-hidden">{FORMAT.format(value)}</span> : null}
-      <span className="rolling-digits" aria-hidden={rolling || value === null ? "true" : undefined}>{digits}</span>
+      <span className="rolling-digits" aria-hidden={rolling ? "true" : undefined}>{digits}</span>
     </span>
   );
 }

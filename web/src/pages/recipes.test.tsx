@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import type { RecipeSummary } from "../api/client";
+import { readMySparks, saveMySparks } from "../my-sparks";
 import { RecipesPage } from "./recipes";
 import { catalogFacts, vocabularyFixture } from "../vocabulary.fixture";
 
@@ -52,6 +53,7 @@ const recipe: RecipeSummary = {
 
 
 beforeEach(() => {
+  localStorage.clear();
   window.history.replaceState(null, "", "/recipes?runtime=vllm&verified=0");
   loadRecipeCatalog.mockReset().mockResolvedValue([recipe]);
   getVocabulary.mockReset().mockResolvedValue(vocabularyFixture);
@@ -96,9 +98,9 @@ test("starts from the visitor's Sparks and engine, in the same URL facets as the
   window.history.replaceState(null, "", "/recipes?verified=0");
   render(<RecipesPage />);
   await screen.findByRole("heading", { name: "Qwen Fast" });
-  const oneSpark = screen.getByRole("button", { name: "1 Spark: 1 recipes" });
+  const oneSpark = screen.getByRole("button", { name: "1 Spark 1 recipe" });
   // "I have 2 Sparks" also runs the one-Spark recipe: a count means "that many or fewer".
-  expect(screen.getByRole("button", { name: "2 Sparks: 1 recipes" })).toBeEnabled();
+  expect(screen.getByRole("button", { name: "2 Sparks 1 recipe" })).toBeEnabled();
   fireEvent.click(oneSpark);
   await waitFor(() => expect(window.location.search).toBe("?verified=0&sparks=1"));
   expect(screen.getByLabelText("Filter by Sparks you have")).toHaveValue("1");
@@ -128,6 +130,39 @@ function verifiedCoder(): RecipeSummary {
   return { ...recipe, slug: "coder", title: "Coder", catalog: catalogFacts({ ...recipe.catalog, model_family: "Coder", model_version_slug: "coder", model_version_title: "coder", capabilities: ["code-generation"], qualification: "Working", qualification_reason: null }) };
 }
 
+describe("My Sparks", () => {
+  test("a pick remembered from the home page fills in the Spark count, and the URL wins over it", async () => {
+    saveMySparks({ sparks: "2", type: "" });
+    window.history.replaceState(null, "", "/recipes?verified=0");
+    const first = render(<RecipesPage />);
+    await screen.findByRole("heading", { name: "Qwen Fast" });
+    expect(screen.getByRole("button", { name: "2 Sparks 1 recipe" })).toHaveAttribute("aria-pressed", "true");
+    expect(window.location.search).toBe("?verified=0&sparks=2");
+    first.unmount();
+
+    window.history.replaceState(null, "", "/recipes?verified=0&sparks=1");
+    render(<RecipesPage />);
+    await screen.findByRole("heading", { name: "Qwen Fast" });
+    expect(screen.getByRole("button", { name: "1 Spark 1 recipe" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("picking on this page is remembered, and clearing the picker forgets it", async () => {
+    window.history.replaceState(null, "", "/recipes?verified=0");
+    render(<RecipesPage />);
+    await screen.findByRole("heading", { name: "Qwen Fast" });
+    fireEvent.click(screen.getByRole("button", { name: "2 Sparks 1 recipe" }));
+    expect(readMySparks("")).toEqual({ sparks: "2", type: "" });
+    fireEvent.click(screen.getByRole("button", { name: "Every count 1 recipe" }));
+    expect(readMySparks("")).toEqual({ sparks: "", type: "" });
+  });
+
+  test("the Spark picker is the first control of the setup section", async () => {
+    render(<RecipesPage />);
+    const setup = within(await screen.findByRole("region", { name: "Then narrow it to your setup." }));
+    expect(setup.getAllByRole("group")[0]).toHaveAccessibleName("How many Sparks do you have?");
+  });
+});
+
 describe("type-first filtering", () => {
   beforeEach(() => {
     loadRecipeCatalog.mockReset().mockResolvedValue([recipe, verifiedCoder()]);
@@ -152,13 +187,13 @@ describe("type-first filtering", () => {
     render(<RecipesPage />);
     expect(await screen.findByRole("heading", { name: "Coder" })).toBeVisible();
     const types = screen.getByRole("group", { name: "Model type" });
-    expect(within(types).getAllByRole("button").map((button) => button.textContent)).toEqual(["All1", "Language0", "Code1", "Vision0", "Image0", "Video0", "Audio0", "3D0", "Other0"]);
-    expect(within(types).getByRole("button", { name: "Code: 1 recipes" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(types).getAllByRole("button").map((button) => button.textContent)).toEqual(["All 1", "Language 0", "Code 1", "Vision 0", "Image 0", "Video 0", "Audio 0", "3D 0", "Other 0"]);
+    expect(within(types).getByRole("button", { name: "Code 1" })).toHaveAttribute("aria-pressed", "true");
     // The type row precedes the setup refinements in the page order.
     expect(types.compareDocumentPosition(screen.getByRole("group", { name: "How many Sparks do you have?" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    fireEvent.click(within(types).getByRole("button", { name: "All: 1 recipes" }));
+    fireEvent.click(within(types).getByRole("button", { name: "All 1" }));
     await waitFor(() => expect(window.location.search).toBe(""));
-    fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "Code: 1 recipes" }));
+    fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "Code 1" }));
     await waitFor(() => expect(window.location.search).toBe("?type=code"));
   });
 
@@ -180,21 +215,21 @@ describe("type-first filtering", () => {
     render(<RecipesPage />);
     await screen.findByRole("heading", { name: "coder" });
     const types = () => within(screen.getByRole("group", { name: "Model type" }));
-    expect(types().getByRole("button", { name: "Code: 1 recipes" })).not.toHaveAttribute("aria-disabled");
-    expect(types().getByRole("button", { name: "Language: 1 recipes" })).toBeVisible();
+    expect(types().getByRole("button", { name: "Code 1" })).not.toHaveAttribute("aria-disabled");
+    expect(types().getByRole("button", { name: "Language 1" })).toBeVisible();
 
-    fireEvent.click(screen.getByRole("button", { name: "1 Spark: 1 recipes" }));
-    await waitFor(() => expect(types().getByRole("button", { name: "Language: 0 recipes" })).toHaveAttribute("aria-disabled", "true"));
-    expect(types().getByRole("button", { name: "Code: 1 recipes" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "1 Spark 1 recipe" }));
+    await waitFor(() => expect(types().getByRole("button", { name: "Language 0" })).toHaveAttribute("aria-disabled", "true"));
+    expect(types().getByRole("button", { name: "Code 1" })).toBeVisible();
     // An empty chip stays focusable but does nothing.
-    fireEvent.click(types().getByRole("button", { name: "Language: 0 recipes" }));
+    fireEvent.click(types().getByRole("button", { name: "Language 0" }));
     expect(window.location.search).toBe("?sparks=1");
 
-    fireEvent.click(screen.getByRole("button", { name: "Any count: 2 recipes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Every count 2 recipes" }));
     await waitFor(() => expect(window.location.search).toBe(""));
     fireEvent.click(within(screen.getByRole("group", { name: "Creator" })).getByRole("button", { name: "eugr: 1" }));
-    await waitFor(() => expect(types().getByRole("button", { name: "Language: 0 recipes" })).toHaveAttribute("aria-disabled", "true"));
-    expect(types().getByRole("button", { name: "Code: 1 recipes" })).toBeVisible();
+    await waitFor(() => expect(types().getByRole("button", { name: "Language 0" })).toHaveAttribute("aria-disabled", "true"));
+    expect(types().getByRole("button", { name: "Code 1" })).toBeVisible();
   });
 
   test("the default Verified on Spark filter is an applied chip and is named in the empty state", async () => {
@@ -218,7 +253,7 @@ describe("type-first filtering", () => {
     await screen.findByRole("heading", { name: "Coder" });
     expect(screen.getByLabelText("Applied filters")).toHaveTextContent("Verified on Spark");
     expect(screen.queryByRole("button", { name: /^Clear \d+ filter/ })).not.toBeInTheDocument();
-    fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "Code: 1 recipes" }));
+    fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "Code 1" }));
     const clear = await screen.findByRole("button", { name: "Clear 1 filter" });
     fireEvent.click(clear);
     await waitFor(() => expect(window.location.search).toBe("?verified=0"));

@@ -49,11 +49,15 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
 - The site's Spark-count filter means "needs that many Sparks or fewer" (4+ matches every
   recipe), in one function (`nodeCountMatches` in `web/src/catalog-filters.ts`) shared by the home
   picker, the catalog and the models page. The Controller's filter still matches the exact count;
-  a Controller follow-up will match this meaning.
+  a Controller follow-up will match this meaning. The pick (Spark count and type) is remembered in
+  `localStorage` by `web/src/my-sparks.ts`; the catalog page reads it when its URL carries neither,
+  and saves a change to either, so home and catalog share one "My Sparks".
 - The home page reads one file, `catalog-summary.json` (`summary_version: 2`),
   which the same Pages build derives from the verified index with the code the pages
   use (`web/src/catalog-stats.ts`): totals, statuses in vocabulary order, shelves per
-  Spark count, one row per recipe, and the weekly and daily series. Home never loads
+  Spark count, one row per recipe, the weekly and daily series, each status with its vocabulary
+  meaning, and the one receipt the home page shows (`receiptFacts` in the same file builds it for the
+  recipe page too). Home never loads
   `catalog-index.json`; the browser accepts version 2 only and refuses anything else
   (error state with Retry). There is no second summary file and no reader for an
   older version: the bump ships atomically with the reader in one Pages build.
@@ -91,7 +95,10 @@ npx --prefix web playwright install chromium
 npm --prefix web run test:e2e   # builds and serves web/dist with vite preview
 ```
 
-The end-to-end suite serves a fixture release at `/catalog/` on the preview
+The end-to-end suite includes an acceptance spec (`web/e2e/acceptance.spec.ts`): no horizontal
+overflow and no console error at 1440 and 400 px in both themes, an axe scan of home, the catalog and a
+recipe page with no serious or critical issue, and the home transfer budget (JavaScript and data under
+200 kB gzipped, never the full catalog index). It serves a fixture release at `/catalog/` on the preview
 origin and blocks every other origin, so it exercises the production bundle
 without network access. `web/scripts/recipe-release.test.mjs` covers the
 fetch-and-verify step with a fixture release, including refusal of bad

@@ -30,6 +30,18 @@ export function readMySparks(search: string): MySparks {
   }
 }
 
+// Remember the pick on this device, for the next visit and for the other page that reads it.
+export function saveMySparks({ sparks, type }: MySparks): void {
+  const parameters = new URLSearchParams();
+  if (sparks) parameters.set("sparks", sparks);
+  if (type) parameters.set("type", type);
+  try {
+    localStorage.setItem(KEY, parameters.toString());
+  } catch {
+    // Blocked storage: the URL still carries the choice.
+  }
+}
+
 export function useMySparks(): [MySparks, (next: Partial<MySparks>) => void] {
   const [value, setValue] = useState(() => readMySparks(window.location.search));
   const update = (next: Partial<MySparks>) => {
@@ -39,11 +51,7 @@ export function useMySparks(): [MySparks, (next: Partial<MySparks>) => void] {
     if (merged.type) parameters.set("type", merged.type);
     const query = parameters.toString();
     window.history.replaceState(null, "", `${window.location.pathname}${query ? `?${query}` : ""}`);
-    try {
-      localStorage.setItem(KEY, query);
-    } catch {
-      // Blocked storage: the URL still carries the choice.
-    }
+    saveMySparks(merged);
     setValue(merged);
   };
   return [value, update];
