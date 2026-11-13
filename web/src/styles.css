@@ -3014,50 +3014,44 @@ a {
 }
 
 
-.type-section {
-  padding: var(--section) 0 0;
-}
-
-/* Type tiles: one connected grid, a gold line icon, the type and its count. */
-.type-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid var(--line);
-  border-left: 1px solid var(--line);
-}
-
-.type-grid li {
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  background: var(--panel);
-}
-
-.type-grid a {
-  display: flex;
-  height: 100%;
-  align-items: center;
-  gap: var(--s4);
-  padding: 1.25rem 1.1rem;
-  color: var(--ink);
-  text-decoration: none;
-  transition: background var(--fast) var(--ease);
-}
-
-.type-grid a:hover { background: var(--raised); }
-.type-grid a:focus-visible { outline-offset: -3px; }
 .type-icon { flex: none; color: var(--gold); }
-.type-text { display: grid; min-width: 0; gap: 0.1rem; }
-.type-text strong { font-size: var(--t-h3); letter-spacing: -0.02em; line-height: 1.2; }
-.type-count { color: var(--muted); font-size: var(--t-small); font-variant-numeric: tabular-nums; }
-.type-count b { color: var(--ink); font-weight: 700; }
 
-
-@media (max-width: 900px) {
-  .type-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+/* The catalog wall: one mark per recipe, shelves by Spark count (a joined mark per Spark). */
+.has-wall { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 64rem) {
+  .has-wall { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start; }
+  .has-wall .home-hero-copy { grid-column: 1; grid-row: 1; }
+  .has-wall .hero-proof { grid-column: 1; grid-row: 2; grid-template-columns: repeat(3, minmax(0, 1fr)); border-bottom: 1px solid var(--line); }
+  .has-wall .hero-stat { padding: var(--s3); border-bottom: 0; border-left: 1px solid var(--line); }
+  .has-wall .hero-stat:first-child { padding-left: 0; border-left: 0; }
+  .has-wall .wall-slot { grid-column: 2; grid-row: 1 / span 2; }
 }
+
+/* Reserved height, measured on the real release, so the wall arriving moves almost nothing. */
+.wall-slot { min-height: 44rem; }
+@media (min-width: 64rem) { .wall-slot { min-height: 50rem; } }
+.wall { display: grid; gap: var(--s4); padding: var(--s5); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--panel); box-shadow: var(--shadow); --cell: 16px; --cell-gap: 3px; }
+@media (max-width: 40rem) { .wall { --cell: 11px; --cell-gap: 2px; padding: var(--s3); } }
+.wall-shelves { display: grid; gap: var(--s4); }
+.wall-shelf-title { margin: 0 0 var(--s2); color: var(--faint); font: 700 var(--t-label)/1.4 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.wall-shelf-title span { margin-left: 0.5em; color: var(--muted); }
+.wall-cells { display: flex; flex-wrap: wrap; gap: var(--cell-gap); }
+.wall-cell { display: flex; gap: 1px; border-radius: 4px; }
+.wall-cell i { box-sizing: border-box; width: var(--cell); height: var(--cell); border-radius: 4px; }
+.wall-cell i:not(:first-child) { border-top-left-radius: 1px; border-bottom-left-radius: 1px; }
+.wall-cell i:not(:last-child) { border-top-right-radius: 1px; border-bottom-right-radius: 1px; }
+.wall-cell:focus-visible, .wall-cell[data-shown] { outline: 2px solid var(--gold-soft); outline-offset: 2px; }
+.wall-cell[data-state="verified"] i, .wall-key[data-state="verified"] { background: var(--lit); box-shadow: var(--lit-glow); }
+.wall-cell[data-state="before"] i, .wall-key[data-state="before"] { border: 1.5px solid var(--warn); }
+.wall-cell[data-state="none"] i, .wall-key[data-state="none"] { border: 1.5px solid var(--line-control); }
+.wall-card { display: grid; align-content: start; gap: 0.2rem; min-height: 8.5rem; padding: var(--s3) var(--s4); border: 1px solid var(--line); border-radius: var(--r-in); background: var(--recess); font-size: var(--t-small); color: var(--muted); }
+.wall-card strong { color: var(--ink); font-size: var(--t-body); }
+.wall-card-status { color: var(--ink); font-weight: 650; }
+.wall-card-hint { margin: 0; }
+.wall-legend { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); margin: 0; padding: 0; list-style: none; color: var(--muted); font-size: var(--t-small); }
+.wall-legend li { display: inline-flex; align-items: center; gap: var(--s2); }
+.wall-legend b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.wall-key { box-sizing: border-box; width: 14px; height: 14px; border-radius: 4px; }
 
 /* Recipe detail: header with the verdict, four facts, the command, then capabilities and details. */
 .detail-page { padding-top: 0; }

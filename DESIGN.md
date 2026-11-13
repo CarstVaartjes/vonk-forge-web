@@ -287,6 +287,10 @@ The home page opens its argument with four promises in one connected grid: know 
 
 The terminal counterpart of the controller preview: the same rounded frame and Card Shadow, a mono label, muted comment lines, and Ready Green commands behind a Spark gold prompt. It shows real `vonkctl` invocations only, never invented output.
 
+### Catalog Wall
+
+The home hero's signature: one mark per recipe from `catalog-summary.json`, in shelves by Spark count (a recipe on two Sparks is one focusable item drawn as two joined marks), newest release first. A mark has three states derived from two catalog facts only, the vocabulary's `verified` flag and whether a hardware pass is on record, never from a status word: filled (`--lit`), amber outline (passed before, not verified now), hollow (no pass yet). Shape carries the state and the legend names it with counts; the exact status word is always in the details card under the wall. The wall is one tab stop with arrow-key movement; on touch a tap selects the nearest mark. Speed is never drawn: the wall shows what runs, not how fast.
+
 ### Role Colours
 
 Five tokens in `:root`, `--role-coder`, `--role-image`, `--role-three-d`, `--role-audio` and `--role-video`, are used only by the example-setup page (`/example-setup`); the architecture diagram's two lane colours (`--lane-public`, `--lane-network`) are the same kind of identity token. They tell model roles apart, always sit beside a text role label and a legend, and are never status or action colours.

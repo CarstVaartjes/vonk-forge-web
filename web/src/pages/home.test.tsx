@@ -44,18 +44,9 @@ describe("home page", () => {
     expect(screen.getByRole("link", { name: "See the agent-friendly CLI" })).toHaveAttribute("href", "/control#local-cli");
     expect(loadRecipeCatalog).not.toHaveBeenCalled();
     expect(listModels).not.toHaveBeenCalled();
-    const tiles = within(screen.getByRole("region", { name: "What can you run?" }));
-    expect(tiles.getByRole("link", { name: /Language\s*1 verified/ })).toHaveAttribute("href", "/recipes?type=language");
-    expect(tiles.getByRole("link", { name: /Code\s*1 verified/ })).toBeVisible();
-    expect(tiles.getByRole("link", { name: /3D\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=3d&verified=0");
-  });
-
-  test("the type tiles start with All verified and carry a decorative icon, so the link name is the text", async () => {
-    getCatalogSummary.mockResolvedValue(summary());
-    render(<HomePage />);
-    const tiles = within(await screen.findByRole("region", { name: "What can you run?" }));
-    expect(tiles.getByRole("link", { name: /All verified\s*2 recipes/ })).toHaveAttribute("href", "/recipes");
-    for (const link of tiles.getAllByRole("link")) expect(link.querySelector("svg.type-icon")).toHaveAttribute("aria-hidden", "true");
+    const wall = await screen.findByRole("group", { name: /The recipe catalog/ });
+    expect(within(wall).getAllByRole("link")).toHaveLength(4);
+    expect(screen.queryByRole("region", { name: "What can you run?" })).toBeNull();
   });
 
   test("shows the two install commands, each with a Copy button", async () => {
@@ -67,11 +58,18 @@ describe("home page", () => {
     expect(quickstart.getAllByRole("button", { name: "Copy" })).toHaveLength(2);
   });
 
+  test("a release with nothing verified shows the empty state and no wall", async () => {
+    getCatalogSummary.mockResolvedValue({ ...summary(), verified: 0 });
+    render(<HomePage />);
+    expect(await screen.findByText(/No recipe in this release has passed hardware checks/)).toBeVisible();
+    expect(screen.queryByRole("group", { name: /The recipe catalog/ })).toBeNull();
+  });
+
   test("shows no numbers and an alert when the summary is missing or malformed", async () => {
     getCatalogSummary.mockRejectedValue(new Error("unsupported"));
     render(<HomePage />);
     await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("The recipe library could not be read."));
     expect(document.querySelector(".rolling-number")).toBeNull();
-    expect(screen.queryByRole("region", { name: "What can you run?" })).toBeNull();
+    expect(screen.queryByRole("group", { name: /The recipe catalog/ })).toBeNull();
   });
 });
