@@ -72,17 +72,22 @@ function windows(end: string, count: number, span: number): Array<{ start: strin
 
 export function deriveCatalogStats(recipes: StatsRecipe[], vocabulary: Vocabulary, updatedAt: string): CatalogStats {
   const verified = recipes.filter(isVerified);
-  const creators = foldCreators(verified.map((recipe) => recipe.catalog.source_owner));
-  const allCreators = new Map(foldCreators(recipes.map((recipe) => recipe.catalog.source_owner)).map(({ name }) => [name.toLowerCase(), name]));
+  // One fold over every recipe names each creator once, so the ledger and the rows spell it the same.
+  const names = new Map(foldCreators(recipes.map((recipe) => recipe.catalog.source_owner)).map(({ name }) => [name.toLowerCase(), name]));
+  const nameOf = (owner: string | null | undefined) => names.get(owner?.trim().toLowerCase() ?? "") ?? null;
+  const creators = new Map<string, number>();
+  for (const recipe of verified) {
+    const name = nameOf(recipe.catalog.source_owner);
+    if (name) creators.set(name, (creators.get(name) ?? 0) + 1);
+  }
   const families = new Set(verified.map((recipe) => modelFamilyTitle(recipe).trim().toLowerCase()).filter(Boolean));
   const types = vocabulary.categories.map(({ id, label }) => ({ id, label, verified: verified.filter((recipe) => recipe.catalog.types.includes(id)).length }));
   const rows: RecipeRow[] = recipes.map((recipe) => {
-    const owner = recipe.catalog.source_owner?.trim();
     return {
       publisher: recipe.publisher,
       slug: recipe.slug,
       title: recipe.title,
-      creator: owner ? allCreators.get(owner.toLowerCase()) ?? null : null,
+      creator: nameOf(recipe.catalog.source_owner),
       sparks: recipe.catalog.node_count,
       status: recipe.catalog.qualification,
       verified: recipe.catalog.verified,
@@ -112,8 +117,8 @@ export function deriveCatalogStats(recipes: StatsRecipe[], vocabulary: Vocabular
     passesPerDay: perDay.map(({ start, from }) => ({ day: start, count: testedTimes.filter((time) => time === from).length })),
     verified: verified.length,
     families: families.size,
-    creators: creators.length,
-    topCreators: creators.map(({ name, count }) => ({ name, verified: count }))
+    creators: creators.size,
+    topCreators: [...creators].map(([name, count]) => ({ name, verified: count }))
       .sort((left, right) => right.verified - left.verified || left.name.localeCompare(right.name, undefined, { sensitivity: "base" }))
       .slice(0, 10),
     types,
