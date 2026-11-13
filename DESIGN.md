@@ -289,7 +289,7 @@ The terminal counterpart of the controller preview: the same rounded frame and C
 
 ### Catalog Wall
 
-The home hero's signature: one mark per recipe from `catalog-summary.json`, in shelves by Spark count (a recipe on two Sparks is one focusable item drawn as two joined marks), newest release first. A mark has three states derived from two catalog facts only, the vocabulary's `verified` flag and whether a hardware pass is on record, never from a status word: filled (`--lit`), amber outline (passed before, not verified now), hollow (no pass yet). Shape carries the state and the legend names it with counts; the exact status word is always in the details card under the wall. The wall is one tab stop with arrow-key movement; on touch a tap selects the nearest mark. Speed is never drawn: the wall shows what runs, not how fast.
+The home hero's signature: one mark per recipe from `catalog-summary.json`, in shelves by Spark count (a recipe on two Sparks is one focusable item drawn as two joined marks), newest release first. A mark has three states derived from two catalog facts only, the vocabulary's `verified` flag and whether a hardware pass is on record, never from a status word: filled (`--lit`), amber outline with a dot (passed before, not verified now), dashed hollow (no pass yet). Shape carries the state and the legend names it with counts; the exact status word is always in the details card under the wall. The wall is one tab stop with arrow-key movement; on touch a tap selects the nearest mark. Speed is never drawn: the wall shows what runs, not how fast.
 
 ### Role Colours
 

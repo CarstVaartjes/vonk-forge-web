@@ -3030,7 +3030,7 @@ a {
 /* Reserved height, measured on the real release, so the wall arriving moves almost nothing. */
 .wall-slot { min-height: 44rem; }
 @media (min-width: 64rem) { .wall-slot { min-height: 50rem; } }
-.wall { display: grid; gap: var(--s4); padding: var(--s5); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--panel); box-shadow: var(--shadow); --cell: 16px; --cell-gap: 3px; }
+.wall { display: grid; gap: var(--s4); padding: var(--s5); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--panel); box-shadow: var(--shadow); }
 @media (max-width: 40rem) { .wall { --cell: 11px; --cell-gap: 2px; padding: var(--s3); } }
 .wall-shelves { display: grid; gap: var(--s4); }
 .wall-shelf-title { margin: 0 0 var(--s2); color: var(--faint); font: 700 var(--t-label)/1.4 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
@@ -3042,8 +3042,11 @@ a {
 .wall-cell i:not(:last-child) { border-top-right-radius: 1px; border-bottom-right-radius: 1px; }
 .wall-cell:focus-visible, .wall-cell[data-shown] { outline: 2px solid var(--gold-soft); outline-offset: 2px; }
 .wall-cell[data-state="verified"] i, .wall-key[data-state="verified"] { background: var(--lit); box-shadow: var(--lit-glow); }
-.wall-cell[data-state="before"] i, .wall-key[data-state="before"] { border: 1.5px solid var(--warn); }
-.wall-cell[data-state="none"] i, .wall-key[data-state="none"] { border: 1.5px solid var(--line-control); }
+/* Three shapes, so no state rests on colour: filled, outlined with a dot, dashed and hollow. */
+.wall-cell[data-state="before"] i, .wall-key[data-state="before"] { display: grid; place-items: center; border: 1.5px solid var(--warn); }
+.wall-cell[data-state="before"] i::after, .wall-key[data-state="before"]::after { content: ""; width: 3px; height: 3px; border-radius: 50%; background: var(--warn); }
+.wall-key[data-state="before"] { display: grid; place-items: center; }
+.wall-cell[data-state="none"] i, .wall-key[data-state="none"] { border: 1.5px dashed var(--line-control); }
 .wall-card { display: grid; align-content: start; gap: 0.2rem; min-height: 8.5rem; padding: var(--s3) var(--s4); border: 1px solid var(--line); border-radius: var(--r-in); background: var(--recess); font-size: var(--t-small); color: var(--muted); }
 .wall-card strong { color: var(--ink); font-size: var(--t-body); }
 .wall-card-status { color: var(--ink); font-weight: 650; }
