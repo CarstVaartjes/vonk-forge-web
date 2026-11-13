@@ -72,7 +72,7 @@ test.each(["dark", "light"])("token pairs meet contrast in the %s theme (text 4.
     const need = TEXT.some(([x, y]) => x === a && y === b) ? 4.5 : 3;
     return contrast(colour(a), colour(b)) < need;
   });
-  // --cool is the dimmed cell: it only needs to read as an outline-less cell (>= 1.2:1) on the panel.
+  // --cool is the dim state, exempt from 3:1: it only has to stay visible against the panel (>= 1.2:1).
   const cool = contrast(colour("--cool", colour("--panel")), colour("--panel"));
-  expect({ failing, cool: cool >= 1.1 }).toEqual({ failing: [], cool: true });
+  expect({ failing, cool: cool >= 1.2 }).toEqual({ failing: [], cool: true });
 });
