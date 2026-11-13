@@ -94,6 +94,17 @@ function NavigationLink({ href, children, primary = false, also = [] }: { href: 
 export function App() {
   const release = useLibraryRelease();
   const [menuOpen, setMenuOpen] = useState(false);
+  // Escape closes the phone menu and hands focus back to its button.
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const close = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setMenuOpen(false);
+      document.querySelector<HTMLButtonElement>(".menu-button")?.focus();
+    };
+    document.addEventListener("keydown", close);
+    return () => document.removeEventListener("keydown", close);
+  }, [menuOpen]);
   return (
     <>
       <a className="skip-link" href="#main-content">Skip to content</a>

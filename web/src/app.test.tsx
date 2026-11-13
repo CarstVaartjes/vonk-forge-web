@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 
 import { App } from "./app";
@@ -44,9 +44,10 @@ test("the theme switch is a labelled button that flips and remembers the theme",
 
 
 test("the release pill and footer line are not drawn when the release cannot be read", async () => {
-  vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 404 })));
+  const unreadable = vi.fn(async () => ({ ok: false, status: 404 }));
+  vi.stubGlobal("fetch", unreadable);
   render(<App />);
-  await new Promise((resolve) => setTimeout(resolve, 20));
+  await waitFor(() => expect(unreadable).toHaveBeenCalled());
   expect(screen.queryByText(/Recipe library/)).toBeNull();
   expect(within(siteHeader()).queryByText(/updated/)).toBeNull();
 });
@@ -296,4 +297,15 @@ test("shared links get a large card with the share image", () => {
   expect(html).toContain('<meta name="twitter:card" content="summary_large_image" />');
   expect(html).toContain('content="https://vonkforge.ai/og.png"');
   expect(html).toContain('<link rel="icon" href="/favicon.svg"');
+});
+
+
+test("Escape closes the open menu and returns focus to its button", () => {
+  render(<App />);
+  const button = screen.getByRole("button", { name: "Menu" });
+  fireEvent.click(button);
+  expect(button).toHaveAttribute("aria-expanded", "true");
+  fireEvent.keyDown(document, { key: "Escape" });
+  expect(button).toHaveAttribute("aria-expanded", "false");
+  expect(document.activeElement).toBe(button);
 });
