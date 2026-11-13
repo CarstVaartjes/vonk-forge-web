@@ -39,7 +39,7 @@ test("answers with the verified total until a count is picked, then names the co
 test("the choice lands in the URL and is remembered; a type narrows the answer and links the filtered catalog", () => {
   const { container } = render(<Harness />);
   fireEvent.click(screen.getByRole("button", { name: "2 Sparks" }));
-  fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "3D: 1" }));
+  fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: /^3D/ }));
   expect(window.location.search).toBe("?sparks=2&type=3d");
   expect(localStorage.getItem("vonk-my-sparks")).toBe("sparks=2&type=3d");
   expect(container.querySelector(".answer")).toHaveTextContent("1verified 3D recipes run on 2 Sparks.");

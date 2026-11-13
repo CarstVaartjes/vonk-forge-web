@@ -3,30 +3,16 @@ import { gzipSync } from "node:zlib";
 
 import { expect, test } from "@playwright/test";
 
-import { e2eCatalogIndex as catalogIndex, recipeDigest, sourceCommit } from "../src/api/e2e-catalog.fixture.ts";
-import { buildCatalogSummary } from "../src/catalog-summary.ts";
+import { catalogIndex, catalogSummary, routeRelease } from "./release-fixture.ts";
+import { recipeDigest, sourceCommit } from "../src/api/e2e-catalog.fixture.ts";
 
 
-const releaseTag = "v4.8.0";
 const recipeImportUri = `vonk://catalog/vonk-forge/qwen-fast@sha256:${recipeDigest}`;
-
-// The production build reads the verified recipe release that the Pages build
-// writes to /catalog on this origin. Serve a fixture release at those paths so the
-// static build is exercised end to end without reaching GitHub.
-const release = { repository: catalogIndex.repository, tag: releaseTag, contract_version: catalogIndex.contract_version, updated_at: catalogIndex.updated_at, source_commit: sourceCommit, catalog_index_sha256: "d".repeat(64) };
-// What the Pages build writes beside release.json, derived by the same code from the same index.
-const catalogSummary = buildCatalogSummary(catalogIndex, release);
 // The picker's answer with nothing picked: every verified recipe, out of the whole catalog.
 const ANSWER = new RegExp(`^4\\s*recipes verified on a real DGX Spark, out of ${catalogSummary.total} in the catalog\\.$`);
 
 
-test.beforeEach(async ({ page }) => {
-  // Block every other origin: the catalog must be served from this site.
-  await page.route((url) => !["127.0.0.1", "localhost"].includes(url.hostname), (route) => route.abort());
-  await page.route("**/catalog/catalog-index.json", (route) => route.fulfill({ json: catalogIndex }));
-  await page.route("**/catalog/release.json", (route) => route.fulfill({ json: release }));
-  await page.route("**/catalog/catalog-summary.json", (route) => route.fulfill({ json: catalogSummary }));
-});
+test.beforeEach(({ page }) => routeRelease(page));
 
 
 test("platform story stays navigable and bounded", async ({ page }) => {
@@ -107,9 +93,9 @@ test("home page shows the live numbers from the build-time summary and loads not
   await expect(page.locator(".answer")).toHaveText(ANSWER);
 
   const chips = page.getByRole("group", { name: "Model type" });
-  await expect(chips.getByRole("button", { name: "Language: 3" })).toBeVisible();
-  await expect(chips.getByRole("button", { name: "Code: 1" })).toBeVisible();
-  await expect(chips.getByRole("button", { name: "Video: 0" })).toHaveAttribute("aria-disabled", "true");
+  await expect(chips.getByRole("button", { name: "Language 3" })).toBeVisible();
+  await expect(chips.getByRole("button", { name: "Code 1" })).toBeVisible();
+  await expect(chips.getByRole("button", { name: "Video 0" })).toHaveAttribute("aria-disabled", "true");
   await expect(page.getByRole("group", { name: /The recipe catalog/ }).getByRole("link")).toHaveCount(catalogSummary.total);
 
   // Kept current and verified on hardware draw from the same summary.
@@ -122,7 +108,7 @@ test("home page shows the live numbers from the build-time summary and loads not
 
   // The picker's choice reaches the catalog filtered the same way, and survives a reload.
   await page.getByRole("button", { name: "2 Sparks" }).click();
-  await chips.getByRole("button", { name: /^Code:/ }).click();
+  await chips.getByRole("button", { name: /^Code/ }).click();
   await expect(page).toHaveURL(/\/\?sparks=2&type=code$/);
   await page.reload();
   await expect(page.getByRole("button", { name: "2 Sparks" })).toHaveAttribute("aria-pressed", "true");

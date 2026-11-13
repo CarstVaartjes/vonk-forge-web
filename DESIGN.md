@@ -315,6 +315,10 @@ The ten creators with the most verified recipes, from the summary's `topCreators
 
 "Every way to run {family}" (`WaysMatrix`), on the recipe page and the model page: creators as rows (most recipes first), Spark counts as columns, one chip per recipe with the wall's mark (filled, outlined dot, dashed) and its status word for assistive technology. The current recipe has a heavier outline and `aria-current`. The scope is the recipe's family as `modelFamilyTitle` gives it; a family with one recipe draws nothing. Below 44rem each creator becomes a block with the Spark count as a label. The page reads the full recipe list (already loaded for the recipe); if it cannot be read the matrix is not shown.
 
+### Motion
+
+All of it sits inside `prefers-reduced-motion: no-preference`; with reduced motion the page is in its final state on first paint. The wall ignites once, in release order, when it first scrolls into view (marks start dimmed, then a CSS transition delayed by each mark's index lights them in about 1.4 s); marks cool and relight in 240 ms when the picker changes; the wall's detail card fades in over 120 ms; the terminal caret blinks. There is no parallax, no scroll-driven animation and no autoplay.
+
 ### Role Colours
 
 Five tokens in `:root`, `--role-coder`, `--role-image`, `--role-three-d`, `--role-audio` and `--role-video`, are used only by the example-setup page (`/example-setup`); the architecture diagram's two lane colours (`--lane-public`, `--lane-network`) are the same kind of identity token. They tell model roles apart, always sit beside a text role label and a legend, and are never status or action colours.

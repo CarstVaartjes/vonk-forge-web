@@ -95,7 +95,10 @@ npx --prefix web playwright install chromium
 npm --prefix web run test:e2e   # builds and serves web/dist with vite preview
 ```
 
-The end-to-end suite serves a fixture release at `/catalog/` on the preview
+The end-to-end suite includes an acceptance spec (`web/e2e/acceptance.spec.ts`): no horizontal
+overflow and no console error at 1440 and 400 px in both themes, an axe scan of home and a recipe
+page with no serious or critical issue, and the home transfer budget (JavaScript and data under
+200 kB gzipped, never the full catalog index). It serves a fixture release at `/catalog/` on the preview
 origin and blocks every other origin, so it exercises the production bundle
 without network access. `web/scripts/recipe-release.test.mjs` covers the
 fetch-and-verify step with a fixture release, including refusal of bad

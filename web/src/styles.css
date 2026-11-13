@@ -3269,3 +3269,13 @@ a {
   .matrix td { padding: var(--s1) 0; border: 0; }
   .matrix td:not(:empty)::before { display: block; margin: var(--s2) 0; color: var(--faint); content: attr(data-label); font-size: var(--t-label); }
 }
+
+/* Motion: all of it off under reduced motion (the wall is then in its final state on first paint). */
+@media (prefers-reduced-motion: no-preference) {
+  .wall-cell i, .wall-cell i::after { transition: background-color var(--base) var(--ease), box-shadow var(--base) var(--ease), border-color var(--base) var(--ease); }
+  .wall[data-ignite="playing"] .wall-cell i, .wall[data-ignite="playing"] .wall-cell i::after { transition-duration: 300ms; transition-delay: calc(var(--i) / var(--n) * 1100ms); }
+  .wall-card { animation: card-in var(--fast) var(--ease); }
+  .caret { animation: caret-blink 1.1s steps(1) infinite; }
+}
+@keyframes card-in { from { opacity: 0; } }
+@keyframes caret-blink { 50% { opacity: 0; } }

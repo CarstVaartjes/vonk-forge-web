@@ -190,7 +190,7 @@ function RunTheMix() {
         <figure className="agent-session">
           <div className="agent-session-frame" aria-label="Example vonkctl session">
             <span className="agent-session-label">vonkctl · the same Controller, from a terminal or an agent</span>
-            <pre><code>{agentSession.map((line) => (
+            <pre tabIndex={0}><code>{agentSession.map((line) => (
               <span key={line.command} className="agent-session-step">
                 <span className="agent-session-comment"># {line.comment}</span>{"\n"}
                 <span className="agent-session-command">{line.command}</span>{"\n\n"}
