@@ -1412,8 +1412,11 @@ a {
   width: min(calc(100vw - 2rem), 112rem);
   margin-top: 2.5rem;
   margin-left: 50%;
+  overflow: hidden;
   border: 1px solid var(--line);
-  background: var(--bg);
+  border-radius: var(--r-card);
+  background: var(--panel);
+  box-shadow: var(--shadow);
   transform: translateX(-50%);
 }
 
@@ -2499,7 +2502,9 @@ a {
   margin: 0 0 2rem;
   padding: 1.5rem;
   border: 1px solid var(--line);
+  border-radius: var(--r-card);
   background: var(--panel);
+  box-shadow: var(--shadow);
 }
 
 .catalog-setup-heading {
@@ -2541,7 +2546,9 @@ a {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 1px;
+  overflow: hidden;
   border: 1px solid var(--line);
+  border-radius: var(--r-in);
   background: var(--line);
 }
 
@@ -2641,7 +2648,7 @@ a {
   min-height: 2rem;
   padding: 0.25rem 0.65rem;
   border: 1px solid var(--line-control);
-  border-radius: var(--r-ctl);
+  border-radius: var(--r-pill);
   color: var(--ink);
   background: transparent;
   font: inherit;
@@ -2782,7 +2789,7 @@ a {
 .catalog-type { display: grid; gap: 0.9rem; margin: 2rem 0 1.5rem; }
 .catalog-type h2 { margin: 0; font-size: var(--t-h3); letter-spacing: -0.03em; }
 
-.type-tabs { display: flex; flex-wrap: wrap; gap: 1px; border: 1px solid var(--line); background: var(--line); }
+.type-tabs { display: flex; flex-wrap: wrap; gap: 1px; overflow: hidden; border: 1px solid var(--line); border-radius: var(--r-in); background: var(--line); }
 
 .type-tabs button {
   display: inline-flex;

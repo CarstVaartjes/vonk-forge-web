@@ -4,6 +4,7 @@ import { usePageMeta } from "../page-meta";
 import { getVocabulary, loadRecipeCatalog, type RecipeSummary } from "../api/client";
 import { capabilityLabel, statusMeaning, typeLabel, type Vocabulary } from "../vocabulary";
 import { CatalogTabs } from "../catalog-tabs";
+import { readMySparks, saveMySparks } from "../my-sparks";
 import { STATUS_LEGEND_ID, StatusLegend } from "../status-legend";
 import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
 import {
@@ -77,7 +78,16 @@ type ActiveFilter = { key: string; label: string; remove: () => void };
 
 export function RecipesPage() {
   usePageMeta("Recipes", "Browse recipes for NVIDIA DGX Spark, each shown with whether it passed hardware checks, its memory and Spark count.");
-  const [parameters, setParameters] = useState(() => new URLSearchParams(window.location.search));
+  // The URL wins; without a Spark count or type in it, the pick remembered from the home page fills them in.
+  const [parameters, setParameters] = useState(() => {
+    const start = new URLSearchParams(window.location.search);
+    const mine = readMySparks(window.location.search);
+    if (!start.has("sparks") && !start.has("type")) {
+      if (mine.sparks) start.set("sparks", mine.sparks);
+      if (mine.type) start.set("type", mine.type);
+    }
+    return start;
+  });
   // The recipes and the words of the release they came from, loaded together.
   const [loaded, setLoaded] = useState<{ recipes: RecipeSummary[]; vocabulary: Vocabulary } | null>(null);
   const catalog = loaded?.recipes ?? null;
@@ -105,6 +115,9 @@ export function RecipesPage() {
   function replace(next: URLSearchParams) {
     const suffix = next.toString();
     window.history.replaceState(null, "", `${window.location.pathname}${suffix ? `?${suffix}` : ""}`);
+    // A change to the Spark count or type is the visitor's pick: remember it for the home page.
+    const after = filtersFromParameters(next);
+    if (after.sparks !== filters.sparks || after.type !== filters.type) saveMySparks(after);
     setParameters(next);
   }
 
@@ -227,16 +240,16 @@ export function RecipesPage() {
         <section className="catalog-setup" aria-labelledby="recipe-setup-title">
           <div className="catalog-setup-heading">
             <h2 id="recipe-setup-title">Then narrow it to your setup.</h2>
-            <p>Pick how many Sparks you have. The list narrows to recipes that need that many or fewer; your Controller makes the same check against the live capacity of your Sparks.</p>
+            <p>My Sparks: pick how many you have and the list narrows to recipes that need that many or fewer. The pick is remembered on this device and shared with the home page. Your Controller makes the same check against the live capacity of your Sparks.</p>
           </div>
-          <VerifiedToggle checked={filters.verified} onChange={setVerified} />
-          <StatusLegend statuses={qualifications} vocabulary={vocabulary} />
           <SparkPicker
             value={filters.sparks}
             noun="recipes"
             counts={sparkCounts}
             onChange={(value) => update("sparks", value)}
           />
+          <VerifiedToggle checked={filters.verified} onChange={setVerified} />
+          <StatusLegend statuses={qualifications} vocabulary={vocabulary} />
           <div className="catalog-setup-facets">
             <FacetStrip label="Model family" value={filters.modelFamily} onChange={updateModelFamily} options={modelFamilies.map((value) => ({ value, label: value, count: count("modelFamily", (recipe) => modelFamilyTitle(recipe) === value) }))} />
             <FacetStrip label="Engine" value={filters.runtime} onChange={(value) => update("runtime", value)} options={runtimes.map((value) => ({ value, label: engineLabel(value), count: count("runtime", (recipe) => recipe.catalog.runtime_distribution === value) }))} />

@@ -134,6 +134,21 @@ test("home page shows the live numbers from the build-time summary and loads not
 });
 
 
+test("the Spark count picked on the home page is the catalog's first filter, and clearing it restores the list", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "1 Spark", exact: true }).click();
+  await page.goto("/recipes?verified=0");
+  const sparks = page.getByRole("group", { name: "How many Sparks do you have?" });
+  await expect(sparks.getByRole("button", { name: /^1 Spark:/ })).toHaveAttribute("aria-pressed", "true");
+  const all = page.getByRole("region", { name: "Recipe results" }).getByText(/of \d+ recipes/);
+  const narrowed = await all.textContent();
+  await sparks.getByRole("button", { name: /^Any count/ }).click();
+  await expect(all).not.toHaveText(narrowed!);
+  await page.reload();
+  await expect(sparks.getByRole("button", { name: /^1 Spark:/ })).toHaveAttribute("aria-pressed", "false");
+});
+
+
 test("a recipe opens from the picker's results, and a creator opens the catalog filtered to them", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "2 Sparks" }).click();

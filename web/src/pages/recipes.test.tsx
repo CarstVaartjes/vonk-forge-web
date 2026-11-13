@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 import type { RecipeSummary } from "../api/client";
+import { readMySparks, saveMySparks } from "../my-sparks";
 import { RecipesPage } from "./recipes";
 import { catalogFacts, vocabularyFixture } from "../vocabulary.fixture";
 
@@ -52,6 +53,7 @@ const recipe: RecipeSummary = {
 
 
 beforeEach(() => {
+  localStorage.clear();
   window.history.replaceState(null, "", "/recipes?runtime=vllm&verified=0");
   loadRecipeCatalog.mockReset().mockResolvedValue([recipe]);
   getVocabulary.mockReset().mockResolvedValue(vocabularyFixture);
@@ -127,6 +129,38 @@ test("sorts the list from any column and preserves the selected direction", asyn
 function verifiedCoder(): RecipeSummary {
   return { ...recipe, slug: "coder", title: "Coder", catalog: catalogFacts({ ...recipe.catalog, model_family: "Coder", model_version_slug: "coder", model_version_title: "coder", capabilities: ["code-generation"], qualification: "Working", qualification_reason: null }) };
 }
+
+describe("My Sparks", () => {
+  test("a pick remembered from the home page fills in the Spark count, and the URL wins over it", async () => {
+    saveMySparks({ sparks: "2", type: "" });
+    window.history.replaceState(null, "", "/recipes?verified=0");
+    const first = render(<RecipesPage />);
+    await screen.findByRole("heading", { name: "Qwen Fast" });
+    expect(screen.getByRole("button", { name: "2 Sparks: 1 recipes" })).toHaveAttribute("aria-pressed", "true");
+    first.unmount();
+
+    window.history.replaceState(null, "", "/recipes?verified=0&sparks=1");
+    render(<RecipesPage />);
+    await screen.findByRole("heading", { name: "Qwen Fast" });
+    expect(screen.getByRole("button", { name: "1 Spark: 1 recipes" })).toHaveAttribute("aria-pressed", "true");
+  });
+
+  test("picking on this page is remembered, and clearing the picker forgets it", async () => {
+    window.history.replaceState(null, "", "/recipes?verified=0");
+    render(<RecipesPage />);
+    await screen.findByRole("heading", { name: "Qwen Fast" });
+    fireEvent.click(screen.getByRole("button", { name: "2 Sparks: 1 recipes" }));
+    expect(readMySparks("")).toEqual({ sparks: "2", type: "" });
+    fireEvent.click(screen.getByRole("button", { name: "Any count: 1 recipes" }));
+    expect(readMySparks("")).toEqual({ sparks: "", type: "" });
+  });
+
+  test("the Spark picker is the first control of the setup section", async () => {
+    render(<RecipesPage />);
+    const setup = within(await screen.findByRole("region", { name: "Then narrow it to your setup." }));
+    expect(setup.getAllByRole("group")[0]).toHaveAccessibleName("How many Sparks do you have?");
+  });
+});
 
 describe("type-first filtering", () => {
   beforeEach(() => {

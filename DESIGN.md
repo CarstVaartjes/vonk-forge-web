@@ -293,7 +293,7 @@ The home hero's signature: one mark per recipe from `catalog-summary.json`, in s
 
 ### Spark Picker
 
-"How many Sparks do you have?" is a segmented control with the catalog page's choices (1, 2, 3, 4+); type chips come from the summary. The pick means "needs that many Sparks or fewer" (4+ matches every recipe), in one function (`nodeCountMatches`) used by the home picker, the catalog and the models page. The answer (a rolling number, one sentence, a breakdown by Spark count) sits in an `aria-live="polite"` region and counts recipes only: nothing on the page claims a memory fit, and the line says the Controller checks memory and disk. Non-matching wall marks are dimmed. The state lives in the URL (`?sparks=2&type=code`) and in `localStorage`, and the catalog link carries it.
+"How many Sparks do you have?" is a segmented control with the catalog page's choices (1, 2, 3, 4+); type chips come from the summary. The pick means "needs that many Sparks or fewer" (4+ matches every recipe), in one function (`nodeCountMatches`) used by the home picker, the catalog and the models page. The answer (a rolling number, one sentence, a breakdown by Spark count) sits in an `aria-live="polite"` region and counts recipes only: nothing on the page claims a memory fit, and the line says the Controller checks memory and disk. Non-matching wall marks are dimmed. The state lives in the URL (`?sparks=2&type=code`) and in `localStorage`, and the catalog link carries it. The catalog page opens with this same Spark picker as its first filter (My Sparks), pre-filled from the remembered pick when its URL has none, and its cards, tiles, chips and table take the dashboard radii.
 
 ### Bar Series
 
