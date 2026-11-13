@@ -57,14 +57,24 @@ function ProductShot({
   return (
     <figure className="product-shot">
       <div className="product-shot-frame">
-        <div className="product-shot-bar" aria-hidden="true"><i /><i /><i /><span>https://controller.fixture.invalid/fleet</span></div>
-        <img
-          src={src}
-          alt={alt}
-          width="1280"
-          height="800"
-          loading="lazy"
-        />
+        <div className="product-shot-bar" aria-hidden="true"><i /><i /><i /><span>https://controller.fixture.invalid/overview</span></div>
+        {(["dark", "light"] as const).map((theme) => (
+          <picture key={theme} className={`shot-${theme}`}>
+            <source
+              media="(max-width: 30rem)"
+              srcSet={`${src}-400-${theme}.webp 1x, ${src}-400-${theme}@2x.webp 2x`}
+              width="400"
+              height="800"
+            />
+            <img
+              src={`${src}-1280-${theme}.webp`}
+              alt={alt}
+              width="1280"
+              height="800"
+              loading="lazy"
+            />
+          </picture>
+        ))}
       </div>
       <figcaption>
         <strong>{title}</strong>
@@ -167,8 +177,7 @@ function CatalogSections({ state, retry }: { state: CatalogState; retry: () => v
 }
 
 
-// Section 4: the same Controller from the browser and from a terminal (a scripted screenshot arrives with
-// the dashboard; until then the current Fleet screenshot stands), then the three things it does for you.
+// Section 4: the same Controller from the browser and from a terminal (a scripted screenshot of the Overview), then the three things it does for you.
 function RunTheMix() {
   return (
     <section className="home-section" aria-labelledby="mix-title">
@@ -182,10 +191,10 @@ function RunTheMix() {
       </div>
       <div className="tour-grid">
         <ProductShot
-          src="/product/controller-fleet.webp"
-          alt="Vonk Forge Fleet showing an illustrative Spark roster, workloads, and attention state"
-          title="Fleet shows reality, including blockers"
-          body="Fixture-backed fleet view · illustrative test data"
+          src="/product/controller-overview"
+          alt="Controller Overview on an example fleet: Spark cards with memory use, running workloads, and what needs attention"
+          title="Overview shows the fleet as it is, blockers included"
+          body="Example fleet · scripted screenshot, no live data"
         />
         <figure className="agent-session">
           <div className="agent-session-frame" aria-label="Example vonkctl session">
