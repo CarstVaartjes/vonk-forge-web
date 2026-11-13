@@ -311,6 +311,10 @@ The ten creators with the most verified recipes, from the summary's `topCreators
 
 "What it needs" on the recipe page draws one model across its Sparks (`SparkUnit`): the model name over a bracket that joins one slab per Spark, each slab with the peak a hardware run measured and the memory the recipe declares, on one shared scale. Only what the catalog carries is drawn: a recipe with no measured peak shows the declared value and never the word "measured". The receipt on the right is shown only for a verified recipe (its digests are those of the recipe that passed); any other status shows its vocabulary meaning and no receipt rows. Facts below the slabs: Sparks, disk per Spark, context, concurrent requests.
 
+### Ways Matrix
+
+"Every way to run {family}" (`WaysMatrix`), on the recipe page and the model page: creators as rows (most recipes first), Spark counts as columns, one chip per recipe with the wall's mark (filled, outlined dot, dashed) and its status word for assistive technology. The current recipe has a heavier outline and `aria-current`. The scope is the recipe's family as `modelFamilyTitle` gives it; a family with one recipe draws nothing. Below 44rem each creator becomes a block with the Spark count as a label. The page reads the full recipe list (already loaded for the recipe); if it cannot be read the matrix is not shown.
+
 ### Role Colours
 
 Five tokens in `:root`, `--role-coder`, `--role-image`, `--role-three-d`, `--role-audio` and `--role-video`, are used only by the example-setup page (`/example-setup`); the architecture diagram's two lane colours (`--lane-public`, `--lane-network`) are the same kind of identity token. They tell model roles apart, always sit beside a text role label and a legend, and are never status or action colours.

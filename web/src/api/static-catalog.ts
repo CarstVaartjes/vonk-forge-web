@@ -442,7 +442,7 @@ export async function getStaticVocabulary(url: string, signal?: AbortSignal): Pr
   return (await loadIndex(url, signal)).vocabulary;
 }
 
-export async function listStaticRecipeCatalog(url: string, signal?: AbortSignal): Promise<RecipeSummary[]> {
+export async function listStaticRecipeCatalog(url: string, signal?: AbortSignal): Promise<RecipeDetail[]> {
   return recipesFromIndex(await loadIndex(url, signal));
 }
 

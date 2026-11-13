@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 
-import { getRecipe, getVocabulary, type RecipeDetail } from "../api/client";
+import { getRecipe, getVocabulary, loadRecipeCatalog, type RecipeDetail } from "../api/client";
 import { CommandBlock } from "../command-block";
-import { engineLabel, gibLabel, sourceLabel } from "../catalog-filters";
+import { engineLabel, gibLabel, modelFamilyTitle, sourceLabel } from "../catalog-filters";
+import { WaysMatrix } from "../ways-matrix";
 import { receiptFacts } from "../catalog-stats";
 import { EvidenceReceipt } from "../evidence-receipt";
 import { SparkUnit } from "../spark-unit";
@@ -18,6 +19,13 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
   const [recipe, setRecipe] = useState<RecipeDetail | null>(null);
   const [error, setError] = useState(false);
   const [aboutOpen, setAboutOpen] = useState(false);
+  // Every recipe, for the matrix of other ways to run this family. If it cannot be read the matrix is not shown.
+  const [allRecipes, setAllRecipes] = useState<RecipeDetail[]>([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    loadRecipeCatalog(controller.signal).then(setAllRecipes).catch(() => undefined);
+    return () => controller.abort();
+  }, []);
   // The release words for capabilities and statuses. Without them the page still shows the raw names.
   const [vocabulary, setVocabulary] = useState<Vocabulary | null>(null);
   useEffect(() => {
@@ -144,6 +152,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
           </details>
         </section>
       </div>
+      <WaysMatrix recipes={allRecipes} family={modelFamilyTitle(recipe)} current={{ publisher, slug }} />
     </main>
   );
 }

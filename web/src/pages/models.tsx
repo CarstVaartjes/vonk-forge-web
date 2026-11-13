@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePageMeta } from "../page-meta";
 
-import { getModel, getVocabulary, listModels, type ModelSummary, type ModelVersionSummary } from "../api/client";
+import { getModel, getVocabulary, listModels, loadRecipeCatalog, type ModelSummary, type ModelVersionSummary, type RecipeDetail } from "../api/client";
+import { WaysMatrix } from "../ways-matrix";
 import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
 import { SPARK_OPTIONS, engineLabel, nodeCountMatches, type SparkFilter } from "../catalog-filters";
 import { capabilityLabel, type Vocabulary } from "../vocabulary";
@@ -281,9 +282,12 @@ export function ModelDetailPage({ publisher, slug }: { publisher: string; slug: 
   const [detailVocabulary, setDetailVocabulary] = useState<Vocabulary | null>(null);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  // Every recipe, for the matrix of every way to run this model's family; if it cannot be read the matrix is not shown.
+  const [allRecipes, setAllRecipes] = useState<RecipeDetail[]>([]);
+  useEffect(() => { const controller = new AbortController(); loadRecipeCatalog(controller.signal).then(setAllRecipes).catch(() => undefined); return () => controller.abort(); }, []);
   useEffect(() => { const controller = new AbortController(); setError(false); Promise.all([getModel(publisher, slug, controller.signal), getVocabulary(controller.signal)]).then(([found, words]) => { setModel(found); setDetailVocabulary(words); }).catch(() => { if (!controller.signal.aborted) setError(true); }); return () => controller.abort(); }, [publisher, slug, attempt]);
   usePageMeta(model ? `${model.title} · Models` : "Model", model ? `${model.title}: published versions, variants and the recipes that run it on NVIDIA DGX Spark.` : "A model in the Vonk Forge catalog.");
   if (error) return <main className="status-panel error"><h1>Model unavailable</h1><p>This model is not present in the published index.</p><button className="button" type="button" onClick={() => { setModel(null); setAttempt((value) => value + 1); }}>Retry</button></main>;
   if (!model || !detailVocabulary) return <main className="status-panel" role="status">Loading immutable model…</main>;
-  return <main className="model-detail-page"><header className="page-intro"><h1>{model.title}</h1><p className="model-meta">{model.family ? `Model family · ${model.family}` : "Model"}</p><p className="recipe-path">{model.publisher}/{model.slug}</p><p className="model-detail-identity">Immutable model identity <code>{model.revision_id}</code></p><p>{model.description || "No description published."}</p></header><div className="model-detail-actions"><a className="button" href="/models">All models</a><a className="button" href={`/recipes?q=${encodeURIComponent(model.title)}`}>Compare recipes</a><a className="button primary" href="/control#library-import">Open Controller instructions</a></div><section className="model-detail-boundary"><div><h2>Versions and weight variants</h2><p>Each row is a published version and variant. Download size, source revision, format, license, access, and capabilities appear when the catalog declares them.</p></div><div className="model-version-list">{model.versions.map((version) => <VersionRow key={`${version.publisher}/${version.slug}-${version.revision_id}`} version={version} vocabulary={detailVocabulary} />)}</div></section></main>;
+  return <main className="model-detail-page"><header className="page-intro"><h1>{model.title}</h1><p className="model-meta">{model.family ? `Model family · ${model.family}` : "Model"}</p><p className="recipe-path">{model.publisher}/{model.slug}</p><p className="model-detail-identity">Immutable model identity <code>{model.revision_id}</code></p><p>{model.description || "No description published."}</p></header><div className="model-detail-actions"><a className="button" href="/models">All models</a><a className="button" href={`/recipes?q=${encodeURIComponent(model.title)}`}>Compare recipes</a><a className="button primary" href="/control#library-import">Open Controller instructions</a></div><section className="model-detail-boundary"><div><h2>Versions and weight variants</h2><p>Each row is a published version and variant. Download size, source revision, format, license, access, and capabilities appear when the catalog declares them.</p></div><div className="model-version-list">{model.versions.map((version) => <VersionRow key={`${version.publisher}/${version.slug}-${version.revision_id}`} version={version} vocabulary={detailVocabulary} />)}</div></section>{model.family ? <WaysMatrix recipes={allRecipes} family={model.family} /> : null}</main>;
 }

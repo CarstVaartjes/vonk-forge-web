@@ -5,8 +5,8 @@ import { RecipeDetailPage } from "./recipe-detail";
 import { catalogFacts, vocabularyFixture } from "../vocabulary.fixture";
 
 
-const { getRecipe, getVocabulary } = vi.hoisted(() => ({ getRecipe: vi.fn(), getVocabulary: vi.fn() }));
-vi.mock("../api/client", () => ({ getRecipe, getVocabulary }));
+const { getRecipe, getVocabulary, loadRecipeCatalog } = vi.hoisted(() => ({ getRecipe: vi.fn(), getVocabulary: vi.fn(), loadRecipeCatalog: vi.fn() }));
+vi.mock("../api/client", () => ({ getRecipe, getVocabulary, loadRecipeCatalog }));
 
 function recipe(publisher: string, sourceRepository: string, sourceOwner: string): RecipeDetail {
   return {
@@ -20,6 +20,7 @@ function recipe(publisher: string, sourceRepository: string, sourceOwner: string
 
 beforeEach(() => {
   getVocabulary.mockResolvedValue(vocabularyFixture);
+  loadRecipeCatalog.mockResolvedValue([]);
 });
 
 test("a community recipe is not tagged official, and the creator links to the host the source lives on", async () => {
@@ -86,4 +87,15 @@ test("the about text is clamped until Read all", async () => {
   fireEvent.click(button);
   expect(screen.getByText("A recipe.")).not.toHaveClass("clamped");
   expect(screen.getByRole("button", { name: "Show less" })).toHaveAttribute("aria-expanded", "true");
+});
+
+test("the family matrix lists the other recipes and marks this one", async () => {
+  const mine = recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme");
+  const other = { ...recipe("vonk-forge", "https://github.com/acme/qwen-slow", "acme"), slug: "qwen-slow", title: "Qwen Slow" };
+  getRecipe.mockResolvedValue(mine);
+  loadRecipeCatalog.mockResolvedValue([mine, other]);
+  render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
+  const ways = within(await screen.findByRole("region", { name: "Every way to run Qwen: 2 recipes from 1 creator" }));
+  expect(ways.getByRole("link", { name: /^Qwen Fast/ })).toHaveAttribute("aria-current", "page");
+  expect(ways.getByRole("link", { name: /^Qwen Slow/ })).toHaveAttribute("href", "/recipes/vonk-forge/qwen-slow");
 });

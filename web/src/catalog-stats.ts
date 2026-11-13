@@ -97,6 +97,10 @@ export const newestFirst = (left: RecipeRow, right: RecipeRow): number => right.
 
 export type StatsRecipe = RecipeSummary & { evidence?: RecipeDetail["evidence"] };
 
+// Not verified now, but the catalog holds an earlier hardware pass: the one rule for the wall's and
+// the matrix's amber mark.
+export const passedBefore = (recipe: StatsRecipe): boolean => !recipe.catalog.verified && Boolean(recipe.evidence);
+
 const DAY = 86_400_000;
 const dayKey = (time: number) => new Date(time).toISOString().slice(0, 10);
 const dayTime = (day: string) => Date.parse(`${day.slice(0, 10)}T00:00:00Z`);
@@ -139,7 +143,7 @@ export function deriveCatalogStats(recipes: StatsRecipe[], vocabulary: Vocabular
       sparks: recipe.catalog.node_count,
       status: recipe.catalog.qualification,
       verified: recipe.catalog.verified,
-      passedBefore: !recipe.catalog.verified && Boolean(recipe.evidence),
+      passedBefore: passedBefore(recipe),
       types: recipe.catalog.types,
       engine: recipe.runtime.adapter ?? null,
       memoryBytes: recipe.capacity?.maximum_runtime_memory_bytes_per_node ?? null,

@@ -147,7 +147,7 @@ export interface ModelPage {
 // Pages build verified and copied to this site (web/scripts/recipe-release.mjs).
 const RECIPE_LIBRARY_INDEX_URL = "/catalog/catalog-index.json";
 
-export function loadRecipeCatalog(signal?: AbortSignal): Promise<RecipeSummary[]> {
+export function loadRecipeCatalog(signal?: AbortSignal): Promise<RecipeDetail[]> {
   return listStaticRecipeCatalog(RECIPE_LIBRARY_INDEX_URL, signal);
 }
 

@@ -6,15 +6,19 @@ import { typesOf } from "../vocabulary";
 import { vocabularyFixture } from "../vocabulary.fixture";
 import { ModelDetailPage, ModelsPage } from "./models";
 
-const { getModel, getVocabulary, listModels } = vi.hoisted(() => ({ getModel: vi.fn(), getVocabulary: vi.fn(), listModels: vi.fn<() => Promise<ModelPage>>() }));
+const { getModel, getVocabulary, listModels, loadRecipeCatalog } = vi.hoisted(() => ({ getModel: vi.fn(), getVocabulary: vi.fn(), listModels: vi.fn<() => Promise<ModelPage>>(), loadRecipeCatalog: vi.fn() }));
 
 vi.mock("../api/client", () => ({
   getModel,
   getVocabulary,
   listModels,
+  loadRecipeCatalog,
 }));
 
-beforeEach(() => getVocabulary.mockResolvedValue(vocabularyFixture));
+beforeEach(() => {
+  getVocabulary.mockResolvedValue(vocabularyFixture);
+  loadRecipeCatalog.mockResolvedValue([]);
+});
 
 function model(number: number, publisher = "publisher"): ModelSummary {
   const runs = number % 2 ? { spark_counts: [1], engines: ["vllm"], creators: ["eugr"] } : { spark_counts: [2, 4], engines: ["sglang"], creators: [] };
