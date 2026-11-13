@@ -75,6 +75,9 @@ export interface RecipeDetail extends RecipeSummary {
   evidence: { tested_at: string; spark_count?: number; hardware_class?: string; evidence_ref?: string; image_digest?: string } | null;
   // What the recipe's chat API serves; absent for a recipe that is not a chat API.
   chat_api?: { endpoints: string[]; streaming: boolean; structured_output: boolean; image_input: boolean; audio_input: boolean };
+  // The model names the recipe's API answers to, and the people and projects it credits.
+  served_names: string[];
+  credits: string[];
   // The recipe's own defaults for the settings the page shows.
   settings: { context_tokens?: number; concurrency?: number };
   license: Licence;

@@ -344,7 +344,7 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   await page.getByRole("link", { name: "Qwen Fast" }).click();
   // The header carries the verdict and the run command; the exact trust facts sit under Provenance.
   await expect(page.getByRole("heading", { level: 1, name: "Qwen Fast" })).toBeVisible();
-  await expect(page.locator(".verdict")).toContainText("Working");
+  await expect(page.getByLabel("Hardware evidence")).toContainText("Working");
   await expect(page.locator(".command-block code")).toHaveText("vonkctl run \"Qwen Fast\"");
   await page.locator(".provenance > summary").click();
   await expect(page.getByRole("heading", { name: "Trust, precisely stated" })).toBeVisible();

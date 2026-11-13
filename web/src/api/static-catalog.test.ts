@@ -155,6 +155,8 @@ describe("static recipe library adapter", () => {
     });
     expect(recipe.chat_api).toEqual({ endpoints: ["/v1/chat/completions", "/v1/completions", "/v1/responses", "/v1/messages"], streaming: true, structured_output: true, image_input: true, audio_input: true });
     expect(recipe.settings).toEqual({ context_tokens: 131072 });
+    expect(recipe.served_names).toEqual(["gemma-4-e2b-it"]);
+    expect(recipe.credits).toEqual(["NVIDIA", "vLLM contributors", "Google DeepMind"]);
     expect(recipe.license).toEqual({ spdx: "Apache-2.0", url: "https://ai.google.dev/gemma/docs/gemma_4_license" });
   });
 

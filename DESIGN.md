@@ -307,6 +307,10 @@ The ticket for one hardware pass (`EvidenceReceipt`): status (shape and word), t
 
 The ten creators with the most verified recipes, from the summary's `topCreators`: the name (gold, a link to the catalog filtered to that creator), a `role="meter"` bar scaled to the largest count, the count, then "and N more creators". Credit is the product, so the ledger sits above the install commands. The home page runs in this order: hero (sentence, picker, wall), kept current, verified on hardware, run the mix (Controller screenshot beside the `vonkctl` session with a caret, then the three points), creators, install, security boundary, closing. The three hero count stats are gone: the picker's answer is the one number in the hero.
 
+### Spark Unit
+
+"What it needs" on the recipe page draws one model across its Sparks (`SparkUnit`): the model name over a bracket that joins one slab per Spark, each slab with the peak a hardware run measured and the memory the recipe declares, on one shared scale. Only what the catalog carries is drawn: a recipe with no measured peak shows the declared value and never the word "measured". The receipt on the right is shown only for a verified recipe (its digests are those of the recipe that passed); any other status shows its vocabulary meaning and no receipt rows. Facts below the slabs: Sparks, disk per Spark, context, concurrent requests.
+
 ### Role Colours
 
 Five tokens in `:root`, `--role-coder`, `--role-image`, `--role-three-d`, `--role-audio` and `--role-video`, are used only by the example-setup page (`/example-setup`); the architecture diagram's two lane colours (`--lane-public`, `--lane-network`) are the same kind of identity token. They tell model roles apart, always sit beside a text role label and a legend, and are never status or action colours.

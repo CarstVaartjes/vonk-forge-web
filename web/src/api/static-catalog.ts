@@ -344,6 +344,8 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
       image_digest: lastPass.identity.runtime_image?.image_digest,
     } : null,
     chat_api: chat ? { endpoints: chat.endpoints, streaming: chat.streaming, structured_output: chat.structured_output, image_input: chat.input_modalities.image, audio_input: chat.input_modalities.audio } : undefined,
+    served_names: document.interfaces.flatMap((entry) => (entry.adapter === "openai" ? entry.model_aliases : [])),
+    credits: document.provenance.attribution,
     settings: {
       context_tokens: "context_tokens" in settings ? settings.context_tokens.value : undefined,
       concurrency: "concurrency" in settings ? settings.concurrency?.value : undefined,
