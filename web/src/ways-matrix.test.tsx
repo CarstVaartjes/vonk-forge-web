@@ -26,6 +26,7 @@ test("creators are rows (most recipes first), Spark counts are columns, and each
   expect(within(table).getAllByRole("columnheader").map((cell) => cell.textContent)).toEqual(["Creator", "1 Spark", "2 Sparks", "4 Sparks"]);
   expect(within(table).getAllByRole("rowheader").map((cell) => cell.textContent)).toEqual(["MiaAI-Lab", "eugr", "Creator not named"]);
   expect(within(table).getByRole("link", { name: "mia-two · vLLM, Working" })).toHaveAttribute("aria-current", "page");
+  expect(within(table).getByRole("link", { name: "mia-two · vLLM, Working" })).toHaveAttribute("title", "Working");
   expect(within(table).getByRole("link", { name: "eugr-one · vLLM, Re-check: worked before" })).not.toHaveAttribute("aria-current");
   expect(within(table).queryByRole("link", { name: /qwen-other-family/ })).toBeNull();
 });

@@ -137,6 +137,7 @@ describe("My Sparks", () => {
     const first = render(<RecipesPage />);
     await screen.findByRole("heading", { name: "Qwen Fast" });
     expect(screen.getByRole("button", { name: "2 Sparks: 1 recipes" })).toHaveAttribute("aria-pressed", "true");
+    expect(window.location.search).toBe("?verified=0&sparks=2");
     first.unmount();
 
     window.history.replaceState(null, "", "/recipes?verified=0&sparks=1");

@@ -71,7 +71,7 @@ describe("home page", () => {
     getCatalogSummary.mockResolvedValue(summary());
     render(<HomePage />);
     const current = within(await screen.findByRole("region", { name: /New models and recipe revisions/ }));
-    expect(current.getByRole("group", { name: /^Recipes released per week: 1 recipes/ })).toBeVisible();
+    expect(current.getByRole("group", { name: /^Recipes released per week: 1 recipe,/ })).toBeVisible();
     expect(current.getAllByRole("listitem").map((item) => item.querySelector("a")?.textContent)).toEqual(["a", "b"]);
     const proof = within(screen.getByRole("region", { name: /Ran, on a real DGX Spark/ }));
     expect(proof.getByText("Passed on a real DGX Spark for this exact recipe, runtime image and model.")).toBeVisible();

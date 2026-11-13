@@ -20,7 +20,7 @@ export function WaysMatrix({ recipes, family, current }: { recipes: StatsRecipe[
     <section className="card detail-block ways" aria-labelledby="ways-title">
       <p className="receipt-label">Other ways to run this family</p>
       <h2 id="ways-title">Every way to run {family}: {scope.length} recipes from {rows.length} {rows.length === 1 ? "creator" : "creators"}</h2>
-      <p className="ways-note">Every creator&apos;s recipe for each number of Sparks. A filled mark is verified on real hardware, an outlined dot passed before, a dashed mark has no hardware pass yet. The status word is on every recipe.</p>
+      <p className="ways-note">Every creator&apos;s recipe for each number of Sparks. A filled mark is verified on real hardware, an outlined dot passed before, a dashed mark has no hardware pass yet. Hover a recipe for its status word; screen readers hear it.</p>
       <table className="matrix">
         <thead><tr><th scope="col">Creator</th>{columns.map((count) => <th key={count} scope="col">{sparksLabel(count)}</th>)}</tr></thead>
         <tbody>
@@ -32,7 +32,7 @@ export function WaysMatrix({ recipes, family, current }: { recipes: StatsRecipe[
                   {row.recipes.filter((recipe) => recipe.catalog.node_count === count).map((recipe) => {
                     const here = current?.publisher === recipe.publisher && current.slug === recipe.slug;
                     return (
-                      <a key={`${recipe.publisher}/${recipe.slug}`} className="way" href={`/recipes/${recipe.publisher}/${recipe.slug}`} aria-current={here ? "page" : undefined}>
+                      <a key={`${recipe.publisher}/${recipe.slug}`} className="way" href={`/recipes/${recipe.publisher}/${recipe.slug}`} title={recipe.catalog.qualification} aria-current={here ? "page" : undefined}>
                         <span className="wall-key" data-state={cellState({ verified: recipe.catalog.verified, passedBefore: passedBefore(recipe) })} aria-hidden="true" />
                         <span>{recipe.title}{recipe.runtime.adapter ? <> · <small>{engineLabel(recipe.runtime.adapter)}</small></> : null}<span className="visually-hidden">, {recipe.catalog.qualification}</span></span>
                       </a>
