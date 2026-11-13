@@ -12,12 +12,12 @@ local controller without pretending the public website is the controller.
 [Browse recipes](https://vonkforge.ai/recipes) ·
 [Controller repository](https://github.com/CarstVaartjes/vonk-forge)
 
-| Library: choose with exact model and lifecycle facts | Fleet: see capacity, placement, and blockers |
+| Overview: capacity, placement, and blockers | Workloads: what is running and why |
 | --- | --- |
-| ![Vonk Forge Library](web/public/product/controller-library.webp) | ![Vonk Forge Fleet](web/public/product/controller-fleet.webp) |
+| ![Vonk Forge Controller Overview](web/public/product/controller-overview-1280.webp) | ![Vonk Forge Controller Workloads](web/public/product/controller-workloads-1280.webp) |
 
-These are fixture-backed screenshots of the private Web Controller implemented
-in `vonk-forge`; they contain no live fleet data.
+These are scripted screenshots of the private Web Controller implemented in
+`vonk-forge`, taken on an example fleet; they contain no live fleet data.
 
 ## What visitors should understand
 

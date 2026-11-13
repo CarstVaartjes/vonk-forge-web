@@ -63,7 +63,7 @@ test("defines the product and puts installation first", () => {
   expect(screen.getByRole("link", { name: "Browse what runs" })).toHaveAttribute("href", "/recipes");
   expect(screen.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
   expect(screen.getByText(/install\.vonkforge\.ai\/spark \| VONK_CONTROLLER_ADDRESS=/)).toBeVisible();
-  expect(screen.getByAltText(/Vonk Forge Fleet showing an illustrative Spark roster/i)).toBeVisible();
+  expect(screen.getByAltText(/Controller Overview on an example fleet/i)).toBeVisible();
 });
 
 
