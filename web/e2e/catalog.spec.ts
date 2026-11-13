@@ -1,4 +1,5 @@
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { gzipSync } from "node:zlib";
 
 import { expect, test } from "@playwright/test";
 
@@ -40,7 +41,7 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Know what fits." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Stay current." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Run the mix you need." })).toBeVisible();
-  await expect(page.getByText("vonkctl recipe library --fits-fleet --json")).toBeVisible();
+  await expect(page.getByText("vonkctl recipe library --fits-fleet --json").first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Catalog + verified releases", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Vonk Forge controller", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "DGX Spark fleet", exact: true })).toBeVisible();
@@ -63,15 +64,17 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   expect(horizontalOverflow).toBeLessThanOrEqual(0);
 
   await page.keyboard.press("Tab");
-  await expect(page.locator(".home-hero").getByRole("link", { name: "Install", exact: true })).toBeFocused();
+  // The first stop after the skip link is the Spark picker, the first control of the hero.
+  await expect(page.getByRole("button", { name: "1 Spark", exact: true })).toBeFocused();
 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(page.locator("html")).toHaveCSS("scroll-behavior", "auto");
 
+  // The faint ink on every surface, in both themes (the build may shorten #ffffff to #fff).
   const minimumFaintContrast = await page.evaluate(() => {
-    const styles = getComputedStyle(document.documentElement);
     const parseHex = (value: string) => {
-      const hex = value.trim().replace("#", "");
+      const digits = value.trim().replace("#", "");
+      const hex = digits.length === 3 ? [...digits].map((digit) => digit + digit).join("") : digits;
       return [0, 2, 4].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255);
     };
     const luminance = (value: string) => parseHex(value)
@@ -83,11 +86,12 @@ test("platform story stays navigable and bounded", async ({ page }) => {
       const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
       return (values[0] + 0.05) / (values[1] + 0.05);
     };
-    const foreground = styles.getPropertyValue("--faint");
-    return Math.min(
-      ...["--bg", "--panel", "--raised"].map((token) =>
-        contrast(foreground, styles.getPropertyValue(token))),
-    );
+    return Math.min(...["dark", "light"].flatMap((theme) => {
+      document.documentElement.setAttribute("data-theme", theme);
+      const styles = getComputedStyle(document.documentElement);
+      const foreground = styles.getPropertyValue("--faint");
+      return ["--bg", "--panel", "--raised"].map((token) => contrast(foreground, styles.getPropertyValue(token)));
+    }));
   });
   expect(minimumFaintContrast).toBeGreaterThanOrEqual(4.5);
 });
@@ -103,20 +107,24 @@ test("home page shows the live numbers from the build-time summary and loads not
   await expect(proof).toHaveText(PROOF);
   await expect(proof.locator(".rolling-number")).toHaveCount(3);
 
-  const tiles = page.getByRole("region", { name: "What can you run?" });
-  await expect(tiles.getByRole("link", { name: /Language\s*3 verified/ })).toHaveAttribute("href", "/recipes?type=language");
-  await expect(tiles.getByRole("link", { name: /Code\s*1 verified/ })).toHaveAttribute("href", "/recipes?type=code");
-  await expect(tiles.getByRole("link", { name: /Vision\s*1 verified/ })).toBeVisible();
-  await expect(tiles.getByRole("link", { name: /3D\s*1 verified/ })).toBeVisible();
-  await expect(tiles.getByRole("link", { name: /Video\s*None verified yet/ })).toHaveAttribute("href", "/recipes?type=video&verified=0");
+  const chips = page.getByRole("group", { name: "Model type" });
+  await expect(chips.getByRole("button", { name: "Language: 3" })).toBeVisible();
+  await expect(chips.getByRole("button", { name: "Code: 1" })).toBeVisible();
+  await expect(chips.getByRole("button", { name: "Video: 0" })).toHaveAttribute("aria-disabled", "true");
+  await expect(page.getByRole("group", { name: /The recipe catalog/ }).getByRole("link")).toHaveCount(catalogSummary.total);
 
   // The home page reads the summary, never the full catalog index.
   expect(requests).toContain("/catalog/catalog-summary.json");
   expect(requests).not.toContain("/catalog/catalog-index.json");
 
-  // A type tile lands on the catalog already filtered to that type.
-  await tiles.getByRole("link", { name: /Code/ }).click();
-  await expect(page).toHaveURL(/\/recipes\?type=code$/);
+  // The picker's choice reaches the catalog filtered the same way, and survives a reload.
+  await page.getByRole("button", { name: "2 Sparks" }).click();
+  await chips.getByRole("button", { name: /^Code:/ }).click();
+  await expect(page).toHaveURL(/\/\?sparks=2&type=code$/);
+  await page.reload();
+  await expect(page.getByRole("button", { name: "2 Sparks" })).toHaveAttribute("aria-pressed", "true");
+  await page.getByRole("link", { name: /^See all 1 in the catalog/ }).click();
+  await expect(page).toHaveURL(/\/recipes\?sparks=2&type=code$/);
   await expect(page.getByRole("link", { name: "Acme Coder" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Acme Vision" })).toHaveCount(0);
   await expect(page.getByRole("link", { name: "Qwen Code" })).toHaveCount(0);
@@ -126,8 +134,9 @@ test("home page shows the live numbers from the build-time summary and loads not
 test("the summary the build wrote is small enough to read on the home page", () => {
   // The real build output (the catalog the CI step verified), not the fixture.
   test.skip(!existsSync("public/catalog/catalog-summary.json"), "no fetched release: run `node web/scripts/recipe-release.mjs` (needs an authenticated gh) to check the real summary size");
-  expect(statSync("public/catalog/catalog-summary.json").size).toBeLessThan(20_000);
-  expect(statSync("public/catalog/catalog-index.json").size).toBeGreaterThan(100 * statSync("public/catalog/catalog-summary.json").size);
+  // The wall carries one row per recipe: the budget is 40 kB gzipped, not a raw size.
+  expect(gzipSync(readFileSync("public/catalog/catalog-summary.json")).length).toBeLessThan(40_000);
+  expect(statSync("public/catalog/catalog-index.json").size).toBeGreaterThan(20 * statSync("public/catalog/catalog-summary.json").size);
 });
 
 
@@ -136,7 +145,7 @@ test("home page never shows numbers when the summary is missing, malformed or em
   await page.goto("/");
   await expect(page.getByRole("alert")).toContainText("The recipe library could not be read.");
   await expect(page.locator(".rolling-number")).toHaveCount(0);
-  await expect(page.getByRole("region", { name: "What can you run?" })).toHaveCount(0);
+  await expect(page.getByRole("group", { name: /The recipe catalog/ })).toHaveCount(0);
 
   await page.route("**/catalog/catalog-summary.json", (route) => route.fulfill({ json: { ...catalogSummary, verified: 0 } }));
   await page.reload();
@@ -149,7 +158,8 @@ test("home page never shows numbers when the summary is missing, malformed or em
 
 test("the number roll starts from blank, ends at the final value, and is silent for screen readers", async ({ page }) => {
   await page.goto("/");
-  const first = page.locator(".rolling-number").first();
+  await page.locator(".hero-proof").scrollIntoViewIfNeeded();
+  const first = page.locator(".hero-proof .rolling-number").first();
   // While rolling: moving digits hidden from assistive technology, one visually hidden final value.
   await expect(first).toHaveAttribute("data-phase", /armed|playing/, { timeout: 2000 }).catch(() => undefined);
   if ((await first.getAttribute("data-phase")) !== "final") {
@@ -159,7 +169,7 @@ test("the number roll starts from blank, ends at the final value, and is silent 
   // And it always ends on the true number, with no strips left over.
   await expect(first).toHaveAttribute("data-phase", "final", { timeout: 5000 });
   await expect(page.locator(".hero-proof")).toHaveText(PROOF);
-  await expect(page.locator(".rolling-strip")).toHaveCount(0);
+  await expect(page.locator(".hero-proof .rolling-strip")).toHaveCount(0);
 });
 
 
@@ -168,7 +178,7 @@ test("rolling numbers do not animate under reduced motion", async ({ page }) => 
   await page.goto("/");
   await expect(page.locator(".rolling-number").first()).toHaveAttribute("data-phase", "final");
   await page.waitForTimeout(500);
-  await expect(page.locator(".rolling-strip")).toHaveCount(0);
+  await expect(page.locator(".hero-proof .rolling-strip")).toHaveCount(0);
   await expect(page.locator(".rolling-number .visually-hidden")).toHaveCount(0);
   await expect(page.locator(".hero-proof")).toHaveText(PROOF);
 });
@@ -218,7 +228,8 @@ test("models page explains the public to local boundary on demand", async ({ pag
 
 test("architecture, installation, and control guides stay navigable at 1…N scale", async ({ page }) => {
   await page.goto("/architecture");
-  await expect(page.getByRole("navigation", { name: "Primary navigation" }).getByRole("link", { name: "Docs" })).toHaveAttribute("aria-current", "page");
+  // Below 64rem the links sit behind the Menu button, so address the link by its place, not its role.
+  await expect(page.locator("#primary-nav a", { hasText: "Docs" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("heading", { name: /one control plane.*one to many sparks/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Spark fleet" })).toBeVisible();
   await expect(page.getByText("NVIDIA fabric", { exact: true })).toBeVisible();
