@@ -33,7 +33,8 @@ A macOS or Linux workstation retrieves the signed installer. That same laptop—
 
 ## Brand Commitments
 
-- Keep the established dark forge visual world, tuned to the DGX Spark hardware: graphite near-black surfaces, warm ivory type, NVIDIA green for actions and local readiness, and the Spark chassis champagne gold reserved for public source and material accents.
+- Keep the established forge visual world, tuned to the DGX Spark hardware and shared with the Controller dashboard: graphite near-black surfaces (dark by default) with a designed light theme the visitor can pick, warm ivory type, rounded cards, NVIDIA green for actions and local readiness, and the Spark chassis champagne gold reserved for public source and material accents.
+- The promise is that every recipe is incredibly easy to run. The site carries no speed figures and no creator speed claims.
 - Sound precise, capable, and plain-spoken. Prefer concrete system behavior over infrastructure theater.
 - “Open source,” “local,” and “operator owned” are product facts, not decoration.
 

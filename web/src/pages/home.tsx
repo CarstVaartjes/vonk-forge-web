@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 
 import { getCatalogSummary } from "../api/client";
 import type { CatalogSummary } from "../catalog-stats";
+import { CatalogWall } from "../catalog-wall";
+import { fitsPick, useMySparks, type MySparks } from "../my-sparks";
+import { FitAnswerView, FitResults, SparkSegments, TypeChips } from "../spark-picker";
 import { CommandBlock } from "../command-block";
 import { controllerInstallCommand, sparkInstallCommand } from "./install";
-import { TypeIcon } from "../icons";
 import { RollingNumber } from "../rolling-number";
 
 
@@ -71,8 +73,6 @@ function ProductShot({
 }
 
 
-const number = new Intl.NumberFormat("en");
-
 // "empty" is a valid release with nothing verified yet: there are no numbers to show.
 type CatalogState = { status: "loading" } | { status: "error" } | { status: "empty" } | { status: "ready"; summary: CatalogSummary };
 
@@ -99,12 +99,13 @@ function joinNames(names: string[]): string {
 
 // The sentence leads (owner 2026-11-12); the counts follow as proof. All three
 // counts are over recipes verified on a DGX Spark.
-function Hero({ state }: { state: CatalogState }) {
+function Hero({ state, pick, setPick }: { state: CatalogState; pick: MySparks; setPick: (next: Partial<MySparks>) => void }) {
   const summary = state.status === "ready" ? state.summary : null;
   const top = summary ? summary.topCreators.slice(0, 3).map((creator) => creator.name) : [];
   const showCounts = state.status === "loading" || state.status === "ready";
+  const showWall = showCounts;
   return (
-    <section className="home-hero" aria-labelledby="home-title">
+    <section className={`home-hero${showWall ? " has-wall" : ""}`} aria-labelledby="home-title">
       <div className="home-hero-copy">
         <h1 id="home-title">Models that fit your Sparks, kept current.</h1>
         <p className="home-definition">
@@ -114,6 +115,13 @@ function Hero({ state }: { state: CatalogState }) {
           mix you need in a few clicks or one <code>vonkctl</code> command your
           agents can drive.
         </p>
+        {showWall ? (
+          <section className="card picker" aria-label="Which recipes fit your Sparks">
+            <SparkSegments value={pick.sparks} onChange={(sparks) => setPick({ sparks })} />
+            {summary ? <FitAnswerView summary={summary} pick={pick} /> : <div className="answer-placeholder" aria-hidden="true" />}
+            <CommandBlock compact label="Ask your own Sparks">{agentSession[0]!.command}</CommandBlock>
+          </section>
+        ) : null}
         <div className="hero-actions">
           <a className="button primary" href="/install">Install</a>
           <a className="button secondary" href="/recipes">Browse what runs</a>
@@ -137,43 +145,14 @@ function Hero({ state }: { state: CatalogState }) {
           <span className="hero-stat"><RollingNumber value={summary?.creators ?? null} placeholderDigits={2} /> creators</span>
         </p>
       ) : null}
-    </section>
-  );
-}
-
-function TypeTiles({ summary }: { summary: CatalogSummary }) {
-  return (
-    <section className="type-section" aria-labelledby="type-title">
-      <div className="home-section-heading">
-        <h2 id="type-title">What can you run?</h2>
-        <p>Pick a kind of model. Each count is recipes that passed hardware checks on a DGX Spark, and the catalog opens on that type with "Verified on Spark" on.</p>
-      </div>
-      <ul className="type-grid">
-        <li>
-          <a href="/recipes">
-            <TypeIcon id="all" />
-            <span className="type-text">
-              <strong>All verified</strong>
-              <span className="type-count"><b>{number.format(summary.verified)}</b> recipes</span>
-            </span>
-          </a>
-        </li>
-        {summary.types.map((type) => {
-          const { verified } = type;
-          const href = verified > 0 ? `/recipes?type=${type.id}` : `/recipes?type=${type.id}&verified=0`;
-          return (
-            <li key={type.id}>
-              <a href={href}>
-                <TypeIcon id={type.id} />
-                <span className="type-text">
-                  <strong>{type.label}</strong>
-                  <span className="type-count">{verified > 0 ? <><b>{number.format(verified)}</b> verified</> : "None verified yet"}</span>
-                </span>
-              </a>
-            </li>
-          );
-        })}
-      </ul>
+      {showWall ? <div className="wall-slot">{summary ? (
+        <CatalogWall
+          summary={summary}
+          match={(row) => fitsPick(row, pick)}
+          before={<><p className="wall-lead">Every recipe in the catalog. Lit means it passed on a real Spark.</p><TypeChips summary={summary} pick={pick} onChange={(type) => setPick({ type })} /></>}
+          after={<FitResults summary={summary} pick={pick} />}
+        />
+      ) : null}</div> : null}
     </section>
   );
 }
@@ -190,15 +169,16 @@ function CatalogSections({ state, retry }: { state: CatalogState; retry: () => v
       </div>
     );
   }
-  return <TypeTiles summary={state.summary} />;
+  return null;
 }
 
 
 export function HomePage() {
   const [state, retry] = useCatalogSummary();
+  const [pick, setPick] = useMySparks();
   return (
     <main className="home-page">
-      <Hero state={state} />
+      <Hero state={state} pick={pick} setPick={setPick} />
       <CatalogSections state={state} retry={retry} />
 
       <section className="quickstart" aria-labelledby="quickstart-title">

@@ -4,9 +4,9 @@
 import { parseLibraryIndex, recipesFromIndex } from "./api/static-catalog.ts";
 import { deriveCatalogStats, parseCatalogSummary, type CatalogSummary } from "./catalog-stats.ts";
 
-export function buildCatalogSummary(rawIndex: unknown, rawRelease: { tag: string; catalog_index_sha256: string }): CatalogSummary {
+export function buildCatalogSummary(rawIndex: unknown, rawRelease: { tag: string; catalog_index_sha256: string; updated_at: string }): CatalogSummary {
   const index = parseLibraryIndex(rawIndex, rawRelease);
-  const summary = { summary_version: 1, release: rawRelease.tag, catalog_index_sha256: rawRelease.catalog_index_sha256, ...deriveCatalogStats(recipesFromIndex(index), index.vocabulary) };
+  const summary = { summary_version: 2, release: rawRelease.tag, catalog_index_sha256: rawRelease.catalog_index_sha256, ...deriveCatalogStats(recipesFromIndex(index), index.vocabulary, rawRelease.updated_at) };
   // Round-trip through the browser's own check: a summary the site would refuse is a build failure.
   return parseCatalogSummary(JSON.parse(JSON.stringify(summary)));
 }

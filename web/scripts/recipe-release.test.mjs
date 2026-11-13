@@ -157,8 +157,9 @@ describe("recipe release publication", () => {
     const raw = await readFile(path.join(outDir, "catalog-summary.json"), "utf8");
     expect(raw.length).toBeLessThan(20_000);
     expect(JSON.parse(raw)).toMatchObject({
-      summary_version: 1,
+      summary_version: 2,
       release: tag,
+      total: 1,
       catalog_index_sha256: sha256(assets["catalog-index.json"]),
       verified: 1,
       families: 1,
