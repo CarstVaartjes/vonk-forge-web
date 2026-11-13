@@ -4,7 +4,7 @@ import { getCatalogSummary } from "../api/client";
 import type { CatalogSummary } from "../catalog-stats";
 import { CatalogWall } from "../catalog-wall";
 import { fitsPick, useMySparks, type MySparks } from "../my-sparks";
-import { FitAnswerView, FitResults, SparkPicker, TypeChips } from "../spark-picker";
+import { FitAnswerView, FitResults, SparkSegments, TypeChips } from "../spark-picker";
 import { CommandBlock } from "../command-block";
 import { controllerInstallCommand, sparkInstallCommand } from "./install";
 import { RollingNumber } from "../rolling-number";
@@ -116,11 +116,11 @@ function Hero({ state, pick, setPick }: { state: CatalogState; pick: MySparks; s
           agents can drive.
         </p>
         {showWall ? (
-          <div className="card picker" aria-label="Which recipes fit your Sparks">
-            <SparkPicker value={pick.sparks} onChange={(sparks) => setPick({ sparks })} />
+          <section className="card picker" aria-label="Which recipes fit your Sparks">
+            <SparkSegments value={pick.sparks} onChange={(sparks) => setPick({ sparks })} />
             {summary ? <FitAnswerView summary={summary} pick={pick} /> : <div className="answer-placeholder" aria-hidden="true" />}
             <CommandBlock compact label="Ask your own Sparks">{agentSession[0]!.command}</CommandBlock>
-          </div>
+          </section>
         ) : null}
         <div className="hero-actions">
           <a className="button primary" href="/install">Install</a>

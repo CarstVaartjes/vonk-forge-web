@@ -34,7 +34,7 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name: "Models that fit your Sparks, kept current." })).toBeVisible();
   await expect(page.locator(".hero-proof")).toHaveText(PROOF);
   await expect(page.getByText(/Vonk Forge is the open-source Controller for NVIDIA DGX Spark/)).toBeVisible();
-  await expect(page.getByText(/Recipes from Acme and Qwen and more/)).toBeVisible();
+  await expect(page.getByText(/Recipes from Acme and qwen and more/)).toBeVisible();
   await expect(page.getByRole("link", { name: "See the agent-friendly CLI" })).toBeVisible();
   await expect(page.locator(".home-hero").getByRole("link", { name: "Install", exact: true })).toHaveAttribute("href", "/install");
   await expect(page.getByRole("link", { name: "Browse what runs" })).toHaveAttribute("href", "/recipes");
@@ -298,7 +298,7 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
 
 test("facets remain in the URL and exact trust facts survive navigation", async ({ page }) => {
   await page.goto("/recipes?sparks=2&abliterated=false&capability=chat");
-  await expect(page.getByLabel("Filter by required Sparks")).toHaveValue("2");
+  await expect(page.getByLabel("Filter by Sparks you have")).toHaveValue("2");
   await expect(page.getByRole("group", { name: "How many Sparks do you have?" }).getByRole("button", { name: /2 Sparks/ })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("group", { name: "Engine" }).getByRole("button", { name: /vLLM/ })).toBeVisible();
   await expect(page.getByLabel("Filter by abliterated")).toHaveValue("false");
@@ -306,7 +306,7 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   await expect(page.getByLabel("Filter by model family")).toBeVisible();
   await expect(page.getByLabel("Filter by model", { exact: true })).toBeVisible();
   await expect(page.getByLabel("Filter by quantization")).toBeVisible();
-  await expect(page.getByLabel("Filter by required Sparks")).toBeVisible();
+  await expect(page.getByLabel("Filter by Sparks you have")).toBeVisible();
   await expect(page.getByLabel("Filter by recipe creator")).toBeVisible();
   await expect(page.getByLabel("Filter by updated date")).toBeVisible();
   await expect(page.getByLabel("Filter by execution readiness")).toBeVisible();

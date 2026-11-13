@@ -1,7 +1,7 @@
 import { useState } from "react";
 
-import { nodeCountMatches, SPARK_OPTIONS, type SparkFilter } from "./catalog-filters";
-import type { CatalogSummary, RecipeRow } from "./catalog-stats";
+import { filtersFromParameters, nodeCountMatches, type SparkFilter } from "./catalog-filters";
+import { newestFirst, type CatalogSummary, type RecipeRow } from "./catalog-stats";
 
 // What the visitor said about their setup: how many Sparks, and the kind of model. It lives in the
 // URL (`?sparks=2&type=code`, so a state can be shared) and is remembered in localStorage, so the
@@ -12,13 +12,11 @@ export interface MySparks {
 }
 
 const KEY = "vonk-my-sparks";
-const VALID = new Set<string>(SPARK_OPTIONS.map((option) => option.value));
-
+// The one URL parser is the catalog's own (`filtersFromParameters`), so the home page and the catalog
+// read `sparks` and `type` identically.
 function parse(parameters: URLSearchParams): MySparks | null {
-  const sparks = parameters.get("sparks") ?? "";
-  const type = parameters.get("type") ?? "";
-  if (!VALID.has(sparks) && !type) return null;
-  return { sparks: VALID.has(sparks) ? sparks as SparkFilter : "", type };
+  const { sparks, type } = filtersFromParameters(parameters);
+  return sparks || type ? { sparks, type } : null;
 }
 
 // The URL wins; otherwise what was remembered; otherwise nothing picked.
@@ -75,6 +73,6 @@ export function fitAnswer(summary: CatalogSummary, pick: MySparks, newest = 5): 
     byUse: Array.from(new Set(verified.map((row) => row.sparks))).sort((left, right) => left - right)
       .map((sparks) => ({ sparks, count: verified.filter((row) => row.sparks === sparks).length })),
     moreUnverified: fitting.length - verified.length,
-    newest: [...verified].sort((left, right) => right.released.localeCompare(left.released) || left.title.localeCompare(right.title)).slice(0, newest),
+    newest: [...verified].sort(newestFirst).slice(0, newest),
   };
 }

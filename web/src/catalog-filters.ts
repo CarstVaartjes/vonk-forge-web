@@ -12,8 +12,8 @@ export const READINESS_OPTIONS = [
 type BooleanFilter = "" | "true" | "false";
 export type SparkFilter = "" | "1" | "2" | "3" | "4+";
 
-// The Spark-count choices a visitor starts from. "4+" covers four- and
-// eight-Spark recipes; the library has no other counts.
+// The Spark counts a visitor says they have. A count matches recipes that need that many or fewer
+// (nodeCountMatches); "4+" matches every recipe, the library having none for more than eight.
 export const SPARK_OPTIONS: ReadonlyArray<{ value: Exclude<SparkFilter, "">; numeral: string; label: string }> = [
   { value: "1", numeral: "1", label: "1 Spark" },
   { value: "2", numeral: "2", label: "2 Sparks" },

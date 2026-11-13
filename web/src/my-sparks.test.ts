@@ -13,12 +13,11 @@ test("the URL wins over the remembered choice, which wins over nothing", () => {
   expect(readMySparks("?sparks=banana&type=vision")).toEqual({ sparks: "", type: "vision" });
 });
 
+// The fixture release: three verified one-Spark recipes (two language/vision/audio, one 3D) and one
+// eight-Spark recipe that is not verified.
 test("counts verified recipes that need that many Sparks or fewer, and the unverified ones published for them", () => {
-  const rows = summaryFixture.recipes;
-  const verifiedOne = rows.filter((row) => row.verified && row.sparks === 1).length;
-  const answer = fitAnswer(summaryFixture, { sparks: "2", type: "" });
-  expect(answer).toMatchObject({ count: verifiedOne, byUse: [{ sparks: 1, count: verifiedOne }], moreUnverified: 0 });
-  // Four or more matches every recipe, so the eight-Spark recipe that is not verified is "published for your Sparks".
-  expect(fitAnswer(summaryFixture, { sparks: "4+", type: "" }).moreUnverified).toBe(rows.filter((row) => !row.verified).length);
-  expect(fitAnswer(summaryFixture, { sparks: "", type: "" }).count).toBe(summaryFixture.verified);
+  expect(fitAnswer(summaryFixture, { sparks: "2", type: "" })).toMatchObject({ count: 3, byUse: [{ sparks: 1, count: 3 }], moreUnverified: 0 });
+  expect(fitAnswer(summaryFixture, { sparks: "4+", type: "" })).toMatchObject({ count: 3, moreUnverified: 1 });
+  expect(fitAnswer(summaryFixture, { sparks: "1", type: "3d" })).toMatchObject({ count: 1, moreUnverified: 0 });
+  expect(fitAnswer(summaryFixture, { sparks: "", type: "" }).count).toBe(3);
 });

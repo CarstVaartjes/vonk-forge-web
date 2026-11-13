@@ -13,7 +13,7 @@ const day = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", t
 
 // "How many Sparks do you have?": the same choices as the catalog page (SPARK_OPTIONS), as one
 // segmented control. Pressing the pressed choice clears it.
-export function SparkPicker({ value, onChange }: { value: SparkFilter; onChange: (value: SparkFilter) => void }) {
+export function SparkSegments({ value, onChange }: { value: SparkFilter; onChange: (value: SparkFilter) => void }) {
   return (
     <div className="picker-row">
       <p className="picker-q" id="picker-question">How many Sparks do you have?</p>
@@ -90,7 +90,7 @@ export function FitResults({ summary, pick }: { summary: CatalogSummary; pick: M
     <section className="fit-results" aria-labelledby="fit-results-title">
       <div className="fit-results-head">
         <h3 id="fit-results-title" className="wall-shelf-title">Newest that fit</h3>
-        <a className="link" href={`/recipes${query ? `?${query}` : ""}`}>See all {number.format(answer.count)} in the catalog</a>
+        <a className="text-link" href={`/recipes${query ? `?${query}` : ""}`}>See all {number.format(answer.count)} in the catalog</a>
       </div>
       <ul>
         {answer.newest.map((row: RecipeRow) => (

@@ -82,7 +82,7 @@ test("keeps Controller-parity filters in the URL and applies them locally", asyn
   expect(screen.getByLabelText("Filter by model")).toBeVisible();
   expect(screen.getByLabelText("Filter by quantization")).toBeVisible();
   expect(screen.getByLabelText("Filter by runtime")).toBeVisible();
-  expect(screen.getByLabelText("Filter by required Sparks")).toBeVisible();
+  expect(screen.getByLabelText("Filter by Sparks you have")).toBeVisible();
   expect(screen.getByLabelText("Filter by recipe creator")).toBeVisible();
   expect(screen.getByLabelText("Filter by updated date")).toBeVisible();
   expect(screen.getByLabelText("Filter by execution readiness")).toBeVisible();
@@ -101,7 +101,7 @@ test("starts from the visitor's Sparks and engine, in the same URL facets as the
   expect(screen.getByRole("button", { name: "2 Sparks: 1 recipes" })).toBeEnabled();
   fireEvent.click(oneSpark);
   await waitFor(() => expect(window.location.search).toBe("?verified=0&sparks=1"));
-  expect(screen.getByLabelText("Filter by required Sparks")).toHaveValue("1");
+  expect(screen.getByLabelText("Filter by Sparks you have")).toHaveValue("1");
   expect(oneSpark).toHaveAttribute("aria-pressed", "true");
   fireEvent.click(within(screen.getByRole("group", { name: "Engine" })).getByRole("button", { name: "vLLM: 1" }));
   await waitFor(() => expect(window.location.search).toContain("runtime=vllm"));

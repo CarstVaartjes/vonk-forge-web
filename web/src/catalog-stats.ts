@@ -54,6 +54,9 @@ export interface CatalogStats {
   types: Array<{ id: string; label: string; verified: number }>;
 }
 
+// Newest release first, then by title: the order of the wall's shelves and of "newest that fit".
+export const newestFirst = (left: RecipeRow, right: RecipeRow): number => right.released.localeCompare(left.released) || left.title.localeCompare(right.title);
+
 export type StatsRecipe = RecipeSummary & { evidence?: RecipeDetail["evidence"] };
 
 const DAY = 86_400_000;

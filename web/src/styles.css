@@ -3017,6 +3017,10 @@ a {
 
 .type-icon { flex: none; color: var(--gold); }
 
+/* A card is a rounded slab; the gold is for creators and sources. */
+.card { border: 1px solid var(--line); border-radius: var(--r-card); background: var(--panel); box-shadow: var(--shadow); }
+.src { color: var(--gold-soft); }
+
 /* The picker and its answer. */
 .picker { display: grid; gap: var(--s4); margin-top: var(--s6); padding: var(--s5); max-width: 36rem; }
 .picker-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s3) var(--s4); }

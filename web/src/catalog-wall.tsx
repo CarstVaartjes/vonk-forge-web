@@ -1,6 +1,6 @@
 import { useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 
-import type { CatalogSummary, RecipeRow } from "./catalog-stats";
+import { newestFirst, type CatalogSummary, type RecipeRow } from "./catalog-stats";
 import { gibLabel } from "./catalog-filters";
 
 // One recipe is one lit, outlined or hollow mark; the state comes from two catalog facts only
@@ -13,9 +13,6 @@ export function cellState(row: Pick<RecipeRow, "verified" | "passedBefore">): Ce
 
 const day = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: "UTC" });
 const number = new Intl.NumberFormat("en");
-
-// Newest release first, so new work appears top-left.
-const newestFirst = (left: RecipeRow, right: RecipeRow) => right.released.localeCompare(left.released) || left.title.localeCompare(right.title);
 
 function recipeHref(row: RecipeRow): string {
   return `/recipes/${row.publisher}/${row.slug}`;

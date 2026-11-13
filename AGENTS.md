@@ -46,6 +46,10 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   build derived from it). Never type a contract capability name or status string in
   `web/src` outside tests and fixtures: `check-single-sources` rejects an added
   literal (`web/src/vocabulary.single-source.json`).
+- The site's Spark-count filter means "needs that many Sparks or fewer" (4+ matches every
+  recipe), in one function (`nodeCountMatches` in `web/src/catalog-filters.ts`) shared by the home
+  picker, the catalog and the models page. The Controller's filter still matches the exact count;
+  a Controller follow-up will match this meaning.
 - The home page reads one file, `catalog-summary.json` (`summary_version: 2`),
   which the same Pages build derives from the verified index with the code the pages
   use (`web/src/catalog-stats.ts`): totals, statuses in vocabulary order, shelves per
