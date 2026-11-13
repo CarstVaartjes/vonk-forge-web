@@ -85,6 +85,8 @@ export function RecipesPage() {
     if (!start.has("sparks") && !start.has("type")) {
       if (mine.sparks) start.set("sparks", mine.sparks);
       if (mine.type) start.set("type", mine.type);
+      // The URL carries what the list shows, so a share or bookmark reproduces it.
+      if (start.has("sparks") || start.has("type")) window.history.replaceState(null, "", `${window.location.pathname}?${start}`);
     }
     return start;
   });
