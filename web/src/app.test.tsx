@@ -72,7 +72,7 @@ test("tells one story: what it does, with the vonkctl session behind it", () => 
   for (const title of ["Know what fits.", "Stay current.", "Run the mix you need."]) {
     expect(screen.getByRole("heading", { name: title })).toBeVisible();
   }
-  expect(screen.getByText("vonkctl recipe library --fits-fleet --json")).toBeVisible();
+  expect(screen.getAllByText("vonkctl recipe library --fits-fleet --json")[0]).toBeVisible();
   expect(screen.getByText("vonkctl --profile 2 profile load --yes --json")).toBeVisible();
   expect(document.body.textContent).not.toMatch(/15 minutes/);
   expect(document.querySelectorAll("main section").length).toBeLessThanOrEqual(7);

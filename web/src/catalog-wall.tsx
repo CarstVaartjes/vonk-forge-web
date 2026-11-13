@@ -1,4 +1,4 @@
-import { useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent } from "react";
+import { useRef, useState, type CSSProperties, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 
 import type { CatalogSummary, RecipeRow } from "./catalog-stats";
 import { gibLabel } from "./catalog-filters";
@@ -21,7 +21,7 @@ function recipeHref(row: RecipeRow): string {
   return `/recipes/${row.publisher}/${row.slug}`;
 }
 
-function memoryLine(row: RecipeRow): string | null {
+export function memoryLine(row: RecipeRow): string | null {
   if (row.measuredBytes !== null) return `${gibLabel(row.measuredBytes)} per Spark, measured`;
   if (row.memoryBytes !== null) return `${gibLabel(row.memoryBytes)} per Spark, declared`;
   return null;
@@ -45,7 +45,7 @@ function WallCard({ row }: { row: RecipeRow | null }) {
 // The whole catalog at a glance: shelves by Spark count, a mark per recipe (a joined mark per Spark),
 // one tab stop with arrow-key movement, Enter opens the recipe. The details of the hovered, focused or
 // tapped mark show in a reserved panel under the wall, so nothing moves when they change.
-export function CatalogWall({ summary }: { summary: CatalogSummary }) {
+export function CatalogWall({ summary, match = () => true, before, after }: { summary: CatalogSummary; match?: (row: RecipeRow) => boolean; before?: ReactNode; after?: ReactNode }) {
   const shelves = summary.bySparks.map(({ sparks, total }) => ({ sparks, total, rows: summary.recipes.filter((row) => row.sparks === sparks).sort(newestFirst) }));
   const ordered = shelves.flatMap((shelf) => shelf.rows);
   const [active, setActive] = useState(0);
@@ -112,6 +112,7 @@ export function CatalogWall({ summary }: { summary: CatalogSummary }) {
   let index = -1;
   return (
     <div className="wall">
+      {before}
       <p id="wall-summary" className="visually-hidden">
         {number.format(ordered.length)} recipes: {number.format(counts.verified)} {verifiedLabel}, {number.format(counts.before)} passed before and are not verified now, {number.format(counts.none)} with no hardware pass yet.
       </p>
@@ -129,6 +130,7 @@ export function CatalogWall({ summary }: { summary: CatalogSummary }) {
                     ref={(element) => { cells.current[mine] = element; }}
                     className="wall-cell"
                     data-state={cellState(row)}
+                    data-dim={match(row) ? undefined : ""}
                     data-shown={shown === mine ? "" : undefined}
                     href={recipeHref(row)}
                     tabIndex={active === mine ? 0 : -1}
@@ -151,6 +153,7 @@ export function CatalogWall({ summary }: { summary: CatalogSummary }) {
         <li><span className="wall-key" data-state="before" aria-hidden="true" />Passed before, not verified now <b>{number.format(counts.before)}</b></li>
         <li><span className="wall-key" data-state="none" aria-hidden="true" />No hardware pass yet <b>{number.format(counts.none)}</b></li>
       </ul>
+      {after}
     </div>
   );
 }

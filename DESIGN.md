@@ -291,6 +291,10 @@ The terminal counterpart of the controller preview: the same rounded frame and C
 
 The home hero's signature: one mark per recipe from `catalog-summary.json`, in shelves by Spark count (a recipe on two Sparks is one focusable item drawn as two joined marks), newest release first. A mark has three states derived from two catalog facts only, the vocabulary's `verified` flag and whether a hardware pass is on record, never from a status word: filled (`--lit`), amber outline (passed before, not verified now), hollow (no pass yet). Shape carries the state and the legend names it with counts; the exact status word is always in the details card under the wall. The wall is one tab stop with arrow-key movement; on touch a tap selects the nearest mark. Speed is never drawn: the wall shows what runs, not how fast.
 
+### Spark Picker
+
+"How many Sparks do you have?" is a segmented control with the catalog page's choices (1, 2, 3, 4+); type chips come from the summary. The pick means "needs that many Sparks or fewer" (4+ matches every recipe), in one function (`nodeCountMatches`) used by the home picker, the catalog and the models page. The answer (a rolling number, one sentence, a breakdown by Spark count) sits in an `aria-live="polite"` region and counts recipes only: nothing on the page claims a memory fit, and the line says the Controller checks memory and disk. Non-matching wall marks are dimmed. The state lives in the URL (`?sparks=2&type=code`) and in `localStorage`, and the catalog link carries it.
+
 ### Role Colours
 
 Five tokens in `:root`, `--role-coder`, `--role-image`, `--role-three-d`, `--role-audio` and `--role-video`, are used only by the example-setup page (`/example-setup`); the architecture diagram's two lane colours (`--lane-public`, `--lane-network`) are the same kind of identity token. They tell model roles apart, always sit beside a text role label and a legend, and are never status or action colours.

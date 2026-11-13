@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { getCatalogSummary } from "../api/client";
 import type { CatalogSummary } from "../catalog-stats";
 import { CatalogWall } from "../catalog-wall";
+import { fitsPick, useMySparks, type MySparks } from "../my-sparks";
+import { FitAnswerView, FitResults, SparkPicker, TypeChips } from "../spark-picker";
 import { CommandBlock } from "../command-block";
 import { controllerInstallCommand, sparkInstallCommand } from "./install";
 import { RollingNumber } from "../rolling-number";
@@ -97,7 +99,7 @@ function joinNames(names: string[]): string {
 
 // The sentence leads (owner 2026-11-12); the counts follow as proof. All three
 // counts are over recipes verified on a DGX Spark.
-function Hero({ state }: { state: CatalogState }) {
+function Hero({ state, pick, setPick }: { state: CatalogState; pick: MySparks; setPick: (next: Partial<MySparks>) => void }) {
   const summary = state.status === "ready" ? state.summary : null;
   const top = summary ? summary.topCreators.slice(0, 3).map((creator) => creator.name) : [];
   const showCounts = state.status === "loading" || state.status === "ready";
@@ -113,6 +115,13 @@ function Hero({ state }: { state: CatalogState }) {
           mix you need in a few clicks or one <code>vonkctl</code> command your
           agents can drive.
         </p>
+        {showWall ? (
+          <div className="card picker" aria-label="Which recipes fit your Sparks">
+            <SparkPicker value={pick.sparks} onChange={(sparks) => setPick({ sparks })} />
+            {summary ? <FitAnswerView summary={summary} pick={pick} /> : <div className="answer-placeholder" aria-hidden="true" />}
+            <CommandBlock compact label="Ask your own Sparks">{agentSession[0]!.command}</CommandBlock>
+          </div>
+        ) : null}
         <div className="hero-actions">
           <a className="button primary" href="/install">Install</a>
           <a className="button secondary" href="/recipes">Browse what runs</a>
@@ -136,7 +145,14 @@ function Hero({ state }: { state: CatalogState }) {
           <span className="hero-stat"><RollingNumber value={summary?.creators ?? null} placeholderDigits={2} /> creators</span>
         </p>
       ) : null}
-      {showWall ? <div className="wall-slot">{summary ? <CatalogWall summary={summary} /> : null}</div> : null}
+      {showWall ? <div className="wall-slot">{summary ? (
+        <CatalogWall
+          summary={summary}
+          match={(row) => fitsPick(row, pick)}
+          before={<><p className="wall-lead">Every recipe in the catalog. Lit means it passed on a real Spark.</p><TypeChips summary={summary} pick={pick} onChange={(type) => setPick({ type })} /></>}
+          after={<FitResults summary={summary} pick={pick} />}
+        />
+      ) : null}</div> : null}
     </section>
   );
 }
@@ -159,9 +175,10 @@ function CatalogSections({ state, retry }: { state: CatalogState; retry: () => v
 
 export function HomePage() {
   const [state, retry] = useCatalogSummary();
+  const [pick, setPick] = useMySparks();
   return (
     <main className="home-page">
-      <Hero state={state} />
+      <Hero state={state} pick={pick} setPick={setPick} />
       <CatalogSections state={state} retry={retry} />
 
       <section className="quickstart" aria-labelledby="quickstart-title">

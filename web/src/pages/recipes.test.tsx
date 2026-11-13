@@ -97,7 +97,8 @@ test("starts from the visitor's Sparks and engine, in the same URL facets as the
   render(<RecipesPage />);
   await screen.findByRole("heading", { name: "Qwen Fast" });
   const oneSpark = screen.getByRole("button", { name: "1 Spark: 1 recipes" });
-  expect(screen.getByRole("button", { name: "2 Sparks: 0 recipes" })).toBeDisabled();
+  // "I have 2 Sparks" also runs the one-Spark recipe: a count means "that many or fewer".
+  expect(screen.getByRole("button", { name: "2 Sparks: 1 recipes" })).toBeEnabled();
   fireEvent.click(oneSpark);
   await waitFor(() => expect(window.location.search).toBe("?verified=0&sparks=1"));
   expect(screen.getByLabelText("Filter by required Sparks")).toHaveValue("1");
@@ -182,12 +183,12 @@ describe("type-first filtering", () => {
     expect(types().getByRole("button", { name: "Code: 1 recipes" })).not.toHaveAttribute("aria-disabled");
     expect(types().getByRole("button", { name: "Language: 1 recipes" })).toBeVisible();
 
-    fireEvent.click(screen.getByRole("button", { name: "2 Sparks: 1 recipes" }));
-    await waitFor(() => expect(types().getByRole("button", { name: "Code: 0 recipes" })).toHaveAttribute("aria-disabled", "true"));
-    expect(types().getByRole("button", { name: "Language: 1 recipes" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "1 Spark: 1 recipes" }));
+    await waitFor(() => expect(types().getByRole("button", { name: "Language: 0 recipes" })).toHaveAttribute("aria-disabled", "true"));
+    expect(types().getByRole("button", { name: "Code: 1 recipes" })).toBeVisible();
     // An empty chip stays focusable but does nothing.
-    fireEvent.click(types().getByRole("button", { name: "Code: 0 recipes" }));
-    expect(window.location.search).toBe("?sparks=2");
+    fireEvent.click(types().getByRole("button", { name: "Language: 0 recipes" }));
+    expect(window.location.search).toBe("?sparks=1");
 
     fireEvent.click(screen.getByRole("button", { name: "Any count: 2 recipes" }));
     await waitFor(() => expect(window.location.search).toBe(""));

@@ -1,18 +1,12 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { expect, test } from "vitest";
 
-import { catalogIndexFixture } from "./api/catalog.fixture";
-import type { CatalogIndex } from "./api/catalog-types";
-import { parseLibraryIndex, recipesFromIndex } from "./api/static-catalog";
-import { deriveCatalogStats, type CatalogSummary } from "./catalog-stats";
+import { summaryFixture } from "./catalog-summary.fixture";
 import { CatalogWall, cellState } from "./catalog-wall";
 
 // The four real recipes of the fixture release: Working gemma and 3D recipes, one of them with a
 // measured peak, and an eight-Spark recipe that is not verified.
-const index = catalogIndexFixture as CatalogIndex;
-const release = { repository: index.repository, tag: "v4.8.0", contract_version: index.contract_version, updated_at: index.updated_at, source_commit: index.source_commit, catalog_index_sha256: "a".repeat(64) };
-const stats = deriveCatalogStats(recipesFromIndex(parseLibraryIndex(index, release)), index.vocabulary, index.updated_at);
-const summary: CatalogSummary = { summary_version: 2, release: "v4.8.0", catalog_index_sha256: "a".repeat(64), ...stats };
+const summary = summaryFixture;
 
 const linkOf = (row: { publisher: string; slug: string }) => document.querySelector(`a[href="/recipes/${row.publisher}/${row.slug}"]`)!;
 
@@ -60,4 +54,10 @@ test("the card says measured only for a recipe the summary has a measured peak f
     expect(card).toHaveTextContent(`per Spark, ${word}`);
     expect(card).not.toHaveTextContent(word === "measured" ? "declared" : "measured");
   }
+});
+
+test("marks that do not match the pick are dimmed, the rest are not", () => {
+  render(<CatalogWall summary={summary} match={(row) => row.sparks === 1} />);
+  const dimmed = document.querySelectorAll("a.wall-cell[data-dim]").length;
+  expect(dimmed).toBe(summary.recipes.filter((row) => row.sparks !== 1).length);
 });

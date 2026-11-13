@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import type { RecipeSummary } from "./api/client";
-import { EMPTY_FILTERS, filtersFromParameters, recipeMatches, sortRecipes } from "./catalog-filters";
+import { EMPTY_FILTERS, filtersFromParameters, nodeCountMatches, recipeMatches, sortRecipes } from "./catalog-filters";
 import { catalogFacts } from "./vocabulary.fixture";
 
 
@@ -40,6 +40,12 @@ function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["cata
     }),
   };
 }
+
+test("a Spark count matches recipes that need that many or fewer; 4+ and none match every recipe", () => {
+  expect([1, 2, 3, 8].map((nodes) => nodeCountMatches(nodes, "2"))).toEqual([true, true, false, false]);
+  expect([1, 8].map((nodes) => nodeCountMatches(nodes, "4+"))).toEqual([true, true]);
+  expect(nodeCountMatches(8, "")).toBe(true);
+});
 
 describe("public catalog Controller-parity filters", () => {
   test("parses the shared filter vocabulary and validates enumerated values", () => {

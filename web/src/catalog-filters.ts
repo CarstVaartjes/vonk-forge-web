@@ -21,9 +21,11 @@ export const SPARK_OPTIONS: ReadonlyArray<{ value: Exclude<SparkFilter, "">; num
   { value: "4+", numeral: "4+", label: "4 or more" },
 ];
 
+// "I have N Sparks" matches every recipe that needs N or fewer; "4+" matches them all (the library
+// has no recipe for more than eight). One function for the home picker and the catalog filter.
 export function nodeCountMatches(nodes: number, sparks: SparkFilter): boolean {
-  if (!sparks) return true;
-  return sparks === "4+" ? nodes >= 4 : nodes === Number(sparks);
+  if (!sparks || sparks === "4+") return true;
+  return nodes <= Number(sparks);
 }
 
 const ENGINE_LABELS: Record<string, string> = {
