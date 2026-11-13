@@ -314,6 +314,7 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
       profile_node_counts: [nodeCount],
       maximum_installed_bytes_per_node: resources.disk || undefined,
       maximum_runtime_memory_bytes_per_node: resources.memory || undefined,
+      measured_memory_bytes_per_node: item.measured_memory ? Math.max(...item.measured_memory.roles.map((role) => role.measured_peak_bytes)) : undefined,
     },
     moderation_warning: null,
     facts: {
@@ -335,7 +336,13 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
       media_type: item.package.media_type,
     },
     catalog: publicMetadata(item, index, artifacts),
-    evidence: lastPass ? { tested_at: lastPass.tested_at, spark_count: lastPass.platform.spark_count ?? undefined } : null,
+    evidence: lastPass ? {
+      tested_at: lastPass.tested_at,
+      spark_count: lastPass.platform.spark_count ?? undefined,
+      hardware_class: lastPass.platform.hardware_class,
+      evidence_ref: lastPass.evidence_refs?.[0],
+      image_digest: lastPass.identity.runtime_image?.image_digest,
+    } : null,
     chat_api: chat ? { endpoints: chat.endpoints, streaming: chat.streaming, structured_output: chat.structured_output, image_input: chat.input_modalities.image, audio_input: chat.input_modalities.audio } : undefined,
     settings: {
       context_tokens: "context_tokens" in settings ? settings.context_tokens.value : undefined,
@@ -418,7 +425,7 @@ export async function getStaticLibraryRelease(url: string, signal?: AbortSignal)
 }
 
 // The recipes of an accepted index, as the pages show them.
-export function recipesFromIndex(index: LibraryIndex): RecipeSummary[] {
+export function recipesFromIndex(index: LibraryIndex): RecipeDetail[] {
   return index.recipes.map((item) => mapRecipe(item, index));
 }
 

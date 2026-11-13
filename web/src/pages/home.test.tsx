@@ -19,11 +19,11 @@ function recipe(slug: string, owner: string, status: string, capabilities: strin
 
 const today = new Date().toISOString().slice(0, 10);
 const summary = () => ({
-  summary_version: 1, release: "v3.1.0", catalog_index_sha256: "a".repeat(64),
+  summary_version: 2, release: "v3.1.0", catalog_index_sha256: "a".repeat(64),
   ...deriveCatalogStats([
     recipe("a", "NVIDIA", "Working", ["chat"], "Qwen", today), recipe("b", "nvidia", "Working", ["code-generation"], "GLM"),
     recipe("d", "NVIDIA", "Not yet verified", ["chat"], "Hidden"), recipe("c", "eugr", "Not yet verified", ["chat"], "Hidden"),
-  ], vocabularyFixture),
+  ], vocabularyFixture, `${today}T12:00:00Z`),
 });
 
 beforeEach(() => {

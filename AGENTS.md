@@ -46,6 +46,13 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   build derived from it). Never type a contract capability name or status string in
   `web/src` outside tests and fixtures: `check-single-sources` rejects an added
   literal (`web/src/vocabulary.single-source.json`).
+- The home page reads one file, `catalog-summary.json` (`summary_version: 2`),
+  which the same Pages build derives from the verified index with the code the pages
+  use (`web/src/catalog-stats.ts`): totals, statuses in vocabulary order, shelves per
+  Spark count, one row per recipe, and the weekly and daily series. Home never loads
+  `catalog-index.json`; the browser accepts version 2 only and refuses anything else
+  (error state with Retry). There is no second summary file and no reader for an
+  older version: the bump ships atomically with the reader in one Pages build.
 - The public site never builds or executes a container, accepts model weights,
   stores visitor data, or holds controller authority. Weights stay at immutable
   origins; container layers stay in registries; runtime authority, secrets, and

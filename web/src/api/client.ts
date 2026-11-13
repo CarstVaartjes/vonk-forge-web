@@ -28,6 +28,8 @@ export interface RecipeSummary {
     profile_node_counts?: number[];
     maximum_installed_bytes_per_node?: number;
     maximum_runtime_memory_bytes_per_node?: number;
+    // The largest per-role peak a hardware run measured; absent for a recipe with none.
+    measured_memory_bytes_per_node?: number;
   };
   moderation_warning?: string | null;
   facts?: {
@@ -70,7 +72,7 @@ export interface RecipeSummary {
 
 export interface RecipeDetail extends RecipeSummary {
   // The newest hardware pass the library recorded for this recipe: when, and on how many Sparks.
-  evidence: { tested_at: string; spark_count?: number } | null;
+  evidence: { tested_at: string; spark_count?: number; hardware_class?: string; evidence_ref?: string; image_digest?: string } | null;
   // What the recipe's chat API serves; absent for a recipe that is not a chat API.
   chat_api?: { endpoints: string[]; streaming: boolean; structured_output: boolean; image_input: boolean; audio_input: boolean };
   // The recipe's own defaults for the settings the page shows.
