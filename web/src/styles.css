@@ -274,6 +274,7 @@ a {
 }
 
 .site-header nav a,
+.site-header-end .nav-primary,
 .site-footer nav a {
   color: var(--muted);
   font-size: var(--t-small);
@@ -290,7 +291,8 @@ a {
   text-underline-offset: 0.2em;
 }
 
-.site-header nav a {
+.site-header nav a,
+.site-header-end .nav-primary {
   min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
@@ -305,26 +307,64 @@ a {
   color: var(--ink);
 }
 
-.site-header nav .nav-primary {
+.site-header .nav-primary {
   padding: 0.55rem 0.8rem;
   border: 1px solid rgb(118 185 0 / 55%);
+  border-radius: var(--r-ctl);
   color: var(--green-text);
 }
 
-.site-header nav .nav-primary:hover {
+.site-header .nav-primary:hover {
   border-color: var(--green);
   color: var(--green-ink);
   background: var(--green);
 }
 
 /* The current page: ivory text with a 2px green underline, never a tinted pill. */
-.site-header nav a.is-active:not(.nav-primary) {
+.site-header a.is-active:not(.nav-primary) {
   color: var(--ink);
   box-shadow: inset 0 -2px var(--green);
 }
 
-.site-header nav .nav-primary.is-active {
+.site-header .nav-primary.is-active {
   border-color: var(--green);
+}
+
+.site-header-end { display: flex; align-items: center; gap: 0.75rem; }
+
+.release-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+  color: var(--muted);
+  font-size: var(--t-small);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.release-pill b { margin: 0 0.25em; color: var(--ink); font-weight: 650; }
+
+.theme-switch, .menu-button {
+  display: inline-grid;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-ctl);
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+}
+.theme-switch:hover, .menu-button:hover { color: var(--ink); background: var(--raised); }
+.menu-button { display: none; padding: 0 0.8rem; font-weight: 650; font-size: var(--t-small); }
+
+@media (max-width: 64rem) {
+  .release-pill { display: none; }
+  .menu-button { display: inline-grid; }
+  .site-header { flex-wrap: wrap; }
+  .site-header > nav { display: none; order: 3; flex-basis: 100%; padding-bottom: 0.75rem; flex-wrap: wrap; gap: 0.25rem 1rem; }
+  .site-header > nav.is-open { display: flex; }
 }
 
 .hero-actions {
@@ -511,6 +551,7 @@ a {
 .site-footer p { margin: 0; }
 .site-footer .library-version { margin-top: 0.4rem; }
 .site-footer .library-version a { color: var(--muted); }
+.site-footer .library-version code { font: 600 var(--t-label) var(--mono); }
 .site-footer strong { color: var(--muted); }
 .site-footer nav { flex-wrap: wrap; gap: 1.25rem; }
 
@@ -1775,16 +1816,9 @@ a {
 @media (max-width: 600px) {
   .site-shell { width: min(100% - 1.5rem, 1220px); }
   .site-header { position: relative; min-height: 4.25rem; }
+  .site-header-end { gap: 0.4rem; }
   .brand-name { display: none; }
-  .site-header nav { display: grid; grid-template-columns: repeat(3, auto); gap: 0.3rem 0.75rem; justify-items: end; }
-  .site-header nav a {
-    min-height: 2.75rem;
-    display: inline-flex;
-    align-items: center;
-    padding: 0.45rem 0.35rem;
-    font-size: var(--t-label);
-  }
-  .contract-pipeline,
+    .contract-pipeline,
   .contract-fields,
   .contract-ownership { grid-template-columns: 1fr; }
   .contract-pipeline li { min-height: 15rem; }

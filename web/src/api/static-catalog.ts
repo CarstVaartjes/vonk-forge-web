@@ -355,6 +355,7 @@ interface ReleaseManifest {
   contract_version: string;
   updated_at: string;
   source_commit: string;
+  catalog_index_sha256: string;
 }
 
 // The Pages build writes the verified release's index and a manifest naming
@@ -371,10 +372,10 @@ function releaseUrl(indexUrl: string): string {
 
 function libraryRelease(value: unknown): LibraryRelease {
   const release = record(value) as Partial<ReleaseManifest>;
-  if (typeof release.tag !== "string" || !/^v\d+\.\d+\.\d+$/.test(release.tag) || typeof release.updated_at !== "string") {
+  if (typeof release.tag !== "string" || !/^v\d+\.\d+\.\d+$/.test(release.tag) || typeof release.updated_at !== "string" || !/^[0-9a-f]{64}$/.test(release.catalog_index_sha256 ?? "")) {
     throw new Error("Recipe library returned an unsupported release manifest");
   }
-  return { version: release.tag, updated_at: release.updated_at };
+  return { version: release.tag, updated_at: release.updated_at, index_sha256: release.catalog_index_sha256! };
 }
 
 async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {

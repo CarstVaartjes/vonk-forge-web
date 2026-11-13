@@ -131,6 +131,7 @@ export interface ModelSummary {
 export interface LibraryRelease {
   version: string;
   updated_at: string;
+  index_sha256: string;
 }
 
 export interface ModelPage {

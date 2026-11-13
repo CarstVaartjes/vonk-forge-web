@@ -145,7 +145,7 @@ Eyebrows and kickers, thick side-tab borders, generic Unicode icons, and Space G
 
 ## Colors
 
-The palette is taken from the DGX Spark itself: a graphite dark system with NVIDIA green as the one functional action voice and the chassis champagne gold as one tightly bounded public-source exception. The tokens are the Controller dashboard's, same names and values, so the site and the product are one family. Dark is the default; a designed light theme (`:root[data-theme="light"]`, warm paper `#f3f1ea`, white cards, near-black ink) is selected by `data-theme` on the root element. Light is a selected theme, not an inversion: `green-text` and `gold-soft` darken for text, the model ink flips to near-black, and `styles.test.ts` measures every text and mark pair in both themes (4.5:1 text, 3:1 marks).
+The palette is taken from the DGX Spark itself: a graphite dark system with NVIDIA green as the one functional action voice and the chassis champagne gold as one tightly bounded public-source exception. The tokens are the Controller dashboard's, same names and values, so the site and the product are one family. Dark is the default; a designed light theme (`:root[data-theme="light"]`, warm paper `#f3f1ea`, white cards, near-black ink) follows `prefers-color-scheme` until the visitor picks with the header switch (see Navigation). Light is a selected theme, not an inversion: `green-text` and `gold-soft` darken for text, the model ink flips to near-black, and `styles.test.ts` measures every text and mark pair in both themes (4.5:1 text, 3:1 marks).
 
 The catalog wall adds three tokens: `--lit` (a verified Spark cell), `--cool` (a dimmed cell) and the cell size and gap (`--cell`, `--cell-gap`).
 
@@ -267,7 +267,9 @@ Components feel firm, precise, and ready for real operation.
 
 ### Navigation
 
-Navigation is compact Onest text on the workbench ground. Default links use Ash Muted and become Forge Ivory on hover. The installation action is the one persistent green-outlined exception. Mobile navigation wraps into a scannable row without icons or a novelty menu glyph.
+Navigation is compact Onest text on the workbench ground: Catalog, Models, Controller, Docs. Default links use Ash Muted and become Forge Ivory on hover. On the right sit the release pill ("Catalog v4.8.0 · updated 12 Nov", read from `release.json` and left out when it cannot be read), the theme switch and Install, the one persistent green-outlined exception. Below 64rem the links collapse behind a Menu button and the pill is hidden (the footer carries the tag, the first 12 characters of the index digest and the date).
+
+**The Theme Switch Rule.** The theme follows `prefers-color-scheme` until the visitor picks; the pick is remembered in `localStorage` (`vonk-theme`). `public/theme-init.js` sets `data-theme` before first paint (an external script, CSP stays `script-src 'self'`), and `src/theme.ts` owns the same rule in the app.
 
 ### Command Strip
 

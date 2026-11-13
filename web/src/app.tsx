@@ -11,6 +11,8 @@ import { RecipeDetailPage } from "./pages/recipe-detail";
 import { RecipesPage } from "./pages/recipes";
 import { ShowcasePage } from "./pages/showcase";
 import { ModelDetailPage, ModelsPage } from "./pages/models";
+import { ThemeIcon } from "./icons";
+import { applyTheme, chooseTheme, currentTheme, followSystem, type Theme } from "./theme";
 
 
 function CurrentPage() {
@@ -33,25 +35,44 @@ function CurrentPage() {
   return <main className="status-panel"><h1>Not found</h1><p>This spark has not been forged.</p></main>;
 }
 
-function updatedLabel(value: string): string {
+function dateLabel(value: string, options: Intl.DateTimeFormatOptions): string {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("en", { dateStyle: "medium", timeZone: "UTC" }).format(date);
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("en-GB", { ...options, timeZone: "UTC" }).format(date);
 }
 
-// The recipe library version this site serves (its release tag, which is the
-// contract version) and when its recipes last changed.
-function LibraryVersion() {
+// The release this site serves (its tag is the contract version), read once from the small
+// manifest. Until it is read, or if it cannot be, the pill and the footer line are not drawn.
+function useLibraryRelease(): LibraryRelease | null {
   const [release, setRelease] = useState<LibraryRelease | null>(null);
   useEffect(() => {
     const controller = new AbortController();
     getLibraryRelease(controller.signal).then(setRelease).catch(() => undefined);
     return () => controller.abort();
   }, []);
+  return release;
+}
+
+function releaseUrl(release: LibraryRelease): string {
+  return `https://github.com/CarstVaartjes/vonk-forge-recipes/releases/tag/${release.version}`;
+}
+
+function LibraryVersion({ release }: { release: LibraryRelease | null }) {
   if (!release) return null;
   return (
     <p className="library-version">
-      Recipe library <a href={`https://github.com/CarstVaartjes/vonk-forge-recipes/releases/tag/${release.version}`}>{release.version}</a> · Updated {updatedLabel(release.updated_at)}
+      Recipe library <a href={releaseUrl(release)}>{release.version}</a> · Updated {dateLabel(release.updated_at, { dateStyle: "medium" })} · Index <code>{release.index_sha256.slice(0, 12)}</code>
     </p>
+  );
+}
+
+function ThemeSwitch() {
+  const [theme, setTheme] = useState<Theme>(currentTheme);
+  useEffect(() => followSystem((next) => { applyTheme(next); setTheme(next); }), []);
+  const next: Theme = theme === "dark" ? "light" : "dark";
+  return (
+    <button type="button" className="theme-switch" aria-label={`Switch to ${next} theme`} onClick={() => { chooseTheme(next); setTheme(next); }}>
+      <ThemeIcon theme={theme} />
+    </button>
   );
 }
 
@@ -71,6 +92,8 @@ function NavigationLink({ href, children, primary = false, also = [] }: { href: 
 }
 
 export function App() {
+  const release = useLibraryRelease();
+  const [menuOpen, setMenuOpen] = useState(false);
   return (
     <>
       <a className="skip-link" href="#main-content">Skip to content</a>
@@ -80,11 +103,18 @@ export function App() {
             <span aria-hidden="true" className="brand-mark"><i /><i /><i /></span>
             <span className="brand-name"><strong>Vonk</strong> Forge</span>
           </a>
-          <nav aria-label="Primary navigation">
-            <NavigationLink href="/recipes" also={["/models"]}>Catalog</NavigationLink>
-            <NavigationLink primary href="/install">Install</NavigationLink>
-            <NavigationLink href="/architecture" also={["/control"]}>Docs</NavigationLink>
+          <nav aria-label="Primary navigation" className={menuOpen ? "is-open" : undefined} id="primary-nav">
+            <NavigationLink href="/recipes">Catalog</NavigationLink>
+            <NavigationLink href="/models">Models</NavigationLink>
+            <NavigationLink href="/control">Controller</NavigationLink>
+            <NavigationLink href="/architecture">Docs</NavigationLink>
           </nav>
+          <div className="site-header-end">
+            {release && <a className="release-pill" href={releaseUrl(release)}>Catalog <b>{release.version}</b> · updated {dateLabel(release.updated_at, { day: "numeric", month: "short" })}</a>}
+            <ThemeSwitch />
+            <NavigationLink primary href="/install">Install</NavigationLink>
+            <button type="button" className="menu-button" aria-expanded={menuOpen} aria-controls="primary-nav" onClick={() => setMenuOpen(!menuOpen)}>Menu</button>
+          </div>
         </header>
         <div id="main-content" tabIndex={-1}>
           <CurrentPage />
@@ -92,10 +122,11 @@ export function App() {
         <footer className="site-footer">
           <div>
             <p><strong>Vonk Forge</strong> · Models that fit your Sparks, kept current. Open-source local control for NVIDIA DGX Spark.</p>
-            <LibraryVersion />
+            <LibraryVersion release={release} />
           </div>
           <nav aria-label="Footer navigation">
             <a href="/recipes">Catalog</a>
+            <a href="/models">Models</a>
             <a href="/install">Install</a>
             <a href="/architecture">How it works</a>
             <a href="/control">Control</a>

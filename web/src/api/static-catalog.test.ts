@@ -8,7 +8,7 @@ import { displayTitle, getStaticLibraryRelease, getStaticModel, getStaticVocabul
 // Real entries of the signed library (see catalog.fixture.ts): two single-Spark Working
 // gemma recipes, a Working 3D recipe and an eight-Spark recipe that needs more Sparks.
 const index = catalogIndexFixture as CatalogIndex;
-const release = { repository: index.repository, tag: "v4.8.0", contract_version: index.contract_version, updated_at: index.updated_at, source_commit: index.source_commit };
+const release = { repository: index.repository, tag: "v4.8.0", contract_version: index.contract_version, updated_at: index.updated_at, source_commit: index.source_commit, catalog_index_sha256: "a".repeat(64) };
 const indexUrl = "https://example.test/catalog/catalog-index.json";
 const nvidia = "gemma-4-e2b-it-nvidia-vllm-single";
 const eight = "inkling-975b-a41b-nvfp4-sglang-eight";
@@ -221,7 +221,7 @@ describe("static recipe library adapter", () => {
 
   test("reads the library version and update time from the release manifest alone", async () => {
     const fetchMock = serve(index);
-    await expect(getStaticLibraryRelease(indexUrl)).resolves.toEqual({ version: "v4.8.0", updated_at: index.updated_at });
+    await expect(getStaticLibraryRelease(indexUrl)).resolves.toEqual({ version: "v4.8.0", updated_at: index.updated_at, index_sha256: "a".repeat(64) });
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual(["https://example.test/catalog/release.json"]);
   });
 });

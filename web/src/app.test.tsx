@@ -6,10 +6,12 @@ import indexHtml from "../index.html?raw";
 import { InstallPage } from "./pages/install";
 
 
+const siteHeader = () => document.querySelector<HTMLElement>("header.site-header")!;
+
 // The footer reads the verified release manifest the Pages build writes.
 beforeEach(() => {
   vi.stubGlobal("fetch", vi.fn(async (url: string) => {
-    if (url.endsWith("/catalog/release.json")) return { ok: true, json: async () => ({ repository: "CarstVaartjes/vonk-forge-recipes", tag: "v2.0.0", contract_version: "2.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: "f".repeat(40) }) };
+    if (url.endsWith("/catalog/release.json")) return { ok: true, json: async () => ({ repository: "CarstVaartjes/vonk-forge-recipes", tag: "v2.0.0", contract_version: "2.0.0", updated_at: "2026-09-28T20:04:06Z", source_commit: "f".repeat(40), catalog_index_sha256: "b".repeat(64) }) };
     return { ok: false, status: 404 };
   }));
 });
@@ -24,7 +26,29 @@ test("shows the recipe library version and when it was last updated", async () =
   render(<App />);
   const footer = screen.getByRole("contentinfo");
   expect(await within(footer).findByRole("link", { name: "v2.0.0" })).toHaveAttribute("href", "https://github.com/CarstVaartjes/vonk-forge-recipes/releases/tag/v2.0.0");
-  expect(within(footer).getByText(/Updated Sep 28, 2026/)).toBeVisible();
+  expect(within(footer).getByText(/Updated 28 Sept 2026/)).toBeVisible();
+  expect(within(footer).getByText("bbbbbbbbbbbb")).toBeVisible();
+  expect(within(siteHeader()).getByRole("link", { name: /Catalog v2\.0\.0 · updated 28 Sep/ })).toBeVisible();
+});
+
+
+test("the theme switch is a labelled button that flips and remembers the theme", async () => {
+  render(<App />);
+  const toggle = screen.getByRole("button", { name: "Switch to light theme" });
+  toggle.click();
+  expect(await screen.findByRole("button", { name: "Switch to dark theme" })).toBeVisible();
+  expect(document.documentElement).toHaveAttribute("data-theme", "light");
+  expect(localStorage.getItem("vonk-theme")).toBe("light");
+  localStorage.clear();
+});
+
+
+test("the release pill and footer line are not drawn when the release cannot be read", async () => {
+  vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 404 })));
+  render(<App />);
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(screen.queryByText(/Recipe library/)).toBeNull();
+  expect(within(siteHeader()).queryByText(/updated/)).toBeNull();
 });
 
 
@@ -55,13 +79,13 @@ test("tells one story: what it does, with the vonkctl session behind it", () => 
 });
 
 
-test("top menu is Catalog, Install, Docs; Publish and Example setup live in the footer", () => {
+test("top menu is Catalog, Models, Controller, Docs beside Install; Publish and Example setup live in the footer", () => {
   render(<App />);
 
   const primaryNavigation = within(screen.getByRole("navigation", { name: "Primary navigation" }));
-  expect(primaryNavigation.getAllByRole("link").map((link) => link.textContent)).toEqual(["Catalog", "Install", "Docs"]);
+  expect(primaryNavigation.getAllByRole("link").map((link) => link.textContent)).toEqual(["Catalog", "Models", "Controller", "Docs"]);
   expect(primaryNavigation.getByRole("link", { name: "Catalog" })).toHaveAttribute("href", "/recipes");
-  expect(primaryNavigation.getByRole("link", { name: "Install" })).toHaveAttribute("href", "/install");
+  expect(within(siteHeader()).getByRole("link", { name: "Install" })).toHaveAttribute("href", "/install");
   expect(primaryNavigation.getByRole("link", { name: "Docs" })).toHaveAttribute("href", "/architecture");
 
   const footer = within(screen.getByRole("navigation", { name: "Footer navigation" }));
@@ -74,16 +98,16 @@ test("marks the current top-level destination, grouping the pages under it", () 
   const current = (path: string) => {
     window.history.replaceState({}, "", path);
     const view = render(<App />);
-    const links = within(screen.getByRole("navigation", { name: "Primary navigation" })).getAllByRole("link");
+    const links = within(siteHeader()).getAllByRole("link");
     const marked = links.filter((link) => link.getAttribute("aria-current") === "page").map((link) => link.textContent);
     view.unmount();
     return marked;
   };
 
   expect(current("/recipes/vonk/qwen-fast")).toEqual(["Catalog"]);
-  expect(current("/models")).toEqual(["Catalog"]);
+  expect(current("/models")).toEqual(["Models"]);
   expect(current("/install")).toEqual(["Install"]);
-  expect(current("/control")).toEqual(["Docs"]);
+  expect(current("/control")).toEqual(["Controller"]);
   expect(current("/publish")).toEqual([]);
 });
 
