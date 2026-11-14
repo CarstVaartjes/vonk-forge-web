@@ -22,7 +22,6 @@ function modelEntity(options: { digest: string; slug: string; logical: string; p
       identity: {
         publisher: options.publisher,
         slug: options.slug,
-        family: { publisher: options.publisher, slug: options.family.toLowerCase().replaceAll(" ", "-") },
         model: { publisher: options.publisher, slug: options.logical },
         version: "1.0",
         variant: "nvfp4",
