@@ -398,10 +398,6 @@ export const catalogIndexFixture = {
           "quantization": "none"
         },
         "identity": {
-          "family": {
-            "publisher": "google",
-            "slug": "gemma"
-          },
           "model": {
             "publisher": "google",
             "slug": "gemma-4-e2b"
@@ -507,10 +503,6 @@ export const catalogIndexFixture = {
           "quantization": "gguf-q8-0"
         },
         "identity": {
-          "family": {
-            "publisher": "google",
-            "slug": "gemma"
-          },
           "model": {
             "publisher": "ggml-org",
             "slug": "gemma-4-e2b"
@@ -978,10 +970,6 @@ export const catalogIndexFixture = {
           "quantization": "nvfp4"
         },
         "identity": {
-          "family": {
-            "publisher": "thinkingmachines",
-            "slug": "inkling"
-          },
           "model": {
             "publisher": "thinkingmachines",
             "slug": "inkling-975b-a41b"
@@ -1076,10 +1064,6 @@ export const catalogIndexFixture = {
           "quantization": "none"
         },
         "identity": {
-          "family": {
-            "publisher": "vast-ai",
-            "slug": "skintokens"
-          },
           "model": {
             "publisher": "vast-ai",
             "slug": "skintokens"
