@@ -125,6 +125,12 @@ function selectedEntity(document: RecipeDefinition, index: LibraryIndex, selecti
   return selection && index.catalog_entities.find((entity) => sameReference(selection.model, entity));
 }
 
+// A Family's title comes from the index `families`, keyed by the Model display's lineage; a Model without lineage has none.
+function familyTitle(index: LibraryIndex, display: CatalogModelEntry["display"]): string {
+  const slug = display.lineage?.family;
+  return displayTitle(index.families?.find((family) => family.slug === slug)?.title);
+}
+
 function modelMetadata(document: RecipeDefinition, index: LibraryIndex): { publisher: string; slug: string; title: string; family: string; versionPublisher: string; versionSlug: string; versionTitle: string } {
   const entity = selectedEntity(document, index);
   const identity = entity?.document.identity;
@@ -135,7 +141,7 @@ function modelMetadata(document: RecipeDefinition, index: LibraryIndex): { publi
     publisher: identity?.model.publisher ?? versionPublisher,
     slug,
     title: displayTitle(entity?.display.model_title, slug),
-    family: displayTitle(entity?.display.family_title) || displayTitle(entity?.display.model_title, slug),
+    family: (entity && familyTitle(index, entity.display)) || displayTitle(entity?.display.model_title, slug),
     versionPublisher,
     versionSlug,
     versionTitle: versionSlug,
@@ -220,7 +226,7 @@ function mapModels(index: LibraryIndex): ModelSummary[] {
       slug: identity.slug,
       title: displayTitle(display.model_title, identity.slug),
       description: display.description,
-      family: displayTitle(display.family_title) || undefined,
+      family: familyTitle(index, display) || undefined,
       runs: modelRuns(versionRows, recipes),
       verified_runs: runsOf(verifiedRecipes),
       verified_recipe_count: verifiedRecipes.length,
