@@ -30,7 +30,7 @@ function modelEntity(options: { digest: string; slug: string; logical: string; p
       format: { precision: "nvfp4", quantization: "nvfp4" },
       files: [{ id: "weights", path: "weights.safetensors", sha256: options.fileDigest, size_bytes: 20_000_000_000, roles: ["weights"] }],
     },
-    display: { ...baseModel.display, capabilities: options.capabilities, family_title: options.family, model_title: options.title, description: `${options.title} model`, tags: options.tags ?? [] },
+    display: { ...baseModel.display, capabilities: options.capabilities, family_title: options.family, lineage: { family: options.family.toLowerCase().replace(/ /g, "-"), line: options.logical, model: options.logical, variant_kind: "base" }, model_title: options.title, description: `${options.title} model`, tags: options.tags ?? [] },
   } satisfies CatalogModelEntry;
 }
 
@@ -67,6 +67,11 @@ function recipeEntry(options: { digest: string; slug: string; title: string; mod
 export const e2eCatalogIndex = {
   ...catalogIndexFixture,
   source_commit: sourceCommit,
+  families: [
+    ["qwen", "Qwen"],
+    ["acme-coder", "Acme Coder"],
+    ["acme", "Acme"],
+  ].map(([slug, title]) => ({ kind: "family-display" as const, slug: slug!, title: title!, lines: [] })),
   catalog_entities: [
     modelEntity({ digest: modelDigest, slug: "qwen-fast-nvfp4", logical: "qwen-fast", publisher: "qwen", family: "Qwen", title: "Qwen Fast", capabilities: ["chat", "reasoning"], repository: "https://huggingface.co/Qwen/Qwen-Fast", fileDigest: "b".repeat(64), tags: ["language"] }),
     modelEntity({ digest: "4".repeat(64), slug: "qwen-code-bf16", logical: "qwen-code", publisher: "qwen", family: "Qwen", title: "Qwen Code", capabilities: ["code-generation"], repository: "https://huggingface.co/qwen/Qwen-Code", fileDigest: "c".repeat(64) }),

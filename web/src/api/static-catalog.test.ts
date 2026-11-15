@@ -87,7 +87,7 @@ describe("static recipe library adapter", () => {
         model_slug: "gemma-4-e2b",
         model_title: "Gemma 4 E2B",
         model_version_slug: "gemma-4-e2b-it-4adf1574",
-        model_family: "Google Gemma",
+        model_family: "Gemma",
         source_owner: "NVIDIA",
         source_repository: "https://github.com/NVIDIA/dgx-spark-playbooks",
         alignment: "unspecified",
@@ -166,7 +166,7 @@ describe("static recipe library adapter", () => {
     expect(page.items[0]).toMatchObject({
       title: "Gemma 4 E2B",
       description: "Exact public Google Gemma 4 E2B instruction-tuned checkpoint.",
-      family: "Google Gemma",
+      family: "Gemma",
       tags: ["google", "gemma", "language", "instruction-tuned", "candidate"],
       recipe_count: 1,
       verified_recipe_count: 1,

@@ -268,6 +268,11 @@ export const catalogIndexFixture = {
       }
     ]
   },
+  "families": [
+    { "kind": "family-display", "slug": "gemma", "title": "Gemma", "lines": [{ "slug": "gemma-e2b", "title": "Gemma E2B", "models": [{ "slug": "gemma-4-e2b", "title": "Gemma 4 E2B" }] }] },
+    { "kind": "family-display", "slug": "inkling", "title": "Inkling", "lines": [{ "slug": "inkling-975b-a41b", "title": "Inkling 975B-A41B", "models": [{ "slug": "inkling-975b-a41b", "title": "Inkling" }] }] },
+    { "kind": "family-display", "slug": "skintokens", "title": "SkinTokens", "lines": [{ "slug": "skintokens", "title": "SkinTokens", "models": [{ "slug": "skintokens", "title": "SkinTokens" }] }] }
+  ],
   "catalog_entities": [
     {
       "content_sha256": "8c3b7f84fa5cc8ae81e13cfeb408e29f47960016284b60d46764037c69cc2414",
@@ -285,6 +290,12 @@ export const catalogIndexFixture = {
         "identity": {
           "publisher": "google",
           "slug": "gemma-4-e2b-it-4adf1574"
+        },
+        "lineage": {
+          "family": "gemma",
+          "line": "gemma-e2b",
+          "model": "gemma-4-e2b",
+          "variant_kind": "base"
         },
         "kind": "model-display",
         "license": {
@@ -434,6 +445,12 @@ export const catalogIndexFixture = {
           "publisher": "ggml-org",
           "slug": "gemma-4-e2b-it-q8-0-63f6c6f2"
         },
+        "lineage": {
+          "family": "gemma",
+          "line": "gemma-e2b",
+          "model": "gemma-4-e2b",
+          "variant_kind": "quantization"
+        },
         "kind": "model-display",
         "license": {
           "attribution": [
@@ -534,6 +551,12 @@ export const catalogIndexFixture = {
         "identity": {
           "publisher": "thinkingmachines",
           "slug": "inkling-975b-a41b-nvfp4"
+        },
+        "lineage": {
+          "family": "inkling",
+          "line": "inkling-975b-a41b",
+          "model": "inkling-975b-a41b",
+          "variant_kind": "quantization"
         },
         "kind": "model-display",
         "license": {
@@ -999,6 +1022,12 @@ export const catalogIndexFixture = {
         "identity": {
           "publisher": "vast-ai",
           "slug": "skintokens"
+        },
+        "lineage": {
+          "family": "skintokens",
+          "line": "skintokens",
+          "model": "skintokens",
+          "variant_kind": "base"
         },
         "kind": "model-display",
         "license": {
