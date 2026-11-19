@@ -1,7 +1,9 @@
 name: CI
 
 # Pull requests run this directly. A push to main runs it through pages.yml
-# (workflow_call), which deploys only after it passes.
+# (workflow_call), which deploys only after it passes. A Dependabot pull
+# request runs no job: its update lands through an integration pull request,
+# which runs CI once (web/scripts/ci-dependabot.test.mjs).
 on:
   pull_request:
   workflow_call:
@@ -11,6 +13,7 @@ permissions:
 
 jobs:
   web:
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -61,6 +64,7 @@ jobs:
       - run: npm --prefix web run test:e2e
 
   security:
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-24.04
     permissions:
       contents: read

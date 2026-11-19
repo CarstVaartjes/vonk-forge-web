@@ -105,7 +105,10 @@ fetch-and-verify step with a fixture release, including refusal of bad
 signatures and digests. To load the real catalog locally, run
 `node web/scripts/recipe-release.mjs` (needs an authenticated `gh`); it writes
 the git-ignored `web/public/catalog/`. CI also runs a
-gitleaks secret scan and a Trivy filesystem scan.
+gitleaks secret scan and a Trivy filesystem scan. A Dependabot pull request runs
+no CI job (`web/scripts/ci-dependabot.test.mjs`): fold it into an integration
+pull request, which runs CI once. Its missing `Trivy` result keeps it from
+merging on its own.
 
 `web/public/_headers` carries the Content Security Policy. `connect-src` allows
 only this origin and the Cloudflare analytics endpoint; keep the catalog
