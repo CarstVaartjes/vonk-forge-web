@@ -91,7 +91,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
             </div>
           </section>
         </div>
-        {receipt && catalog.verified ? <div className="detail-receipt"><EvidenceReceipt facts={receipt} verified /><a className="text-link" href={`/recipes#${STATUS_LEGEND_ID}`}>What this means</a></div> : (
+        {receipt && catalog.verified ? <div className="detail-receipt"><EvidenceReceipt facts={receipt} verified showTitle={false} /><a className="text-link" href={`/recipes#${STATUS_LEGEND_ID}`}>What this means</a></div> : (
           <section className="card receipt" aria-label="Hardware status">
             <div className="receipt-top"><span className="receipt-label">Hardware status</span><span className="status off">{catalog.qualification}</span></div>
             <p className="receipt-meaning">{meaning ?? catalog.qualification_reason ?? ""} <a href={`/recipes#${STATUS_LEGEND_ID}`}>What this means</a></p>
