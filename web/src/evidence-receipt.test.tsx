@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, test } from "vitest";
 
 import type { ReceiptFacts } from "./catalog-stats";
@@ -9,23 +9,28 @@ const facts: ReceiptFacts = {
   measuredBytes: 119_400_000_000, contentSha256: "ab".repeat(32), imageDigest: `sha256:${"cd".repeat(32)}`, evidenceRef: "ef".repeat(32),
 };
 
-test("shows the sentence and every field the pass carries", () => {
-  render(<EvidenceReceipt facts={facts} verified />);
-  expect(screen.getByText("Passed hardware checks on 2 DGX Sparks, 12 Nov 2026.")).toBeVisible();
-  expect(screen.getByText("GB10 · 2 Sparks")).toBeVisible();
-  expect(screen.getByText("111.2 GiB per Spark, measured")).toBeVisible();
-  expect(screen.getByText(`sha256:${"ab".repeat(32)}`)).toBeVisible();
+test("leads with one line, keeps the creator and puts the hashes behind Details", () => {
+  render(<EvidenceReceipt facts={facts} verified showTitle={false} />);
+  expect(screen.getByText("Passed on 2 Sparks · 111.2 GiB per Spark, measured")).toBeVisible();
+  expect(screen.queryByText("Acme Coder two Sparks")).toBeNull();
+  expect(screen.getByText("Acme")).toBeVisible();
+  expect(screen.getByText("GB10")).toBeVisible();
+  expect(screen.getByText("12 Nov 2026")).toBeVisible();
+  const hash = screen.getByText(`sha256:${"ab".repeat(32)}`);
+  expect(hash).not.toBeVisible();
+  fireEvent.click(screen.getByText("Details"));
+  expect(hash).toBeVisible();
   expect(screen.getByText("Runtime image")).toBeVisible();
   expect(screen.getByText("Evidence record")).toBeVisible();
 });
 
 test("leaves out what the catalog does not carry and never says measured without a measurement", () => {
   render(<EvidenceReceipt facts={{ ...facts, hardwareClass: null, measuredBytes: null, imageDigest: null, evidenceRef: null, sparks: null }} verified={false} />);
-  expect(screen.getByText("Passed hardware checks, 12 Nov 2026.")).toBeVisible();
-  for (const name of ["Hardware", "Memory peak", "Runtime image", "Evidence record"]) expect(screen.queryByText(name)).toBeNull();
+  expect(screen.getByText("Passed hardware checks")).toBeVisible();
+  for (const name of ["Hardware", "Runtime image", "Evidence record"]) expect(screen.queryByText(name)).toBeNull();
   expect(document.body.textContent).not.toContain("measured");
 });
 
 test("one Spark reads in the singular", () => {
-  expect(evidenceLine({ sparks: 1, tested: "2026-11-12T10:00:00Z" })).toBe("Passed hardware checks on 1 DGX Spark, 12 Nov 2026.");
+  expect(evidenceLine({ sparks: 1, measuredBytes: null })).toBe("Passed on 1 Spark");
 });

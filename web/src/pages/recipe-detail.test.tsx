@@ -37,7 +37,7 @@ test("the evidence line names the Spark count only when the library recorded one
   verified.catalog = { ...verified.catalog, qualification: "Working", verified: true };
   getRecipe.mockResolvedValue(verified);
   render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
-  expect(await screen.findByText(/Passed hardware checks, 4 Nov 2026\./)).toBeVisible();
+  expect(await screen.findByText("Passed hardware checks")).toBeVisible();
 });
 
 test("an official recipe carries the official tag", async () => {
@@ -59,8 +59,8 @@ test("a verified recipe shows its receipt and the model across its Sparks, measu
   getRecipe.mockResolvedValue(verified);
   render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
   const receipt = within(await screen.findByLabelText("Hardware evidence"));
-  expect(receipt.getByText("Passed hardware checks on 2 DGX Sparks, 4 Nov 2026.")).toBeVisible();
-  expect(receipt.getByText("110.0 GiB per Spark, measured")).toBeVisible();
+  expect(receipt.getByText("Passed on 2 Sparks · 110.0 GiB per Spark, measured")).toBeVisible();
+  expect(receipt.queryByRole("heading", { level: 3 })).toBeNull();
   const needs = within(screen.getByRole("region", { name: "What it needs" }));
   expect(needs.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["Spark 1", "Spark 2"]);
   expect(needs.getAllByText("Declared")).toHaveLength(2);

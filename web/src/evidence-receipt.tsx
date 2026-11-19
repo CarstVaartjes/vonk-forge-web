@@ -1,10 +1,11 @@
 import { gibLabel } from "./catalog-filters";
 import type { ReceiptFacts } from "./catalog-stats";
 
-// When the library recorded no Spark count, the line says only when the recipe passed.
-export function evidenceLine({ sparks, tested }: Pick<ReceiptFacts, "sparks" | "tested">): string {
-  const date = dateLabel(tested);
-  return sparks === null ? `Passed hardware checks, ${date}.` : `Passed hardware checks on ${sparks} DGX Spark${sparks === 1 ? "" : "s"}, ${date}.`;
+// The one lead line of a pass. Without a Spark count it says only that the recipe passed; the
+// measured memory joins it only when the library recorded a measurement.
+export function evidenceLine({ sparks, measuredBytes }: Pick<ReceiptFacts, "sparks" | "measuredBytes">): string {
+  const passed = sparks === null ? "Passed hardware checks" : `Passed on ${sparks} Spark${sparks === 1 ? "" : "s"}`;
+  return measuredBytes === null ? passed : `${passed} · ${gibLabel(measuredBytes, 1)} per Spark, measured`;
 }
 
 function dateLabel(value: string): string {
@@ -12,28 +13,37 @@ function dateLabel(value: string): string {
   return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(date);
 }
 
-// The ticket for one hardware pass: the status, the evidence sentence and the fields the catalog
-// holds for that pass. A field the release does not carry is left out, never filled in.
-export function EvidenceReceipt({ facts, verified }: { facts: ReceiptFacts; verified: boolean }) {
-  const rows: Array<{ name: string; value: string; mono?: boolean }> = [{ name: "Result", value: evidenceLine(facts) }];
-  if (facts.hardwareClass) rows.push({ name: "Hardware", value: facts.sparks === null ? facts.hardwareClass : `${facts.hardwareClass} · ${facts.sparks} Spark${facts.sparks === 1 ? "" : "s"}` });
-  if (facts.measuredBytes !== null) rows.push({ name: "Memory peak", value: `${gibLabel(facts.measuredBytes, 1)} per Spark, measured` });
-  rows.push({ name: "Recipe", value: `sha256:${facts.contentSha256}`, mono: true });
-  if (facts.imageDigest) rows.push({ name: "Runtime image", value: facts.imageDigest, mono: true });
-  if (facts.evidenceRef) rows.push({ name: "Evidence record", value: facts.evidenceRef, mono: true });
+// The ticket for one hardware pass: the status, one lead line, the creator and the fields the
+// catalog holds for that pass. The three hashes sit behind "Details". A field the release does not
+// carry is left out, never filled in. `showTitle` is off where the page already names the recipe.
+export function EvidenceReceipt({ facts, verified, showTitle = true }: { facts: ReceiptFacts; verified: boolean; showTitle?: boolean }) {
+  const rows: Array<{ name: string; value: string; mono?: boolean }> = [];
+  if (facts.hardwareClass) rows.push({ name: "Hardware", value: facts.hardwareClass });
+  rows.push({ name: "Tested", value: dateLabel(facts.tested) });
+  const hashes: typeof rows = [{ name: "Recipe", value: `sha256:${facts.contentSha256}`, mono: true }];
+  if (facts.imageDigest) hashes.push({ name: "Runtime image", value: facts.imageDigest, mono: true });
+  if (facts.evidenceRef) hashes.push({ name: "Evidence record", value: facts.evidenceRef, mono: true });
+  const list = (items: typeof rows) => (
+    <dl>
+      {items.map(({ name, value, mono }) => (
+        <div key={name}><dt>{name}</dt><dd className={mono ? "mono" : undefined} title={mono ? value : undefined}>{value}</dd></div>
+      ))}
+    </dl>
+  );
   return (
     <section className="card receipt" aria-label="Hardware evidence">
       <div className="receipt-top">
         <span className="receipt-label">Hardware evidence</span>
         <span className={`status ${verified ? "ok" : "warn"}`}>{facts.status}</span>
       </div>
-      <h3>{facts.title}</h3>
+      {showTitle ? <h3>{facts.title}</h3> : null}
+      <p className="receipt-lead">{evidenceLine(facts)}</p>
       {facts.creator ? <p className="receipt-by">Recipe by <span className="src">{facts.creator}</span></p> : null}
-      <dl>
-        {rows.map(({ name, value, mono }) => (
-          <div key={name}><dt>{name}</dt><dd className={mono ? "mono" : undefined} title={mono ? value : undefined}>{value}</dd></div>
-        ))}
-      </dl>
+      {list(rows)}
+      <details className="receipt-details">
+        <summary>Details</summary>
+        {list(hashes)}
+      </details>
     </section>
   );
 }
