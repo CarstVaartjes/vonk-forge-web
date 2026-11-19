@@ -324,6 +324,9 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   await expect(page.getByLabel("Filter by Sparks you have")).toHaveValue("2");
   await expect(page.getByRole("group", { name: "How many Sparks do you have?" }).getByRole("button", { name: /2 Sparks/ })).toHaveAttribute("aria-pressed", "true");
   await page.getByText("More filters").click();
+  // On a phone the column filters sit behind one "Filters" button.
+  const phoneToggle = page.getByRole("button", { name: "Filters", exact: true });
+  if (await phoneToggle.isVisible()) await phoneToggle.click();
   await expect(page.getByRole("group", { name: "Engine" }).getByRole("button", { name: /vLLM/ })).toBeVisible();
   await expect(page.getByLabel("Filter by abliterated")).toHaveValue("false");
   await expect(page.getByLabel("Filter by capability")).toContainText("1 selected");
@@ -422,7 +425,7 @@ test("the model type is the first choice on the recipes and models pages", async
   }
 });
 
-test("the first recipe is on the first screen on desktop and within two screens on a phone", async ({ page }) => {
+test("the first recipe is on the first screen on desktop and on a phone, with the column filters behind one tap", async ({ page }) => {
   const firstRecipeTop = async () => {
     await page.goto("/recipes");
     const link = page.locator(".catalog-table-recipe h2 a").first();
@@ -432,7 +435,13 @@ test("the first recipe is on the first screen on desktop and within two screens 
   await page.setViewportSize({ width: 1280, height: 720 });
   expect(await firstRecipeTop()).toBeLessThan(720);
   await page.setViewportSize({ width: 390, height: 844 });
-  expect(await firstRecipeTop()).toBeLessThan(1700);
+  expect(await firstRecipeTop()).toBeLessThan(844);
+  const toggle = page.getByRole("button", { name: "Filters", exact: true });
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByRole("columnheader")).toHaveCount(0);
+  await toggle.click();
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByLabel("Filter by capability")).toBeVisible();
   // The refinements stay one click away, and a link to the status legend opens them.
   await expect(page.locator(".catalog-more")).not.toHaveAttribute("open", "");
   await page.goto("/recipes#how-recipes-are-verified");

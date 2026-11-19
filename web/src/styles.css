@@ -1438,6 +1438,7 @@ a {
 .catalog-pagination span { color: var(--muted); text-align: center; font-size: var(--t-label); font-variant-numeric: tabular-nums; }
 .catalog-pagination .button:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
+.catalog-phone-filters { display: none; }
 .catalog-table-scroll { width: 100%; max-height: min(68vh, 48rem); overflow: auto; overscroll-behavior: contain; scrollbar-color: var(--green) var(--panel); scrollbar-gutter: stable; }
 .catalog-table-scroll:focus-visible { outline: 3px solid var(--green); outline-offset: -3px; }
 .catalog-table { width: 132rem; border-collapse: separate; border-spacing: 0; table-layout: fixed; font-size: var(--t-label); }
@@ -1490,7 +1491,11 @@ a {
 @media (max-width: 700px) {
   .catalog-table-scroll { max-height: none; overflow: visible; scrollbar-gutter: auto; }
   .catalog-table { width: 100%; display: block; table-layout: auto; }
-  .catalog-table thead,
+  .catalog-browser .catalog-results-heading { grid-template-columns: 1fr auto auto; align-items: center; gap: 0.75rem; padding: 0.6rem 1rem; }
+  .catalog-local-note { display: none; }
+  .catalog-phone-filters { display: inline-flex; min-height: 2rem; padding: 0.25rem 0.7rem; }
+  .catalog-table:not(.is-filters-open) thead { display: none; }
+  .catalog-table.is-filters-open thead { display: block; }
   .catalog-table tbody,
   .catalog-table tr { display: block; }
   .catalog-table thead tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; }
