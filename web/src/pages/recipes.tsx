@@ -224,7 +224,7 @@ export function RecipesPage() {
   const clearAll = () => replace(new URLSearchParams("verified=0"));
 
   return (
-    <main className="catalog-page">
+    <main className="catalog-page recipes-page">
       <CatalogTabs current="recipes" />
       <header className="page-intro catalog-intro">
         <h1>Find the right recipe.</h1>
@@ -240,9 +240,7 @@ export function RecipesPage() {
 
       {catalog && vocabulary ? (
         <section className="catalog-setup catalog-setup-compact" aria-labelledby="recipe-setup-title">
-          <div className="catalog-setup-heading">
-            <h2 id="recipe-setup-title" className="visually-hidden">Then narrow it to your setup.</h2>
-          </div>
+          <h2 id="recipe-setup-title" className="visually-hidden">Then narrow it to your setup.</h2>
           <SparkPicker
             value={filters.sparks}
             noun="recipes"
@@ -269,7 +267,7 @@ export function RecipesPage() {
 
       {catalog ? <section className="catalog-browser" aria-label="Recipe results">
         <div className="catalog-results-heading">
-          <div><p aria-live="polite"><strong>{filtered.length}</strong> of {available.length} recipes</p><small>Filter and order the list from its column headings.</small></div>
+          <div><p aria-live="polite"><strong>{filtered.length}</strong> of {available.length} recipes</p></div>
           <p className="catalog-local-note">Imported, current, and update status appear only in <a href="/control">your local Controller</a>.</p>
           {clearable.length ? <button type="button" className="catalog-clear" onClick={clearAll}>Clear {clearable.length} filter{clearable.length === 1 ? "" : "s"}</button> : null}
         </div>

@@ -83,7 +83,6 @@ export function FacetStrip({ label, options, value, onChange, max = 10 }: {
             type="button"
             aria-pressed={value === option.value}
             aria-label={`${option.label}: ${number.format(option.count)}`}
-            disabled={option.count === 0 && value !== option.value}
             onClick={() => onChange(value === option.value ? "" : option.value)}
           >
             {option.label} <small>{number.format(option.count)}</small>

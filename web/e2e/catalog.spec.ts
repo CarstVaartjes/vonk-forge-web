@@ -422,7 +422,7 @@ test("the model type is the first choice on the recipes and models pages", async
   }
 });
 
-test("the first recipe is on the first screen of the catalog, on desktop and on a phone", async ({ page }) => {
+test("the first recipe is on the first screen on desktop and within two screens on a phone", async ({ page }) => {
   const firstRecipeTop = async () => {
     await page.goto("/recipes");
     const link = page.locator(".catalog-table-recipe h2 a").first();
