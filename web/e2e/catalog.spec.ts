@@ -323,6 +323,7 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   await page.goto("/recipes?sparks=2&abliterated=false&capability=chat");
   await expect(page.getByLabel("Filter by Sparks you have")).toHaveValue("2");
   await expect(page.getByRole("group", { name: "How many Sparks do you have?" }).getByRole("button", { name: /2 Sparks/ })).toHaveAttribute("aria-pressed", "true");
+  await page.getByText("More filters").click();
   await expect(page.getByRole("group", { name: "Engine" }).getByRole("button", { name: /vLLM/ })).toBeVisible();
   await expect(page.getByLabel("Filter by abliterated")).toHaveValue("false");
   await expect(page.getByLabel("Filter by capability")).toContainText("1 selected");
@@ -401,6 +402,7 @@ test("the model type is the first choice on the recipes and models pages", async
   // "Verified on Spark" is on by default; turning it off shows the unverified recipe too.
   await page.goto("/recipes?type=language");
   await expect(page.getByRole("link", { name: "Qwen Code" })).toHaveCount(0);
+  await page.getByText("More filters").click();
   await page.getByRole("checkbox", { name: /Verified on Spark/ }).uncheck();
   await expect(page).toHaveURL(/verified=0/);
   await page.getByRole("group", { name: "Model type" }).getByRole("button", { name: /^Code/ }).click();
@@ -418,4 +420,21 @@ test("the model type is the first choice on the recipes and models pages", async
       expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
     }
   }
+});
+
+test("the first recipe is on the first screen of the catalog, on desktop and on a phone", async ({ page }) => {
+  const firstRecipeTop = async () => {
+    await page.goto("/recipes");
+    const link = page.locator(".catalog-table-recipe h2 a").first();
+    await expect(link).toBeVisible();
+    return (await link.boundingBox())!.y + (await page.evaluate(() => window.scrollY));
+  };
+  await page.setViewportSize({ width: 1280, height: 720 });
+  expect(await firstRecipeTop()).toBeLessThan(720);
+  await page.setViewportSize({ width: 390, height: 844 });
+  expect(await firstRecipeTop()).toBeLessThan(1700);
+  // The refinements stay one click away, and a link to the status legend opens them.
+  await expect(page.locator(".catalog-more")).not.toHaveAttribute("open", "");
+  await page.goto("/recipes#how-recipes-are-verified");
+  await expect(page.locator("#how-recipes-are-verified")).toBeVisible();
 });

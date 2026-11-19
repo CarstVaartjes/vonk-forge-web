@@ -10,8 +10,17 @@ export const STATUS_LEGEND_ID = "how-recipes-are-verified";
 export function StatusLegend({ statuses, vocabulary }: { statuses: string[]; vocabulary: Vocabulary }) {
   const section = useRef<HTMLElement>(null);
   // The legend mounts after the catalog loads, so a link to its anchor (from a recipe page) lands here, not at load.
+  // It sits inside the closed "More filters" disclosure, which a link to the anchor opens first.
   useEffect(() => {
-    if (window.location.hash === `#${STATUS_LEGEND_ID}`) section.current?.scrollIntoView();
+    const reveal = () => {
+      if (window.location.hash !== `#${STATUS_LEGEND_ID}`) return;
+      const disclosure = section.current?.closest("details");
+      if (disclosure) disclosure.open = true;
+      section.current?.scrollIntoView();
+    };
+    reveal();
+    window.addEventListener("hashchange", reveal);
+    return () => window.removeEventListener("hashchange", reveal);
   }, []);
   return (
     <section ref={section} id={STATUS_LEGEND_ID} className="status-legend" aria-labelledby={`${STATUS_LEGEND_ID}-title`}>
