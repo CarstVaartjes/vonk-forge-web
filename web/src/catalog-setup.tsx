@@ -63,13 +63,15 @@ export function FacetStrip({ label, options, value, onChange, max = 10 }: {
   onChange: (value: string) => void;
   max?: number;
 }) {
-  const ranked = [...options].sort((left, right) => right.count - left.count || left.label.localeCompare(right.label, undefined, { numeric: true }));
+  // A value no recipe has is not offered, unless it is the one selected.
+  const ranked = options.filter((option) => option.count > 0 || option.value === value).sort((left, right) => right.count - left.count || left.label.localeCompare(right.label, undefined, { numeric: true }));
   const shown = ranked.slice(0, max);
   if (value && !shown.some((option) => option.value === value)) {
     const selected = ranked.find((option) => option.value === value);
     if (selected) shown.push(selected);
   }
   const rest = ranked.filter((option) => !shown.includes(option));
+  if (ranked.length === 0) return null;
   const number = new Intl.NumberFormat("en");
   return (
     <div className="setup-facet" role="group" aria-label={label}>
@@ -81,7 +83,6 @@ export function FacetStrip({ label, options, value, onChange, max = 10 }: {
             type="button"
             aria-pressed={value === option.value}
             aria-label={`${option.label}: ${number.format(option.count)}`}
-            disabled={option.count === 0 && value !== option.value}
             onClick={() => onChange(value === option.value ? "" : option.value)}
           >
             {option.label} <small>{number.format(option.count)}</small>
@@ -90,7 +91,7 @@ export function FacetStrip({ label, options, value, onChange, max = 10 }: {
         {rest.length ? (
           <select aria-label={`More ${label.toLowerCase()}`} value="" onChange={(event) => onChange(event.target.value)}>
             <option value="">{rest.length} more…</option>
-            {rest.map((option) => <option key={option.value} value={option.value} disabled={option.count === 0}>{option.label} ({number.format(option.count)})</option>)}
+            {rest.map((option) => <option key={option.value} value={option.value}>{option.label} ({number.format(option.count)})</option>)}
           </select>
         ) : null}
       </div>

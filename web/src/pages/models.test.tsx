@@ -131,7 +131,7 @@ describe("public model browse", () => {
     expect(oneSpark).toHaveAttribute("aria-pressed", "true");
     const families = screen.getByRole("group", { name: "Model family" });
     expect(within(families).getByRole("button", { name: "Qwen: 7" })).toBeVisible();
-    expect(within(families).getByRole("button", { name: "GLM: 0" })).toBeDisabled();
+    expect(within(families).queryByRole("button", { name: /^GLM/ })).toBeNull();
     fireEvent.click(within(screen.getByRole("group", { name: "Engine" })).getByRole("button", { name: "vLLM: 7" }));
     expect(window.location.search).toBe("?engine=vllm&sparks=1");
     expect(screen.getAllByText("1 Spark").length).toBeGreaterThan(1);

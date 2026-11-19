@@ -224,7 +224,7 @@ export function RecipesPage() {
   const clearAll = () => replace(new URLSearchParams("verified=0"));
 
   return (
-    <main className="catalog-page">
+    <main className="catalog-page recipes-page">
       <CatalogTabs current="recipes" />
       <header className="page-intro catalog-intro">
         <h1>Find the right recipe.</h1>
@@ -233,31 +233,32 @@ export function RecipesPage() {
 
       {catalog && vocabulary ? (
         <section className="catalog-type" aria-labelledby="recipe-type-title">
-          <h2 id="recipe-type-title">What kind of model?</h2>
+          <h2 id="recipe-type-title" className="visually-hidden">What kind of model?</h2>
           <TypeTabs types={vocabulary.categories} value={filters.type} counts={typeCounts} total={count("type", () => true)} onChange={(value) => update("type", value)} />
         </section>
       ) : null}
 
       {catalog && vocabulary ? (
-        <section className="catalog-setup" aria-labelledby="recipe-setup-title">
-          <div className="catalog-setup-heading">
-            <h2 id="recipe-setup-title">Then narrow it to your setup.</h2>
-            <p>My Sparks: pick how many you have and the list narrows to recipes that need that many or fewer. The pick is remembered on this device and shared with the home page. Your Controller makes the same check against the live capacity of your Sparks.</p>
-          </div>
+        <section className="catalog-setup catalog-setup-compact" aria-labelledby="recipe-setup-title">
+          <h2 id="recipe-setup-title" className="visually-hidden">Then narrow it to your setup.</h2>
           <SparkPicker
             value={filters.sparks}
             noun="recipes"
             counts={sparkCounts}
             onChange={(value) => update("sparks", value)}
           />
-          <VerifiedToggle checked={filters.verified} onChange={setVerified} />
-          <StatusLegend statuses={qualifications} vocabulary={vocabulary} />
-          <div className="catalog-setup-facets">
-            <FacetStrip label="Model family" value={filters.modelFamily} onChange={updateModelFamily} options={modelFamilies.map((value) => ({ value, label: value, count: count("modelFamily", (recipe) => modelFamilyTitle(recipe) === value) }))} />
-            <FacetStrip label="Engine" value={filters.runtime} onChange={(value) => update("runtime", value)} options={runtimes.map((value) => ({ value, label: engineLabel(value), count: count("runtime", (recipe) => recipe.catalog.runtime_distribution === value) }))} />
-            <FacetStrip label="Creator" value={filters.sourceOwner} onChange={(value) => update("creator", value)} options={sourceOwners.map((value) => ({ value, label: value, count: count("sourceOwner", (recipe) => sameCreator(recipe.catalog.source_owner, value)) }))} />
-            <FacetStrip label="Quantization" value={filters.quantization} onChange={(value) => update("quantization", value)} options={quantizations.map((value) => ({ value, label: value, count: count("quantization", (recipe) => recipe.catalog.quantizations.includes(value)) }))} />
-          </div>
+          <details className="catalog-more">
+            <summary>More filters</summary>
+            <p className="catalog-more-note">My Sparks: pick how many you have and the list narrows to recipes that need that many or fewer. The pick is remembered on this device and shared with the home page. Your Controller makes the same check against the live capacity of your Sparks.</p>
+            <VerifiedToggle checked={filters.verified} onChange={setVerified} />
+            <div className="catalog-setup-facets">
+              <FacetStrip label="Model family" value={filters.modelFamily} onChange={updateModelFamily} options={modelFamilies.map((value) => ({ value, label: value, count: count("modelFamily", (recipe) => modelFamilyTitle(recipe) === value) }))} />
+              <FacetStrip label="Engine" value={filters.runtime} onChange={(value) => update("runtime", value)} options={runtimes.map((value) => ({ value, label: engineLabel(value), count: count("runtime", (recipe) => recipe.catalog.runtime_distribution === value) }))} />
+              <FacetStrip label="Creator" value={filters.sourceOwner} onChange={(value) => update("creator", value)} options={sourceOwners.map((value) => ({ value, label: value, count: count("sourceOwner", (recipe) => sameCreator(recipe.catalog.source_owner, value)) }))} />
+              <FacetStrip label="Quantization" value={filters.quantization} onChange={(value) => update("quantization", value)} options={quantizations.map((value) => ({ value, label: value, count: count("quantization", (recipe) => recipe.catalog.quantizations.includes(value)) }))} />
+            </div>
+            <StatusLegend statuses={qualifications} vocabulary={vocabulary} />
+          </details>
         </section>
       ) : null}
 
@@ -266,7 +267,7 @@ export function RecipesPage() {
 
       {catalog ? <section className="catalog-browser" aria-label="Recipe results">
         <div className="catalog-results-heading">
-          <div><p aria-live="polite"><strong>{filtered.length}</strong> of {available.length} recipes</p><small>Filter and order the list from its column headings.</small></div>
+          <div><p aria-live="polite"><strong>{filtered.length}</strong> of {available.length} recipes</p></div>
           <p className="catalog-local-note">Imported, current, and update status appear only in <a href="/control">your local Controller</a>.</p>
           {clearable.length ? <button type="button" className="catalog-clear" onClick={clearAll}>Clear {clearable.length} filter{clearable.length === 1 ? "" : "s"}</button> : null}
         </div>
