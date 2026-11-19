@@ -1493,9 +1493,15 @@ a {
   .catalog-table { width: 100%; display: block; table-layout: auto; }
   .catalog-browser .catalog-results-heading { grid-template-columns: 1fr auto auto; align-items: center; gap: 0.75rem; padding: 0.6rem 1rem; }
   .catalog-local-note { display: none; }
+  .catalog-applied { padding: 0.4rem 1rem; }
   .catalog-phone-filters { display: inline-flex; min-height: 2rem; padding: 0.25rem 0.7rem; }
-  .catalog-table:not(.is-filters-open) thead { display: none; }
-  .catalog-table.is-filters-open thead { display: block; }
+  /* Closed: only the search input of the Recipe column stays; the other column filters wait behind the button. */
+  .catalog-table:not(.is-filters-open) thead tr { grid-template-columns: 1fr; }
+  .catalog-table:not(.is-filters-open) th:not(:first-child),
+  .catalog-table:not(.is-filters-open) th:first-child .catalog-column-heading { display: none; }
+  .catalog-table:not(.is-filters-open) th:first-child { padding: 0.35rem 0; border: 0; background: transparent; }
+  .catalog-table:not(.is-filters-open) th:first-child .catalog-column-filter { margin-top: 0; }
+  .catalog-table thead,
   .catalog-table tbody,
   .catalog-table tr { display: block; }
   .catalog-table thead tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; }
@@ -3309,7 +3315,9 @@ a {
 .catalog-setup-compact .setup-tile strong { font-size: var(--t-h3); }
 .catalog-more-note { margin: 0 0 0.75rem; color: var(--muted); font-size: var(--t-small); line-height: 1.6; }
 @media (max-width: 600px) {
-  .catalog-setup-compact { padding: 0.75rem 1rem; }
+  .recipes-page { padding-top: 0.5rem; }
+  .recipes-page .catalog-type { margin: 0.5rem 0; }
+  .catalog-setup-compact { margin-bottom: 0.5rem; padding: 0.75rem 1rem; }
   .catalog-setup-compact .setup-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .catalog-setup-compact .setup-tile { padding: 0.5rem 0.6rem; }
 }

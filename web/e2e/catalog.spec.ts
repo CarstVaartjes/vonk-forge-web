@@ -438,7 +438,9 @@ test("the first recipe is on the first screen on desktop and on a phone, with th
   expect(await firstRecipeTop()).toBeLessThan(844);
   const toggle = page.getByRole("button", { name: "Filters", exact: true });
   await expect(toggle).toHaveAttribute("aria-expanded", "false");
-  await expect(page.getByRole("columnheader")).toHaveCount(0);
+  // Search stays in view; the other column filters wait behind the button.
+  await expect(page.getByRole("searchbox", { name: "Search recipes" })).toBeVisible();
+  await expect(page.getByLabel("Filter by capability")).toBeHidden();
   await toggle.click();
   await expect(toggle).toHaveAttribute("aria-expanded", "true");
   await expect(page.getByLabel("Filter by capability")).toBeVisible();
