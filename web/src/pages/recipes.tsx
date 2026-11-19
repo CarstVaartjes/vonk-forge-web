@@ -77,6 +77,8 @@ function ColumnHeader({ label, sort, activeSort, direction, filtered, onSort, ch
 type ActiveFilter = { key: string; label: string; remove: () => void };
 
 export function RecipesPage() {
+  // On a phone the column filters sit behind one "Filters" button; wider screens always show them.
+  const [columnFiltersOpen, setColumnFiltersOpen] = useState(false);
   usePageMeta("Recipes", "Browse recipes for NVIDIA DGX Spark, each shown with whether it passed hardware checks, its memory and Spark count.");
   // The URL wins; without a Spark count or type in it, the pick remembered from the home page fills them in.
   const [parameters, setParameters] = useState(() => {
@@ -269,12 +271,13 @@ export function RecipesPage() {
         <div className="catalog-results-heading">
           <div><p aria-live="polite"><strong>{filtered.length}</strong> of {available.length} recipes</p></div>
           <p className="catalog-local-note">Imported, current, and update status appear only in <a href="/control">your local Controller</a>.</p>
+          <button type="button" className="button catalog-phone-filters" aria-expanded={columnFiltersOpen} aria-controls="catalog-table" onClick={() => setColumnFiltersOpen((open) => !open)}>Filters</button>
           {clearable.length ? <button type="button" className="catalog-clear" onClick={clearAll}>Clear {clearable.length} filter{clearable.length === 1 ? "" : "s"}</button> : null}
         </div>
         {applied.length ? <div className="catalog-applied" aria-label="Applied filters">{applied.map((item) => <button type="button" key={item.key} onClick={item.remove}>{item.label}<span aria-hidden="true">×</span><span className="visually-hidden"> Remove filter</span></button>)}</div> : null}
 
         <div className="catalog-table-scroll" role="region" aria-label="Recipe list" tabIndex={0}>
-          <table className="catalog-table">
+          <table id="catalog-table" className={`catalog-table${columnFiltersOpen ? " is-filters-open" : ""}`}>
             <caption className="visually-hidden">Publisher-submitted evidence is not a Vonk endorsement.</caption>
             <thead><tr>
               <ColumnHeader label="Recipe" sort="recipe" filtered={Boolean(filters.query)} {...columnProps}><input type="search" aria-label="Search recipes" value={filters.query} onChange={(event) => update("q", event.target.value)} placeholder="Search…" /></ColumnHeader>
