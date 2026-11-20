@@ -72,7 +72,10 @@ describe("home page", () => {
     render(<HomePage />);
     const current = within(await screen.findByRole("region", { name: /New models and recipe revisions/ }));
     expect(current.getByRole("group", { name: /^Recipes released per week: 1 recipe,/ })).toBeVisible();
-    expect(current.getAllByRole("listitem").map((item) => item.querySelector("a")?.textContent)).toEqual(["a", "b"]);
+    expect(current.queryByRole("heading", { name: "Newest verified recipes" })).toBeNull();
+    const story = screen.getByRole("heading", { name: "Click it, or hand it to your agent." });
+    expect(story.compareDocumentPosition(current.getByRole("heading", { name: /New models and recipe revisions/ })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(current.queryAllByRole("listitem")).toHaveLength(0);
     const proof = within(screen.getByRole("region", { name: /Ran, on a real DGX Spark/ }));
     expect(proof.getByText("Passed on a real DGX Spark for this exact recipe, runtime image and model.")).toBeVisible();
     expect(proof.getByRole("table", { name: "Most recent hardware pass per recipe, by day, last 28 days" })).toBeInTheDocument();

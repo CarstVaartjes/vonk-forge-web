@@ -28,7 +28,9 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Know what fits." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Stay current." })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Run the mix you need." })).toBeVisible();
-  await expect(page.getByText("vonkctl recipe library --fits-fleet --json").first()).toBeVisible();
+  await expect(page.getByText("vonkctl recipe library --fits-fleet --limit 5").first()).toBeVisible();
+  await expect(page.getByText("vonkctl profile endpoint", { exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Newest verified recipes" })).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Catalog + verified releases", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Vonk Forge controller", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "DGX Spark fleet", exact: true })).toBeVisible();

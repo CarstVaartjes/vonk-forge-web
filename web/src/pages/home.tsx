@@ -29,13 +29,14 @@ const points = [
   },
 ];
 
-// Three real vonkctl calls an agent or script runs in order: see what fits,
-// review the exact plan, apply it without a prompt. Documented in the
-// vonk-forge vonkctl runbook.
+// One recipe followed through, in the order `vonkctl --help` lists under "Start here": see the
+// Sparks, see what fits, run one, find the endpoint. Every command is carried from the vonk-forge
+// vonkctl runbook (docs/runbooks/vonkctl.md); the story ends where a client can connect.
 const agentSession = [
-  { comment: "What fits the Sparks I have right now?", command: "vonkctl recipe library --fits-fleet --json" },
-  { comment: "Show the exact plan before anything changes.", command: "vonkctl --profile 2 profile load --review --json" },
-  { comment: "Apply it without a prompt; progress stays parseable.", command: "vonkctl --profile 2 profile load --yes --json" },
+  { comment: "What does every Spark run, and what needs attention?", command: "vonkctl fleet" },
+  { comment: "Which recipes fit my Sparks? Working ones come first.", command: "vonkctl recipe library --fits-fleet --limit 5" },
+  { comment: "Put one in profile 2, review the plan, start it.", command: "vonkctl --profile 2 run \"Qwen Code\"" },
+  { comment: "API base and model name for your clients.", command: "vonkctl profile endpoint" },
 ];
 
 function StateDot({ tone = "ready" }: { tone?: "ready" | "source" }) {
@@ -130,7 +131,7 @@ function Hero({ state, pick, setPick }: { state: CatalogState; pick: MySparks; s
           <section className="card picker" aria-label="Which recipes fit your Sparks">
             <SparkSegments value={pick.sparks} onChange={(sparks) => setPick({ sparks })} />
             {summary ? <FitAnswerView summary={summary} pick={pick} /> : <div className="answer-placeholder" aria-hidden="true" />}
-            <CommandBlock compact label="Ask your own Sparks">{agentSession[0]!.command}</CommandBlock>
+            <CommandBlock compact label="Ask your own Sparks">{agentSession[1]!.command}</CommandBlock>
           </section>
         ) : null}
         <div className="hero-actions">
@@ -258,9 +259,8 @@ export function HomePage() {
     <main className="home-page">
       <Hero state={state} pick={pick} setPick={setPick} />
       <CatalogSections state={state} retry={retry} />
-      {state.status === "ready" ? <><KeptCurrent summary={state.summary} /><VerifiedOnHardware summary={state.summary} /></> : null}
-
       <RunTheMix />
+      {state.status === "ready" ? <><KeptCurrent summary={state.summary} /><VerifiedOnHardware summary={state.summary} /></> : null}
       {state.status === "ready" ? <Creators summary={state.summary} /> : null}
 
       <section className="quickstart" aria-labelledby="quickstart-title">
