@@ -88,11 +88,11 @@ describe("public model browse", () => {
     expect(screen.getByRole("heading", { name: "Available globally" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Prepared locally" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Run on Sparks" })).toBeVisible();
-    expect(screen.getByText(/Model files downloaded and verified on your NAS/i)).toBeVisible();
-    expect(screen.getByText(/container image—the software needed to run the model—has been downloaded or built and cached on your NAS/i)).toBeVisible();
-    expect(screen.getByText(/Local means cached on your NAS. Running starts when you choose Run. Recipe definitions stay in the global repository/i)).toBeVisible();
+    expect(screen.getByText(/Model files downloaded and verified on your Controller/i)).toBeVisible();
+    expect(screen.getByText(/container image—the software needed to run the model—has been downloaded or built and cached on your Controller/i)).toBeVisible();
+    expect(screen.getByText(/Local means cached on your Controller. Running starts when you choose Run. Recipe definitions stay in the global repository/i)).toBeVisible();
     expect(screen.getByText(/Profiles remember your model, recipe, and Spark assignments/i)).toBeVisible();
-    fireEvent.change(screen.getByLabelText("Capability"), { target: { value: "ocr" } });
+    fireEvent.change(screen.getByLabelText("Capabilities"), { target: { value: "ocr" } });
     expect(window.location.search).toBe("?capability=ocr");
     expect(screen.getByText("7 of 13 models")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
@@ -147,7 +147,7 @@ describe("public model browse", () => {
     expect(screen.getByText("7 of 13 models")).toBeVisible();
     expect(oneSpark).toHaveAttribute("aria-pressed", "true");
     fireEvent.click(screen.getByText("More filters"));
-    const families = screen.getByRole("group", { name: "Model family" });
+    const families = screen.getByRole("group", { name: "Family" });
     expect(within(families).getByRole("button", { name: "Qwen: 7" })).toBeVisible();
     expect(within(families).queryByRole("button", { name: /^GLM/ })).toBeNull();
     fireEvent.click(within(screen.getByRole("group", { name: "Engine" })).getByRole("button", { name: "vLLM: 7" }));

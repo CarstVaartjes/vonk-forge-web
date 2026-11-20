@@ -35,9 +35,9 @@ test("shows the recipe library version and when it was last updated", async () =
   render(<App />);
   const footer = screen.getByRole("contentinfo");
   expect(await within(footer).findByRole("link", { name: "v2.0.0" })).toHaveAttribute("href", "https://github.com/CarstVaartjes/vonk-forge-recipes/releases/tag/v2.0.0");
-  expect(within(footer).getByText(/Updated 28 Sept 2026/)).toBeVisible();
+  expect(within(footer).getByText(/Updated 28 Sep 2026/)).toBeVisible();
   expect(within(footer).getByText("bbbbbbbbbbbb")).toBeVisible();
-  expect(within(siteHeader()).getByRole("link", { name: /Catalog v2\.0\.0 · updated 28 Sep/ })).toBeVisible();
+  expect(within(siteHeader()).getByRole("link", { name: /Catalog v2\.0\.0 · updated 28 Sep 2026/ })).toBeVisible();
 });
 
 
@@ -159,7 +159,7 @@ test("explains the operator-owned architecture for one to many Sparks", async ()
   expect(screen.getByText(/management-lan tls \/ mtls/i)).toBeVisible();
   expect(screen.getByText("NVIDIA fabric", { selector: "strong" })).toBeVisible();
   expect(screen.getByText("Local project files")).toBeVisible();
-  expect(screen.getByText(/Prepares and caches verified model files and runtime images on your NAS/i)).toBeVisible();
+  expect(screen.getByText(/Prepares and caches verified model files and runtime images on your Controller/i)).toBeVisible();
   expect(screen.getByText(/Prepared assets are distributed as needed/i)).toBeVisible();
 
 });

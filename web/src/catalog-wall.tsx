@@ -1,3 +1,4 @@
+import { formatDate } from "./dates";
 import { useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from "react";
 
 import { newestFirst, type CatalogSummary, type RecipeRow } from "./catalog-stats";
@@ -11,7 +12,6 @@ export function cellState(row: Pick<RecipeRow, "verified" | "passedBefore">): Ce
   return row.verified ? "verified" : row.passedBefore ? "before" : "none";
 }
 
-const day = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: "UTC" });
 const number = new Intl.NumberFormat("en");
 
 function recipeHref(row: RecipeRow): string {
@@ -32,7 +32,7 @@ function WallCard({ row }: { row: RecipeRow | null }) {
       <strong>{row.title}</strong>
       {row.creator ? <span className="src">{row.creator}</span> : null}
       <span className="wall-card-status">{row.status}</span>
-      <span>{row.tested ? `Tested ${day.format(new Date(row.tested))}` : "No hardware pass on record"}</span>
+      <span>{row.tested ? `Tested ${formatDate(row.tested)}` : "No hardware pass on record"}</span>
       <span>{row.sparks === 1 ? "1 Spark" : `${row.sparks} Sparks`}{memory ? ` · ${memory}` : ""}</span>
       <a className="text-link" href={recipeHref(row)}>Open recipe</a>
     </div>

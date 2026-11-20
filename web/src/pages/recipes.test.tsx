@@ -103,7 +103,7 @@ test("keeps Controller-parity filters in the URL and applies them locally", asyn
   fireEvent.change(screen.getByLabelText("Filter by abliterated"), { target: { value: "false" } });
   await waitFor(() => expect(window.location.search).toContain("abliterated=false"));
   const more = within(document.querySelector(".catalog-more") as HTMLElement);
-  for (const name of ["Model family", "Engine", "Capabilities"]) expect(more.getByRole("group", { name })).toBeInTheDocument();
+  for (const name of ["Family", "Engine", "Capabilities"]) expect(more.getByRole("group", { name })).toBeInTheDocument();
   for (const label of ["Filter by model", "Filter by memory per spark", "Filter by disk per spark", "Filter by download size", "Filter by updated date", "Filter by execution readiness", "Filter by qualification", "Filter by original repository"]) expect(more.getByLabelText(label)).toBeInTheDocument();
   expect(screen.getByText(/status appear only in/i)).toBeVisible();
   expect(screen.queryByRole("button", { name: "Cards" })).not.toBeInTheDocument();

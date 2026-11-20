@@ -1,3 +1,4 @@
+import { formatDate } from "./dates";
 import { gibLabel } from "./catalog-filters";
 import type { ReceiptFacts } from "./catalog-stats";
 
@@ -8,11 +9,6 @@ export function evidenceLine({ sparks, measuredBytes }: Pick<ReceiptFacts, "spar
   return measuredBytes === null ? passed : `${passed} · ${gibLabel(measuredBytes, 1)} per Spark, measured`;
 }
 
-function dateLabel(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(date);
-}
-
 // The ticket for one hardware pass: the status, one lead line, the creator and the fields the
 // catalog holds for that pass. With `meaning` (the vocabulary's words for the status) a "What this means"
 // disclosure opens inline. The three hashes sit behind "Details". A field the release does not
@@ -20,7 +16,7 @@ function dateLabel(value: string): string {
 export function EvidenceReceipt({ facts, verified, showTitle = true, meaning }: { facts: ReceiptFacts; verified: boolean; showTitle?: boolean; meaning?: string }) {
   const rows: Array<{ name: string; value: string; mono?: boolean }> = [];
   if (facts.hardwareClass) rows.push({ name: "Hardware", value: facts.hardwareClass });
-  rows.push({ name: "Tested", value: dateLabel(facts.tested) });
+  rows.push({ name: "Tested", value: formatDate(facts.tested) });
   const hashes: typeof rows = [{ name: "Recipe", value: `sha256:${facts.contentSha256}`, mono: true }];
   if (facts.imageDigest) hashes.push({ name: "Runtime image", value: facts.imageDigest, mono: true });
   if (facts.evidenceRef) hashes.push({ name: "Evidence record", value: facts.evidenceRef, mono: true });

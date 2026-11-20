@@ -1,5 +1,7 @@
 import { Component, Suspense, lazy, useEffect, useLayoutEffect, useState, type ComponentType, type ReactNode } from "react";
 
+import { formatDate } from "./dates";
+
 import { getLibraryRelease, type LibraryRelease } from "./api/client";
 import { HomePage } from "./pages/home";
 import { ThemeIcon } from "./icons";
@@ -70,11 +72,6 @@ function CurrentPage() {
   return <Page {...match.params} />;
 }
 
-function dateLabel(value: string, options: Intl.DateTimeFormatOptions): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("en-GB", { ...options, timeZone: "UTC" }).format(date);
-}
-
 // The release this site serves (its tag is the contract version), read once from the small
 // manifest. Until it is read, or if it cannot be, the pill and the footer line are not drawn.
 function useLibraryRelease(): LibraryRelease | null {
@@ -95,7 +92,7 @@ function LibraryVersion({ release }: { release: LibraryRelease | null }) {
   if (!release) return null;
   return (
     <p className="library-version">
-      Recipe library <a href={releaseUrl(release)}>{release.version}</a> · Updated {dateLabel(release.updated_at, { dateStyle: "medium" })} · Index <code>{release.index_sha256.slice(0, 12)}</code>
+      Recipe library <a href={releaseUrl(release)}>{release.version}</a> · Updated {formatDate(release.updated_at)} · Index <code>{release.index_sha256.slice(0, 12)}</code>
     </p>
   );
 }
@@ -160,7 +157,7 @@ export function App() {
             <NavigationLink href="/architecture">How it works</NavigationLink>
           </nav>
           <div className="site-header-end">
-            {release && <a className="release-pill" href={releaseUrl(release)}>Catalog <b>{release.version}</b> · updated {dateLabel(release.updated_at, { day: "numeric", month: "short" })}</a>}
+            {release && <a className="release-pill" href={releaseUrl(release)}>Catalog <b>{release.version}</b> · updated {formatDate(release.updated_at)}</a>}
             <ThemeSwitch />
             <NavigationLink primary href="/install">Install</NavigationLink>
             <button type="button" className="menu-button" aria-expanded={menuOpen} aria-controls="primary-nav" onClick={() => setMenuOpen(!menuOpen)}>Menu</button>
