@@ -212,12 +212,22 @@ The stylesheet uses these sizes and only these (`--t-display`, `--t-h2`, `--t-h3
 
 ## Where styles live
 
-The stylesheet is `web/src/styles/`: `index.css` is the one entry (imported by `main.tsx`) and lists every module with `@import`, in the order that is the cascade. Reordering the list, or moving a rule to a module that imports earlier or later, changes which rule wins; add a rule to the module of the page or component it styles and keep it where it already sits relative to the rules it overrides.
+The stylesheet is `web/src/styles/`: `index.css` is the one entry (imported by `main.tsx`) and lists every module with `@import`, in the order that is the cascade. The modules were cut from the old single file in source order and no rule was moved, so a component's rules can continue in a later module. Reordering the list, or moving a rule across modules, changes which rule wins.
 
 - `tokens.css`: both themes' tokens (`:root`, dark, light); `styles.test.ts` reads this module for the contrast checks.
-- `base.css`: reset, typography, links, focus. `layout.css`: shell, header, footer navigation and the narrow-width header.
-- `components.css`: buttons, section headings, path grids, catalog tabs, footer. `status-and-publishing.css`: hash, status, tag, status panel, publishing path.
-- Pages: `guides.css` (architecture and guides) with `guides-responsive.css`, `control.css`, `install-command.css` (command block, privacy, install lanes), `agent-session.css`, `catalog.css`, `models.css`, `home.css`, `home-hero.css`, `home-wall.css`, `home-evidence.css`, `setup.css`, `recipe-detail.css`, `recipe-family.css`, `motion-and-picks.css`.
+- `base.css`: reset, typography, plain links, focus ring, skip link, textarea.
+- `layout.css`: site shell, header, brand, navigation, release pill, theme switch and menu button, narrow-width header.
+- `components.css`: buttons, section headings, control-path and compact-path grids, catalog tabs, site footer.
+- `guides.css`: architecture, trust boundary, contract pipeline and the other guide sections.
+- `control.css`: control guide, guide jump, credential warning.
+- `install-command.css`: the command block, privacy content, verification, preflight checks, install lanes, runbook links, then the start of the catalog page rules (`.catalog-page`, `.detail-page`, page intro, filters).
+- `catalog.css`: catalog browser, toolbar, results table, readiness. `models.css`: Models index and Model page, the public-contract explainer.
+- `status-and-publishing.css`: hash, status, tag, warning, status panel, visually hidden, publishing path and boundary.
+- `responsive.css`: the site-wide narrow-width rules for the guides, catalog and publishing pages, and their reduced-motion rule.
+- `home.css`: home story, product shot, tour, security map, private ledger, closing; `agent-session.css`: agent session, agent contract, secure remote intro; `setup.css`: Spark setup tiles and facets, rolling hero numbers; `home-hero.css`: type tabs, example-setup showcase, status legend, hero; `home-wall.css`: product screenshot frame, card, picker and answer, catalog wall; `home-evidence.css`: evidence pairs, meanings, receipt, creators.
+- `recipe-detail.css`: recipe detail header, facts, provenance; `recipe-family.css`: run command, Spark unit rows, ways matrix; `motion-and-picks.css`: motion under `prefers-reduced-motion: no-preference`, then the recipe catalog's first screen and the Spark pick answer.
+
+Known spreads, because the source order was kept: `.compact-paths` (components, responsive), `.home-facts` (home, setup, responsive), `.detail-*` (install-command, models, recipe-detail, recipe-family), `.site-footer` (layout navigation, components), `.catalog-*` (install-command, catalog, setup, home-hero, motion-and-picks), `.answer*` (home-wall, motion-and-picks), and strays inside `home-hero.css` (showcase and status-legend rules among the hero rules). Search all modules for a selector before editing it.
 
 ## Layout
 
