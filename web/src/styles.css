@@ -2301,11 +2301,6 @@ button.text-link {
   }
 }
 
-/* Hero headline: four short lines so the fit, currency and one-click promise read at once. */.home-hero-copy h1 {
-  max-width: 17ch;
-  font-size: var(--t-display);
-}
-
 .home-definition code {
   color: var(--green-text);
   font-size: 0.9em;

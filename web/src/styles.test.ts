@@ -68,9 +68,10 @@ test.each(["dark", "light"])("token pairs meet contrast in the %s theme (text 4.
     return alias ? resolve(alias[1]!) : value;
   };
   const colour = (name: string, under = [0, 0, 0]) => channels(resolve(name), under);
+  const over = (a: string, b: string) => contrast(colour(a, colour(b)), colour(b));
   const failing = [...TEXT, ...MARKS.filter(([a]) => a !== "--cool")].filter(([a, b]) => {
     const need = TEXT.some(([x, y]) => x === a && y === b) ? 4.5 : 3;
-    return contrast(colour(a), colour(b)) < need;
+    return over(a, b) < need;
   });
   // --cool is the dim state, exempt from 3:1: it only has to stay visible against the panel (>= 1.2:1).
   const cool = contrast(colour("--cool", colour("--panel")), colour("--panel"));

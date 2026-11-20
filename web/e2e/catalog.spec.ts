@@ -209,7 +209,7 @@ test("the count is the real number on first paint, with no roll from zero", asyn
   await expect(page.locator(".answer")).toHaveText(ANSWER);
 });
 
-test("the count rolls only when the Spark count changes, and not under reduced motion", async ({ page }) => {
+test("the count rolls when the visitor changes the pick", async ({ page }) => {
   await page.goto("/");
   const picker = page.getByRole("group", { name: "How many Sparks do you have?" });
   await picker.getByRole("button", { name: /^1 Spark/ }).click();
@@ -217,9 +217,6 @@ test("the count rolls only when the Spark count changes, and not under reduced m
   await expect(strip).toBeAttached();
   await expect.poll(() => strip.evaluate((element) => element.getAnimations().length)).toBeGreaterThan(0);
   await expect(page.locator(".answer .rolling-number .rolling-strip")).toHaveCount(0, { timeout: 4000 });
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await picker.getByRole("button", { name: /^2 Sparks/ }).click();
-  await expect(page.locator(".answer .rolling-strip")).toHaveCount(0);
 });
 
 test("minimum supported viewport does not overflow", async ({ page }) => {

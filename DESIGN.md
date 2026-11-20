@@ -206,7 +206,7 @@ The stylesheet uses these sizes and only these (`--t-display`, `--t-h2`, `--t-h3
 
 ### Named Rules
 
-**The Definition First Rule.** A large heading should state what the product or section is; do not precede it with an eyebrow, kicker, or category slogan. The home page headline is "Models that fit your Sparks, kept current." (Display, four short lines); the one live number in the hero is the picker's answer, set in Ready Green and painted as plain text from the first render. The definition sentence ("Vonk Forge is the open-source Controller for NVIDIA DGX Spark. …") stays directly under it, and the install and CLI paths stay in the first screen.
+**The Definition First Rule.** A large heading should state what the product or section is; do not precede it with an eyebrow, kicker, or category slogan. The home page headline is "Models that fit your Sparks, kept current." (Display); the one live number in the hero is the picker's answer, set in Ready Green and painted as plain text from the first render. The definition sentence ("Vonk Forge is the open-source Controller for NVIDIA DGX Spark. …") stays directly under it, and the install and CLI paths stay in the first screen.
 
 **The One Family Rule.** Onest Variable owns both display and body roles. Do not reintroduce Space Grotesk or use a novelty display face to manufacture personality.
 
@@ -317,7 +317,7 @@ The ten creators with the most verified recipes, from the summary's `topCreators
 
 ### Motion
 
-All of it sits inside `prefers-reduced-motion: no-preference`; with reduced motion the page is in its final state on first paint. The wall has no ignition: every mark is lit on first paint. Rolling numbers are plain text on first paint and roll (digit slots exactly 1em tall, strips moved in whole ems) only when the visitor changes the Spark count; marks cool and relight in 240 ms when the picker changes; the wall's detail card fades in over 120 ms; the terminal caret blinks. There is no parallax, no scroll-driven animation and no autoplay.
+All of it sits inside `prefers-reduced-motion: no-preference`; with reduced motion the page is in its final state on first paint. The wall has no ignition: every mark is lit on first paint. Rolling numbers are plain text on first paint and roll (digit slots exactly 1em tall, strips moved in whole ems) when the visitor changes the pick (Spark count or type); marks cool and relight in 240 ms when the picker changes; the wall's detail card fades in over 120 ms; the terminal caret blinks. There is no parallax, no scroll-driven animation and no autoplay.
 
 ### Role Colours
 
