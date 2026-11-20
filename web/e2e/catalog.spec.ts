@@ -365,7 +365,7 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   await expect(page.getByRole("columnheader")).toHaveCount(16);
   const compactRecipeRows = await page.evaluate(() => window.innerWidth < 700);
   await expect(page.getByRole("row").nth(1).getByRole("cell")).toHaveCount(compactRecipeRows ? 8 : 16);
-  await expect(page.getByRole("heading", { name: "Qwen Fast" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Qwen Fast" })).toBeVisible();
   await expect(page.getByText(/Source verified/)).toBeVisible();
   await page.getByRole("link", { name: "Qwen Fast" }).click();
   // The header carries the verdict and the run command; the exact trust facts sit under Provenance.
@@ -449,7 +449,7 @@ test("the model type is the first choice on the recipes and models pages", async
 test("the first recipe is on the first screen on desktop and on a phone, with the column filters behind one tap", async ({ page }) => {
   const firstRecipeTop = async () => {
     await page.goto("/recipes");
-    const link = page.locator(".catalog-table-recipe h2 a").first();
+    const link = page.locator(".catalog-table-recipe a").first();
     await expect(link).toBeVisible();
     return (await link.boundingBox())!.y + (await page.evaluate(() => window.scrollY));
   };

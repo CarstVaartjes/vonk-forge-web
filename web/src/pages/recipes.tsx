@@ -302,7 +302,7 @@ export function RecipesPage() {
               const facts = recipe.catalog;
               const counts = recipe.capacity?.profile_node_counts ?? [];
               return <tr key={`${recipe.publisher}/${recipe.slug}`}>
-                <td className="catalog-table-recipe"><h2><a href={`/recipes/${recipe.publisher}/${recipe.slug}`}>{recipe.title}</a></h2><span>{recipe.publisher}/{recipe.slug}</span><span>{recipe.version ? `v${recipe.version}` : "unversioned"} · {recipe.content_sha256.slice(0, 10)}…</span></td>
+                <td className="catalog-table-recipe"><a href={`/recipes/${recipe.publisher}/${recipe.slug}`}>{recipe.title}</a><span>{recipe.publisher}/{recipe.slug}</span><span>{recipe.version ? `v${recipe.version}` : "unversioned"} · {recipe.content_sha256.slice(0, 10)}…</span></td>
                 <td className="catalog-table-number">{counts.length ? counts.join(" / ") : facts.node_count}</td>
                 <td>{engineLabel(facts.runtime_distribution)}</td>
                 <td className="catalog-table-number">{gibLabel(recipe.capacity?.maximum_runtime_memory_bytes_per_node)}</td>

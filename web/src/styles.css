@@ -1478,8 +1478,7 @@ a {
 .catalog-table tbody tr:hover td { background: var(--raised); }
 .catalog-table strong { color: var(--ink); }
 .catalog-table-model span, .catalog-table-recipe span { display: block; margin-top: 0.2rem; color: var(--faint); font: var(--t-label)/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; }
-.catalog-table-recipe h2 { margin: 0; font-size: var(--t-small); line-height: 1.25; }
-.catalog-table-recipe a { display: block; color: var(--ink); font-weight: 800; text-decoration: none; }
+.catalog-table-recipe a { display: block; color: var(--ink); font-size: var(--t-small); line-height: 1.25; font-weight: 800; text-decoration: none; }
 .catalog-table-recipe a:hover { color: var(--green-text); text-decoration: underline; text-underline-offset: 0.2rem; }
 .catalog-table th:nth-child(1), .catalog-table td:nth-child(1) { position: sticky; left: 0; z-index: 2; background: var(--raised); box-shadow: 1px 0 0 var(--line-strong); }
 .catalog-table th:nth-child(1) { z-index: 4; }

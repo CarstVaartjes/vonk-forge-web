@@ -5,7 +5,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { routeRelease } from "./release-fixture.ts";
 
-const PAGES = ["/", "/recipes", "/recipes/vonk-forge/qwen-fast"];
+const PAGES = ["/", "/recipes", "/models", "/recipes/vonk-forge/qwen-fast"];
 
 test.beforeEach(({ page }) => routeRelease(page));
 
@@ -40,6 +40,14 @@ test("an accessibility scan of home, the catalog and a recipe page reports no se
       expect(violations.filter((violation) => violation.impact === "serious" || violation.impact === "critical").map((violation) => `${scheme} ${path} ${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).slice(0, 3).join(" | ")}`)).toEqual([]);
     }
   }
+});
+
+test("the catalog rows are not headings: the Recipes page has only its two section headings under one h1", async ({ page }) => {
+  await load(page, "/recipes", []);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
+  await expect(page.locator("main").getByRole("heading", { level: 2 })).toHaveCount(2);
+  await expect(page.locator("tbody").getByRole("heading")).toHaveCount(0);
+  await expect(page.locator("tbody tr").first().getByRole("link").first()).toBeVisible();
 });
 
 test("with reduced motion the wall is in its final state on first paint", async ({ page }) => {
