@@ -185,16 +185,16 @@ export function RecipesPage() {
   if (filters.verified) applied.push({ key: "verified", label: "Verified on Spark", remove: () => setVerified(false) });
   if (filters.query) addApplied("query", `Search: ${filters.query}`, "q");
   if (filters.type) addApplied("type", `Type: ${vocabulary ? typeLabel(vocabulary, filters.type) : filters.type}`, "type");
-  if (filters.modelFamily) addApplied("modelFamily", `Model family: ${filters.modelFamily}`, "model_family");
+  if (filters.modelFamily) addApplied("modelFamily", `Family: ${filters.modelFamily}`, "model_family");
   if (filters.model) addApplied("model", `Model: ${models.find(([value]) => value === filters.model)?.[1] ?? filters.model}`, "model");
-  if (filters.quantization) addApplied("quantization", `Format: ${filters.quantization}`, "quantization");
+  if (filters.quantization) addApplied("quantization", `Quantization: ${filters.quantization}`, "quantization");
   if (filters.abliterated) addApplied("abliterated", `Abliterated: ${filters.abliterated === "true" ? "True" : "False"}`, "abliterated");
   if (filters.sparks) addApplied("sparks", sparksFewerLabel(filters.sparks), "sparks");
   if (filters.uses) addApplied("uses", `Uses exactly ${filters.uses} ${filters.uses === 1 ? "Spark" : "Sparks"}`, "uses");
   if (filters.sourceOwner) addApplied("sourceOwner", `Creator: ${filters.sourceOwner}`, "creator");
   if (filters.updated) addApplied("updated", `Updated: last ${filters.updated} days`, "updated");
   if (filters.readiness) addApplied("readiness", `Readiness: ${READINESS_OPTIONS.find((option) => option.value === filters.readiness)?.label ?? filters.readiness}`, "readiness");
-  for (const capability of filters.capabilities) applied.push({ key: `capability:${capability}`, label: `Capability: ${capabilityName(capability)}`, remove: () => toggleCapability(capability) });
+  for (const capability of filters.capabilities) applied.push({ key: `capability:${capability}`, label: `Capabilities: ${capabilityName(capability)}`, remove: () => toggleCapability(capability) });
   if (filters.qualification) addApplied("qualification", `Qualification: ${filters.qualification}`, "qualification");
   if (filters.repository) addApplied("repository", `Repository: ${sourceLabel(filters.repository)}`, "repository");
   if (filters.runtime) addApplied("runtime", `Runtime: ${humanize(filters.runtime)}`, "runtime");
@@ -253,7 +253,7 @@ export function RecipesPage() {
             <p className="catalog-more-note">My Sparks: pick how many you have and the list narrows to recipes that need that many or fewer. The pick is remembered on this device and shared with the home page. Your Controller makes the same check against the live capacity of your Sparks.</p>
             <VerifiedToggle checked={filters.verified} onChange={setVerified} />
             <div className="catalog-setup-facets">
-              <FacetStrip label="Model family" value={filters.modelFamily} onChange={updateModelFamily} options={modelFamilies.map((value) => ({ value, label: value, count: count("modelFamily", (recipe) => modelFamilyTitle(recipe) === value) }))} />
+              <FacetStrip label="Family" value={filters.modelFamily} onChange={updateModelFamily} options={modelFamilies.map((value) => ({ value, label: value, count: count("modelFamily", (recipe) => modelFamilyTitle(recipe) === value) }))} />
               <FacetStrip label="Engine" value={filters.runtime} onChange={(value) => update("runtime", value)} options={runtimes.map((value) => ({ value, label: engineLabel(value), count: count("runtime", (recipe) => recipe.catalog.runtime_distribution === value) }))} />
               <FacetStrip label="Creator" value={filters.sourceOwner} onChange={(value) => update("creator", value)} options={sourceOwners.map((value) => ({ value, label: value, count: count("sourceOwner", (recipe) => sameCreator(recipe.catalog.source_owner, value)) }))} />
               <FacetStrip label="Quantization" value={filters.quantization} onChange={(value) => update("quantization", value)} options={quantizations.map((value) => ({ value, label: value, count: count("quantization", (recipe) => recipe.catalog.quantizations.includes(value)) }))} />

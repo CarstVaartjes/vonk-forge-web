@@ -245,13 +245,13 @@ test("models page explains the public to local boundary on demand", async ({ pag
   await summary.focus();
   await expect(summary).toBeFocused();
   await expect(page.getByRole("heading", { name: "Pick a model. Choose how to run it." })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "From the catalog to your NAS" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "From the catalog to your Controller" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Available globally" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Prepared locally" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Run on Sparks" })).toBeVisible();
-  await expect(page.getByText(/Model files downloaded and verified on your NAS/i)).toBeVisible();
-  await expect(page.getByText(/container image—the software needed to run the model—has been downloaded or built and cached on your NAS/i)).toBeVisible();
-  await expect(page.getByText(/Local means cached on your NAS. Running starts when you choose Run. Recipe definitions stay in the global repository/i)).toBeVisible();
+  await expect(page.getByText(/Model files downloaded and verified on your Controller/i)).toBeVisible();
+  await expect(page.getByText(/container image—the software needed to run the model—has been downloaded or built and cached on your Controller/i)).toBeVisible();
+  await expect(page.getByText(/Local means cached on your Controller. Running starts when you choose Run. Recipe definitions stay in the global repository/i)).toBeVisible();
   await expect(page.getByText(/Profiles remember your model, recipe, and Spark assignments/i)).toBeVisible();
 
   const horizontalOverflow = await page.evaluate(
@@ -339,7 +339,7 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   await expect(page.getByRole("group", { name: "Engine" }).getByRole("button", { name: /vLLM/ })).toBeVisible();
   await expect(page.getByLabel("Filter by abliterated")).toHaveValue("false");
   await expect(page.getByRole("group", { name: "Capabilities" }).getByRole("button", { pressed: true })).toHaveCount(1);
-  await expect(page.getByRole("group", { name: "Model family" })).toBeVisible();
+  await expect(page.getByRole("group", { name: "Family" })).toBeVisible();
   for (const label of ["Filter by model", "Filter by updated date", "Filter by execution readiness", "Filter by original repository", "Filter by download size", "Filter by disk per spark", "Filter by memory per spark"]) await expect(page.getByLabel(label, { exact: true })).toBeVisible();
   if (!(await page.evaluate(() => window.innerWidth < 700))) {
     await expect(page.getByRole("columnheader")).toHaveCount(6);
