@@ -62,7 +62,7 @@ beforeEach(() => {
 
 test("shows sizing, immutable identity, and evidence provenance", async () => {
   render(<RecipesPage />);
-  expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
+  expect(await screen.findByRole("link", { name: "Qwen Fast" })).toBeVisible();
   expect(screen.getByRole("cell", { name: "20 GiB" })).toBeVisible();
   expect(screen.getByRole("cell", { name: "48 GiB" })).toBeVisible();
   expect(screen.getByText(/Source verified/)).toBeVisible();
@@ -77,7 +77,7 @@ test("shows sizing, immutable identity, and evidence provenance", async () => {
 
 test("keeps Controller-parity filters in the URL and applies them locally", async () => {
   render(<RecipesPage />);
-  await screen.findByRole("heading", { name: "Qwen Fast" });
+  await screen.findByRole("link", { name: "Qwen Fast" });
   fireEvent.change(screen.getByLabelText("Filter by abliterated"), { target: { value: "false" } });
   await waitFor(() => expect(window.location.search).toContain("abliterated=false"));
   expect(screen.getByLabelText("Filter by model family")).toBeVisible();
@@ -97,7 +97,7 @@ test("keeps Controller-parity filters in the URL and applies them locally", asyn
 test("starts from the visitor's Sparks and engine, in the same URL facets as the columns", async () => {
   window.history.replaceState(null, "", "/recipes?verified=0");
   render(<RecipesPage />);
-  await screen.findByRole("heading", { name: "Qwen Fast" });
+  await screen.findByRole("link", { name: "Qwen Fast" });
   const oneSpark = screen.getByRole("button", { name: "1 Spark 1 recipe" });
   // "I have 2 Sparks" also runs the one-Spark recipe: a count means "that many or fewer".
   expect(screen.getByRole("button", { name: "2 Sparks 1 recipe" })).toBeEnabled();
@@ -115,7 +115,7 @@ test("starts from the visitor's Sparks and engine, in the same URL facets as the
 
 test("sorts the list from any column and preserves the selected direction", async () => {
   render(<RecipesPage />);
-  await screen.findByRole("heading", { name: "Qwen Fast" });
+  await screen.findByRole("link", { name: "Qwen Fast" });
   fireEvent.click(screen.getByRole("button", { name: "Sort Model ascending" }));
   await waitFor(() => expect(window.location.search).toContain("sort=model"));
   expect(window.location.search).toContain("direction=asc");
@@ -135,21 +135,21 @@ describe("My Sparks", () => {
     saveMySparks({ sparks: "2", type: "" });
     window.history.replaceState(null, "", "/recipes?verified=0");
     const first = render(<RecipesPage />);
-    await screen.findByRole("heading", { name: "Qwen Fast" });
+    await screen.findByRole("link", { name: "Qwen Fast" });
     expect(screen.getByRole("button", { name: "2 Sparks 1 recipe" })).toHaveAttribute("aria-pressed", "true");
     expect(window.location.search).toBe("?verified=0&sparks=2");
     first.unmount();
 
     window.history.replaceState(null, "", "/recipes?verified=0&sparks=1");
     render(<RecipesPage />);
-    await screen.findByRole("heading", { name: "Qwen Fast" });
+    await screen.findByRole("link", { name: "Qwen Fast" });
     expect(screen.getByRole("button", { name: "1 Spark 1 recipe" })).toHaveAttribute("aria-pressed", "true");
   });
 
   test("picking on this page is remembered, and clearing the picker forgets it", async () => {
     window.history.replaceState(null, "", "/recipes?verified=0");
     render(<RecipesPage />);
-    await screen.findByRole("heading", { name: "Qwen Fast" });
+    await screen.findByRole("link", { name: "Qwen Fast" });
     fireEvent.click(screen.getByRole("button", { name: "2 Sparks 1 recipe" }));
     expect(readMySparks("")).toEqual({ sparks: "2", type: "" });
     fireEvent.click(screen.getByRole("button", { name: "Every count 1 recipe" }));
@@ -171,13 +171,13 @@ describe("type-first filtering", () => {
   test("shows only verified recipes until the toggle is turned off", async () => {
     window.history.replaceState(null, "", "/recipes");
     render(<RecipesPage />);
-    expect(await screen.findByRole("heading", { name: "Coder" })).toBeVisible();
-    expect(screen.queryByRole("heading", { name: "Qwen Fast" })).not.toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Coder" })).toBeVisible();
+    expect(screen.queryByRole("link", { name: "Qwen Fast" })).not.toBeInTheDocument();
     const toggle = screen.getByRole("checkbox", { name: /Verified on Spark/ });
     expect(toggle).toBeChecked();
     fireEvent.click(toggle);
     await waitFor(() => expect(window.location.search).toBe("?verified=0"));
-    expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
+    expect(await screen.findByRole("link", { name: "Qwen Fast" })).toBeVisible();
     fireEvent.click(toggle);
     await waitFor(() => expect(window.location.search).toBe(""));
   });
@@ -185,7 +185,7 @@ describe("type-first filtering", () => {
   test("the type row comes first, counts with the other filters applied, and lives in the URL", async () => {
     window.history.replaceState(null, "", "/recipes?type=code");
     render(<RecipesPage />);
-    expect(await screen.findByRole("heading", { name: "Coder" })).toBeVisible();
+    expect(await screen.findByRole("link", { name: "Coder" })).toBeVisible();
     const types = screen.getByRole("group", { name: "Model type" });
     expect(within(types).getAllByRole("button").map((button) => button.textContent)).toEqual(["All 1", "Language 0", "Code 1", "Vision 0", "Image 0", "Video 0", "Audio 0", "3D 0", "Other 0"]);
     expect(within(types).getByRole("button", { name: "Code 1" })).toHaveAttribute("aria-pressed", "true");
@@ -200,7 +200,7 @@ describe("type-first filtering", () => {
   test("an explicit qualification turns the default off", async () => {
     window.history.replaceState(null, "", "/recipes?qualification=Not+yet+verified");
     render(<RecipesPage />);
-    expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
+    expect(await screen.findByRole("link", { name: "Qwen Fast" })).toBeVisible();
     expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked();
   });
 
@@ -213,7 +213,7 @@ describe("type-first filtering", () => {
     loadRecipeCatalog.mockReset().mockResolvedValue([variant("coder", "eugr", 1, ["code-generation"]), variant("chatter", "NVIDIA", 2, ["chat"])]);
     window.history.replaceState(null, "", "/recipes");
     render(<RecipesPage />);
-    await screen.findByRole("heading", { name: "coder" });
+    await screen.findByRole("link", { name: "coder" });
     const types = () => within(screen.getByRole("group", { name: "Model type" }));
     expect(types().getByRole("button", { name: "Code 1" })).not.toHaveAttribute("aria-disabled");
     expect(types().getByRole("button", { name: "Language 1" })).toBeVisible();
@@ -244,13 +244,13 @@ describe("type-first filtering", () => {
     await waitFor(() => expect(window.location.search).toBe("?type=vision&verified=0"));
     fireEvent.click(screen.getByRole("button", { name: /^Clear \d+ filter/ }));
     await waitFor(() => expect(window.location.search).toBe("?verified=0"));
-    expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
+    expect(await screen.findByRole("link", { name: "Qwen Fast" })).toBeVisible();
   });
 
   test("Clear counts only what the visitor chose, and clearing also turns the default off", async () => {
     window.history.replaceState(null, "", "/recipes");
     render(<RecipesPage />);
-    await screen.findByRole("heading", { name: "Coder" });
+    await screen.findByRole("link", { name: "Coder" });
     expect(screen.getByLabelText("Applied filters")).toHaveTextContent("Verified on Spark");
     expect(screen.queryByRole("button", { name: /^Clear \d+ filter/ })).not.toBeInTheDocument();
     fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "Code 1" }));
@@ -268,7 +268,7 @@ test("explains each status shown with the release's meaning, links every badge t
     { ...recipe, slug: "odd", title: "Odd", catalog: { ...recipe.catalog, qualification: "Status from a newer library" } },
   ]);
   render(<RecipesPage />);
-  await screen.findByRole("heading", { name: "Odd" });
+  await screen.findByRole("link", { name: "Odd" });
   const legend = within(document.getElementById("how-recipes-are-verified") as HTMLElement);
   expect(legend.getByText(/information to help you choose, never a gate/)).toBeInTheDocument();
   // The vocabulary's meaning, exactly as published; a status it has no entry for is listed by name alone.
