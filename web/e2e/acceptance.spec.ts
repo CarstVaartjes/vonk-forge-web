@@ -40,7 +40,7 @@ async function sitePaths(page: Page): Promise<string[]> {
   return paths;
 }
 
-for (const width of [1440, 400]) {
+for (const width of [1440, 768, 400, 320]) {
   for (const scheme of ["dark", "light"] as const) {
     test(`every page at ${width}px in ${scheme}: no horizontal overflow, no console error`, async ({ page }) => {
       const errors = watch(page);

@@ -9,7 +9,6 @@ import { receiptFacts } from "../catalog-stats";
 import { EvidenceReceipt } from "../evidence-receipt";
 import { SparkUnit } from "../spark-unit";
 import { usePageMeta } from "../page-meta";
-import { STATUS_LEGEND_ID } from "../status-legend";
 import { capabilityLabel, statusMeaning, type Vocabulary } from "../vocabulary";
 
 
@@ -86,7 +85,8 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
           </p>
           <section className="run" aria-labelledby="run-title">
             <h2 id="run-title">Run it</h2>
-            <CommandBlock label="Workstation terminal">{`vonkctl --profile 2 run ${shellQuote(recipe.title)}`}</CommandBlock>
+            <CommandBlock label="Workstation terminal">{`vonkctl --profile 1 run ${shellQuote(recipe.title)}`}</CommandBlock>
+            <div className="run-note"><p>Profile <code>1</code> is your first profile; <code>vonkctl profile list</code> shows the numbers of the others. <code>vonkctl run</code> always needs <code>--profile</code>.</p></div>
             {job ? <>
               <CommandBlock label="Then make one">{jobRunCommand(job)}</CommandBlock>
               <p className="run-note">ALIAS is the name you gave this recipe in your profile; <code>vonkctl profile endpoint</code> lists them. The results land in the <code>results</code> folder.</p>
@@ -97,10 +97,10 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
             </div>
           </section>
         </div>
-        {receipt && catalog.verified ? <div className="detail-receipt"><EvidenceReceipt facts={receipt} verified showTitle={false} /><a className="text-link" href={`/recipes#${STATUS_LEGEND_ID}`}>What this means</a></div> : (
+        {receipt && catalog.verified ? <EvidenceReceipt facts={receipt} verified showTitle={false} meaning={meaning} /> : (
           <section className="card receipt" aria-label="Hardware status">
             <div className="receipt-top"><span className="receipt-label">Hardware status</span><span className="status off">{catalog.qualification}</span></div>
-            <p className="receipt-meaning">{meaning ?? catalog.qualification_reason ?? ""} <a href={`/recipes#${STATUS_LEGEND_ID}`}>What this means</a></p>
+            <p className="receipt-meaning">{meaning ?? catalog.qualification_reason ?? ""}</p>
           </section>
         )}
       </header>

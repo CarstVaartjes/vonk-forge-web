@@ -47,6 +47,18 @@ export function SparkPicker({ value, counts, noun, onChange }: {
 }
 
 
+// The "More filters" summary of both catalog pages: a badge counts what is set inside the disclosure,
+// so a filter that is hidden is never silent.
+export function MoreFiltersSummary({ active }: { active: number }) {
+  return (
+    <summary>
+      More filters{active ? <span className="catalog-more-count" aria-hidden="true">{active}</span> : null}
+      {active ? <span className="visually-hidden"> ({active} active)</span> : null}
+    </summary>
+  );
+}
+
+
 export interface FacetOption {
   value: string;
   label: string;

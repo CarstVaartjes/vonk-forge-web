@@ -3,7 +3,7 @@ import { usePageMeta } from "../page-meta";
 
 import { getModel, getVocabulary, listModels, loadRecipeCatalog, type ModelSummary, type ModelVersionSummary, type RecipeDetail } from "../api/client";
 import { WaysMatrix } from "../ways-matrix";
-import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
+import { FacetStrip, MoreFiltersSummary, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
 import { EMPTY_FILTERS, SPARK_OPTIONS, engineLabel, nodeCountMatches, recipeMatches, sortRecipes, type SparkFilter } from "../catalog-filters";
 import { readMySparks, saveMySparks } from "../my-sparks";
 import { capabilityLabel, type Vocabulary } from "../vocabulary";
@@ -246,7 +246,7 @@ export function ModelsPage() {
     if (updated.page > 1) params.set("page", String(updated.page));
     window.history.replaceState({}, "", `/models${params.toString() ? `?${params}` : ""}`);
   }
-  function clearFilters() { updateFilters({ type: "", verified: false, query: "", publisher: "", capability: "", recipes: "", family: "", engine: "", sparks: "", sort: "name" }); }
+  function clearFilters() { updateFilters({ type: "", verified: true, query: "", publisher: "", capability: "", recipes: "", family: "", engine: "", sparks: "", sort: "name" }); }
   return <main className="models-page">
     <CatalogTabs current="models" />
     <header className="page-intro models-intro"><div><h1>Models, with their exact versions.</h1></div><p>Start with a model, then inspect its exact versions and variants and the recipes that bind them. Details come from the published catalog; local cache and running state stay in your Controller.</p></header>
@@ -257,20 +257,21 @@ export function ModelsPage() {
       </section>
     ) : null}
     {models ? (
-      <section className="catalog-setup" aria-labelledby="model-setup-title">
-        <div className="catalog-setup-heading">
-          <h2 id="model-setup-title">Then narrow it to your setup.</h2>
-          <p>Pick what you have. A model stays in the list while at least one of its public recipes runs on that many Sparks or fewer, with that engine.</p>
-        </div>
-        <VerifiedToggle checked={filters.verified} onChange={(checked) => updateFilters({ verified: checked })} />
+      <section className="catalog-setup catalog-setup-compact" aria-labelledby="model-setup-title">
+        <h2 id="model-setup-title" className="visually-hidden">Then narrow it to your setup.</h2>
         <SparkPicker value={filters.sparks} noun="models" counts={sparkCounts} onChange={(value) => updateFilters({ sparks: value })} />
+        <details className="catalog-more">
+        <MoreFiltersSummary active={[filters.family, filters.engine].filter(Boolean).length + (filters.verified ? 0 : 1)} />
+        <p className="catalog-more-note">Pick how many Sparks you have. A model stays in the list while at least one of its public recipes runs on that many Sparks or fewer, with that engine.</p>
+        <VerifiedToggle checked={filters.verified} onChange={(checked) => updateFilters({ verified: checked })} />
         <div className="catalog-setup-facets">
           <FacetStrip label="Model family" value={filters.family} onChange={(value) => updateFilters({ family: value })} options={families.map((value) => ({ value, label: value, count: facetCount("family", (model) => model.family === value) }))} />
           <FacetStrip label="Engine" value={filters.engine} onChange={(value) => updateFilters({ engine: value })} options={engines.map((value) => ({ value, label: engineLabel(value), count: facetCount("engine", (model) => runsOf(model, filters).engines.includes(value)) }))} />
         </div>
+        </details>
       </section>
     ) : null}
-    <section className="model-index-tools" aria-label="Model index controls"><label htmlFor="model-search">Find a model</label><input id="model-search" type="search" value={filters.query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder="Search model, family, publisher, or tag" /><label htmlFor="model-publisher">Publisher</label><select id="model-publisher" value={filters.publisher} onChange={(event) => updateFilters({ publisher: event.target.value })}><option value="">All publishers</option>{publishers.map((publisher) => <option key={publisher} value={publisher}>{publisher}</option>)}</select><label htmlFor="model-capability">Capability</label><select id="model-capability" value={filters.capability} onChange={(event) => updateFilters({ capability: event.target.value })}><option value="">All declared capabilities</option>{(vocabulary?.capabilities ?? []).map((option) => <option key={option.name} value={option.name} title={option.description}>{option.label}</option>)}</select><label htmlFor="model-recipes">Recipe support</label><select id="model-recipes" value={filters.recipes} onChange={(event) => updateFilters({ recipes: event.target.value, ...(event.target.value === "none" ? { verified: false } : {}) })}><option value="">All models</option><option value="recipes">Has public recipes</option><option value="none">No public recipes</option></select><label htmlFor="model-sort">Sort</label><select id="model-sort" value={filters.sort} onChange={(event) => updateFilters({ sort: event.target.value })}><option value="name">Name</option><option value="versions">Most versions</option><option value="recipes">Most recipes</option></select><span aria-live="polite">{models ? `${filtered.length} of ${models.length} models` : error ? "Model index unavailable" : "Loading models…"}</span>{(filters.type || filters.query || filters.publisher || filters.capability || filters.recipes || filters.family || filters.engine || filters.sparks || filters.sort !== "name") ? <button className="text-button" type="button" onClick={clearFilters}>Clear filters</button> : null}</section>
+    <section className="model-index-tools" aria-label="Model index controls"><label htmlFor="model-search">Find a model</label><input id="model-search" type="search" value={filters.query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder="Search model, family, publisher, or tag" /><label htmlFor="model-publisher">Publisher</label><select id="model-publisher" value={filters.publisher} onChange={(event) => updateFilters({ publisher: event.target.value })}><option value="">All publishers</option>{publishers.map((publisher) => <option key={publisher} value={publisher}>{publisher}</option>)}</select><label htmlFor="model-capability">Capability</label><select id="model-capability" value={filters.capability} onChange={(event) => updateFilters({ capability: event.target.value })}><option value="">All declared capabilities</option>{(vocabulary?.capabilities ?? []).map((option) => <option key={option.name} value={option.name} title={option.description}>{option.label}</option>)}</select><label htmlFor="model-recipes">Recipe support</label><select id="model-recipes" value={filters.recipes} onChange={(event) => updateFilters({ recipes: event.target.value, ...(event.target.value === "none" ? { verified: false } : {}) })}><option value="">All models</option><option value="recipes">Has public recipes</option><option value="none">No public recipes</option></select><label htmlFor="model-sort">Sort</label><select id="model-sort" value={filters.sort} onChange={(event) => updateFilters({ sort: event.target.value })}><option value="name">Name</option><option value="versions">Most versions</option><option value="recipes">Most recipes</option></select><span aria-live="polite">{models ? `${filtered.length} of ${models.length} models` : error ? "Model index unavailable" : "Loading models…"}</span>{(filters.type || filters.query || filters.publisher || filters.capability || filters.recipes || filters.family || filters.engine || filters.sparks || !filters.verified || filters.sort !== "name") ? <button className="text-button" type="button" onClick={clearFilters}>Clear filters</button> : null}</section>
     <PublicCatalogExplainer />
     {error ? <div className="status-panel error" role="alert"><h2>Models are temporarily unavailable.</h2><p>The public model index could not be loaded. Try again when the catalog source is reachable.</p><button className="button" type="button" onClick={() => { setModels(null); setAttempt((value) => value + 1); }}>Retry</button></div> : null}
     {!models && !error ? <div className="status-panel" role="status">Loading immutable model index…</div> : null}

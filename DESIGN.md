@@ -295,6 +295,8 @@ The home hero's signature: one mark per recipe from `catalog-summary.json`, in s
 
 "How many Sparks do you have?" is a segmented control with the catalog page's choices (1, 2, 3, 4+); type chips come from the summary. The pick means "needs that many Sparks or fewer" (4+ matches every recipe), in one function (`nodeCountMatches`) used by the home picker, the catalog and the models page. The answer (a rolling number, one sentence, a breakdown by Spark count) sits in an `aria-live="polite"` region and counts recipes only: nothing on the page claims a memory fit, and the line says the Controller checks memory and disk. Non-matching wall marks are dimmed. The state lives in the URL (`?sparks=2&type=code`) and in `localStorage`, and the catalog link carries it. The catalog page opens with this same Spark picker as its first filter (My Sparks), pre-filled from the remembered pick when its URL has none, and its cards, tiles, chips and table take the dashboard radii.
 
+The Models page uses the same compact picker as Recipes (one row, the rest behind "More filters"), so the first model starts on the first screen at 1440x900. The Install page's four step cards are one grid: four columns, two on a tablet, one on a phone. The enrollment snippet under "Enroll one Spark or many" carries an "Illustrative preview" note, because its Spark name and grant id are placeholders.
+
 ### Recipe Table
 
 The catalog's recipe list is six columns: Recipe (the name, with a mono subtitle of creator, format and version), Sparks, Memory / Spark, Engine, Capabilities and Status. Hashes, slugs and the other facts live on the recipe page. The "Executable contract" badge is the default and is never drawn; only a row whose readiness deviates shows its readiness. The table header holds sort buttons only (press once for ascending, again for descending, a third time for newest). All filters sit in one toolbar: search plus a "More filters" disclosure (its badge counts only what is set inside it); Memory, Disk and Download there are "at most" capacity buckets. "Reset filters" returns to the default Verified on Spark filter and says so. On a phone the table becomes cards, the lead paragraph is hidden (the one-line note that this is the public catalog and the Controller checks the fleet stays), the model types are one horizontally scrolling strip, the Spark choice is a five-segment control (1, 2, 3, 4+, Any; each segment's visible text starts its accessible name), More filters is a 44px button, and a Sort select appears in the disclosure.
@@ -306,6 +308,8 @@ One small bar chart for a date series from the summary (`BarSeries`): a single s
 ### Evidence Receipt
 
 The ticket for one hardware pass (`EvidenceReceipt`): status (shape and word), the evidence sentence, then only the fields the catalog holds for that pass (hardware class and Spark count, measured memory peak, recipe digest, runtime image digest, evidence record). A field the release does not carry is left out, never filled in. Home shows one, chosen by rule (the newest verified multi-Spark recipe with a measured peak); the recipe page uses the same component.
+
+On the recipe page the receipt carries its status meaning as an inline "What this means" disclosure; nothing navigates away. The "Run it" command uses `--profile 1` (`vonkctl run` always needs `--profile`) with a note on choosing the number, and its strip scrolls sideways with end padding so long names never touch the border.
 
 ### Creators Ledger
 

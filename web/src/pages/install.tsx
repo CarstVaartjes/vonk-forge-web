@@ -26,12 +26,12 @@ export function InstallPage() {
           Secure remote over Tailscale follows as the second path. Routine
           operation needs neither SSH nor a Git checkout.
         </p>
-        <div className="guide-jump" aria-label="Installation steps">
+        <nav className="guide-jump four-up" aria-label="Installation steps">
           <a href="#lab">1 · Lab mode <span>LAN, no Tailscale</span></a>
           <a href="#secure-remote">2 · Secure remote <span>Tailscale</span></a>
           <a href="#control">3 · Control <span>Browser or CLI</span></a>
           <a href="#fleet">4 · Sparks <span>Enroll 1…N nodes</span></a>
-        </div>
+        </nav>
       </section>
 
       <section className="install-prerequisites" aria-labelledby="prerequisites-title">
@@ -215,6 +215,7 @@ curl --fail --show-error --silent \\
         </p>
         <CommandBlock label="CLI alternative for creating the grant">{`vonkctl fleet enroll Atlas --output atlas-grant.json
 vonkctl fleet enrollment status GRANT_UUID`}</CommandBlock>
+        <div className="run-note illustrative-note"><p><strong>Illustrative preview.</strong> <code>Atlas</code> is an example Spark name and <code>GRANT_UUID</code> is a placeholder for the id <code>fleet enroll</code> prints; replace both before you run these, so do not paste the block as it stands.</p></div>
         <ol className="install-steps fleet-steps">
           <li><span>01</span><div><h3>Use the controller&apos;s stable LAN address</h3><p>Reserve a fixed address for your laptop, NAS, or other controller host. The controller hostnames remain in place for TLS while the installer creates the local mapping. In Lab mode the Spark must resolve the <code>enroll</code>, <code>agents</code>, and <code>registry</code> hostnames to that same address, and any client that connects to Spark-facing HTTPS endpoints needs the local CA certificate imported.</p></div></li>
           <li><span>02</span><div><h3>Complete the pairing prompts</h3><p>Enter the one-use grant values and the requested Spark management and fabric addresses. The installer writes the agent and firewall configuration.</p></div></li>
