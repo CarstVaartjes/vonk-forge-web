@@ -292,6 +292,14 @@ a {
   text-underline-offset: 0.2em;
 }
 
+button.text-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
 .site-header nav a,
 .site-header-end .nav-primary {
   min-height: 2.75rem;
