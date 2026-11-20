@@ -19,6 +19,7 @@ const recipeAuthoringGuide = "https://github.com/CarstVaartjes/vonk-forge-recipe
 export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug: string }) {
   const [recipe, setRecipe] = useState<RecipeDetail | null>(null);
   const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
   const [aboutOpen, setAboutOpen] = useState(false);
   // Every recipe, for the matrix of other ways to run this family. If it cannot be read the matrix is not shown.
   const [allRecipes, setAllRecipes] = useState<RecipeDetail[]>([]);
@@ -45,7 +46,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
         if (!controller.signal.aborted) setError(true);
       });
     return () => controller.abort();
-  }, [publisher, slug]);
+  }, [publisher, slug, attempt]);
   usePageMeta(recipe?.title ?? "Recipe", recipe ? `${recipe.title}: a recipe for NVIDIA DGX Spark, with its published verification status and install contract.` : "A Vonk Forge recipe for NVIDIA DGX Spark.");
   useEffect(() => {
     if (!recipe) return;
@@ -57,7 +58,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
     }
     canonical.href = `${window.location.origin}/recipes/${recipe.publisher}/${recipe.slug}`;
   }, [recipe]);
-  if (error) return <main className="status-panel error"><h1>Recipe unavailable</h1><p>It may be hidden, removed from listings, or the catalog may be offline.</p></main>;
+  if (error) return <main className="status-panel error"><h1>Recipe unavailable</h1><p>It may be hidden, removed from listings, or the catalog may be offline.</p><p className="status-actions"><button type="button" className="text-link" onClick={() => setAttempt(attempt + 1)}>Retry</button> · <a className="text-link" href="/recipes">Back to Recipes</a></p></main>;
   if (!recipe) return <main className="status-panel" role="status">Loading immutable recipe…</main>;
   const { catalog, capacity, chat_api: chat, settings, license, job } = recipe;
   const sparks = catalog.node_count;
@@ -153,9 +154,9 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
             {chat ? <div><dt>API</dt><dd>{chat.endpoints.join(" · ")}</dd></div> : null}
             {recipe.served_names.length ? <div><dt>Served as</dt><dd>{recipe.served_names.join(" · ")}</dd></div> : null}
             <div>
-              <dt>Licence</dt>
+              <dt>License</dt>
               <dd>
-                {license.spdx ?? "Not declared"}{license.url ? <> · <a href={license.url}>read the licence</a></> : null}
+                {license.spdx ?? "Not declared"}{license.url ? <> · <a href={license.url}>read the license</a></> : null}
                 {license.notice ? <span className="kv-note">{license.notice}</span> : null}
                 <span className="kv-note">Shown for information. Use is your call.</span>
               </dd>

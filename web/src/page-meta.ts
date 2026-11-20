@@ -21,3 +21,14 @@ export function usePageMeta(page: string, description: string) {
     descriptionTag().content = description;
   }, [page, description]);
 }
+
+// A page that is not part of the site (the not-found view) asks search engines to skip it.
+export function useNoindex() {
+  useEffect(() => {
+    const tag = document.createElement("meta");
+    tag.name = "robots";
+    tag.content = "noindex";
+    document.head.append(tag);
+    return () => tag.remove();
+  }, []);
+}

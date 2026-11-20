@@ -86,16 +86,17 @@ test("tells one story: what it does, with the vonkctl session behind it", () => 
 });
 
 
-test("top menu is Recipes, Models, Controller, Docs beside Install; Publish and Example setup live in the footer", () => {
+test("top menu is Recipes, Models, Controller, How it works beside Install; Publish and Example setup live in the footer", () => {
   render(<App />);
 
   const primaryNavigation = within(screen.getByRole("navigation", { name: "Primary navigation" }));
-  expect(primaryNavigation.getAllByRole("link").map((link) => link.textContent)).toEqual(["Recipes", "Models", "Controller", "Docs"]);
+  expect(primaryNavigation.getAllByRole("link").map((link) => link.textContent)).toEqual(["Recipes", "Models", "Controller", "How it works"]);
   expect(primaryNavigation.getByRole("link", { name: "Recipes" })).toHaveAttribute("href", "/recipes");
   expect(within(siteHeader()).getByRole("link", { name: "Install" })).toHaveAttribute("href", "/install");
-  expect(primaryNavigation.getByRole("link", { name: "Docs" })).toHaveAttribute("href", "/architecture");
+  expect(primaryNavigation.getByRole("link", { name: "How it works" })).toHaveAttribute("href", "/architecture");
 
   const footer = within(screen.getByRole("navigation", { name: "Footer navigation" }));
+  ["Recipes", "Models", "Controller", "How it works"].forEach((label) => expect(footer.getByRole("link", { name: label })).toBeInTheDocument());
   expect(footer.getByRole("link", { name: "Publish" })).toHaveAttribute("href", "/publish");
   expect(footer.getByRole("link", { name: "Example setup" })).toHaveAttribute("href", "/example-setup");
 });
@@ -323,4 +324,19 @@ test("Escape closes the open menu and returns focus to its button", () => {
   fireEvent.keyDown(document, { key: "Escape" });
   expect(button).toHaveAttribute("aria-expanded", "false");
   expect(document.activeElement).toBe(button);
+});
+
+
+test("an unknown address says not found, offers the way back and asks search engines to skip it", () => {
+  window.history.replaceState({}, "", "/no-such-page");
+  const view = render(<App />);
+
+  expect(screen.getByRole("heading", { name: "Not found" })).toBeVisible();
+  const main = within(screen.getByRole("main"));
+  expect(main.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/");
+  expect(main.getByRole("link", { name: "Recipes" })).toHaveAttribute("href", "/recipes");
+  expect(main.getByRole("link", { name: "Install" })).toHaveAttribute("href", "/install");
+  expect(document.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe("noindex");
+  view.unmount();
+  expect(document.querySelector('meta[name="robots"]')).toBeNull();
 });

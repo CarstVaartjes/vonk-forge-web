@@ -13,8 +13,21 @@ import { ShowcasePage } from "./pages/showcase";
 import { ModelDetailPage, ModelsPage } from "./pages/models";
 import { ThemeIcon } from "./icons";
 import { matchRoute, type Route, type RouteMatch } from "./routes";
+import { useNoindex, usePageMeta } from "./page-meta";
 import { applyTheme, chooseTheme, currentTheme, followSystem, type Theme } from "./theme";
 
+
+function NotFoundPage() {
+  usePageMeta("Not found", "This page does not exist on the Vonk Forge site.");
+  useNoindex();
+  return (
+    <main className="status-panel">
+      <h1>Not found</h1>
+      <p>This spark has not been forged. Try one of these instead.</p>
+      <p className="status-actions"><a className="text-link" href="/">Home</a> · <a className="text-link" href="/recipes">Recipes</a> · <a className="text-link" href="/install">Install</a></p>
+    </main>
+  );
+}
 
 const PAGES: Record<Route, (params: RouteMatch["params"]) => ReactElement> = {
   "/": () => <HomePage />,
@@ -33,7 +46,7 @@ const PAGES: Record<Route, (params: RouteMatch["params"]) => ReactElement> = {
 function CurrentPage() {
   const match = matchRoute(window.location.pathname);
   if (match) return PAGES[match.route](match.params);
-  return <main className="status-panel"><h1>Not found</h1><p>This spark has not been forged.</p></main>;
+  return <NotFoundPage />;
 }
 
 function dateLabel(value: string, options: Intl.DateTimeFormatOptions): string {
@@ -119,7 +132,7 @@ export function App() {
             <NavigationLink href="/recipes">Recipes</NavigationLink>
             <NavigationLink href="/models">Models</NavigationLink>
             <NavigationLink href="/control">Controller</NavigationLink>
-            <NavigationLink href="/architecture">Docs</NavigationLink>
+            <NavigationLink href="/architecture">How it works</NavigationLink>
           </nav>
           <div className="site-header-end">
             {release && <a className="release-pill" href={releaseUrl(release)}>Catalog <b>{release.version}</b> · updated {dateLabel(release.updated_at, { day: "numeric", month: "short" })}</a>}
@@ -141,7 +154,7 @@ export function App() {
             <a href="/models">Models</a>
             <a href="/install">Install</a>
             <a href="/architecture">How it works</a>
-            <a href="/control">Control</a>
+            <a href="/control">Controller</a>
             <a href="/example-setup">Example setup</a>
             <a href="/publish">Publish</a>
             <a href="/privacy">Privacy</a>

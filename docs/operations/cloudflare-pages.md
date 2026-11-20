@@ -125,8 +125,8 @@ signed files travel in the one `recipe-library.tar` asset, so a run never sees a
 half-updated set; if it catches the tar briefly absent while it is replaced, the
 download fails and the next run heals it.
 
-To pin a release instead of following the newest one, set the `production`
-environment (or repository) variable `VONK_RECIPE_RELEASE` to an exact tag such
+To pin a release instead of following the newest one, set the repository
+variable `VONK_RECIPE_RELEASE` to an exact tag such
 as `v4.0.0` and dispatch the workflow; clear it to follow the newest release
 again. A pin skips release resolution.
 
