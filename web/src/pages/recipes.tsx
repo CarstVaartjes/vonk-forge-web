@@ -17,7 +17,7 @@ import {
   humanize,
   nodeCountMatches,
   modelFamilyTitle,
-  modelVersionKey,
+  modelKey,
   recipeIsAbliterated,
   recipeMatches,
   sameCreator,
@@ -173,7 +173,7 @@ export function RecipesPage() {
   function updateModelFamily(modelFamily: string) {
     const next = new URLSearchParams(parameters);
     if (modelFamily) next.set("model_family", modelFamily); else next.delete("model_family");
-    if (filters.model && !available.some((recipe) => (!modelFamily || modelFamilyTitle(recipe) === modelFamily) && modelVersionKey(recipe) === filters.model)) next.delete("model");
+    if (filters.model && !available.some((recipe) => (!modelFamily || modelFamilyTitle(recipe) === modelFamily) && modelKey(recipe) === filters.model)) next.delete("model");
     next.delete("cursor");
     replace(next);
   }
@@ -181,7 +181,7 @@ export function RecipesPage() {
   const modelFamilies = useMemo(() => Array.from(new Set(available.map(modelFamilyTitle))).sort(), [available]);
   const models = useMemo(() => {
     const identities = new Map<string, string>();
-    for (const recipe of available.filter((item) => !filters.modelFamily || modelFamilyTitle(item) === filters.modelFamily)) identities.set(modelVersionKey(recipe), recipe.catalog.model_version_title);
+    for (const recipe of available.filter((item) => !filters.modelFamily || modelFamilyTitle(item) === filters.modelFamily)) identities.set(modelKey(recipe), recipe.catalog.model_title);
     const titleCounts = [...identities.values()].reduce((counts, title) => counts.set(title, (counts.get(title) ?? 0) + 1), new Map<string, number>());
     return [...identities].map(([value, title]) => [value, titleCounts.get(title) === 1 ? title : `${title} · ${value}`] as const).sort((left, right) => left[1].localeCompare(right[1]));
   }, [available, filters.modelFamily]);
@@ -287,7 +287,7 @@ export function RecipesPage() {
               <ColumnHeader label="Memory / Spark" sort="memory" filtered={Boolean(filters.memory)} {...columnProps}><select aria-label="Filter by memory per Spark" value={filters.memory} onChange={(event) => update("memory", event.target.value)}><option value="">Any</option>{memories.map((value) => <option key={sizeKey(value)} value={sizeKey(value)}>{gibLabel(value)}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Disk / Spark" sort="disk" filtered={Boolean(filters.disk)} {...columnProps}><select aria-label="Filter by disk per Spark" value={filters.disk} onChange={(event) => update("disk", event.target.value)}><option value="">Any</option>{disks.map((value) => <option key={sizeKey(value)} value={sizeKey(value)}>{gibLabel(value)}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Model family" sort="modelFamily" filtered={Boolean(filters.modelFamily)} {...columnProps}><select aria-label="Filter by model family" value={filters.modelFamily} onChange={(event) => updateModelFamily(event.target.value)}><option value="">All</option>{modelFamilies.map((value) => <option key={value} value={value} disabled={count("modelFamily", (recipe) => modelFamilyTitle(recipe) === value) === 0}>{value}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Model" sort="model" filtered={Boolean(filters.model)} {...columnProps}><select aria-label="Filter by model" value={filters.model} onChange={(event) => update("model", event.target.value)}><option value="">All</option>{models.map(([value, label]) => <option key={value} value={value} disabled={count("model", (recipe) => modelVersionKey(recipe) === value) === 0}>{label}</option>)}</select></ColumnHeader>
+              <ColumnHeader label="Model" sort="model" filtered={Boolean(filters.model)} {...columnProps}><select aria-label="Filter by model" value={filters.model} onChange={(event) => update("model", event.target.value)}><option value="">All</option>{models.map(([value, label]) => <option key={value} value={value} disabled={count("model", (recipe) => modelKey(recipe) === value) === 0}>{label}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Format" sort="quantization" filtered={Boolean(filters.quantization)} {...columnProps}><select aria-label="Filter by quantization" value={filters.quantization} onChange={(event) => update("quantization", event.target.value)}><option value="">Any</option>{quantizations.map((value) => <option key={value} value={value} disabled={count("quantization", (recipe) => recipe.catalog.quantizations.includes(value)) === 0}>{value}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Creator" sort="creator" filtered={Boolean(filters.sourceOwner)} {...columnProps}><select aria-label="Filter by recipe creator" value={filters.sourceOwner} onChange={(event) => update("creator", event.target.value)}><option value="">All</option>{sourceOwners.map((value) => <option key={value} value={value} disabled={count("sourceOwner", (recipe) => sameCreator(recipe.catalog.source_owner, value)) === 0}>{value}</option>)}</select></ColumnHeader>
               <ColumnHeader label="Updated" sort="catalog" filtered={Boolean(filters.updated)} {...columnProps}><select aria-label="Filter by updated date" value={filters.updated} onChange={(event) => update("updated", event.target.value)}><option value="">Any</option>{(["7", "30", "90", "365"] as UpdatedFilter[]).map((value) => <option key={value} value={value} disabled={count("updated", (recipe) => updatedMatches(recipe, value)) === 0}>Last {value} days</option>)}</select></ColumnHeader>

@@ -40,7 +40,8 @@ describe("static recipe library adapter", () => {
     ]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(recipe.package).not.toHaveProperty("url");
-    expect(models.items).toHaveLength(4);
+    // The index's own `families` document is the oracle: one row per hierarchy Model.
+    expect(models.items).toHaveLength(index.families!.flatMap((family) => family.lines.flatMap((line) => line.models)).length);
   });
 
   test("resolves the default same-origin index path against the page", async () => {
@@ -65,7 +66,7 @@ describe("static recipe library adapter", () => {
       .mockImplementation(async (url: string) => ({ ok: true, json: async () => (url.endsWith("release.json") ? release : index) }));
     vi.stubGlobal("fetch", fetchMock);
     await expect(listStaticModels(indexUrl)).rejects.toThrow("returned 503");
-    expect((await listStaticModels(indexUrl)).items).toHaveLength(4);
+    expect((await listStaticModels(indexUrl)).items).toHaveLength(3);
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
@@ -83,8 +84,8 @@ describe("static recipe library adapter", () => {
       capacity: { profile_node_counts: [1], maximum_installed_bytes_per_node: 60278835678, maximum_runtime_memory_bytes_per_node: 119063746765 },
       catalog: {
         description: index.recipes[0]!.display.description,
-        model_publisher: "google",
-        model_slug: "gemma-4-e2b",
+        model_publisher: "gemma",
+        model_slug: "gemma-e2b--gemma-4-e2b",
         model_title: "Gemma 4 E2B",
         model_version_slug: "gemma-4-e2b-it-4adf1574",
         model_family: "Gemma",
@@ -162,18 +163,17 @@ describe("static recipe library adapter", () => {
 
   test("links model versions to recipes and preserves declared capabilities, licence and file sizes", async () => {
     const page = await listStaticModels(indexUrl);
-    expect(page.items.map((item) => `${item.publisher}/${item.slug}`)).toEqual(["google/gemma-4-e2b", "ggml-org/gemma-4-e2b", "thinkingmachines/inkling-975b-a41b", "vast-ai/skintokens"]);
+    expect(page.items.map((item) => `${item.publisher}/${item.slug}`)).toEqual(["gemma/gemma-e2b--gemma-4-e2b", "inkling/inkling-975b-a41b--inkling-975b-a41b", "skintokens/skintokens--skintokens"]);
     expect(page.items[0]).toMatchObject({
       title: "Gemma 4 E2B",
       description: "Exact public Google Gemma 4 E2B instruction-tuned checkpoint.",
       family: "Gemma",
       tags: ["google", "gemma", "language", "instruction-tuned", "candidate"],
-      recipe_count: 1,
-      verified_recipe_count: 1,
-      runs: { spark_counts: [1], engines: ["vllm"], creators: ["NVIDIA"] },
+      // The ggml-org variant of the same lineage model sits inside it, not beside it.
+      recipe_count: 2,
+      runs: { spark_counts: [1], engines: ["llama-cpp", "vllm"], creators: ["NVIDIA", "ggml-org"] },
       versions: [{
         slug: "gemma-4-e2b-it-4adf1574",
-        model_slug: "gemma-4-e2b",
         requires_token: false,
         variant: "IT 4adf1574",
         source_repository: "https://huggingface.co/google/gemma-4-E2B-it",
@@ -181,13 +181,13 @@ describe("static recipe library adapter", () => {
         capabilities: ["audio-understanding", "chat", "image-understanding", "reasoning", "text-generation", "tool-use"],
         license: { spdx: "Apache-2.0" },
         recipe_slugs: [`vonk-forge/${nvidia}`],
-      }],
+      }, { slug: "gemma-4-e2b-it-q8-0-63f6c6f2" }],
     });
     // The eight-Spark model has a recipe but none verified.
-    const inkling = page.items.find((item) => item.slug === "inkling-975b-a41b")!;
+    const inkling = page.items.find((item) => item.publisher === "inkling")!;
     expect(inkling).toMatchObject({ recipe_count: 1, verified_recipe_count: 0, verified_runs: { spark_counts: [], engines: [], creators: [] }, runs: { spark_counts: [8] } });
     expect(inkling.versions[0]!.sizes).toEqual({ download_bytes: expect.any(Number), installed_bytes: expect.any(Number) });
-    await expect(getStaticModel(indexUrl, "google", "missing")).rejects.toThrow("Model not found");
+    await expect(getStaticModel(indexUrl, "gemma", "missing")).rejects.toThrow("Model not found");
   });
 
   test("reads the words of the release from the same index", async () => {
@@ -195,17 +195,37 @@ describe("static recipe library adapter", () => {
     await listStaticRecipeCatalog(indexUrl);
     await expect(getStaticVocabulary(indexUrl)).resolves.toEqual(index.vocabulary);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect((await listStaticModels(indexUrl)).items.map((item) => item.types)).toEqual([["language", "vision", "audio"], ["language", "vision", "audio"], ["language", "vision", "audio"], ["3d"]]);
+    expect((await listStaticModels(indexUrl)).items.map((item) => item.types)).toEqual([["language", "vision", "audio"], ["language", "vision", "audio"], ["3d"]]);
   });
 
-  test("keeps published model entities visible when no recipe selects them", async () => {
-    const standalone = structuredClone(index.catalog_entities[3]!);
-    standalone.content_sha256 = "4".repeat(64);
-    standalone.document.identity = { ...standalone.document.identity, publisher: "standalone", slug: "standalone-v1", model: { publisher: "standalone", slug: "standalone" } };
-    serve({ ...index, catalog_entities: [...index.catalog_entities, standalone] });
+  test("a variant without lineage is in no Model: no row, no duplicate title", async () => {
+    const helper = structuredClone(index.catalog_entities[0]!);
+    helper.content_sha256 = "a".repeat(64);
+    helper.display.lineage = null;
+    helper.document.identity = { ...helper.document.identity, publisher: "helper", slug: "helper-drafter" };
+    serve({ ...index, catalog_entities: [...index.catalog_entities, helper] });
     const page = await listStaticModels(indexUrl);
-    expect(page.items).toHaveLength(5);
-    expect(page.items.find((item) => item.publisher === "standalone")).toMatchObject({ slug: "standalone", recipe_count: 0, versions: [{ recipe_slugs: [] }] });
+    expect(page.items).toHaveLength(index.families!.flatMap((family) => family.lines.flatMap((line) => line.models)).length);
+    const titles = page.items.map((item) => item.title);
+    expect(new Set(titles).size).toBe(titles.length);
+    expect(page.items.flatMap((item) => item.versions.map((version) => version.slug))).not.toContain("helper-drafter");
+  });
+
+  test("two lineage Models whose variants share a logical model keep separate addresses", async () => {
+    const entity = structuredClone(index.catalog_entities[0]!);
+    entity.content_sha256 = "c".repeat(64);
+    entity.document.identity = { ...entity.document.identity, publisher: "other", slug: "other-variant" };
+    entity.display.lineage = { ...entity.display.lineage!, model: "gemma-4-e2b-next" };
+    // The same logical model as the first Gemma variant, a different hierarchy Model.
+    const body = { ...index, catalog_entities: [entity, ...index.catalog_entities] };
+    serve(body);
+    const page = await listStaticModels(indexUrl);
+    const addresses = page.items.map((item) => `${item.publisher}/${item.slug}`);
+    expect(new Set(addresses).size).toBe(addresses.length);
+    expect(addresses).toContain("gemma/gemma-e2b--gemma-4-e2b-next");
+    expect((await getStaticModel(indexUrl, "gemma", "gemma-e2b--gemma-4-e2b")).versions).toHaveLength(2);
+    const recipes = await listStaticRecipeCatalog(indexUrl);
+    expect(recipes.find((recipe) => recipe.slug === nvidia)!.catalog).toMatchObject({ model_publisher: "gemma", model_slug: "gemma-e2b--gemma-4-e2b" });
   });
 
   test("does not join same-slug entities when their immutable digests differ", async () => {

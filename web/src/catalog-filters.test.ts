@@ -69,9 +69,18 @@ describe("public catalog Controller-parity filters", () => {
   test("requires every selected capability and combines model, readiness, and Spark facets", () => {
     const both = recipe("both", { capabilities: ["chat", "reasoning"], node_count: 4 });
     const chat = recipe("chat", { capabilities: ["chat"], node_count: 4 });
-    const filters = { ...EMPTY_FILTERS, model: "models/both-v1", quantization: "NVFP4", updated: "30" as const, sparks: "4+" as const, readiness: "executable" as const, capabilities: ["chat", "reasoning"] };
+    const filters = { ...EMPTY_FILTERS, model: "models/both", quantization: "NVFP4", updated: "30" as const, sparks: "4+" as const, readiness: "executable" as const, capabilities: ["chat", "reasoning"] };
     expect(recipeMatches(both, filters)).toBe(true);
     expect(recipeMatches(chat, filters)).toBe(false);
+  });
+
+  test("the model parameter matches every variant of a model", () => {
+    const base = recipe("base");
+    const variant = recipe("variant", { model_slug: "base", model_version_slug: "base-q4", model_version_title: "base q4" });
+    const filters = { ...EMPTY_FILTERS, model: "models/base" };
+    expect(recipeMatches(base, filters)).toBe(true);
+    expect(recipeMatches(variant, filters)).toBe(true);
+    expect(recipeMatches(recipe("other"), filters)).toBe(false);
   });
 
   test("Verified on Spark is on by default and off with verified=0 or an explicit qualification", () => {

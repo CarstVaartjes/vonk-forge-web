@@ -178,7 +178,7 @@ function setupMatches(model: ModelSummary, filters: ModelFilters, omit: SetupFac
   const runs = runsOf(model, filters);
   return (!filters.verified || model.verified_runs.spark_counts.length > 0)
     && (omit === "sparks" || runsOn(model, filters, filters.sparks))
-    && (omit === "family" || !filters.family || (model.family ?? "Model") === filters.family)
+    && (omit === "family" || !filters.family || model.family === filters.family)
     && (omit === "engine" || !filters.engine || runs.engines.includes(filters.engine));
 }
 
@@ -221,7 +221,7 @@ export function ModelsPage() {
   const typeCount = (predicate: (model: ModelSummary) => boolean) => (models ?? []).filter((model) => predicate(model) && baseMatches(model, filters, "type") && setupMatches(model, filters, null)).length;
   const typeCounts = Object.fromEntries((vocabulary?.categories ?? []).map((type) => [type.id, typeCount((model) => model.types.includes(type.id))]));
   const sparkCounts = Object.fromEntries([...SPARK_OPTIONS.map((option) => option.value), ""].map((value) => [value, facetCount("sparks", (model) => runsOn(model, filters, value as SparkFilter))])) as Record<SparkFilter, number>;
-  const families = useMemo(() => Array.from(new Set((models ?? []).map((model) => model.family ?? "Model"))).sort(), [models]);
+  const families = useMemo(() => Array.from(new Set((models ?? []).flatMap((model) => model.family ? [model.family] : []))).sort(), [models]);
   const engines = useMemo(() => Array.from(new Set((models ?? []).flatMap((model) => model.runs.engines))).sort(), [models]);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const page = Math.min(filters.page, pageCount);
@@ -262,7 +262,7 @@ export function ModelsPage() {
         <VerifiedToggle checked={filters.verified} onChange={(checked) => updateFilters({ verified: checked })} />
         <SparkPicker value={filters.sparks} noun="models" counts={sparkCounts} onChange={(value) => updateFilters({ sparks: value })} />
         <div className="catalog-setup-facets">
-          <FacetStrip label="Model family" value={filters.family} onChange={(value) => updateFilters({ family: value })} options={families.map((value) => ({ value, label: value, count: facetCount("family", (model) => (model.family ?? "Model") === value) }))} />
+          <FacetStrip label="Model family" value={filters.family} onChange={(value) => updateFilters({ family: value })} options={families.map((value) => ({ value, label: value, count: facetCount("family", (model) => model.family === value) }))} />
           <FacetStrip label="Engine" value={filters.engine} onChange={(value) => updateFilters({ engine: value })} options={engines.map((value) => ({ value, label: engineLabel(value), count: facetCount("engine", (model) => runsOf(model, filters).engines.includes(value)) }))} />
         </div>
       </section>
@@ -280,14 +280,14 @@ export function ModelsPage() {
 export function ModelDetailPage({ publisher, slug }: { publisher: string; slug: string }) {
   const [model, setModel] = useState<ModelSummary | null>(null);
   const [detailVocabulary, setDetailVocabulary] = useState<Vocabulary | null>(null);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState<"missing" | "failed" | null>(null);
   const [attempt, setAttempt] = useState(0);
   // Every recipe, for the matrix of every way to run this model's family; if it cannot be read the matrix is not shown.
   const [allRecipes, setAllRecipes] = useState<RecipeDetail[]>([]);
   useEffect(() => { const controller = new AbortController(); loadRecipeCatalog(controller.signal).then(setAllRecipes).catch(() => undefined); return () => controller.abort(); }, []);
-  useEffect(() => { const controller = new AbortController(); setError(false); Promise.all([getModel(publisher, slug, controller.signal), getVocabulary(controller.signal)]).then(([found, words]) => { setModel(found); setDetailVocabulary(words); }).catch(() => { if (!controller.signal.aborted) setError(true); }); return () => controller.abort(); }, [publisher, slug, attempt]);
+  useEffect(() => { const controller = new AbortController(); setError(null); Promise.all([getModel(publisher, slug, controller.signal), getVocabulary(controller.signal)]).then(([found, words]) => { setModel(found); setDetailVocabulary(words); }).catch((reason: unknown) => { if (!controller.signal.aborted) setError(reason instanceof Error && reason.message.startsWith("Model not found") ? "missing" : "failed"); }); return () => controller.abort(); }, [publisher, slug, attempt]);
   usePageMeta(model ? `${model.title} · Models` : "Model", model ? `${model.title}: published versions, variants and the recipes that run it on NVIDIA DGX Spark.` : "A model in the Vonk Forge catalog.");
-  if (error) return <main className="status-panel error"><h1>Model unavailable</h1><p>This model is not present in the published index.</p><button className="button" type="button" onClick={() => { setModel(null); setAttempt((value) => value + 1); }}>Retry</button></main>;
+  if (error) return <main className="status-panel error"><h1>Model unavailable</h1><p>This model is not present in the published index.</p>{error === "failed" ? <button className="button" type="button" onClick={() => { setModel(null); setAttempt((value) => value + 1); }}>Retry</button> : <a className="button" href="/models">All models</a>}</main>;
   if (!model || !detailVocabulary) return <main className="status-panel" role="status">Loading immutable model…</main>;
-  return <main className="model-detail-page"><header className="page-intro"><h1>{model.title}</h1><p className="model-meta">{model.family ? `Model family · ${model.family}` : "Model"}</p><p className="recipe-path">{model.publisher}/{model.slug}</p><p className="model-detail-identity">Immutable model identity <code>{model.revision_id}</code></p><p>{model.description || "No description published."}</p></header><div className="model-detail-actions"><a className="button" href="/models">All models</a><a className="button" href={`/recipes?q=${encodeURIComponent(model.title)}`}>Compare recipes</a><a className="button primary" href="/control#library-import">Open Controller instructions</a></div><section className="model-detail-boundary"><div><h2>Versions and weight variants</h2><p>Each row is a published version and variant. Download size, source revision, format, license, access, and capabilities appear when the catalog declares them.</p></div><div className="model-version-list">{model.versions.map((version) => <VersionRow key={`${version.publisher}/${version.slug}-${version.revision_id}`} version={version} vocabulary={detailVocabulary} />)}</div></section>{model.family ? <WaysMatrix recipes={allRecipes} family={model.family} /> : null}</main>;
+  return <main className="model-detail-page"><header className="page-intro"><h1>{model.title}</h1>{model.family ? <p className="model-meta">{`Model family · ${model.family}`}</p> : null}<p className="recipe-path">{model.publisher}/{model.slug}</p><p className="model-detail-identity">Immutable model identity <code>{model.revision_id}</code></p><p>{model.description || "No description published."}</p></header><div className="model-detail-actions"><a className="button" href="/models">All models</a><a className="button" href={`/recipes?q=${encodeURIComponent(model.title)}`}>Compare recipes</a><a className="button primary" href="/control#library-import">Open Controller instructions</a></div><section className="model-detail-boundary"><div><h2>Versions and weight variants</h2><p>Each row is a published version and variant. Download size, source revision, format, license, access, and capabilities appear when the catalog declares them.</p></div><div className="model-version-list">{model.versions.map((version) => <VersionRow key={`${version.publisher}/${version.slug}-${version.revision_id}`} version={version} vocabulary={detailVocabulary} />)}</div></section>{model.family ? <WaysMatrix recipes={allRecipes} family={model.family} /> : null}</main>;
 }

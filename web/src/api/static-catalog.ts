@@ -131,17 +131,48 @@ function familyTitle(index: LibraryIndex, display: CatalogModelEntry["display"])
   return displayTitle(index.families?.find((family) => family.slug === slug)?.title);
 }
 
+// One hierarchy Model: the variants that share a lineage (family, line, model), the unique triple of the contract
+// (the slug pattern allows "--", but no published slug contains it). Its page address and the catalog `model`
+// parameter are built from that key. A variant without lineage (a drafter, encoder or other helper) has no place in
+// the hierarchy: it is in no Model and has no row.
+interface ModelGroup { publisher: string; slug: string; title: string; entities: CatalogModelEntry[] }
+
+const groupsByIndex = new WeakMap<LibraryIndex, { groups: ModelGroup[]; byEntity: Map<CatalogModelEntry, ModelGroup> }>();
+
+function modelGroups(index: LibraryIndex): NonNullable<ReturnType<typeof groupsByIndex.get>> {
+  const cached = groupsByIndex.get(index);
+  if (cached) return cached;
+  const keyed = new Map<string, CatalogModelEntry[]>();
+  for (const entity of index.catalog_entities) {
+    const { lineage } = entity.display;
+    if (!lineage) continue;
+    const key = `${lineage.family}\0${lineage.line}\0${lineage.model}`;
+    keyed.set(key, [...(keyed.get(key) ?? []), entity]);
+  }
+  const groups = Array.from(keyed.values()).map((entities): ModelGroup => {
+    const first = entities[0]!;
+    const lineage = first.display.lineage!;
+    const named = index.families?.find((family) => family.slug === lineage.family)?.lines.find((line) => line.slug === lineage.line)?.models.find((model) => model.slug === lineage.model)?.title;
+    return { publisher: lineage.family, slug: `${lineage.line}--${lineage.model}`, title: displayTitle(named || first.display.model_title, lineage.model), entities };
+  });
+  const byEntity = new Map(groups.flatMap((group) => group.entities.map((entity) => [entity, group] as const)));
+  const built = { groups, byEntity };
+  groupsByIndex.set(index, built);
+  return built;
+}
+
 function modelMetadata(document: RecipeDefinition, index: LibraryIndex): { publisher: string; slug: string; title: string; family: string; versionPublisher: string; versionSlug: string; versionTitle: string } {
   const entity = selectedEntity(document, index);
   const identity = entity?.document.identity;
   const versionSlug = identity?.slug ?? "unknown";
   const versionPublisher = identity?.publisher ?? "unknown";
-  const slug = identity?.model.slug ?? versionSlug;
+  const group = entity && modelGroups(index).byEntity.get(entity);
+  // A recipe's first model always has lineage (the recipe library's check-model-families); no other path.
   return {
-    publisher: identity?.model.publisher ?? versionPublisher,
-    slug,
-    title: displayTitle(entity?.display.model_title, slug),
-    family: (entity && familyTitle(index, entity.display)) || displayTitle(entity?.display.model_title, slug),
+    publisher: group?.publisher ?? "unknown",
+    slug: group?.slug ?? "unknown",
+    title: group?.title ?? "unknown",
+    family: (entity && familyTitle(index, entity.display)) || group?.title || "unknown",
     versionPublisher,
     versionSlug,
     versionTitle: versionSlug,
@@ -210,21 +241,15 @@ function verifiedModelRecipes(versions: ModelVersionSummary[], recipes: RecipeSu
 
 function mapModels(index: LibraryIndex): ModelSummary[] {
   const recipes = index.recipes.map((item) => mapRecipe(item, index));
-  const groups = new Map<string, CatalogModelEntry[]>();
-  for (const entity of index.catalog_entities) {
-    const logical = entity.document.identity.model;
-    const key = `${logical.publisher}\0${logical.slug}`;
-    groups.set(key, [...(groups.get(key) ?? []), entity]);
-  }
-  return Array.from(groups.values()).map((variants) => {
-    const first = variants[0]!;
-    const { identity, display } = { identity: first.document.identity.model, display: first.display };
-    const versionRows = variants.map((version) => mapModelVersion(version, index)).sort((left, right) => left.title.localeCompare(right.title));
+  return modelGroups(index).groups.map(({ publisher, slug, title, entities }) => {
+    const first = entities[0]!;
+    const { display } = first;
+    const versionRows = entities.map((version) => mapModelVersion(version, index)).sort((left, right) => left.title.localeCompare(right.title));
     const verifiedRecipes = verifiedModelRecipes(versionRows, recipes);
     return {
-      publisher: identity.publisher,
-      slug: identity.slug,
-      title: displayTitle(display.model_title, identity.slug),
+      publisher,
+      slug,
+      title,
       description: display.description,
       family: familyTitle(index, display) || undefined,
       runs: modelRuns(versionRows, recipes),

@@ -54,6 +54,12 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   Sparks (`/recipes?sparks=2&uses=1`, `uses=2`). The pick (Spark count and type) is remembered in
   `localStorage` by `web/src/my-sparks.ts`; the catalog page reads it when its URL carries neither,
   and saves a change to either, so home and catalog share one "My Sparks".
+- A Model is the hierarchy's Model (Family → Line → Model → Variant), not a variant. The Models page counts
+  and lists hierarchy Models only, with their variants inside. The variants of one `lineage` (family, line, model)
+  are one Model; that triple is unique (the slug pattern allows `--`, but no published slug contains it), and the
+  page address and the catalog `model` parameter are built from it (`modelGroups` in
+  `web/src/api/static-catalog.ts`). A variant without lineage (a drafter, encoder) has no place in the hierarchy:
+  no row, no address. An address that is not a Model shows the not-found panel.
 - The home page reads one file, `catalog-summary.json` (`summary_version: 2`),
   which the same Pages build derives from the verified index with the code the pages
   use (`web/src/catalog-stats.ts`): totals, statuses in vocabulary order, shelves per
