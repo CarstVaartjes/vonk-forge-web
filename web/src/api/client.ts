@@ -3,11 +3,11 @@ import type { Vocabulary } from "../vocabulary";
 import { getStaticCatalogSummary, getStaticLibraryRelease, getStaticModel, getStaticRecipe, getStaticVocabulary, listStaticModels, listStaticRecipeCatalog } from "./static-catalog";
 
 
-// A model's licence as the catalog published it: shown for information, never a gate.
-export interface Licence {
+// A model's license as the catalog published it: shown for information, never a gate.
+export interface License {
   spdx?: string;
   url?: string;
-  // The regional notice the licence carries (where it does not apply), shown as information.
+  // The regional notice the license carries (where it does not apply), shown as information.
   notice?: string;
 }
 
@@ -113,7 +113,7 @@ export interface RecipeDetail extends RecipeSummary {
   settings: { context_tokens?: number; concurrency?: number };
   // Present only for a job recipe (images, video, audio, 3D): what goes in, what comes out, and its options.
   job?: JobContract;
-  license: Licence;
+  license: License;
   latest_revision: {
     content_sha256: string;
     document: Record<string, unknown>;
@@ -135,7 +135,7 @@ export interface ModelVersionSummary {
   source_revision?: string;
   format?: { precision?: string; quantization?: string };
   sizes?: { download_bytes?: number; installed_bytes?: number };
-  license?: Licence;
+  license?: License;
   capabilities: string[];
   recipe_slugs: string[];
 }

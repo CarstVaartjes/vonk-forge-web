@@ -58,7 +58,7 @@ function ProductShot({
   return (
     <figure className="product-shot">
       <div className="product-shot-frame">
-        <div className="product-shot-bar" aria-hidden="true"><i /><i /><i /><span>https://controller.fixture.invalid/overview</span></div>
+        <div className="product-shot-bar" aria-hidden="true"><i /><i /><i /><span>https://vonk-forge.local/overview</span></div>
         {(["dark", "light"] as const).map((theme) => (
           <picture key={theme} className={`shot-${theme}`}>
             <source

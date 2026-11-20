@@ -147,3 +147,14 @@ test("a chat recipe keeps its context and concurrency fields and no job block", 
   expect(screen.getByText("262,144")).toBeVisible();
   expect(screen.queryByText("What you send")).not.toBeInTheDocument();
 });
+
+
+test("a failed load offers Retry, which loads again, and a way back to Recipes", async () => {
+  getRecipe.mockRejectedValueOnce(new Error("offline")).mockResolvedValue(recipe("someone", "https://huggingface.co/someone/qwen-fast", "someone"));
+  render(<RecipeDetailPage publisher="someone" slug="qwen-fast" />);
+  expect(await screen.findByRole("heading", { name: "Recipe unavailable" })).toBeVisible();
+  expect(screen.getByRole("link", { name: "Back to Recipes" })).toHaveAttribute("href", "/recipes");
+  fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+  expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
+  expect(getRecipe).toHaveBeenCalledTimes(2);
+});

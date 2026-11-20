@@ -1,4 +1,4 @@
-import type { JobSlot, Licence, LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
+import type { JobSlot, License, LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
 
 
 // The release build (web/scripts/recipe-release.mjs) loads this module under Node, so
@@ -64,7 +64,7 @@ function lowerTags(tags: string[]): string[] {
   return tags.map((value) => value.toLowerCase()).filter(Boolean);
 }
 
-// Contract major 4 keeps a model's capabilities and licence in its display
+// Contract major 4 keeps a model's capabilities and license in its display
 // document, not its execution document. They are a plain list of names.
 function declaredCapabilities(entity: CatalogModelEntry): string[] {
   return Array.from(new Set<string>(entity.display.capabilities));
@@ -189,7 +189,7 @@ function modelSize(document: ModelDefinition, deduplicate: boolean): number {
 }
 
 // An empty field is a missing one: the catalog writes "" where it has nothing to say.
-function licenceOf(display: CatalogModelEntry["display"]): Licence {
+function licenseOf(display: CatalogModelEntry["display"]): License {
   return { spdx: display.license.spdx || undefined, url: display.license.url || undefined, notice: display.license.territorial_restrictions?.notice || undefined };
 }
 
@@ -243,7 +243,7 @@ function mapModelVersion(entity: CatalogModelEntry, index: LibraryIndex): ModelV
     source_revision: ("revision" in source ? source.revision : "") || undefined,
     format: { precision: format.precision || undefined, quantization: quantizationOf(format.quantization) },
     sizes: { download_bytes: modelSize(document, true), installed_bytes: modelSize(document, false) },
-    license: licenceOf(display),
+    license: licenseOf(display),
     capabilities: declaredCapabilities(entity),
     recipe_slugs: recipeSlugs,
   };
@@ -410,7 +410,7 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
       context_tokens: "context_tokens" in settings ? settings.context_tokens.value : undefined,
       concurrency: "concurrency" in settings ? settings.concurrency?.value : undefined,
     },
-    license: modelEntity ? licenceOf(modelEntity.display) : {},
+    license: modelEntity ? licenseOf(modelEntity.display) : {},
     latest_revision: {
       content_sha256: item.content_sha256,
       document,
@@ -469,15 +469,28 @@ export function parseLibraryIndex(rawBody: unknown, rawRelease: unknown): Librar
   return body as LibraryIndex;
 }
 
+// One fetch per URL, shared by every caller and never aborted: a caller's signal only ends that
+// caller's wait, so one page leaving cannot cancel the load another page is still waiting for.
 function loadIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
-  const cached = cachedIndexes.get(url);
-  if (cached) return cached;
-  const pending = readIndex(url, signal).catch((error: unknown) => {
-    if (cachedIndexes.get(url) === pending) cachedIndexes.delete(url);
-    throw error;
+  let shared = cachedIndexes.get(url);
+  if (!shared) {
+    const pending: Promise<LibraryIndex> = readIndex(url).catch((error: unknown) => {
+      if (cachedIndexes.get(url) === pending) cachedIndexes.delete(url);
+      throw error;
+    });
+    cachedIndexes.set(url, pending);
+    shared = pending;
+  }
+  return signal ? raceAbort(shared, signal) : shared;
+}
+
+function raceAbort<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) return Promise.reject(signal.reason);
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(signal.reason);
+    signal.addEventListener("abort", onAbort, { once: true });
+    work.then(resolve, reject).finally(() => signal.removeEventListener("abort", onAbort));
   });
-  cachedIndexes.set(url, pending);
-  return pending;
 }
 
 // The library version (its release tag, which is the contract version) and when

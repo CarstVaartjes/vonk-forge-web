@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { ModelPage, ModelSummary } from "../api/client";
@@ -16,6 +16,7 @@ vi.mock("../api/client", () => ({
 }));
 
 beforeEach(() => {
+  window.localStorage.clear();
   getVocabulary.mockResolvedValue(vocabularyFixture);
   loadRecipeCatalog.mockResolvedValue([]);
 });
@@ -99,6 +100,19 @@ describe("public model browse", () => {
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
     expect(window.location.search).toBe("?verified=0&page=2");
     await waitFor(() => expect(screen.getByText("Model 13")).toBeVisible());
+  });
+
+  test("starts from the remembered Spark pick, and the URL still wins", async () => {
+    window.localStorage.setItem("vonk-my-sparks", "sparks=1");
+    render(<ModelsPage />);
+    await waitFor(() => expect(screen.getByText(/ of 13 models$/)).toBeVisible());
+    expect(screen.queryByText("13 of 13 models")).not.toBeInTheDocument();
+    cleanup();
+    window.history.replaceState({}, "", "/models?sparks=2");
+    render(<ModelsPage />);
+    await waitFor(() => expect(screen.getByText(/ of 13 models$/)).toBeVisible());
+    expect(window.localStorage.getItem("vonk-my-sparks")).toBe("sparks=1");
+    window.localStorage.clear();
   });
 
   test("a lone version reads as what it adds to the model's name, or as a count", async () => {
@@ -254,6 +268,15 @@ describe("model page leads with its recipes", () => {
     expect(within(section).getAllByRole("listitem")).toHaveLength(2);
     expect(within(section).getByRole("link", { name: "Compare recipes" })).toHaveAttribute("href", "/recipes?model=publisher%2Fmodel-1&verified=0");
     expect(screen.queryByText(/Immutable model identity/)).not.toBeInTheDocument();
+  });
+
+  test("a license without a link is plain text, not an anchor", async () => {
+    const base = model(1);
+    getModel.mockResolvedValue({ ...base, versions: [{ ...base.versions[0]!, license: { spdx: "LicenseRef-Custom" } }] });
+    render(<ModelDetailPage publisher="publisher" slug="model-1" />);
+    const line = (await screen.findByText(/^License:/));
+    expect(line).toHaveTextContent("License: LicenseRef-Custom");
+    expect(within(line).queryByRole("link")).toBeNull();
   });
 
   test("the remembered Spark pick narrows the list and the Compare link", async () => {

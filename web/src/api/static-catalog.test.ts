@@ -44,6 +44,20 @@ describe("static recipe library adapter", () => {
     expect(models.items).toHaveLength(index.families!.flatMap((family) => family.lines.flatMap((line) => line.models)).length);
   });
 
+  test("one caller aborting never cancels the shared index fetch", async () => {
+    const fetchMock = serve(index);
+    const signals: Array<AbortSignal | undefined> = [];
+    const served = fetchMock.getMockImplementation()!;
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => { signals.push(init?.signal ?? undefined); return served(url); }));
+    const first = new AbortController();
+    const aborted = listStaticModels(indexUrl, first.signal);
+    const kept = listStaticModels(indexUrl, new AbortController().signal);
+    first.abort(new Error("page left"));
+    await expect(aborted).rejects.toThrow("page left");
+    expect((await kept).items.length).toBeGreaterThan(0);
+    expect(signals).toEqual([undefined, undefined]);
+  });
+
   test("resolves the default same-origin index path against the page", async () => {
     const fetchMock = vi.fn(async (url: string) => ({ ok: true, json: async () => (url.endsWith("release.json") ? release : index) }));
     vi.stubGlobal("fetch", fetchMock);
@@ -147,7 +161,7 @@ describe("static recipe library adapter", () => {
     expect(recipes.filter((item) => item.capacity?.measured_memory_bytes_per_node !== undefined)).toHaveLength(index.recipes.filter((item) => item.measured_memory).length);
   });
 
-  test("detail carries the newest hardware pass, the chat API, the setting defaults and the licence from the index", async () => {
+  test("detail carries the newest hardware pass, the chat API, the setting defaults and the license from the index", async () => {
     const recipe = await getStaticRecipe(indexUrl, "vonk-forge", nvidia);
     const pass = index.recipes[0]!.qualification.last_pass!;
     expect(recipe.evidence).toEqual({
@@ -190,7 +204,7 @@ describe("static recipe library adapter", () => {
     expect((await getStaticRecipe(indexUrl, "vonk-forge", nvidia)).job).toBeUndefined();
   });
 
-  test("the regional licence notice reaches the recipe and the model version", async () => {
+  test("the regional license notice reaches the recipe and the model version", async () => {
     serve(withH3Options());
     const notice = "The MiniMax H3 Community License Agreement excludes the European Union, United Kingdom, Republic of Korea, and United States of America from its Applicable Territory.";
     expect((await getStaticRecipe(indexUrl, "vonk-forge", "skintokens-pytorch-single")).license.notice).toBe(notice);
@@ -207,7 +221,7 @@ describe("static recipe library adapter", () => {
     expect((await getStaticRecipe(indexUrl, "vonk-forge", eight)).catalog.quantizations).toEqual(["NVFP4"]);
   });
 
-  test("links model versions to recipes and preserves declared capabilities, licence and file sizes", async () => {
+  test("links model versions to recipes and preserves declared capabilities, license and file sizes", async () => {
     const page = await listStaticModels(indexUrl);
     expect(page.items.map((item) => `${item.publisher}/${item.slug}`)).toEqual(["gemma/gemma-e2b--gemma-4-e2b", "inkling/inkling-975b-a41b--inkling-975b-a41b", "skintokens/skintokens--skintokens"]);
     expect(page.items[0]).toMatchObject({
