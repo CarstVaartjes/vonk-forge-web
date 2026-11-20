@@ -9,7 +9,11 @@ import { STATUS_LEGEND_ID, StatusLegend } from "../status-legend";
 import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
 import {
   READINESS_OPTIONS,
+  SORT_CHOICES,
   SPARK_OPTIONS,
+  capacityBucketMatches,
+  capacityBuckets,
+  capacityLabel,
   engineLabel,
   filtersFromParameters,
   gibLabel,
@@ -23,53 +27,31 @@ import {
   sameCreator,
   sortRecipes,
   sourceLabel,
+  sparksFewerLabel,
   updatedMatches,
   type FilterFacet,
   type RecipeSort,
   type SortDirection,
-  type SparkFilter,
   type UpdatedFilter,
 } from "../catalog-filters";
 
 const PAGE_SIZE = 24;
 
-function sizeKey(value: number | undefined): string {
-  return value === undefined ? "unknown" : String(value);
-}
-
-function updatedLabel(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "Unknown" : new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
-}
-
-function distinctSizes(values: Array<number | undefined>): Array<number | undefined> {
-  return [...new Map(values.map((value) => [sizeKey(value), value])).values()].sort((left, right) => {
-    if (left === undefined) return 1;
-    if (right === undefined) return -1;
-    return left - right;
-  });
-}
-
-function ColumnHeader({ label, sort, activeSort, direction, filtered, onSort, children }: {
+// One sort control per header: first press ascending, second descending, third back to newest.
+function SortHeader({ label, sort, activeSort, direction, onSort }: {
   label: string;
   sort: RecipeSort;
   activeSort: RecipeSort;
   direction: SortDirection;
-  filtered: boolean;
   onSort: (sort: RecipeSort, direction: SortDirection) => void;
-  children: ReactNode;
 }) {
-  const active = activeSort === sort || (sort === "catalog" && activeSort === "updated");
+  const active = activeSort === sort;
+  const next = !active ? "ascending" : direction === "asc" ? "descending" : "newest first";
   return (
-    <th scope="col" className={filtered ? "is-filtered" : ""} aria-sort={active ? direction === "asc" ? "ascending" : "descending" : "none"}>
-      <div className="catalog-column-heading">
-        <span>{label}{filtered ? <i className="catalog-filter-dot" aria-label="Filtered" /> : null}</span>
-        <span className="catalog-column-order" aria-label={`Order ${label}`}>
-          <button type="button" className={active && direction === "asc" ? "is-active" : ""} onClick={() => onSort(sort, "asc")} aria-label={`Sort ${label} ascending`}><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M6 2 2.5 6h2.3v4h2.4V6h2.3L6 2Z" /></svg></button>
-          <button type="button" className={active && direction === "desc" ? "is-active" : ""} onClick={() => onSort(sort, "desc")} aria-label={`Sort ${label} descending`}><svg viewBox="0 0 12 12" aria-hidden="true"><path d="m6 10 3.5-4H7.2V2H4.8v4H2.5L6 10Z" /></svg></button>
-        </span>
-      </div>
-      <div className="catalog-column-filter">{children}</div>
+    <th scope="col" aria-sort={active ? direction === "asc" ? "ascending" : "descending" : "none"}>
+      <button type="button" className="catalog-sort" title={`Sort ${label}, ${next}`} onClick={() => onSort(...(!active ? [sort, "asc"] : direction === "asc" ? [sort, "desc"] : ["catalog", "desc"]) as [RecipeSort, SortDirection])}>
+        {label}<span aria-hidden="true">{active ? direction === "asc" ? "↑" : "↓" : ""}</span>
+      </button>
     </th>
   );
 }
@@ -77,8 +59,6 @@ function ColumnHeader({ label, sort, activeSort, direction, filtered, onSort, ch
 type ActiveFilter = { key: string; label: string; remove: () => void };
 
 export function RecipesPage() {
-  // On a phone the column filters sit behind one "Filters" button; wider screens always show them.
-  const [columnFiltersOpen, setColumnFiltersOpen] = useState(false);
   usePageMeta("Recipes", "Browse recipes for NVIDIA DGX Spark, each shown with whether it passed hardware checks, its memory and Spark count.");
   // The URL wins; without a Spark count or type in it, the pick remembered from the home page fills them in.
   const [parameters, setParameters] = useState(() => {
@@ -134,8 +114,7 @@ export function RecipesPage() {
 
   function updateSort(sort: RecipeSort, direction: SortDirection) {
     const next = new URLSearchParams(parameters);
-    next.set("sort", sort);
-    next.set("direction", direction);
+    if (sort === "catalog") { next.delete("sort"); next.delete("direction"); } else { next.set("sort", sort); next.set("direction", direction); }
     next.delete("cursor");
     replace(next);
   }
@@ -190,9 +169,12 @@ export function RecipesPage() {
   const qualifications = useMemo(() => Array.from(new Set(available.map((recipe) => recipe.catalog.qualification))).sort(), [available]);
   const runtimes = useMemo(() => Array.from(new Set(available.map((recipe) => recipe.catalog.runtime_distribution))).sort(), [available]);
   const quantizations = useMemo(() => Array.from(new Set(available.flatMap((recipe) => recipe.catalog.quantizations))).sort(), [available]);
-  const downloads = useMemo(() => distinctSizes(available.map((recipe) => recipe.catalog.expected_download_bytes)), [available]);
-  const disks = useMemo(() => distinctSizes(available.map((recipe) => recipe.capacity?.maximum_installed_bytes_per_node)), [available]);
-  const memories = useMemo(() => distinctSizes(available.map((recipe) => recipe.capacity?.maximum_runtime_memory_bytes_per_node)), [available]);
+  const downloadOf = (recipe: RecipeSummary) => recipe.catalog.expected_download_bytes;
+  const diskOf = (recipe: RecipeSummary) => recipe.capacity?.maximum_installed_bytes_per_node;
+  const memoryOf = (recipe: RecipeSummary) => recipe.capacity?.maximum_runtime_memory_bytes_per_node;
+  const downloads = useMemo(() => capacityBuckets(available.map(downloadOf)), [available]);
+  const disks = useMemo(() => capacityBuckets(available.map(diskOf)), [available]);
+  const memories = useMemo(() => capacityBuckets(available.map(memoryOf)), [available]);
 
   const typeCounts = Object.fromEntries((vocabulary?.categories ?? []).map((type) => [type.id, count("type", (recipe) => recipe.catalog.types.includes(type.id))]));
   const capabilityName = (name: string) => vocabulary ? capabilityLabel(vocabulary, name) : humanize(name);
@@ -207,7 +189,7 @@ export function RecipesPage() {
   if (filters.model) addApplied("model", `Model: ${models.find(([value]) => value === filters.model)?.[1] ?? filters.model}`, "model");
   if (filters.quantization) addApplied("quantization", `Format: ${filters.quantization}`, "quantization");
   if (filters.abliterated) addApplied("abliterated", `Abliterated: ${filters.abliterated === "true" ? "True" : "False"}`, "abliterated");
-  if (filters.sparks) addApplied("sparks", filters.sparks === "4+" ? "Recipes for any number of Sparks" : `Recipes for up to ${filters.sparks} ${filters.sparks === "1" ? "Spark" : "Sparks"}`, "sparks");
+  if (filters.sparks) addApplied("sparks", sparksFewerLabel(filters.sparks), "sparks");
   if (filters.uses) addApplied("uses", `Uses exactly ${filters.uses} ${filters.uses === 1 ? "Spark" : "Sparks"}`, "uses");
   if (filters.sourceOwner) addApplied("sourceOwner", `Creator: ${filters.sourceOwner}`, "creator");
   if (filters.updated) addApplied("updated", `Updated: last ${filters.updated} days`, "updated");
@@ -216,15 +198,22 @@ export function RecipesPage() {
   if (filters.qualification) addApplied("qualification", `Qualification: ${filters.qualification}`, "qualification");
   if (filters.repository) addApplied("repository", `Repository: ${sourceLabel(filters.repository)}`, "repository");
   if (filters.runtime) addApplied("runtime", `Runtime: ${humanize(filters.runtime)}`, "runtime");
-  if (filters.download) addApplied("download", `Download: ${filters.download === "unknown" ? "Not declared" : gibLabel(Number(filters.download))}`, "download");
-  if (filters.disk) addApplied("disk", `Disk: ${filters.disk === "unknown" ? "Not declared" : gibLabel(Number(filters.disk))}`, "disk");
-  if (filters.memory) addApplied("memory", `Memory: ${filters.memory === "unknown" ? "Not declared" : gibLabel(Number(filters.memory))}`, "memory");
+  if (filters.download) addApplied("download", `Download: ${capacityLabel(filters.download)}`, "download");
+  if (filters.disk) addApplied("disk", `Disk: ${capacityLabel(filters.disk)}`, "disk");
+  if (filters.memory) addApplied("memory", `Memory: ${capacityLabel(filters.memory)}`, "memory");
 
   const columnProps = { activeSort: filters.sort, direction: filters.direction, onSort: updateSort };
-  // Clearing means showing everything, so the default Verified on Spark filter goes too.
-  // "Clear" is about what the visitor chose: the default Verified on Spark chip is not counted.
+  const bucketOptions = (facet: FilterFacet, buckets: string[], valueOf: (recipe: RecipeSummary) => number | undefined) => buckets.map((bucket) => ({ bucket, count: count(facet, (recipe) => capacityBucketMatches(valueOf(recipe), bucket)) })).filter((option) => option.count > 0 || option.bucket === filters[facet as "memory" | "disk" | "download"]).map((option) => <option key={option.bucket} value={option.bucket}>{capacityLabel(option.bucket)} ({option.count})</option>);
+  // Reset restores the defaults, Verified on Spark included; it is offered when anything differs from them.
   const clearable = applied.filter((item) => item.key !== "verified");
-  const clearAll = () => replace(new URLSearchParams("verified=0"));
+  const resettable = clearable.length > 0 || !filters.verified;
+  // The badge counts what is set inside the disclosure; search, type and Sparks sit outside it.
+  const inMore = clearable.filter((item) => !["query", "type", "sparks", "uses"].includes(item.key)).length + (filters.verified ? 0 : 1);
+  const resetFilters = () => replace(new URLSearchParams());
+
+  const select = (label: string, value: string, onChange: (value: string) => void, options: ReactNode, anyLabel = "Any") => (
+    <label className="catalog-more-field"><span>{label}</span><select aria-label={`Filter by ${label.toLowerCase()}`} value={value} onChange={(event) => onChange(event.target.value)}><option value="">{anyLabel}</option>{options}</select></label>
+  );
 
   return (
     <main className="catalog-page recipes-page">
@@ -250,8 +239,17 @@ export function RecipesPage() {
             counts={sparkCounts}
             onChange={(value) => update("sparks", value)}
           />
+        </section>
+      ) : null}
+
+      {error ? <div className="status-panel error catalog-error" role="alert"><h2>Recipes are temporarily out of reach.</h2><p>{error} Retry the public index, or inspect the version-controlled library directly.</p><div className="hero-actions"><button className="button primary" type="button" onClick={() => setRetry((value) => value + 1)}>Try again</button><a className="button" href="https://github.com/CarstVaartjes/vonk-forge-recipes">Open recipe library</a></div></div> : null}
+      {!catalog && !error ? <div className="status-panel" role="status">Loading the public recipe index…</div> : null}
+
+      {catalog && vocabulary ? <section className="catalog-browser" aria-label="Recipe results">
+        <div className="catalog-toolbar">
+          <input type="search" className="catalog-search" aria-label="Search recipes" value={filters.query} onChange={(event) => update("q", event.target.value)} placeholder="Search recipes…" />
           <details className="catalog-more">
-            <summary>More filters</summary>
+            <summary>More filters{inMore ? <span className="catalog-more-count" aria-hidden="true">{inMore}</span> : null}{inMore ? <span className="visually-hidden"> ({inMore} active)</span> : null}</summary>
             <p className="catalog-more-note">My Sparks: pick how many you have and the list narrows to recipes that need that many or fewer. The pick is remembered on this device and shared with the home page. Your Controller makes the same check against the live capacity of your Sparks.</p>
             <VerifiedToggle checked={filters.verified} onChange={setVerified} />
             <div className="catalog-setup-facets">
@@ -259,70 +257,67 @@ export function RecipesPage() {
               <FacetStrip label="Engine" value={filters.runtime} onChange={(value) => update("runtime", value)} options={runtimes.map((value) => ({ value, label: engineLabel(value), count: count("runtime", (recipe) => recipe.catalog.runtime_distribution === value) }))} />
               <FacetStrip label="Creator" value={filters.sourceOwner} onChange={(value) => update("creator", value)} options={sourceOwners.map((value) => ({ value, label: value, count: count("sourceOwner", (recipe) => sameCreator(recipe.catalog.source_owner, value)) }))} />
               <FacetStrip label="Quantization" value={filters.quantization} onChange={(value) => update("quantization", value)} options={quantizations.map((value) => ({ value, label: value, count: count("quantization", (recipe) => recipe.catalog.quantizations.includes(value)) }))} />
+              <div className="setup-facet" role="group" aria-label="Capabilities">
+                <span className="setup-facet-label">Capabilities</span>
+                <div className="setup-chips">{vocabulary.capabilities.map((option) => {
+                  const on = filters.capabilities.includes(option.name);
+                  return <button key={option.name} type="button" aria-pressed={on} title={option.description} disabled={capabilityCount(option.name) === 0 && !on} onClick={() => toggleCapability(option.name)}>{option.label}</button>;
+                })}</div>
+              </div>
+            </div>
+            <div className="catalog-more-fields">
+              {select("Memory per Spark", filters.memory, (value) => update("memory", value), bucketOptions("memory", memories, memoryOf))}
+              {select("Disk per Spark", filters.disk, (value) => update("disk", value), bucketOptions("disk", disks, diskOf))}
+              {select("Download size", filters.download, (value) => update("download", value), bucketOptions("download", downloads, downloadOf))}
+              {select("Updated date", filters.updated, (value) => update("updated", value), (["7", "30", "90", "365"] as UpdatedFilter[]).map((value) => <option key={value} value={value} disabled={count("updated", (recipe) => updatedMatches(recipe, value)) === 0}>Last {value} days</option>))}
+              {select("Execution readiness", filters.readiness, (value) => update("readiness", value), READINESS_OPTIONS.map((option) => <option key={option.value} value={option.value} disabled={count("readiness", (recipe) => recipe.catalog.execution_readiness === option.value) === 0}>{option.label}</option>))}
+              {select("Qualification", filters.qualification, (value) => update("qualification", value), qualifications.map((status) => <option key={status} value={status} disabled={count("qualification", (recipe) => recipe.catalog.qualification === status) === 0}>{status}</option>))}
+              {select("Abliterated", filters.abliterated, (value) => update("abliterated", value), [<option key="true" value="true" disabled={count("abliterated", recipeIsAbliterated) === 0}>True</option>, <option key="false" value="false" disabled={count("abliterated", (recipe) => !recipeIsAbliterated(recipe)) === 0}>False</option>])}
+              {select("Model", filters.model, (value) => update("model", value), models.map(([value, label]) => <option key={value} value={value} disabled={count("model", (recipe) => modelKey(recipe) === value) === 0}>{label}</option>), "All")}
+              {select("Original repository", filters.repository, (value) => update("repository", value), repositories.map((value) => <option key={value} value={value} disabled={count("repository", (recipe) => recipe.catalog.source_repository === value) === 0}>{sourceLabel(value)}</option>), "All")}
+              <label className="catalog-more-field catalog-sort-field"><span>Sort by</span>
+                <select aria-label="Sort by" value={filters.sort === "catalog" ? "catalog:desc" : `${filters.sort}:${filters.direction}`} onChange={(event) => { const [sort, direction] = event.target.value.split(":") as [RecipeSort, SortDirection]; updateSort(sort, direction); }}>
+                  {SORT_CHOICES.map((choice) => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
+                </select>
+              </label>
             </div>
             <StatusLegend statuses={qualifications} vocabulary={vocabulary} />
           </details>
-        </section>
-      ) : null}
-
-      {error ? <div className="status-panel error catalog-error" role="alert"><h2>Recipes are temporarily out of reach.</h2><p>{error} Retry the public index, or inspect the version-controlled library directly.</p><div className="hero-actions"><button className="button primary" type="button" onClick={() => setRetry((value) => value + 1)}>Try again</button><a className="button" href="https://github.com/CarstVaartjes/vonk-forge-recipes">Open recipe library</a></div></div> : null}
-      {!catalog && !error ? <div className="status-panel" role="status">Loading the public recipe index…</div> : null}
-
-      {catalog ? <section className="catalog-browser" aria-label="Recipe results">
+        </div>
         <div className="catalog-results-heading">
-          <div><p aria-live="polite"><strong>{filtered.length}</strong> of {available.length} recipes</p></div>
+          <p aria-live="polite"><strong>{filtered.length}</strong> of {available.length} recipes</p>
+          {resettable ? <button type="button" className="catalog-clear" onClick={resetFilters}>Reset filters <small>to Verified on Spark</small></button> : null}
           <p className="catalog-local-note">Imported, current, and update status appear only in <a href="/control">your local Controller</a>.</p>
-          <button type="button" className="button catalog-phone-filters" aria-expanded={columnFiltersOpen} aria-controls="catalog-table" onClick={() => setColumnFiltersOpen((open) => !open)}>Filters</button>
-          {clearable.length ? <button type="button" className="catalog-clear" onClick={clearAll}>Clear {clearable.length} filter{clearable.length === 1 ? "" : "s"}</button> : null}
         </div>
         {applied.length ? <div className="catalog-applied" aria-label="Applied filters">{applied.map((item) => <button type="button" key={item.key} onClick={item.remove}>{item.label}<span aria-hidden="true">×</span><span className="visually-hidden"> Remove filter</span></button>)}</div> : null}
 
-        <div className="catalog-table-scroll" role="region" aria-label="Recipe list" tabIndex={0}>
-          <table id="catalog-table" className={`catalog-table${columnFiltersOpen ? " is-filters-open" : ""}`}>
+        <div className="catalog-table-scroll">
+          <table id="catalog-table" className="catalog-table">
             <caption className="visually-hidden">Publisher-submitted evidence is not a Vonk endorsement.</caption>
             <thead><tr>
-              <ColumnHeader label="Recipe" sort="recipe" filtered={Boolean(filters.query)} {...columnProps}><input type="search" aria-label="Search recipes" value={filters.query} onChange={(event) => update("q", event.target.value)} placeholder="Search…" /></ColumnHeader>
-              <ColumnHeader label="Sparks" sort="sparks" filtered={Boolean(filters.sparks)} {...columnProps}><select aria-label="Filter by Sparks you have" value={filters.sparks} onChange={(event) => update("sparks", event.target.value)}><option value="">Any</option>{(["1", "2", "3", "4+"] as SparkFilter[]).map((value) => <option key={value} value={value} disabled={count("sparks", (recipe) => nodeCountMatches(recipe.catalog.node_count, value)) === 0}>{value}{value === "1" ? " Spark" : " Sparks"}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Engine" sort="runtime" filtered={Boolean(filters.runtime)} {...columnProps}><select aria-label="Filter by runtime" value={filters.runtime} onChange={(event) => update("runtime", event.target.value)}><option value="">All</option>{runtimes.map((value) => <option key={value} value={value} disabled={count("runtime", (recipe) => recipe.catalog.runtime_distribution === value) === 0}>{engineLabel(value)}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Memory / Spark" sort="memory" filtered={Boolean(filters.memory)} {...columnProps}><select aria-label="Filter by memory per Spark" value={filters.memory} onChange={(event) => update("memory", event.target.value)}><option value="">Any</option>{memories.map((value) => <option key={sizeKey(value)} value={sizeKey(value)}>{gibLabel(value)}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Disk / Spark" sort="disk" filtered={Boolean(filters.disk)} {...columnProps}><select aria-label="Filter by disk per Spark" value={filters.disk} onChange={(event) => update("disk", event.target.value)}><option value="">Any</option>{disks.map((value) => <option key={sizeKey(value)} value={sizeKey(value)}>{gibLabel(value)}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Model family" sort="modelFamily" filtered={Boolean(filters.modelFamily)} {...columnProps}><select aria-label="Filter by model family" value={filters.modelFamily} onChange={(event) => updateModelFamily(event.target.value)}><option value="">All</option>{modelFamilies.map((value) => <option key={value} value={value} disabled={count("modelFamily", (recipe) => modelFamilyTitle(recipe) === value) === 0}>{value}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Model" sort="model" filtered={Boolean(filters.model)} {...columnProps}><select aria-label="Filter by model" value={filters.model} onChange={(event) => update("model", event.target.value)}><option value="">All</option>{models.map(([value, label]) => <option key={value} value={value} disabled={count("model", (recipe) => modelKey(recipe) === value) === 0}>{label}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Format" sort="quantization" filtered={Boolean(filters.quantization)} {...columnProps}><select aria-label="Filter by quantization" value={filters.quantization} onChange={(event) => update("quantization", event.target.value)}><option value="">Any</option>{quantizations.map((value) => <option key={value} value={value} disabled={count("quantization", (recipe) => recipe.catalog.quantizations.includes(value)) === 0}>{value}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Creator" sort="creator" filtered={Boolean(filters.sourceOwner)} {...columnProps}><select aria-label="Filter by recipe creator" value={filters.sourceOwner} onChange={(event) => update("creator", event.target.value)}><option value="">All</option>{sourceOwners.map((value) => <option key={value} value={value} disabled={count("sourceOwner", (recipe) => sameCreator(recipe.catalog.source_owner, value)) === 0}>{value}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Updated" sort="catalog" filtered={Boolean(filters.updated)} {...columnProps}><select aria-label="Filter by updated date" value={filters.updated} onChange={(event) => update("updated", event.target.value)}><option value="">Any</option>{(["7", "30", "90", "365"] as UpdatedFilter[]).map((value) => <option key={value} value={value} disabled={count("updated", (recipe) => updatedMatches(recipe, value)) === 0}>Last {value} days</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Readiness" sort="readiness" filtered={Boolean(filters.readiness)} {...columnProps}><select aria-label="Filter by execution readiness" value={filters.readiness} onChange={(event) => update("readiness", event.target.value)}><option value="">Any</option>{READINESS_OPTIONS.map((option) => <option key={option.value} value={option.value} disabled={count("readiness", (recipe) => recipe.catalog.execution_readiness === option.value) === 0}>{option.label}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Capabilities" sort="capability" filtered={filters.capabilities.length > 0} {...columnProps}><select aria-label="Filter by capability" value="" onChange={(event) => toggleCapability(event.target.value)}><option value="">{filters.capabilities.length ? `${filters.capabilities.length} selected · add…` : "Any capability"}</option>{(vocabulary?.capabilities ?? []).map((option) => <option key={option.name} value={option.name} title={option.description} disabled={capabilityCount(option.name) === 0 && !filters.capabilities.includes(option.name)}>{filters.capabilities.includes(option.name) ? `Remove ${option.label}` : option.label}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Qualification" sort="qualification" filtered={Boolean(filters.qualification)} {...columnProps}><select aria-label="Filter by qualification" value={filters.qualification} onChange={(event) => update("qualification", event.target.value)}><option value="">Any</option>{qualifications.map((status) => <option key={status} value={status} disabled={count("qualification", (recipe) => recipe.catalog.qualification === status) === 0}>{status}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Repository" sort="repository" filtered={Boolean(filters.repository)} {...columnProps}><select aria-label="Filter by original repository" value={filters.repository} onChange={(event) => update("repository", event.target.value)}><option value="">All</option>{repositories.map((value) => <option key={value} value={value} disabled={count("repository", (recipe) => recipe.catalog.source_repository === value) === 0}>{sourceLabel(value)}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Download" sort="download" filtered={Boolean(filters.download)} {...columnProps}><select aria-label="Filter by download size" value={filters.download} onChange={(event) => update("download", event.target.value)}><option value="">Any</option>{downloads.map((value) => <option key={sizeKey(value)} value={sizeKey(value)}>{gibLabel(value)}</option>)}</select></ColumnHeader>
-              <ColumnHeader label="Abliterated" sort="abliterated" filtered={Boolean(filters.abliterated)} {...columnProps}><select aria-label="Filter by abliterated" value={filters.abliterated} onChange={(event) => update("abliterated", event.target.value)}><option value="">Any</option><option value="true" disabled={count("abliterated", recipeIsAbliterated) === 0}>True</option><option value="false" disabled={count("abliterated", (recipe) => !recipeIsAbliterated(recipe)) === 0}>False</option></select></ColumnHeader>
+              <SortHeader label="Recipe" sort="recipe" {...columnProps} />
+              <SortHeader label="Sparks" sort="sparks" {...columnProps} />
+              <SortHeader label="Memory / Spark" sort="memory" {...columnProps} />
+              <SortHeader label="Engine" sort="runtime" {...columnProps} />
+              <th scope="col"><span className="catalog-sort">Capabilities</span></th>
+              <SortHeader label="Status" sort="qualification" {...columnProps} />
             </tr></thead>
             <tbody>{pageItems.map((recipe) => {
               const facts = recipe.catalog;
               const counts = recipe.capacity?.profile_node_counts ?? [];
+              const meta = [facts.source_owner, facts.quantizations.join(" · "), recipe.version ? `v${recipe.version}` : null].filter(Boolean).join(" · ");
               return <tr key={`${recipe.publisher}/${recipe.slug}`}>
-                <td className="catalog-table-recipe"><a href={`/recipes/${recipe.publisher}/${recipe.slug}`}>{recipe.title}</a><span>{recipe.publisher}/{recipe.slug}</span><span>{recipe.version ? `v${recipe.version}` : "unversioned"} · {recipe.content_sha256.slice(0, 10)}…</span></td>
-                <td className="catalog-table-number">{counts.length ? counts.join(" / ") : facts.node_count}</td>
-                <td>{engineLabel(facts.runtime_distribution)}</td>
-                <td className="catalog-table-number">{gibLabel(recipe.capacity?.maximum_runtime_memory_bytes_per_node)}</td>
-                <td className="catalog-table-number">{gibLabel(recipe.capacity?.maximum_installed_bytes_per_node)}</td>
-                <td><strong>{modelFamilyTitle(recipe)}</strong></td>
-                <td className="catalog-table-model"><strong>{facts.model_version_title}</strong><span>{facts.model_version_publisher}/{facts.model_version_slug}</span></td>
-                <td>{facts.quantizations.length ? facts.quantizations.join(" · ") : "—"}</td>
-                <td>{facts.source_owner ?? "—"}</td>
-                <td className="catalog-table-date">{updatedLabel(recipe.published_at)}</td>
-                <td><span className={`catalog-readiness readiness-${facts.execution_readiness}`}>{READINESS_OPTIONS.find((option) => option.value === facts.execution_readiness)?.label ?? humanize(facts.execution_readiness)}</span></td>
-                <td>{facts.capabilities.length ? facts.capabilities.map(capabilityName).join(" · ") : "—"}</td>
-                <td><a className="badge-link" href={`#${STATUS_LEGEND_ID}`} title={vocabulary ? statusMeaning(vocabulary, facts.qualification) : undefined}><span className={`status ${facts.verified ? "ok" : "off"}`}>{facts.qualification}</span></a><span className="catalog-table-substatus">{recipe.facts?.source_bundle_observed ? "Source verified" : "Source pending"}{facts.qualification_reason ? ` · ${facts.qualification_reason}` : ""}</span></td>
-                <td>{facts.source_repository ? <a className="catalog-source-link" href={facts.source_repository}>{sourceLabel(facts.source_repository)}</a> : "—"}</td>
-                <td className="catalog-table-number">{gibLabel(facts.expected_download_bytes)}</td>
-                <td>{recipeIsAbliterated(recipe) ? "True" : "False"}</td>
+                <td className="catalog-table-recipe"><a href={`/recipes/${recipe.publisher}/${recipe.slug}`}>{recipe.title}</a>{meta ? <span>{meta}</span> : null}</td>
+                <td className="catalog-table-number" data-label="Sparks">{counts.length ? counts.join(" / ") : facts.node_count}</td>
+                <td className="catalog-table-number" data-label="Memory / Spark">{gibLabel(recipe.capacity?.maximum_runtime_memory_bytes_per_node)}</td>
+                <td data-label="Engine">{engineLabel(facts.runtime_distribution)}</td>
+                <td className="catalog-table-capabilities" data-label="Capabilities">{facts.capabilities.length ? facts.capabilities.map(capabilityName).join(" · ") : "—"}</td>
+                <td className="catalog-table-status"><a className="badge-link" href={`#${STATUS_LEGEND_ID}`} title={vocabulary ? statusMeaning(vocabulary, facts.qualification) : undefined}><span className={`status ${facts.verified ? "ok" : "off"}`}>{facts.qualification}</span></a>{facts.execution_readiness !== "executable" ? <span className={`catalog-readiness readiness-${facts.execution_readiness}`}>{READINESS_OPTIONS.find((option) => option.value === facts.execution_readiness)?.label ?? humanize(facts.execution_readiness)}</span> : null}<span className="catalog-table-substatus">{recipe.facts?.source_bundle_observed ? "Source verified" : "Source pending"}{facts.qualification_reason ? ` · ${facts.qualification_reason}` : ""}</span></td>
               </tr>;
             })}</tbody>
           </table>
         </div>
-        {filtered.length === 0 ? <div className="status-panel catalog-empty"><h2>No matching recipes.</h2><p>{filters.verified ? "Verified on Spark is on, so recipes that have not passed hardware checks on a DGX Spark are hidden. " : ""}Clear one or more filters to broaden the catalog.</p>{filters.verified ? <button type="button" className="button" onClick={() => setVerified(false)}>Include recipes not yet verified</button> : null}<button type="button" className="button" onClick={clearAll}>Clear filters</button></div> : null}
+        {filtered.length === 0 ? <div className="status-panel catalog-empty"><h2>No matching recipes.</h2><p>{filters.verified ? "Verified on Spark is on, so recipes that have not passed hardware checks on a DGX Spark are hidden. " : ""}Reset the filters to start again from Verified on Spark, or include recipes that are not yet verified.</p>{filters.verified ? <button type="button" className="button" onClick={() => setVerified(false)}>Include recipes not yet verified</button> : null}<button type="button" className="button" onClick={resetFilters}>Reset filters</button></div> : null}
         {filtered.length > PAGE_SIZE ? <nav className="catalog-pagination" aria-label="Recipe pages"><button className="button" type="button" disabled={offset === 0} onClick={() => update("cursor", String(Math.max(0, offset - PAGE_SIZE)))}>Previous page</button><span>Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, filtered.length)} of {filtered.length}</span><button className="button" type="button" disabled={offset + PAGE_SIZE >= filtered.length} onClick={() => update("cursor", String(offset + PAGE_SIZE))}>Next page</button></nav> : null}
       </section> : null}
     </main>

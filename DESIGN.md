@@ -297,6 +297,10 @@ The home hero's signature: one mark per recipe from `catalog-summary.json`, in s
 
 The Models page uses the same compact picker as Recipes (one row, the rest behind "More filters"), so the first model starts on the first screen at 1440x900. The Install page's four step cards are one grid: four columns, two on a tablet, one on a phone. The enrollment snippet under "Enroll one Spark or many" carries an "Illustrative preview" note, because its Spark name and grant id are placeholders.
 
+### Recipe Table
+
+The catalog's recipe list is six columns: Recipe (the name, with a mono subtitle of creator, format and version), Sparks, Memory / Spark, Engine, Capabilities and Status. Hashes, slugs and the other facts live on the recipe page. The "Executable contract" badge is the default and is never drawn; only a row whose readiness deviates shows its readiness. The table header holds sort buttons only (press once for ascending, again for descending, a third time for newest). All filters sit in one toolbar: search plus a "More filters" disclosure (its badge counts only what is set inside it); Memory, Disk and Download there are "at most" capacity buckets. "Reset filters" returns to the default Verified on Spark filter and says so. On a phone the table becomes cards, the lead paragraph is hidden (the one-line note that this is the public catalog and the Controller checks the fleet stays), the model types are one horizontally scrolling strip, the Spark choice is a five-segment control (1, 2, 3, 4+, Any; each segment's visible text starts its accessible name), More filters is a 44px button, and a Sort select appears in the disclosure.
+
 ### Bar Series
 
 One small bar chart for a date series from the summary (`BarSeries`): a single series with no legend (the title names it), neutral bars with the newest in `--model-ink`, a direct label on the peak and the newest bar only, and a range-and-count tooltip on hover. The bars are drawn for the eye; the group's `aria-label` carries the totals and a visually hidden table carries every bar. Home uses it twice: recipes released per week and the most recent hardware pass per recipe by day.

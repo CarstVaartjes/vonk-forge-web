@@ -18,7 +18,7 @@ export const SPARK_OPTIONS: ReadonlyArray<{ value: Exclude<SparkFilter, "">; num
   { value: "1", numeral: "1", label: "1 Spark" },
   { value: "2", numeral: "2", label: "2 Sparks" },
   { value: "3", numeral: "3", label: "3 Sparks" },
-  { value: "4+", numeral: "4+", label: "4 or more" },
+  { value: "4+", numeral: "4+", label: "4+ Sparks" },
 ];
 
 // "I have N Sparks" matches every recipe that needs N or fewer; "4+" matches them all (the library
@@ -41,11 +41,18 @@ const ENGINE_LABELS: Record<string, string> = {
   exllamav3: "ExLlamaV3",
 };
 
+// The visitor's Spark count as a sentence: "2 Sparks or fewer" (4+ is every recipe).
+export function sparksFewerLabel(sparks: Exclude<SparkFilter, "">): string {
+  return sparks === "4+" ? "Any number of Sparks" : `${sparks} ${sparks === "1" ? "Spark" : "Sparks"} or fewer`;
+}
+
 export function engineLabel(value: string): string {
   return ENGINE_LABELS[value] ?? humanize(value);
 }
 export type UpdatedFilter = "" | "7" | "30" | "90" | "365";
-export type RecipeSort = "catalog" | "recipe" | "modelFamily" | "model" | "quantization" | "runtime" | "abliterated" | "sparks" | "creator" | "updated" | "readiness" | "capability" | "qualification" | "repository" | "download" | "disk" | "memory";
+// The sorts the recipe table offers: the five sortable headers, and the newest-first default.
+export const COLUMN_SORTS = ["recipe", "sparks", "memory", "runtime", "qualification"] as const;
+export type RecipeSort = "catalog" | (typeof COLUMN_SORTS)[number];
 export type SortDirection = "asc" | "desc";
 export type FilterFacet = "type" | "verified" | "modelFamily" | "model" | "abliterated" | "sourceOwner" | "repository" | "sparks" | "runtime" | "quantization" | "updated" | "qualification" | "readiness" | "capability" | "download" | "disk" | "memory";
 
@@ -101,7 +108,7 @@ export const EMPTY_FILTERS: CatalogFilters = {
 };
 
 const VALID_SPARKS = new Set<string>(["1", "2", "3", "4+"]);
-const VALID_SORTS = new Set<string>(["catalog", "recipe", "modelFamily", "model", "quantization", "runtime", "abliterated", "sparks", "creator", "updated", "readiness", "capability", "qualification", "repository", "download", "disk", "memory"]);
+const VALID_SORTS = new Set<string>(["catalog", ...COLUMN_SORTS]);
 const VALID_DIRECTIONS = new Set<string>(["asc", "desc"]);
 
 const VALID_READINESS = new Set<string>(READINESS_OPTIONS.map((option) => option.value));
@@ -131,9 +138,9 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
     updated: VALID_UPDATED.has(parameters.get("updated") ?? "") ? parameters.get("updated") as UpdatedFilter : "",
     qualification,
     readiness: VALID_READINESS.has(readiness) ? readiness as CatalogFilters["readiness"] : "",
-    download: parameters.get("download") ?? "",
-    disk: parameters.get("disk") ?? "",
-    memory: parameters.get("memory") ?? "",
+    download: capacityParameter(parameters.get("download")),
+    disk: capacityParameter(parameters.get("disk")),
+    memory: capacityParameter(parameters.get("memory")),
     sort,
     direction: VALID_DIRECTIONS.has(direction) ? direction as SortDirection : sort === "catalog" ? "desc" : "asc",
     capabilities: Array.from(new Set(parameters.getAll("capability").filter(Boolean))),
@@ -181,9 +188,38 @@ function sparksMatch(recipe: RecipeSummary, sparks: SparkFilter): boolean {
   return nodeCountMatches(recipe.catalog.node_count, sparks);
 }
 
-function exactSizeMatches(value: number | undefined, filter: string): boolean {
-  if (!filter) return true;
-  return filter === "unknown" ? value === undefined : String(value) === filter;
+// Memory, disk and download sizes are filtered by capacity bucket ("at most N GiB"), never by exact
+// bytes. The bucket bounds live here and nowhere else; a bucket holds everything up to its bound.
+export const CAPACITY_BUCKETS_GIB = [16, 32, 64, 128, 256, 512, 1024] as const;
+const VALID_CAPACITY = new Set<string>(["unknown", ...CAPACITY_BUCKETS_GIB.map(String)]);
+
+// The URL value of a bucket parameter, or "" when it is not one of the buckets (an old exact-byte link).
+function capacityParameter(value: string | null): string {
+  return value !== null && VALID_CAPACITY.has(value) ? value : "";
+}
+
+export function capacityLabel(bucket: string): string {
+  return bucket === "unknown" ? "Not declared" : `≤ ${Number(bucket)} GiB`;
+}
+
+export function capacityBucketMatches(value: number | undefined, bucket: string): boolean {
+  if (!bucket) return true;
+  if (bucket === "unknown") return value === undefined;
+  return value !== undefined && value <= Number(bucket) * 1024 ** 3;
+}
+
+// The buckets worth offering for these sizes: every bound up to the first one that covers the largest
+// size, plus "unknown" when some size is not declared. Labels are unique by construction.
+export function capacityBuckets(values: ReadonlyArray<number | undefined>): string[] {
+  const known = values.filter((value): value is number => value !== undefined);
+  const largest = Math.max(0, ...known);
+  const buckets: string[] = [];
+  for (const bound of CAPACITY_BUCKETS_GIB) {
+    buckets.push(String(bound));
+    if (largest <= bound * 1024 ** 3) break;
+  }
+  if (values.some((value) => value === undefined)) buckets.push("unknown");
+  return buckets;
 }
 
 // The `model` parameter names a Model (all of its variants), not one variant.
@@ -237,28 +273,36 @@ export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, om
     && (omitted === "qualification" || !filters.qualification || facts.qualification === filters.qualification)
     && (omitted === "readiness" || !filters.readiness || facts.execution_readiness === filters.readiness)
     && (omitted === "capability" || filters.capabilities.every((capability) => facts.capabilities.includes(capability)))
-    && (omitted === "download" || exactSizeMatches(facts.expected_download_bytes, filters.download))
-    && (omitted === "disk" || exactSizeMatches(recipe.capacity?.maximum_installed_bytes_per_node, filters.disk))
-    && (omitted === "memory" || exactSizeMatches(recipe.capacity?.maximum_runtime_memory_bytes_per_node, filters.memory));
+    && (omitted === "download" || capacityBucketMatches(facts.expected_download_bytes, filters.download))
+    && (omitted === "disk" || capacityBucketMatches(recipe.capacity?.maximum_installed_bytes_per_node, filters.disk))
+    && (omitted === "memory" || capacityBucketMatches(recipe.capacity?.maximum_runtime_memory_bytes_per_node, filters.memory));
 }
+
+const SORT_WORDS: Record<(typeof COLUMN_SORTS)[number], [name: string, ascending: string, descending: string]> = {
+  recipe: ["Recipe", "A to Z", "Z to A"],
+  sparks: ["Sparks", "fewest first", "most first"],
+  memory: ["Memory", "low to high", "high to low"],
+  runtime: ["Engine", "A to Z", "Z to A"],
+  qualification: ["Status", "A to Z", "Z to A"],
+};
+
+// Every sort the table can be in, in both directions, as "sort:direction" values with their words:
+// the phone's Sort select lists exactly these, so it always reflects the URL.
+export const SORT_CHOICES: ReadonlyArray<{ value: string; label: string }> = [
+  { value: "catalog:desc", label: "Newest" },
+  ...COLUMN_SORTS.flatMap((sort) => (["asc", "desc"] as const).map((direction) => ({
+    value: `${sort}:${direction}`,
+    label: `${SORT_WORDS[sort][0]} ${SORT_WORDS[sort][direction === "asc" ? 1 : 2]}`,
+  }))),
+];
 
 export function sortRecipes(recipes: RecipeSummary[], sort: RecipeSort, direction: SortDirection = sort === "catalog" ? "desc" : "asc"): RecipeSummary[] {
   const value = (recipe: RecipeSummary): string | number => {
     const facts = recipe.catalog;
     if (sort === "recipe") return recipe.title;
-    if (sort === "modelFamily") return modelFamilyTitle(recipe);
-    if (sort === "model") return facts.model_version_title;
-    if (sort === "creator") return facts.source_owner ?? "";
-    if (sort === "quantization") return facts.quantizations.join(", ");
-    if (sort === "abliterated") return recipeIsAbliterated(recipe) ? "true" : "false";
     if (sort === "sparks") return facts.node_count;
     if (sort === "runtime") return facts.runtime_distribution;
-    if (sort === "readiness") return facts.execution_readiness;
     if (sort === "qualification") return facts.qualification;
-    if (sort === "capability") return facts.capabilities.join(", ");
-    if (sort === "repository") return facts.source_repository ?? "";
-    if (sort === "download") return facts.expected_download_bytes;
-    if (sort === "disk") return recipe.capacity?.maximum_installed_bytes_per_node ?? 0;
     if (sort === "memory") return recipe.capacity?.maximum_runtime_memory_bytes_per_node ?? 0;
     return recipe.published_at;
   };

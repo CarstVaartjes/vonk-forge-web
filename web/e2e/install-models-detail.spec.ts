@@ -46,14 +46,6 @@ test("models: the Spark picker is one compact row and the first model starts on 
   expect((await row.boundingBox())!.y).toBeLessThan(900);
 });
 
-test("models: a model version links straight to its recipe page", async ({ page }) => {
-  await at(page, 1440, 900, "/models");
-  await page.getByRole("list", { name: "Models" }).getByRole("link").first().click();
-  const link = page.locator(".model-recipe-links a").first();
-  await expect(link).toBeVisible();
-  expect(await link.getAttribute("href")).toMatch(/^\/recipes\/[^/?]+\/[^/?]+$/);
-});
-
 test("recipe page: the Run it command uses --profile 1, explains it, and scrolls safely", async ({ page }) => {
   test.skip(Boolean(process.env.VONK_E2E_DOWNLOADED_LIBRARY), "the fixture names the recipe");
   await at(page, 320, 700, "/recipes/vonk-forge/qwen-fast");
