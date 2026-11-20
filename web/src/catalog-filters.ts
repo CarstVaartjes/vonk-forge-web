@@ -182,9 +182,10 @@ function exactSizeMatches(value: number | undefined, filter: string): boolean {
   return filter === "unknown" ? value === undefined : String(value) === filter;
 }
 
-export function modelVersionKey(recipe: RecipeSummary): string {
+// The `model` parameter names a Model (all of its variants), not one variant.
+export function modelKey(recipe: RecipeSummary): string {
   const facts = recipe.catalog;
-  return `${facts.model_version_publisher}/${facts.model_version_slug}`;
+  return `${facts.model_publisher}/${facts.model_slug}`;
 }
 
 export function recipeIsAbliterated(recipe: RecipeSummary): boolean {
@@ -220,7 +221,7 @@ export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, om
     && (omitted === "verified" || !filters.verified || isVerified(recipe))
     && (omitted === "type" || !filters.type || facts.types.includes(filters.type))
     && (omitted === "modelFamily" || !filters.modelFamily || modelFamilyTitle(recipe) === filters.modelFamily)
-    && (omitted === "model" || !filters.model || modelVersionKey(recipe) === filters.model)
+    && (omitted === "model" || !filters.model || modelKey(recipe) === filters.model)
     && (omitted === "abliterated" || !filters.abliterated || recipeIsAbliterated(recipe) === (filters.abliterated === "true"))
     && (omitted === "sourceOwner" || !filters.sourceOwner || sameCreator(facts.source_owner, filters.sourceOwner))
     && (omitted === "repository" || !filters.repository || facts.source_repository === filters.repository)

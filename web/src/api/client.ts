@@ -93,6 +93,8 @@ export interface ModelVersionSummary {
   title: string;
   version: string;
   revision_id: string;
+  // The logical model this variant was published under; its address before grouping.
+  model_publisher: string;
   model_slug: string;
   variant?: string;
   requires_token?: boolean;
