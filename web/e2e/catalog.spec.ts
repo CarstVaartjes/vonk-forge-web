@@ -404,6 +404,18 @@ test("publisher navigation points to repository authoring without an upload work
 });
 
 
+test("a status badge opens the collapsed legend and scrolls it into view", async ({ page }) => {
+  await page.goto("/recipes");
+  const legend = page.locator("#how-recipes-are-verified");
+  await expect(page.locator("details.catalog-more")).not.toHaveAttribute("open", "");
+  await expect(legend).toBeHidden();
+  await page.locator("a.badge-link").first().click();
+  await expect(page.locator("details.catalog-more")).toHaveAttribute("open", "");
+  await expect(legend).toBeVisible();
+  await expect(legend).toBeInViewport();
+});
+
+
 test("the model type is the first choice on the recipes and models pages", async ({ page }) => {
   await page.goto("/recipes?type=code");
   const types = page.getByRole("group", { name: "Model type" });
