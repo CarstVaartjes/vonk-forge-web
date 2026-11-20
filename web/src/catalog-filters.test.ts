@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import type { RecipeSummary } from "./api/client";
-import { EMPTY_FILTERS, filtersFromParameters, nodeCountMatches, recipeMatches, sortRecipes } from "./catalog-filters";
+import { CAPACITY_BUCKETS_GIB, EMPTY_FILTERS, capacityBucketMatches, capacityBuckets, capacityLabel, filtersFromParameters, nodeCountMatches, recipeMatches, sortRecipes, sparksFewerLabel } from "./catalog-filters";
 import { catalogFacts } from "./vocabulary.fixture";
 
 
@@ -56,10 +56,44 @@ test("uses=N lists exactly the recipes needing N Sparks; a malformed count is ig
   expect(filtersFromParameters(new URLSearchParams("uses=x")).uses).toBe(0);
 });
 
+describe("capacity buckets", () => {
+  const gib = (value: number) => value * 1024 ** 3;
+
+  test("a bucket holds everything up to its bound, and an undeclared size only the unknown bucket", () => {
+    expect(capacityBucketMatches(gib(64), "64")).toBe(true);
+    expect(capacityBucketMatches(gib(16), "64")).toBe(true);
+    expect(capacityBucketMatches(gib(64) + 1, "64")).toBe(false);
+    expect(capacityBucketMatches(undefined, "64")).toBe(false);
+    expect(capacityBucketMatches(undefined, "unknown")).toBe(true);
+    expect(capacityBucketMatches(gib(1), "unknown")).toBe(false);
+    expect(capacityBucketMatches(gib(900), "")).toBe(true);
+  });
+
+  test("many distinct sizes give a few buckets with unique labels, up to the one covering the largest", () => {
+    const sizes = [7.5, 19, 19, 56, 56, 56, 56, 56, 100, 116].map(gib);
+    const buckets = capacityBuckets([...sizes, undefined]);
+    expect(buckets).toEqual(["16", "32", "64", "128", "unknown"]);
+    const labels = buckets.map(capacityLabel);
+    expect(new Set(labels).size).toBe(labels.length);
+    expect(labels.slice(0, 4)).toEqual(["≤ 16 GiB", "≤ 32 GiB", "≤ 64 GiB", "≤ 128 GiB"]);
+    expect(capacityBuckets([gib(5)])).toEqual(["16"]);
+    expect(CAPACITY_BUCKETS_GIB.map(String)).toEqual(expect.arrayContaining(buckets.filter((bucket) => bucket !== "unknown")));
+  });
+
+  test("the URL accepts only a bucket; an old exact-byte link means no filter", () => {
+    expect(filtersFromParameters(new URLSearchParams("memory=64&disk=unknown&download=21474836480"))).toMatchObject({ memory: "64", disk: "unknown", download: "" });
+  });
+
+  test("the Spark count reads as 'or fewer'", () => {
+    expect(sparksFewerLabel("1")).toBe("1 Spark or fewer");
+    expect(sparksFewerLabel("3")).toBe("3 Sparks or fewer");
+  });
+});
+
 describe("public catalog Controller-parity filters", () => {
   test("parses the shared filter vocabulary and validates enumerated values", () => {
-    const filters = filtersFromParameters(new URLSearchParams("model_family=GLM+5.3+Flash&model=models%2Fboth-v1&abliterated=true&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&capability=chat&capability=reasoning&capability=chat&download=100&disk=unknown&memory=200&sort=download&direction=desc"));
-    expect(filters).toMatchObject({ modelFamily: "GLM 5.3 Flash", model: "models/both-v1", abliterated: "true", sourceOwner: "owner", quantization: "NVFP4", updated: "30", sparks: "4+", capabilities: ["chat", "reasoning"], download: "100", disk: "unknown", memory: "200", sort: "download", direction: "desc" });
+    const filters = filtersFromParameters(new URLSearchParams("model_family=GLM+5.3+Flash&model=models%2Fboth-v1&abliterated=true&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&capability=chat&capability=reasoning&capability=chat&download=64&disk=unknown&memory=200&sort=download&direction=desc"));
+    expect(filters).toMatchObject({ modelFamily: "GLM 5.3 Flash", model: "models/both-v1", abliterated: "true", sourceOwner: "owner", quantization: "NVFP4", updated: "30", sparks: "4+", capabilities: ["chat", "reasoning"], download: "64", disk: "unknown", memory: "", sort: "download", direction: "desc" });
     expect(filtersFromParameters(new URLSearchParams("abliterated=unknown&sort=bogus")).abliterated).toBe("");
     expect(filtersFromParameters(new URLSearchParams("type=code")).type).toBe("code");
     // Type and capability names are the release vocabulary's, so the URL parser keeps them as given.

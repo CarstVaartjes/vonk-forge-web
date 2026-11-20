@@ -63,35 +63,37 @@ beforeEach(() => {
 test("shows sizing, immutable identity, and evidence provenance", async () => {
   render(<RecipesPage />);
   expect(await screen.findByRole("link", { name: "Qwen Fast" })).toBeVisible();
-  expect(screen.getByRole("cell", { name: "20 GiB" })).toBeVisible();
   expect(screen.getByRole("cell", { name: "48 GiB" })).toBeVisible();
   expect(screen.getByText(/Source verified/)).toBeVisible();
   expect(within(screen.getByRole("table")).getByText(/Not yet verified/, { selector: ".status" })).toBeVisible();
   expect(screen.getByText(/never tested/)).toBeVisible();
   expect(screen.getByText(/not a Vonk endorsement/i)).toBeVisible();
-  expect(screen.getByText(/aaaaaaaaaa…/)).toBeVisible();
-  expect(screen.getAllByRole("columnheader")).toHaveLength(16);
-  expect(screen.getAllByRole("cell")).toHaveLength(16);
+  // Hashes and slugs belong to the recipe page, and a recipe with no executable contract shows it.
+  expect(screen.queryByText(/aaaaaaaaaa…/)).not.toBeInTheDocument();
+  expect(within(screen.getByRole("table")).getByText("Readiness not declared")).toBeVisible();
+  expect(screen.getAllByRole("columnheader")).toHaveLength(6);
+  expect(screen.getAllByRole("cell")).toHaveLength(6);
+  expect(document.querySelector("td h2, td h3")).toBeNull();
 });
 
+
+test("the executable-contract badge shows only on a row that deviates from it", async () => {
+  loadRecipeCatalog.mockResolvedValue([{ ...recipe, catalog: { ...recipe.catalog, execution_readiness: "executable" } }]);
+  render(<RecipesPage />);
+  await screen.findByRole("link", { name: "Qwen Fast" });
+  expect(within(screen.getByRole("table")).queryByText("Executable contract")).not.toBeInTheDocument();
+});
 
 test("keeps Controller-parity filters in the URL and applies them locally", async () => {
   render(<RecipesPage />);
   await screen.findByRole("link", { name: "Qwen Fast" });
   fireEvent.change(screen.getByLabelText("Filter by abliterated"), { target: { value: "false" } });
   await waitFor(() => expect(window.location.search).toContain("abliterated=false"));
-  expect(screen.getByLabelText("Filter by model family")).toBeVisible();
-  expect(screen.getByLabelText("Filter by model")).toBeVisible();
-  expect(screen.getByLabelText("Filter by quantization")).toBeVisible();
-  expect(screen.getByLabelText("Filter by runtime")).toBeVisible();
-  expect(screen.getByLabelText("Filter by Sparks you have")).toBeVisible();
-  expect(screen.getByLabelText("Filter by recipe creator")).toBeVisible();
-  expect(screen.getByLabelText("Filter by updated date")).toBeVisible();
-  expect(screen.getByLabelText("Filter by execution readiness")).toBeVisible();
-  expect(screen.getByLabelText("Filter by capability")).toBeVisible();
+  const more = within(document.querySelector(".catalog-more") as HTMLElement);
+  for (const name of ["Model family", "Engine", "Capabilities"]) expect(more.getByRole("group", { name })).toBeInTheDocument();
+  for (const label of ["Filter by model", "Filter by memory per spark", "Filter by disk per spark", "Filter by download size", "Filter by updated date", "Filter by execution readiness", "Filter by qualification", "Filter by original repository"]) expect(more.getByLabelText(label)).toBeInTheDocument();
   expect(screen.getByText(/status appear only in/i)).toBeVisible();
   expect(screen.queryByRole("button", { name: "Cards" })).not.toBeInTheDocument();
-  expect(screen.queryByLabelText("Sort recipes")).not.toBeInTheDocument();
 });
 
 test("starts from the visitor's Sparks and engine, in the same URL facets as the columns", async () => {
@@ -103,26 +105,29 @@ test("starts from the visitor's Sparks and engine, in the same URL facets as the
   expect(screen.getByRole("button", { name: "2 Sparks 1 recipe" })).toBeEnabled();
   fireEvent.click(oneSpark);
   await waitFor(() => expect(window.location.search).toBe("?verified=0&sparks=1"));
-  expect(screen.getByLabelText("Filter by Sparks you have")).toHaveValue("1");
   expect(oneSpark).toHaveAttribute("aria-pressed", "true");
   fireEvent.click(within(screen.getByRole("group", { name: "Engine" })).getByRole("button", { name: "vLLM: 1" }));
   await waitFor(() => expect(window.location.search).toContain("runtime=vllm"));
-  expect(screen.getByLabelText("Filter by runtime")).toHaveValue("vllm");
-  expect(screen.getByRole("columnheader", { name: /^Sparks/ })).toBeVisible();
-  const headers = [...document.querySelectorAll(".catalog-column-heading > span:first-child")].map((label) => label.textContent?.trim());
-  expect(headers.slice(0, 5)).toEqual(["Recipe", "Sparks", "Engine", "Memory / Spark", "Disk / Spark"]);
+  expect(within(screen.getByRole("group", { name: "Engine" })).getByRole("button", { name: "vLLM: 1" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getAllByRole("columnheader").map((header) => header.textContent?.trim())).toEqual(["Recipe", "Sparks", "Memory / Spark", "Engine", "Capabilities", "Status"]);
 });
 
-test("sorts the list from any column and preserves the selected direction", async () => {
+test("a header sorts ascending, then descending, then back to newest; a capacity bucket filters by at-most", async () => {
   render(<RecipesPage />);
   await screen.findByRole("link", { name: "Qwen Fast" });
-  fireEvent.click(screen.getByRole("button", { name: "Sort Model ascending" }));
-  await waitFor(() => expect(window.location.search).toContain("sort=model"));
-  expect(window.location.search).toContain("direction=asc");
-  fireEvent.click(screen.getByRole("button", { name: "Sort Model descending" }));
+  const memory = () => screen.getByRole("button", { name: /^Memory \/ Spark/ });
+  fireEvent.click(memory());
+  await waitFor(() => expect(window.location.search).toContain("sort=memory&direction=asc"));
+  fireEvent.click(memory());
   await waitFor(() => expect(window.location.search).toContain("direction=desc"));
-  fireEvent.change(screen.getByLabelText("Filter by disk per Spark"), { target: { value: String(20 * 1024 ** 3) } });
-  await waitFor(() => expect(window.location.search).toContain("disk=21474836480"));
+  fireEvent.click(memory());
+  await waitFor(() => expect(window.location.search).not.toContain("sort="));
+  // 48 GiB memory: only the "at most 64 GiB" bucket (and none below it) holds the recipe, so it is the one offered.
+  const labels = [...screen.getByLabelText("Filter by memory per spark").querySelectorAll("option")].map((option) => option.textContent);
+  expect(labels).toEqual(["Any", "≤ 64 GiB (1)"]);
+  fireEvent.change(screen.getByLabelText("Filter by memory per spark"), { target: { value: "64" } });
+  await waitFor(() => expect(window.location.search).toContain("memory=64"));
+  expect(screen.getByRole("link", { name: "Qwen Fast" })).toBeVisible();
 });
 
 
@@ -242,22 +247,24 @@ describe("type-first filtering", () => {
     expect(within(applied).getByRole("button", { name: /Type: Vision/ })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Include recipes not yet verified" }));
     await waitFor(() => expect(window.location.search).toBe("?type=vision&verified=0"));
-    fireEvent.click(screen.getByRole("button", { name: /^Clear \d+ filter/ }));
-    await waitFor(() => expect(window.location.search).toBe("?verified=0"));
-    expect(await screen.findByRole("link", { name: "Qwen Fast" })).toBeVisible();
+    fireEvent.click(screen.getAllByRole("button", { name: /^Reset filters/ })[0]!);
+    await waitFor(() => expect(window.location.search).toBe(""));
+    expect(screen.getByLabelText("Applied filters")).toHaveTextContent("Verified on Spark");
   });
 
-  test("Clear counts only what the visitor chose, and clearing also turns the default off", async () => {
+  test("Reset counts only what the visitor chose, and restores the default Verified on Spark", async () => {
     window.history.replaceState(null, "", "/recipes");
     render(<RecipesPage />);
     await screen.findByRole("link", { name: "Coder" });
     expect(screen.getByLabelText("Applied filters")).toHaveTextContent("Verified on Spark");
-    expect(screen.queryByRole("button", { name: /^Clear \d+ filter/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Reset filters/ })).not.toBeInTheDocument();
     fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "Code 1" }));
-    const clear = await screen.findByRole("button", { name: "Clear 1 filter" });
-    fireEvent.click(clear);
-    await waitFor(() => expect(window.location.search).toBe("?verified=0"));
-    expect(screen.queryByRole("button", { name: /^Clear \d+ filter/ })).not.toBeInTheDocument();
+    const reset = await screen.findByRole("button", { name: /^Reset filters/ });
+    expect(reset).toHaveTextContent("to Verified on Spark");
+    fireEvent.click(reset);
+    await waitFor(() => expect(window.location.search).toBe(""));
+    expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).toBeChecked();
+    expect(screen.queryByRole("button", { name: /^Reset filters/ })).not.toBeInTheDocument();
   });
 });
 

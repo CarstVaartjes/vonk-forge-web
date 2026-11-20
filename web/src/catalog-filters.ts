@@ -41,6 +41,11 @@ const ENGINE_LABELS: Record<string, string> = {
   exllamav3: "ExLlamaV3",
 };
 
+// The visitor's Spark count as a sentence: "2 Sparks or fewer" (4+ is every recipe).
+export function sparksFewerLabel(sparks: Exclude<SparkFilter, "">): string {
+  return sparks === "4+" ? "Any number of Sparks" : `${sparks} ${sparks === "1" ? "Spark" : "Sparks"} or fewer`;
+}
+
 export function engineLabel(value: string): string {
   return ENGINE_LABELS[value] ?? humanize(value);
 }
@@ -131,9 +136,9 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
     updated: VALID_UPDATED.has(parameters.get("updated") ?? "") ? parameters.get("updated") as UpdatedFilter : "",
     qualification,
     readiness: VALID_READINESS.has(readiness) ? readiness as CatalogFilters["readiness"] : "",
-    download: parameters.get("download") ?? "",
-    disk: parameters.get("disk") ?? "",
-    memory: parameters.get("memory") ?? "",
+    download: capacityParameter(parameters.get("download")),
+    disk: capacityParameter(parameters.get("disk")),
+    memory: capacityParameter(parameters.get("memory")),
     sort,
     direction: VALID_DIRECTIONS.has(direction) ? direction as SortDirection : sort === "catalog" ? "desc" : "asc",
     capabilities: Array.from(new Set(parameters.getAll("capability").filter(Boolean))),
@@ -181,9 +186,38 @@ function sparksMatch(recipe: RecipeSummary, sparks: SparkFilter): boolean {
   return nodeCountMatches(recipe.catalog.node_count, sparks);
 }
 
-function exactSizeMatches(value: number | undefined, filter: string): boolean {
-  if (!filter) return true;
-  return filter === "unknown" ? value === undefined : String(value) === filter;
+// Memory, disk and download sizes are filtered by capacity bucket ("at most N GiB"), never by exact
+// bytes. The bucket bounds live here and nowhere else; a bucket holds everything up to its bound.
+export const CAPACITY_BUCKETS_GIB = [16, 32, 64, 128, 256, 512, 1024] as const;
+const VALID_CAPACITY = new Set<string>(["unknown", ...CAPACITY_BUCKETS_GIB.map(String)]);
+
+// The URL value of a bucket parameter, or "" when it is not one of the buckets (an old exact-byte link).
+function capacityParameter(value: string | null): string {
+  return value !== null && VALID_CAPACITY.has(value) ? value : "";
+}
+
+export function capacityLabel(bucket: string): string {
+  return bucket === "unknown" ? "Not declared" : `≤ ${Number(bucket)} GiB`;
+}
+
+export function capacityBucketMatches(value: number | undefined, bucket: string): boolean {
+  if (!bucket) return true;
+  if (bucket === "unknown") return value === undefined;
+  return value !== undefined && value <= Number(bucket) * 1024 ** 3;
+}
+
+// The buckets worth offering for these sizes: every bound up to the first one that covers the largest
+// size, plus "unknown" when some size is not declared. Labels are unique by construction.
+export function capacityBuckets(values: ReadonlyArray<number | undefined>): string[] {
+  const known = values.filter((value): value is number => value !== undefined);
+  const largest = Math.max(0, ...known);
+  const buckets: string[] = [];
+  for (const bound of CAPACITY_BUCKETS_GIB) {
+    buckets.push(String(bound));
+    if (largest <= bound * 1024 ** 3) break;
+  }
+  if (values.some((value) => value === undefined)) buckets.push("unknown");
+  return buckets;
 }
 
 // The `model` parameter names a Model (all of its variants), not one variant.
@@ -237,9 +271,9 @@ export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, om
     && (omitted === "qualification" || !filters.qualification || facts.qualification === filters.qualification)
     && (omitted === "readiness" || !filters.readiness || facts.execution_readiness === filters.readiness)
     && (omitted === "capability" || filters.capabilities.every((capability) => facts.capabilities.includes(capability)))
-    && (omitted === "download" || exactSizeMatches(facts.expected_download_bytes, filters.download))
-    && (omitted === "disk" || exactSizeMatches(recipe.capacity?.maximum_installed_bytes_per_node, filters.disk))
-    && (omitted === "memory" || exactSizeMatches(recipe.capacity?.maximum_runtime_memory_bytes_per_node, filters.memory));
+    && (omitted === "download" || capacityBucketMatches(facts.expected_download_bytes, filters.download))
+    && (omitted === "disk" || capacityBucketMatches(recipe.capacity?.maximum_installed_bytes_per_node, filters.disk))
+    && (omitted === "memory" || capacityBucketMatches(recipe.capacity?.maximum_runtime_memory_bytes_per_node, filters.memory));
 }
 
 export function sortRecipes(recipes: RecipeSummary[], sort: RecipeSort, direction: SortDirection = sort === "catalog" ? "desc" : "asc"): RecipeSummary[] {
