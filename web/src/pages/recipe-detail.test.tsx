@@ -6,7 +6,7 @@ import { catalogFacts, vocabularyFixture } from "../vocabulary.fixture";
 
 
 const { getRecipe, getVocabulary, loadRecipeCatalog } = vi.hoisted(() => ({ getRecipe: vi.fn(), getVocabulary: vi.fn(), loadRecipeCatalog: vi.fn() }));
-vi.mock("../api/client", () => ({ getRecipe, getVocabulary, loadRecipeCatalog }));
+vi.mock("../api/client", () => ({ getRecipe, getVocabulary, loadRecipeCatalog, peekRecipe: () => null, peekRecipeCatalog: () => null, peekModel: () => null, peekModels: () => null, peekVocabulary: () => null }));
 
 function recipe(publisher: string, sourceRepository: string, sourceOwner: string): RecipeDetail {
   return {

@@ -1,7 +1,7 @@
 import { formatDate } from "../dates";
 import { useEffect, useState } from "react";
 
-import { getRecipe, getVocabulary, loadRecipeCatalog, type RecipeDetail } from "../api/client";
+import { getRecipe, getVocabulary, loadRecipeCatalog, peekRecipe, peekRecipeCatalog, peekVocabulary, type RecipeDetail } from "../api/client";
 import { CommandBlock } from "../command-block";
 import { engineLabel, gibLabel, modelFamilyTitle, sourceLabel } from "../catalog-filters";
 import { jobRunCommand, optionRange, optionType, slotCount } from "../job-recipe";
@@ -17,12 +17,12 @@ const recipeAuthoringGuide = "https://github.com/CarstVaartjes/vonk-forge-recipe
 
 
 export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug: string }) {
-  const [recipe, setRecipe] = useState<RecipeDetail | null>(null);
+  const [recipe, setRecipe] = useState<RecipeDetail | null>(() => peekRecipe(publisher, slug));
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [aboutOpen, setAboutOpen] = useState(false);
   // Every recipe, for the matrix of other ways to run this family. If it cannot be read the matrix is not shown.
-  const [allRecipes, setAllRecipes] = useState<RecipeDetail[]>([]);
+  const [allRecipes, setAllRecipes] = useState<RecipeDetail[]>(() => peekRecipeCatalog() ?? []);
   useEffect(() => {
     const controller = new AbortController();
     loadRecipeCatalog(controller.signal).then(setAllRecipes).catch(() => undefined);
@@ -31,7 +31,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
   // "Read all" is offered only when the clamp actually hides text.
   const [aboutCut, setAboutCut] = useState(false);
   // The release words for capabilities and statuses. Without them the page still shows the raw names.
-  const [vocabulary, setVocabulary] = useState<Vocabulary | null>(null);
+  const [vocabulary, setVocabulary] = useState<Vocabulary | null>(peekVocabulary);
   useEffect(() => {
     const controller = new AbortController();
     getVocabulary(controller.signal).then(setVocabulary).catch(() => undefined);
@@ -56,7 +56,10 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
       canonical.rel = "canonical";
       document.head.append(canonical);
     }
+    const before = canonical.href;
     canonical.href = `${window.location.origin}/recipes/${recipe.publisher}/${recipe.slug}`;
+    // Leaving the page puts back the address that was there.
+    return () => { canonical.href = before; };
   }, [recipe]);
   if (error) return <main className="status-panel error"><h1>Recipe unavailable</h1><p>It may be hidden, removed from listings, or the catalog may be offline.</p><p className="status-actions"><button type="button" className="text-link" onClick={() => setAttempt(attempt + 1)}>Retry</button> · <a className="text-link" href="/recipes">Back to Recipes</a></p></main>;
   if (!recipe) return <main className="status-panel" role="status">Loading immutable recipe…</main>;

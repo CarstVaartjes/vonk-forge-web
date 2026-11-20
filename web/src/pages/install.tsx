@@ -1,7 +1,6 @@
 import { CommandBlock } from "../command-block";
+import { controllerInstallCommand } from "../install-command";
 import { usePageMeta } from "../page-meta";
-
-export const controllerInstallCommand = "curl -fsSL https://install.vonkforge.ai/nas | sh";
 
 const repository = "https://github.com/CarstVaartjes/vonk-forge/blob/main";
 const tailscaleRunbook = `${repository}/docs/runbooks/tailscale.md`;

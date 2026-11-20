@@ -78,6 +78,15 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   `catalog-index.json`; the browser accepts version 2 only and refuses anything else
   (error state with Retry). There is no second summary file and no reader for an
   older version: the bump ships atomically with the reader in one Pages build.
+- Navigation has one owner, `web/src/router.ts` (history.pushState/popstate over the one route list in `web/src/routes.ts`;
+  no router dependency). Every non-home page is a `React.lazy` chunk loaded by `preparePage` in `web/src/app.tsx` before it
+  is shown; the entry chunk keeps home (under the 200 kB gzipped budget). The loaded catalog index is cached in
+  `web/src/api/static-catalog.ts` together with everything derived from it (recipes, Models, model documents by
+  reference, all built once per index with `Map` joins, never a `.find` per row); a page starts from the `peek*` accessors
+  in `api/client.ts`, so moving between pages makes no request and draws no loading panel. A page reads its URL at mount
+  (the router remounts it on every navigation that changes the path or the query, even back to the same list address), writes its own filters with `history.replaceState` only, and an in-app link is a
+  plain `<a href>`: do not add click handlers that navigate. `e2e/client-routing.spec.ts` covers one index request,
+  no loading text, focus on the heading, scroll on Back, and modified clicks.
 - The public site never builds or executes a container, accepts model weights,
   stores visitor data, or holds controller authority. Weights stay at immutable
   origins; container layers stay in registries; runtime authority, secrets, and

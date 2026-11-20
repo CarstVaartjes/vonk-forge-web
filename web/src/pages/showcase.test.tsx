@@ -6,7 +6,7 @@ import { LIGHT_CODER, SHOWCASE_PROFILES, SHOWCASE_PUBLISHER } from "../showcase-
 import { ShowcasePage } from "./showcase";
 
 const { loadRecipeCatalog } = vi.hoisted(() => ({ loadRecipeCatalog: vi.fn() }));
-vi.mock("../api/client", () => ({ loadRecipeCatalog }));
+vi.mock("../api/client", () => ({ loadRecipeCatalog, peekRecipe: () => null, peekRecipeCatalog: () => null, peekModel: () => null, peekModels: () => null, peekVocabulary: () => null }));
 
 const slugs = [...new Set(SHOWCASE_PROFILES.flatMap((profile) => profile.members.map((member) => member.slug)))];
 

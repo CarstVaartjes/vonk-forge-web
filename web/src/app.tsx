@@ -1,20 +1,13 @@
+import { Component, Suspense, lazy, useEffect, useLayoutEffect, useState, type ComponentType, type ReactNode } from "react";
+
 import { formatDate } from "./dates";
-import { useEffect, useState, type ReactElement } from "react";
 
 import { getLibraryRelease, type LibraryRelease } from "./api/client";
-import { ArchitecturePage } from "./pages/architecture";
-import { ControlPage } from "./pages/control";
 import { HomePage } from "./pages/home";
-import { InstallPage } from "./pages/install";
-import { PrivacyPage } from "./pages/privacy";
-import { PublishingGuidePage } from "./pages/publishing-guide";
-import { RecipeDetailPage } from "./pages/recipe-detail";
-import { RecipesPage } from "./pages/recipes";
-import { ShowcasePage } from "./pages/showcase";
-import { ModelDetailPage, ModelsPage } from "./pages/models";
 import { ThemeIcon } from "./icons";
 import { matchRoute, type Route, type RouteMatch } from "./routes";
 import { useNoindex, usePageMeta } from "./page-meta";
+import { settleNavigation, startRouter, useLocationKey } from "./router";
 import { applyTheme, chooseTheme, currentTheme, followSystem, type Theme } from "./theme";
 
 
@@ -30,24 +23,53 @@ function NotFoundPage() {
   );
 }
 
-const PAGES: Record<Route, (params: RouteMatch["params"]) => ReactElement> = {
-  "/": () => <HomePage />,
-  "/architecture": () => <ArchitecturePage />,
-  "/control": () => <ControlPage />,
-  "/example-setup": () => <ShowcasePage />,
-  "/install": () => <InstallPage />,
-  "/models": () => <ModelsPage />,
-  "/models/:publisher/:slug": ({ publisher, slug }) => <ModelDetailPage publisher={publisher} slug={slug} />,
-  "/privacy": () => <PrivacyPage />,
-  "/publish": () => <PublishingGuidePage />,
-  "/recipes": () => <RecipesPage />,
-  "/recipes/:publisher/:slug": ({ publisher, slug }) => <RecipeDetailPage publisher={publisher} slug={slug} />,
+// A page whose code cannot load or whose render throws leaves a way out instead of a blank site.
+class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  override state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  override render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <main className="status-panel error" role="alert">
+        <h1>This page could not be loaded</h1>
+        <p>The site may have been updated while this page was open.</p>
+        <p className="status-actions"><button type="button" className="button" onClick={() => window.location.reload()}>Reload</button></p>
+      </main>
+    );
+  }
+}
+
+type PageProps = RouteMatch["params"];
+
+// One entry per route in routes.ts (the type makes a missing one a compile error). Home is in the entry
+// chunk; every other page is its own chunk, loaded before navigation shows it (see `preparePage`).
+const PAGE_LOADERS: Record<Route, () => Promise<{ default: ComponentType<PageProps> }>> = {
+  "/": async () => ({ default: HomePage }),
+  "/architecture": () => import("./pages/architecture").then((m) => ({ default: m.ArchitecturePage })),
+  "/control": () => import("./pages/control").then((m) => ({ default: m.ControlPage })),
+  "/example-setup": () => import("./pages/showcase").then((m) => ({ default: m.ShowcasePage })),
+  "/install": () => import("./pages/install").then((m) => ({ default: m.InstallPage })),
+  "/models": () => import("./pages/models").then((m) => ({ default: m.ModelsPage })),
+  "/models/:publisher/:slug": () => import("./pages/models").then((m) => ({ default: m.ModelDetailPage })),
+  "/privacy": () => import("./pages/privacy").then((m) => ({ default: m.PrivacyPage })),
+  "/publish": () => import("./pages/publishing-guide").then((m) => ({ default: m.PublishingGuidePage })),
+  "/recipes": () => import("./pages/recipes").then((m) => ({ default: m.RecipesPage })),
+  "/recipes/:publisher/:slug": () => import("./pages/recipe-detail").then((m) => ({ default: m.RecipeDetailPage })),
 };
+
+const PAGES = Object.fromEntries(Object.entries(PAGE_LOADERS).map(([route, load]) => [route, lazy(load)])) as unknown as Record<Route, ComponentType<PageProps>>;
+
+// Loads the code of the page at `pathname` (nothing for an unknown path, which renders the not-found page).
+export function preparePage(pathname: string): Promise<unknown> {
+  const match = matchRoute(pathname);
+  return match ? PAGE_LOADERS[match.route]() : Promise.resolve();
+}
 
 function CurrentPage() {
   const match = matchRoute(window.location.pathname);
-  if (match) return PAGES[match.route](match.params);
-  return <NotFoundPage />;
+  if (!match) return <NotFoundPage />;
+  const Page = PAGES[match.route];
+  return <Page {...match.params} />;
 }
 
 // The release this site serves (its tag is the contract version), read once from the small
@@ -104,6 +126,10 @@ function NavigationLink({ href, children, primary = false, also = [] }: { href: 
 export function App() {
   const release = useLibraryRelease();
   const [menuOpen, setMenuOpen] = useState(false);
+  // The page shown follows the router's location, which only an in-app navigation or the back button changes.
+  const location = useLocationKey();
+  useEffect(() => startRouter(preparePage), []);
+  useLayoutEffect(() => { setMenuOpen(false); settleNavigation(); }, [location]);
   // Escape closes the phone menu and hands focus back to its button.
   useEffect(() => {
     if (!menuOpen) return undefined;
@@ -138,7 +164,11 @@ export function App() {
           </div>
         </header>
         <div id="main-content" tabIndex={-1}>
-          <CurrentPage />
+          <PageBoundary key={location}>
+            <Suspense fallback={null}>
+              <CurrentPage />
+            </Suspense>
+          </PageBoundary>
         </div>
         <footer className="site-footer">
           <div>

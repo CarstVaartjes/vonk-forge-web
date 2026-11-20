@@ -13,6 +13,7 @@ vi.mock("../api/client", () => ({
   getVocabulary,
   listModels,
   loadRecipeCatalog,
+  peekRecipe: () => null, peekRecipeCatalog: () => null, peekModel: () => null, peekModels: () => null, peekVocabulary: () => null,
 }));
 
 beforeEach(() => {

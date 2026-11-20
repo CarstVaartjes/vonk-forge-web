@@ -1,6 +1,6 @@
 import type { CatalogSummary } from "../catalog-stats";
 import type { Vocabulary } from "../vocabulary";
-import { getStaticCatalogSummary, getStaticLibraryRelease, getStaticModel, getStaticRecipe, getStaticVocabulary, listStaticModels, listStaticRecipeCatalog } from "./static-catalog";
+import { getStaticCatalogSummary, peekStaticModel, peekStaticModels, peekStaticRecipe, peekStaticRecipeCatalog, peekStaticVocabulary, getStaticLibraryRelease, getStaticModel, getStaticRecipe, getStaticVocabulary, listStaticModels, listStaticRecipeCatalog } from "./static-catalog";
 
 
 // A model's license as the catalog published it: shown for information, never a gate.
@@ -207,3 +207,11 @@ export function getCatalogSummary(signal?: AbortSignal): Promise<CatalogSummary>
 export function getLibraryRelease(signal?: AbortSignal): Promise<LibraryRelease> {
   return getStaticLibraryRelease(RECIPE_LIBRARY_INDEX_URL, signal);
 }
+
+// The same data, only when the index has already loaded; a page starts from it so that moving between
+// pages draws no loading state and makes no request.
+export const peekRecipeCatalog = (): RecipeDetail[] | null => peekStaticRecipeCatalog(RECIPE_LIBRARY_INDEX_URL);
+export const peekRecipe = (publisher: string, slug: string): RecipeDetail | null => peekStaticRecipe(RECIPE_LIBRARY_INDEX_URL, publisher, slug);
+export const peekModels = (): ModelSummary[] | null => peekStaticModels(RECIPE_LIBRARY_INDEX_URL)?.items ?? null;
+export const peekModel = (publisher: string, slug: string): ModelSummary | null => peekStaticModel(RECIPE_LIBRARY_INDEX_URL, publisher, slug);
+export const peekVocabulary = (): Vocabulary | null => peekStaticVocabulary(RECIPE_LIBRARY_INDEX_URL);

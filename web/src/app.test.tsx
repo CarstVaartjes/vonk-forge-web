@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, vi } from "vitest";
 
-import { App } from "./app";
+import { App, preparePage } from "./app";
 import indexHtml from "../index.html?raw";
 import { InstallPage } from "./pages/install";
 
@@ -15,6 +15,15 @@ beforeEach(() => {
     return { ok: false, status: 404 };
   }));
 });
+
+// Open a page the way the browser does: its code is loaded before it is shown.
+async function go(path: string): Promise<void> {
+  window.history.replaceState({}, "", path);
+  await preparePage(path);
+}
+
+// The page is lazy: wait for React to show it.
+const shown = () => waitFor(() => expect(document.querySelector("#main-content main")).not.toBeNull());
 
 afterEach(() => {
   window.history.replaceState({}, "", "/");
@@ -102,27 +111,29 @@ test("top menu is Recipes, Models, Controller, How it works beside Install; Publ
 });
 
 
-test("marks the current top-level destination, grouping the pages under it", () => {
-  const current = (path: string) => {
-    window.history.replaceState({}, "", path);
+test("marks the current top-level destination, grouping the pages under it", async () => {
+  const current = async (path: string) => {
+    await go(path);
     const view = render(<App />);
+  await shown();
     const links = within(siteHeader()).getAllByRole("link");
     const marked = links.filter((link) => link.getAttribute("aria-current") === "page").map((link) => link.textContent);
     view.unmount();
     return marked;
   };
 
-  expect(current("/recipes/vonk/qwen-fast")).toEqual(["Recipes"]);
-  expect(current("/models")).toEqual(["Models"]);
-  expect(current("/install")).toEqual(["Install"]);
-  expect(current("/control")).toEqual(["Controller"]);
-  expect(current("/publish")).toEqual([]);
+  expect(await current("/recipes/vonk/qwen-fast")).toEqual(["Recipes"]);
+  expect(await current("/models")).toEqual(["Models"]);
+  expect(await current("/install")).toEqual(["Install"]);
+  expect(await current("/control")).toEqual(["Controller"]);
+  expect(await current("/publish")).toEqual([]);
 });
 
 
-test("routes publishing to the repository guide without a browser authoring workspace", () => {
-  window.history.replaceState({}, "", "/publish");
+test("routes publishing to the repository guide without a browser authoring workspace", async () => {
+  await go("/publish");
   render(<App />);
+  await shown();
 
   expect(screen.getByRole("heading", { name: "Publish a recipe others can trust." })).toBeVisible();
   expect(screen.getByRole("link", { name: "Read the recipe authoring guide" })).toHaveAttribute(
@@ -133,9 +144,10 @@ test("routes publishing to the repository guide without a browser authoring work
 });
 
 
-test("explains the operator-owned architecture for one to many Sparks", () => {
-  window.history.replaceState({}, "", "/architecture");
+test("explains the operator-owned architecture for one to many Sparks", async () => {
+  await go("/architecture");
   render(<App />);
+  await shown();
 
   expect(
     screen.getByRole("heading", { name: /one control plane.*one to many sparks/i }),
@@ -153,9 +165,10 @@ test("explains the operator-owned architecture for one to many Sparks", () => {
 });
 
 
-test("explains the control to runtime contract without MIA-specific control logic", () => {
-  window.history.replaceState({}, "", "/architecture");
+test("explains the control to runtime contract without MIA-specific control logic", async () => {
+  await go("/architecture");
   render(<App />);
+  await shown();
 
   expect(screen.getByRole("heading", { name: "One contract. Any reviewed runtime." })).toBeVisible();
   for (const name of ["Recipe", "Local controller", "Spark enforcement", "Runtime adapter"]) {
@@ -168,9 +181,10 @@ test("explains the control to runtime contract without MIA-specific control logi
 });
 
 
-test("provides the current signed controller and Spark installation path", () => {
-  window.history.replaceState({}, "", "/install");
+test("provides the current signed controller and Spark installation path", async () => {
+  await go("/install");
   render(<App />);
+  await shown();
 
   expect(screen.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Lab mode: from this page to a signed-in Controller" })).toBeVisible();
@@ -212,9 +226,10 @@ test("provides the current signed controller and Spark installation path", () =>
 });
 
 
-test("documents two equivalent control paths and complete CLI setup", () => {
-  window.history.replaceState({}, "", "/control");
+test("documents two equivalent control paths and complete CLI setup", async () => {
+  await go("/control");
   render(<App />);
+  await shown();
 
   expect(screen.getByRole("heading", { name: "Click it, or script it." })).toBeVisible();
   expect(screen.getAllByRole("heading", { name: "Web Controller" })).toHaveLength(2);
@@ -245,9 +260,10 @@ test("the install page links the removal runbook", () => {
   );
 });
 
-test("offers lab and secure remote install modes with current enrollment commands", () => {
-  window.history.replaceState({}, "", "/install");
+test("offers lab and secure remote install modes with current enrollment commands", async () => {
+  await go("/install");
   render(<App />);
+  await shown();
 
   const labHeading = screen.getByRole("heading", { name: "Lab mode: from this page to a signed-in Controller" });
   const secureHeading = screen.getByRole("heading", { name: "Secure remote with Tailscale" });
@@ -266,9 +282,10 @@ test("offers lab and secure remote install modes with current enrollment command
 });
 
 
-test("discloses aggregate cookie-free visitor analytics", () => {
-  window.history.replaceState({}, "", "/privacy");
+test("discloses aggregate cookie-free visitor analytics", async () => {
+  await go("/privacy");
   render(<App />);
+  await shown();
 
   expect(screen.getByRole("heading", { name: "Useful numbers. No visitor profiles." })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Available statistics" })).toBeVisible();
@@ -291,15 +308,17 @@ test("maps the public catalog to operator-owned control and execution", () => {
 });
 
 
-test("each route sets its own tab title and description", () => {
-  const meta = (path: string) => {
-    window.history.replaceState({}, "", path);
+test("each route sets its own tab title and description", async () => {
+  const meta = async (path: string) => {
+    await go(path);
     const view = render(<App />);
+  await shown();
     const seen = [document.title, document.querySelector('meta[name="description"]')?.getAttribute("content")];
     view.unmount();
     return seen;
   };
-  const pages = ["/recipes", "/install", "/control", "/architecture", "/publish", "/example-setup"].map(meta);
+  const pages: Array<Array<string | null | undefined>> = [];
+  for (const path of ["/recipes", "/install", "/control", "/architecture", "/publish", "/example-setup"]) pages.push(await meta(path));
 
   expect(pages.map(([title]) => title)).toEqual(
     ["Recipes", "Install", "Control", "How it works", "Publish a recipe", "Example setup"].map((name) => `${name} · Vonk Forge`),
@@ -327,9 +346,10 @@ test("Escape closes the open menu and returns focus to its button", () => {
 });
 
 
-test("an unknown address says not found, offers the way back and asks search engines to skip it", () => {
-  window.history.replaceState({}, "", "/no-such-page");
+test("an unknown address says not found, offers the way back and asks search engines to skip it", async () => {
+  await go("/no-such-page");
   const view = render(<App />);
+  await shown();
 
   expect(screen.getByRole("heading", { name: "Not found" })).toBeVisible();
   const main = within(screen.getByRole("main"));

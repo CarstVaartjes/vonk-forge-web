@@ -17,6 +17,9 @@ type RecipeDefinition = CatalogRecipeEntry["document"];
 type ModelDefinition = CatalogModelEntry["document"];
 
 const cachedIndexes = new Map<string, Promise<LibraryIndex>>();
+// The indexes that finished loading, so a page that opens after one can start from them and draw
+// no loading state; every derived view is built once per index (see `derived`).
+const loadedIndexes = new Map<string, LibraryIndex>();
 
 function record(value: unknown): Record<string, unknown> {
   return typeof value === "object" && value !== null ? value as Record<string, unknown> : {};
@@ -113,16 +116,39 @@ function canonicalSource(sourceReference: string): { owner: string; repository: 
 
 
 // A recipe selects a model by kind, identity and content digest; the entity is that exact document.
-function sameReference(selected: RecipeDefinition["models"][number]["model"], entity: CatalogModelEntry): boolean {
-  const { identity } = entity.document;
-  return selected.kind === entity.document.kind
-    && selected.publisher === identity.publisher
-    && selected.slug === identity.slug
-    && selected.content_sha256 === entity.content_sha256;
+function referenceKey(kind: string | undefined, publisher: string, slug: string, sha256: string): string {
+  return `${kind}\0${publisher}\0${slug}\0${sha256}`;
+}
+
+// What is built from one index, once: its model documents by reference, its recipes as the pages show them
+// (and by address), and its Models. A join through these maps is O(N+M), not a scan per recipe.
+interface Derived {
+  entities: Map<string, CatalogModelEntry>;
+  recipes?: RecipeDetail[];
+  recipesByAddress?: Map<string, RecipeDetail>;
+  models?: ModelSummary[];
+}
+const derivedByIndex = new WeakMap<LibraryIndex, Derived>();
+
+function derived(index: LibraryIndex): Derived {
+  let found = derivedByIndex.get(index);
+  if (!found) {
+    const entities = new Map<string, CatalogModelEntry>();
+    for (const entity of index.catalog_entities) {
+      const { identity } = entity.document;
+      const key = referenceKey(entity.document.kind, identity.publisher, identity.slug, entity.content_sha256);
+      if (!entities.has(key)) entities.set(key, entity);
+    }
+    found = { entities };
+    derivedByIndex.set(index, found);
+  }
+  return found;
 }
 
 function selectedEntity(document: RecipeDefinition, index: LibraryIndex, selection = document.models[0]): CatalogModelEntry | undefined {
-  return selection && index.catalog_entities.find((entity) => sameReference(selection.model, entity));
+  if (!selection) return undefined;
+  const { kind, publisher, slug, content_sha256: sha256 } = selection.model;
+  return derived(index).entities.get(referenceKey(kind, publisher, slug, sha256));
 }
 
 // A Family's title comes from the index `families`, keyed by the Model display's lineage; a Model without lineage has none.
@@ -221,14 +247,9 @@ function jobContractOf(document: RecipeDefinition, display: CatalogRecipeEntry["
   };
 }
 
-function mapModelVersion(entity: CatalogModelEntry, index: LibraryIndex): ModelVersionSummary {
+function mapModelVersion(entity: CatalogModelEntry, recipeSlugs: string[]): ModelVersionSummary {
   const { document, display } = entity;
   const { identity, source, format } = document;
-  const recipeSlugs = index.recipes
-    // A recipe runs its first model; a drafter or companion does not make it run that Model.
-    .filter((recipe) => selectedEntity(recipe.document, index) === entity)
-    .map((recipe) => `${recipe.document.identity.publisher}/${recipe.document.identity.slug}`)
-    .sort();
   return {
     publisher: identity.publisher,
     slug: identity.slug,
@@ -249,11 +270,6 @@ function mapModelVersion(entity: CatalogModelEntry, index: LibraryIndex): ModelV
   };
 }
 
-function modelRuns(versions: ModelVersionSummary[], recipes: RecipeSummary[]): ModelRuns {
-  const slugs = new Set(versions.flatMap((version) => version.recipe_slugs));
-  return runsOf(recipes.filter((recipe) => slugs.has(`${recipe.publisher}/${recipe.slug}`)));
-}
-
 function runsOf(own: RecipeSummary[]): ModelRuns {
   const unique = (values: Array<string | null>): string[] => Array.from(new Set(values.filter((value): value is string => Boolean(value)))).sort();
   return {
@@ -263,31 +279,34 @@ function runsOf(own: RecipeSummary[]): ModelRuns {
   };
 }
 
-// The same facts restricted to recipes that passed hardware checks on a Spark.
-function verifiedModelRecipes(versions: ModelVersionSummary[], recipes: RecipeSummary[]): RecipeSummary[] {
-  const slugs = new Set(versions.flatMap((version) => version.recipe_slugs));
-  return recipes.filter((recipe) => slugs.has(`${recipe.publisher}/${recipe.slug}`) && isVerified(recipe));
-}
-
 function mapModels(index: LibraryIndex): ModelSummary[] {
-  const recipes = index.recipes.map((item) => mapRecipe(item, index));
+  const recipes = recipesFromIndex(index);
+  const byAddress = derived(index).recipesByAddress!;
+  // A recipe runs its first model; a drafter or companion does not make it run that Model.
+  const slugsByEntity = new Map<CatalogModelEntry, string[]>();
+  for (const recipe of index.recipes) {
+    const entity = selectedEntity(recipe.document, index);
+    if (entity) slugsByEntity.set(entity, [...(slugsByEntity.get(entity) ?? []), `${recipe.document.identity.publisher}/${recipe.document.identity.slug}`]);
+  }
   return modelGroups(index).groups.map(({ publisher, slug, title, entities }) => {
     const first = entities[0]!;
     const { display } = first;
-    const versionRows = entities.map((version) => mapModelVersion(version, index)).sort((left, right) => left.title.localeCompare(right.title));
-    const verifiedRecipes = verifiedModelRecipes(versionRows, recipes);
+    const versionRows = entities.map((version) => mapModelVersion(version, (slugsByEntity.get(version) ?? []).sort())).sort((left, right) => left.title.localeCompare(right.title));
+    const slugs = new Set(versionRows.flatMap((version) => version.recipe_slugs));
+    const own = Array.from(slugs).flatMap((address) => byAddress.get(address) ?? []);
+    const verifiedRecipes = own.filter(isVerified);
     return {
       publisher,
       slug,
       title,
       family: familyTitle(index, display) || undefined,
-      runs: modelRuns(versionRows, recipes),
+      runs: runsOf(own),
       verified_runs: runsOf(verifiedRecipes),
       verified_recipe_count: verifiedRecipes.length,
       tags: lowerTags(display.tags),
       types: typesOf(index.vocabulary, versionRows.flatMap((version) => version.capabilities)),
       versions: versionRows,
-      recipe_count: new Set(versionRows.flatMap((version) => version.recipe_slugs)).size,
+      recipe_count: slugs.size,
     };
   }).sort((left, right) => left.title.localeCompare(right.title));
 }
@@ -474,7 +493,10 @@ export function parseLibraryIndex(rawBody: unknown, rawRelease: unknown): Librar
 function loadIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
   let shared = cachedIndexes.get(url);
   if (!shared) {
-    const pending: Promise<LibraryIndex> = readIndex(url).catch((error: unknown) => {
+    const pending: Promise<LibraryIndex> = readIndex(url).then((index) => {
+      loadedIndexes.set(url, index);
+      return index;
+    }, (error: unknown) => {
       if (cachedIndexes.get(url) === pending) cachedIndexes.delete(url);
       throw error;
     });
@@ -499,9 +521,18 @@ export async function getStaticLibraryRelease(url: string, signal?: AbortSignal)
   return libraryRelease(await readJson(releaseUrl(url), signal));
 }
 
-// The recipes of an accepted index, as the pages show them.
+// The recipes of an accepted index, as the pages show them (mapped once per index).
 export function recipesFromIndex(index: LibraryIndex): RecipeDetail[] {
-  return index.recipes.map((item) => mapRecipe(item, index));
+  const built = derived(index);
+  if (!built.recipes) {
+    built.recipes = index.recipes.map((item) => mapRecipe(item, index));
+    built.recipesByAddress = new Map();
+    for (const recipe of built.recipes) {
+      const address = `${recipe.publisher}/${recipe.slug}`;
+      if (!built.recipesByAddress.has(address)) built.recipesByAddress.set(address, recipe);
+    }
+  }
+  return built.recipes;
 }
 
 // The small summary the Pages build derived from the verified index
@@ -515,34 +546,80 @@ export async function getStaticVocabulary(url: string, signal?: AbortSignal): Pr
   return (await loadIndex(url, signal)).vocabulary;
 }
 
+function modelsFromIndex(index: LibraryIndex): ModelSummary[] {
+  const built = derived(index);
+  built.models ??= mapModels(index);
+  return built.models;
+}
+
+function recipeFromIndex(index: LibraryIndex, publisher: string, slug: string): RecipeDetail {
+  recipesFromIndex(index);
+  const recipe = derived(index).recipesByAddress!.get(`${publisher}/${slug}`);
+  if (!recipe) throw new Error("Recipe not found in the public library");
+  return recipe;
+}
+
+function modelFromIndex(index: LibraryIndex, publisher: string, slug: string): ModelSummary {
+  const model = modelsFromIndex(index).find((item) => item.publisher === publisher && item.slug === slug);
+  if (!model) throw new Error("Model not found in the public library");
+  return model;
+}
+
 export async function listStaticRecipeCatalog(url: string, signal?: AbortSignal): Promise<RecipeDetail[]> {
   return recipesFromIndex(await loadIndex(url, signal));
 }
 
 export async function listStaticModels(url: string, signal?: AbortSignal): Promise<ModelPage> {
-  const index = await loadIndex(url, signal);
-  return { items: mapModels(index) };
+  return { items: modelsFromIndex(await loadIndex(url, signal)) };
 }
 
-export async function getStaticModel(url: string, publisher: string, slug: string, signal?: AbortSignal): Promise<ModelSummary> {
-  const page = await listStaticModels(url, signal);
-  const model = page.items.find((item) => item.publisher === publisher && item.slug === slug);
-  if (!model) throw new Error("Model not found in the public library");
-  return model;
+// A miss is a miss: the cached index may belong to an older release than the entry asked for, so it is
+// dropped before the error, and Retry or the next page reads the index again.
+async function fromIndex<T>(url: string, signal: AbortSignal | undefined, pick: (index: LibraryIndex) => T): Promise<T> {
+  const index = await loadIndex(url, signal);
+  try {
+    return pick(index);
+  } catch (error) {
+    if (loadedIndexes.get(url) === index) { loadedIndexes.delete(url); cachedIndexes.delete(url); }
+    throw error;
+  }
 }
 
-export async function getStaticRecipe(
-  url: string,
-  publisher: string,
-  slug: string,
-  signal?: AbortSignal,
-): Promise<RecipeDetail> {
-  const index = await loadIndex(url, signal);
-  const item = index.recipes.find((candidate) => candidate.document.identity.publisher === publisher && candidate.document.identity.slug === slug);
-  if (!item) throw new Error("Recipe not found in the public library");
-  return mapRecipe(item, index);
+export function getStaticModel(url: string, publisher: string, slug: string, signal?: AbortSignal): Promise<ModelSummary> {
+  return fromIndex(url, signal, (index) => modelFromIndex(index, publisher, slug));
+}
+
+export function getStaticRecipe(url: string, publisher: string, slug: string, signal?: AbortSignal): Promise<RecipeDetail> {
+  return fromIndex(url, signal, (index) => recipeFromIndex(index, publisher, slug));
+}
+
+// What a page that opens after the index loaded starts from, so moving between pages draws no loading
+// state and fetches nothing. Each is null until the index has loaded (or the entry is not in it).
+export function peekStaticVocabulary(url: string): Vocabulary | null {
+  return loadedIndexes.get(url)?.vocabulary ?? null;
+}
+
+export function peekStaticRecipeCatalog(url: string): RecipeDetail[] | null {
+  const index = loadedIndexes.get(url);
+  return index ? recipesFromIndex(index) : null;
+}
+
+export function peekStaticModels(url: string): ModelPage | null {
+  const index = loadedIndexes.get(url);
+  return index ? { items: modelsFromIndex(index) } : null;
+}
+
+export function peekStaticRecipe(url: string, publisher: string, slug: string): RecipeDetail | null {
+  const index = loadedIndexes.get(url);
+  try { return index ? recipeFromIndex(index, publisher, slug) : null; } catch { return null; }
+}
+
+export function peekStaticModel(url: string, publisher: string, slug: string): ModelSummary | null {
+  const index = loadedIndexes.get(url);
+  try { return index ? modelFromIndex(index, publisher, slug) : null; } catch { return null; }
 }
 
 export function resetStaticCatalogCacheForTests(): void {
   cachedIndexes.clear();
+  loadedIndexes.clear();
 }
