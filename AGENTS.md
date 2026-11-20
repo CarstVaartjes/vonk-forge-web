@@ -104,15 +104,17 @@ npm --prefix web test -- --run
 git ls-files -z | node web/scripts/check-single-sources.mjs
 npm --prefix web run build
 npx --prefix web playwright install chromium
-npm --prefix web run test:e2e   # builds and serves web/dist with vite preview
+npm --prefix web run test:e2e   # builds (locally; CI serves the dist it built earlier) and serves web/dist with vite preview
 ```
 
 The end-to-end suite includes an acceptance spec (`web/e2e/acceptance.spec.ts`): no horizontal
-overflow and no console error at 1440 and 400 px in both themes, an axe scan of home, the catalog and a
-recipe page with no serious or critical issue, and the home transfer budget (JavaScript and data under
+overflow and no console error at 1440 and 400 px in both themes, an axe scan of every page (the routes in
+`web/src/routes.ts`, the one list `app.tsx` renders from; add a page there and it is covered) with no serious or critical issue, and the home transfer budget (JavaScript and data under
 200 kB gzipped, never the full catalog index). It serves a fixture release at `/catalog/` on the preview
 origin and blocks every other origin, so it exercises the production bundle
-without network access. `web/scripts/recipe-release.test.mjs` covers the
+without network access. With `VONK_E2E_DOWNLOADED_LIBRARY=1` it serves the downloaded library instead, which is how
+`pages.yml` tests every deploy. CI runs the browsers in Microsoft's pinned Playwright image, whose tag must match
+the locked `@playwright/test` (`web/scripts/ci-playwright-image.test.mjs`); workflows carry `timeout-minutes`. `web/scripts/recipe-release.test.mjs` covers the
 fetch-and-verify step with a fixture release, including refusal of bad
 signatures and digests. To load the real catalog locally, run
 `node web/scripts/recipe-release.mjs` (needs an authenticated `gh`); it writes

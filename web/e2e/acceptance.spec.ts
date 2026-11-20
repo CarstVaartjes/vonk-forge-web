@@ -3,26 +3,51 @@ import { gzipSync } from "node:zlib";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 
+import { ROUTES } from "../src/routes.ts";
 import { routeRelease } from "./release-fixture.ts";
-
-const PAGES = ["/", "/recipes", "/models", "/recipes/vonk-forge/qwen-fast"];
 
 test.beforeEach(({ page }) => routeRelease(page));
 
-async function load(page: Page, path: string, errors: string[]): Promise<void> {
+// Console and page errors of one test, collected by listeners attached once per page.
+const errorsByPage = new WeakMap<Page, string[]>();
+function watch(page: Page): string[] {
+  const known = errorsByPage.get(page);
+  if (known) return known;
+  const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
+  errorsByPage.set(page, errors);
+  return errors;
+}
+
+async function load(page: Page, path: string): Promise<void> {
   await page.goto(path, { waitUntil: "networkidle" });
+}
+
+// Every route of the site, read from src/routes.ts. A parameterised route is visited at the first
+// entry its list page links to, so the pages are checked against whichever library is being served.
+async function firstEntry(page: Page, route: string): Promise<string> {
+  const list = route.slice(0, route.indexOf("/:"));
+  await load(page, list);
+  const href = await page.locator(`main a[href^="${list}/"]`).first().getAttribute("href");
+  expect(href, `${list} links to at least one entry`).not.toBeNull();
+  return href!;
+}
+
+async function sitePaths(page: Page): Promise<string[]> {
+  const paths: string[] = [];
+  for (const route of ROUTES) paths.push(route.includes(":") ? await firstEntry(page, route) : route);
+  return paths;
 }
 
 for (const width of [1440, 400]) {
   for (const scheme of ["dark", "light"] as const) {
-    test(`home, the catalog and a recipe page at ${width}px in ${scheme}: no horizontal overflow, no console error`, async ({ page }) => {
-      const errors: string[] = [];
+    test(`every page at ${width}px in ${scheme}: no horizontal overflow, no console error`, async ({ page }) => {
+      const errors = watch(page);
       await page.setViewportSize({ width, height: 900 });
       await page.emulateMedia({ colorScheme: scheme });
-      for (const path of PAGES) {
-        await load(page, path, errors);
+      for (const path of await sitePaths(page)) {
+        await load(page, path);
         await expect(page.locator("html")).toHaveCSS("color-scheme", scheme);
         expect(await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth)).toBeLessThanOrEqual(0);
       }
@@ -31,19 +56,25 @@ for (const width of [1440, 400]) {
   }
 }
 
-test("an accessibility scan of home, the catalog and a recipe page reports no serious issue, in both themes", async ({ page }) => {
-  for (const scheme of ["dark", "light"] as const) {
-    await page.emulateMedia({ colorScheme: scheme });
-    for (const path of PAGES) {
-      await load(page, path, []);
+// One test per route and theme, so each fits the default timeout and a violation names its page.
+for (const scheme of ["dark", "light"] as const) {
+  for (const route of ROUTES) {
+    test(`${route} reports no serious accessibility issue in ${scheme}`, async ({ page }) => {
+      const errors = watch(page);
+      const path = route.includes(":") ? await firstEntry(page, route) : route;
+      await page.emulateMedia({ colorScheme: scheme });
+      await load(page, path);
       const { violations } = await new AxeBuilder({ page }).analyze();
-      expect(violations.filter((violation) => violation.impact === "serious" || violation.impact === "critical").map((violation) => `${scheme} ${path} ${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).slice(0, 3).join(" | ")}`)).toEqual([]);
-    }
+      for (const violation of violations.filter((item) => item.impact === "serious" || item.impact === "critical")) {
+        expect.soft(violation.nodes.map((node) => node.target.join(" ")).slice(0, 3), `${scheme} ${path} ${violation.id}`).toEqual([]);
+      }
+      expect.soft(errors).toEqual([]);
+    });
   }
-});
+}
 
 test("the catalog rows are not headings: the Recipes page has only its two section headings under one h1", async ({ page }) => {
-  await load(page, "/recipes", []);
+  await load(page, "/recipes");
   await expect(page.getByRole("heading", { level: 1 })).toHaveCount(1);
   await expect(page.locator("main").getByRole("heading", { level: 2 })).toHaveCount(2);
   await expect(page.locator("tbody").getByRole("heading")).toHaveCount(0);

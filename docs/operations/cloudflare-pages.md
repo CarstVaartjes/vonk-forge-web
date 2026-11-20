@@ -16,12 +16,14 @@ default Pages hostname is `vonk-forge-web.pages.dev`.
    project.
 2. Create a narrowly scoped Cloudflare API token with Account → Cloudflare
    Pages → Edit permission.
-3. In the GitHub `production` environment, add:
+3. In the GitHub `production` environment, add the secrets, and add the variable as a
+   repository variable (the `build` job reads it to skip a current release and has no
+   environment):
 
    ```text
-   Secret:   CLOUDFLARE_ACCOUNT_ID
-   Secret:   CLOUDFLARE_API_TOKEN
-   Variable: CLOUDFLARE_PAGES_PROJECT=vonk-forge-web
+   Secret:              CLOUDFLARE_ACCOUNT_ID    (production environment)
+   Secret:              CLOUDFLARE_API_TOKEN     (production environment)
+   Repository variable: CLOUDFLARE_PAGES_PROJECT=vonk-forge-web
    ```
 4. In the Pages project, add the custom domain `vonkforge.ai`. Because this is
    an apex domain, the zone must use Cloudflare nameservers; Cloudflare then
@@ -66,13 +68,21 @@ and incoming data in the dashboard.
 
 `pages.yml` is the only workflow that runs on a push to `main`; it also runs
 on manual dispatch and hourly (at minute 17). Push runs first call
-`ci.yml` and the deploy job waits for it (pull requests run `ci.yml` directly).
+`ci.yml` and the build job waits for it (pull requests run `ci.yml` directly).
 Scheduled and dispatched runs skip CI, since the code has not changed since the last main
-push that passed it; they only pick up a new recipe release, and the deploy build
-still type-checks the shipped code against it. A release dispatch is therefore not
-blocked by CI checks that look at other branches. The deploy job runs only on
+push that passed it; they only pick up a new recipe release, and every run tests the
+library it is about to publish (below). A release dispatch is therefore not
+blocked by CI checks that look at other branches. The build, e2e and deploy jobs run only on
 `refs/heads/main` (the `production` environment has no branch policy), so a dispatch
-from another ref runs nothing. The deploy job:
+from another ref runs nothing. Three jobs, each with a 15-minute timeout:
+
+- `build` does steps 1 to 4 below, runs the unit tests against the downloaded library, and
+  keeps `web/dist` as an artifact;
+- `e2e` runs the acceptance spec (`VONK_E2E_DOWNLOADED_LIBRARY=1`: no fixture, the downloaded
+  library) against that same `web/dist`, in Microsoft's Playwright container image;
+- `deploy` uploads that `web/dist` only when both passed. A failure leaves the previous site live.
+
+The `build` job:
 
 1. installs the locked frontend dependencies;
 2. runs `web/scripts/recipe-release.mjs`, which asks for the
@@ -100,10 +110,10 @@ from another ref runs nothing. The deploy job:
    through these types, so `tsc` fails when either reads a field the release's contract
    does not have: the first step of `npm run build` for the shipped adapter, and
    `npm run typecheck` (pull-request CI only) for tests and fixtures;
-4. builds `web/dist` (`npm run build` type-checks only shipped code through `web/tsconfig.build.json`; tests and fixtures are checked by `npm run typecheck`, which CI runs on pull requests only. An additive contract minor with a new required field therefore reds PR CI, through the fixtures, but never the deploy) and uploads it as the production Pages deployment with
-   Wrangler. A scheduled run whose verified `release.json` equals the one
-   already served at `https://<project>.pages.dev/catalog/release.json` skips
-   the upload.
+4. builds `web/dist` once (`npm run build` type-checks only shipped code through `web/tsconfig.build.json`; tests and fixtures are checked by `npm run typecheck`, which CI runs on pull requests only. An additive contract minor with a new required field therefore reds PR CI, through the fixtures, but never the deploy) (the `deploy` job uploads that dist as the production Pages deployment with
+   Wrangler). A scheduled run whose verified `release.json` equals the one
+   already served at `https://<project>.pages.dev/catalog/release.json` stops after the
+   download: no tests, no build, no upload.
 
 Any download, signature, or digest failure fails the job before the upload, so
 the previously deployed site keeps serving the last verified catalog. The job
@@ -115,8 +125,8 @@ signed files travel in the one `recipe-library.tar` asset, so a run never sees a
 half-updated set; if it catches the tar briefly absent while it is replaced, the
 download fails and the next run heals it.
 
-To pin a release instead of following the newest one, set the `production`
-environment (or repository) variable `VONK_RECIPE_RELEASE` to an exact tag such
+To pin a release instead of following the newest one, set the repository
+variable `VONK_RECIPE_RELEASE` to an exact tag such
 as `v4.0.0` and dispatch the workflow; clear it to follow the newest release
 again. A pin skips release resolution.
 
