@@ -6,7 +6,7 @@ import { capabilityLabel, statusMeaning, typeLabel, type Vocabulary } from "../v
 import { CatalogTabs } from "../catalog-tabs";
 import { readMySparks, saveMySparks } from "../my-sparks";
 import { STATUS_LEGEND_ID, StatusLegend } from "../status-legend";
-import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
+import { FacetStrip, MoreFiltersSummary, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
 import {
   READINESS_OPTIONS,
   SORT_CHOICES,
@@ -249,7 +249,7 @@ export function RecipesPage() {
         <div className="catalog-toolbar">
           <input type="search" className="catalog-search" aria-label="Search recipes" value={filters.query} onChange={(event) => update("q", event.target.value)} placeholder="Search recipes…" />
           <details className="catalog-more">
-            <summary>More filters{inMore ? <span className="catalog-more-count" aria-hidden="true">{inMore}</span> : null}{inMore ? <span className="visually-hidden"> ({inMore} active)</span> : null}</summary>
+            <MoreFiltersSummary active={inMore} />
             <p className="catalog-more-note">My Sparks: pick how many you have and the list narrows to recipes that need that many or fewer. The pick is remembered on this device and shared with the home page. Your Controller makes the same check against the live capacity of your Sparks.</p>
             <VerifiedToggle checked={filters.verified} onChange={setVerified} />
             <div className="catalog-setup-facets">

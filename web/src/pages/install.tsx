@@ -26,12 +26,12 @@ export function InstallPage() {
           Secure remote over Tailscale follows as the second path. Routine
           operation needs neither SSH nor a Git checkout.
         </p>
-        <div className="guide-jump four-up" aria-label="Installation steps">
+        <nav className="guide-jump four-up" aria-label="Installation steps">
           <a href="#lab">1 · Lab mode <span>LAN, no Tailscale</span></a>
           <a href="#secure-remote">2 · Secure remote <span>Tailscale</span></a>
           <a href="#control">3 · Control <span>Browser or CLI</span></a>
           <a href="#fleet">4 · Sparks <span>Enroll 1…N nodes</span></a>
-        </div>
+        </nav>
       </section>
 
       <section className="install-prerequisites" aria-labelledby="prerequisites-title">

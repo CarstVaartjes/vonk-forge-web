@@ -95,6 +95,9 @@ describe("public model browse", () => {
     expect(window.location.search).toBe("?capability=ocr");
     expect(screen.getByText("7 of 13 models")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(window.location.search).toBe("");
+    fireEvent.click(screen.getByText("More filters"));
+    fireEvent.click(screen.getByRole("checkbox", { name: /Verified on Spark/ }));
     expect(window.location.search).toBe("?verified=0");
     await waitFor(() => expect(screen.getByText("13 of 13 models")).toBeVisible());
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
@@ -151,7 +154,7 @@ describe("public model browse", () => {
     expect(screen.getAllByText("1 Spark").length).toBeGreaterThan(1);
     expect(screen.getAllByText("vLLM").length).toBeGreaterThan(1);
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(window.location.search).toBe("?verified=0");
+    expect(window.location.search).toBe("");
   });
 
   test("offers recovery when the immutable index fails", async () => {
@@ -233,16 +236,21 @@ describe("type-first model filtering", () => {
     expect(rows()[0]).toContain("5 recipes");
   });
 
-  test("Clear filters has one rule: hidden while only the default applies, and it also turns the default off", async () => {
+  test("Clear filters has one rule: hidden while only the default applies, and it restores the default", async () => {
     render(<ModelsPage />);
     await screen.findByRole("group", { name: "Model type" });
     expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument();
     fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "Code 1" }));
     await waitFor(() => expect(window.location.search).toBe("?type=code"));
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
-    await waitFor(() => expect(window.location.search).toBe("?verified=0"));
-    expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked();
+    await waitFor(() => expect(window.location.search).toBe(""));
+    fireEvent.click(screen.getByText("More filters"));
+    expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).toBeChecked();
     expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument();
+    // Turning the default off is itself a filter: it is counted in the badge and can be cleared.
+    fireEvent.click(screen.getByRole("checkbox", { name: /Verified on Spark/ }));
+    expect(screen.getByText("(1 active)")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Clear filters" })).toBeInTheDocument();
   });
 });
 

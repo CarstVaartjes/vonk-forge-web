@@ -41,7 +41,7 @@ export function EvidenceReceipt({ facts, verified, showTitle = true, meaning }: 
       <p className="receipt-lead">{evidenceLine(facts)}</p>
       {facts.creator ? <p className="receipt-by">Recipe by <span className="src">{facts.creator}</span></p> : null}
       {list(rows)}
-      {meaning ? <details className="receipt-details receipt-meaning-details"><summary>What this means</summary><p className="receipt-meaning">{meaning}</p></details> : null}
+      {meaning ? <details className="receipt-details"><summary>What this means</summary><p className="receipt-meaning">{meaning}</p></details> : null}
       <details className="receipt-details">
         <summary>Details</summary>
         {list(hashes)}
