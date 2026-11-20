@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 
 import { getLibraryRelease, type LibraryRelease } from "./api/client";
 import { ArchitecturePage } from "./pages/architecture";
@@ -12,26 +12,27 @@ import { RecipesPage } from "./pages/recipes";
 import { ShowcasePage } from "./pages/showcase";
 import { ModelDetailPage, ModelsPage } from "./pages/models";
 import { ThemeIcon } from "./icons";
+import { matchRoute, type Route, type RouteMatch } from "./routes";
 import { applyTheme, chooseTheme, currentTheme, followSystem, type Theme } from "./theme";
 
 
+const PAGES: Record<Route, (params: RouteMatch["params"]) => ReactElement> = {
+  "/": () => <HomePage />,
+  "/architecture": () => <ArchitecturePage />,
+  "/control": () => <ControlPage />,
+  "/example-setup": () => <ShowcasePage />,
+  "/install": () => <InstallPage />,
+  "/models": () => <ModelsPage />,
+  "/models/:publisher/:slug": ({ publisher, slug }) => <ModelDetailPage publisher={publisher} slug={slug} />,
+  "/privacy": () => <PrivacyPage />,
+  "/publish": () => <PublishingGuidePage />,
+  "/recipes": () => <RecipesPage />,
+  "/recipes/:publisher/:slug": ({ publisher, slug }) => <RecipeDetailPage publisher={publisher} slug={slug} />,
+};
+
 function CurrentPage() {
-  const parts = window.location.pathname.split("/").filter(Boolean);
-  if (parts.length === 0) return <HomePage />;
-  if (parts[0] === "architecture" && parts.length === 1) return <ArchitecturePage />;
-  if (parts[0] === "control" && parts.length === 1) return <ControlPage />;
-  if (parts[0] === "install" && parts.length === 1) return <InstallPage />;
-  if (parts[0] === "privacy" && parts.length === 1) return <PrivacyPage />;
-  if (parts[0] === "recipes" && parts.length === 1) return <RecipesPage />;
-  if (parts[0] === "recipes" && parts.length === 3) {
-    return <RecipeDetailPage publisher={parts[1] ?? ""} slug={parts[2] ?? ""} />;
-  }
-  if (parts[0] === "models" && parts.length === 1) return <ModelsPage />;
-  if (parts[0] === "models" && parts.length === 3) return <ModelDetailPage publisher={parts[1] ?? ""} slug={parts[2] ?? ""} />;
-  if (parts[0] === "example-setup" && parts.length === 1) return <ShowcasePage />;
-  if (parts[0] === "publish") {
-    return <PublishingGuidePage />;
-  }
+  const match = matchRoute(window.location.pathname);
+  if (match) return PAGES[match.route](match.params);
   return <main className="status-panel"><h1>Not found</h1><p>This spark has not been forged.</p></main>;
 }
 

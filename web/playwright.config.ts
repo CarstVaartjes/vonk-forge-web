@@ -18,8 +18,9 @@ export default defineConfig({
     { name: "mobile", use: { ...devices["Pixel 7"] } },
   ],
   webServer: {
-    // Serve the production build, exactly as uploaded to Cloudflare Pages.
-    command: `npm run build && npx vite preview --host 127.0.0.1 --port ${port} --strictPort`,
+    // Serve the production build, exactly as uploaded to Cloudflare Pages. CI has built dist in
+    // an earlier step and serves that one; locally the build runs first.
+    command: `${process.env.CI ? "" : "npm run build && "}npx vite preview --host 127.0.0.1 --port ${port} --strictPort`,
     url: baseURL,
     reuseExistingServer: false,
     timeout: 180_000,

@@ -15,6 +15,8 @@ export const catalogSummary = buildCatalogSummary(catalogIndex, release);
 export async function routeRelease(page: Page): Promise<void> {
   // Block every other origin: the catalog must be served from this site.
   await page.route((url) => !["127.0.0.1", "localhost"].includes(url.hostname), (route) => route.abort());
+  // The deploy job runs the acceptance spec against the library it just downloaded: no fixture.
+  if (process.env.VONK_E2E_DOWNLOADED_LIBRARY) return;
   await page.route("**/catalog/catalog-index.json", (route) => route.fulfill({ json: catalogIndex }));
   await page.route("**/catalog/release.json", (route) => route.fulfill({ json: release }));
   await page.route("**/catalog/catalog-summary.json", (route) => route.fulfill({ json: catalogSummary }));

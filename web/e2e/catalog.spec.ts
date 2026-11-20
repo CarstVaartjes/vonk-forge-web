@@ -223,10 +223,9 @@ test("rolling numbers do not animate under reduced motion", async ({ page }) => 
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
   await expect(page.locator(".rolling-number").first()).toHaveAttribute("data-phase", "final");
-  await page.waitForTimeout(500);
+  await expect(page.locator(".answer")).toHaveText(ANSWER);
   await expect(page.locator(".answer .rolling-strip")).toHaveCount(0);
   await expect(page.locator(".rolling-number .visually-hidden")).toHaveCount(0);
-  await expect(page.locator(".answer")).toHaveText(ANSWER);
 });
 
 
