@@ -37,6 +37,8 @@
   --track: #2a2e27;
   /* the catalog wall (one cell per Spark) */
   --lit: #f2efe8;
+  --tile: rgb(245 240 228 / 78%); /* the wall's lit cell: warm matte ivory, never pure white */
+  --hollow: rgb(245 240 228 / 45%);
   --lit-glow: 0 0 7px rgb(242 239 232 / 28%);
   --cool: rgb(242 239 232 / 13%);
   /* depth */
@@ -84,6 +86,8 @@
   --model-ink: #171813;
   --track: #e6e2d8;
   --lit: #1f201b;
+  --tile: var(--lit);
+  --hollow: rgb(23 24 19 / 55%);
   --lit-glow: none;
   --cool: rgb(23 24 19 / 12%);
   --shadow: 0 1px 2px rgb(40 34 20 / 5%), 0 14px 34px rgb(40 34 20 / 7%);
@@ -1045,6 +1049,7 @@ button.text-link {
 /* The one command block: recess background, gold prompt, green command, Copy with a 3:1 border. */
 .command-block {
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: var(--r-ctl);
@@ -1090,6 +1095,7 @@ button.text-link {
   max-width: 100%;
   margin: 0;
   padding: 0.9rem;
+  padding-inline-end: 1rem;
   overflow-x: auto;
   color: var(--green-text);
   font: 500 var(--t-small)/1.6 var(--mono);
@@ -2284,10 +2290,6 @@ button.text-link {
 }
 
 @media (max-width: 520px) {
-  .home-hero {
-    padding-top: 3.5rem;
-  }
-
   .product-shot figcaption {
     grid-template-columns: 1fr;
     gap: 0.3rem;
@@ -2297,11 +2299,6 @@ button.text-link {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
-
-/* Hero headline: four short lines so the fit, currency and one-click promise read at once. */.home-hero-copy h1 {
-  max-width: 17ch;
-  font-size: var(--t-display);
 }
 
 .home-definition code {
@@ -2346,9 +2343,13 @@ button.text-link {
 
 .agent-session-frame pre {
   flex: 1 1 auto;
+  max-width: 100%;
   margin: 0;
   padding: 1.35rem 1.25rem;
-  overflow: auto;
+  padding-inline-end: 1rem;
+  overflow-x: auto;
+  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-width: thin;
   font: 600 var(--t-lead)/1.75 ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -2706,6 +2707,7 @@ button.text-link {
 
 .rolling-number {
   display: inline-block;
+  letter-spacing: 0;
   color: var(--green-text);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -2722,7 +2724,7 @@ button.text-link {
 }
 
 .rolling-column {
-  width: 0.6em;
+  width: 0.673em; /* the tabular digit advance of Onest, so a rolling number is as wide as the plain one */
   overflow: hidden;
   text-align: center;
 }
@@ -2742,7 +2744,7 @@ button.text-link {
   line-height: 1;
 }
 
-.rolling-number[data-phase="playing"] .rolling-strip {
+.rolling-number[data-phase="go"] .rolling-strip {
   transition: transform 1100ms cubic-bezier(0.16, 1, 0.3, 1);
   transition-delay: calc(var(--column) * 90ms);
 }
@@ -2850,7 +2852,7 @@ button.text-link {
   grid-template-columns: minmax(0, 1.6fr) minmax(14rem, 1fr);
   align-items: center;
   gap: var(--s6) var(--s7);
-  padding: var(--s8) 0 0;
+  padding: var(--s5) 0 0;
 }
 
 .home-hero-copy h1 {
@@ -2863,7 +2865,7 @@ button.text-link {
 
 .home-definition {
   max-width: 34rem;
-  margin: var(--s5) 0 0;
+  margin: var(--s4) 0 0;
   color: var(--muted);
   font-size: var(--t-lead);
   line-height: 1.6;
@@ -2884,7 +2886,7 @@ button.text-link {
 
 
 @media (max-width: 720px) {
-  .home-hero { grid-template-columns: minmax(0, 1fr); padding-top: var(--s7); }
+  .home-hero { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* Product screenshot: a plain window with its fixture address, lifted once. */
@@ -2940,7 +2942,7 @@ button.text-link {
 .src { color: var(--gold-soft); }
 
 /* The picker and its answer. */
-.picker { display: grid; gap: var(--s4); margin-top: var(--s6); padding: var(--s5); max-width: 36rem; }
+.picker { display: grid; gap: var(--s3); margin-top: var(--s4); padding: var(--s4); max-width: 36rem; }
 .picker-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s3) var(--s4); }
 .picker-q { margin: 0; font-weight: 700; font-size: var(--t-body); letter-spacing: -0.01em; }
 .seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--recess); }
@@ -2953,7 +2955,7 @@ button.text-link {
 .answer p { margin: 0; font-size: var(--t-body); line-height: 1.45; font-weight: 600; }
 .answer .answer-breakdown { grid-column: 1 / -1; color: var(--muted); font-size: var(--t-small); font-weight: 400; }
 .answer-placeholder { grid-column: 1 / -1; min-height: 7.5rem; }
-.command-block.compact pre { padding: 0.6rem 0.9rem; }
+.command-block.compact pre { padding: 0.6rem 1rem 0.6rem 0.9rem; }
 .wall-lead { margin: 0; font-weight: 700; letter-spacing: -0.01em; }
 .type-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .type-chips button { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.7rem; border: 1px solid var(--line-strong); border-radius: var(--r-pill); color: var(--muted); background: transparent; font-size: var(--t-small); font-weight: 500; cursor: pointer; }
@@ -2985,7 +2987,7 @@ button.text-link {
 /* Reserved height, measured on the real release, so the wall arriving moves almost nothing. */
 .wall-slot { min-height: 80rem; }
 @media (max-width: 40rem) { .wall-slot { min-height: 95rem; } }
-.wall { display: grid; gap: var(--s4); padding: var(--s5); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--panel); box-shadow: var(--shadow); }
+.wall { display: grid; gap: var(--s3); padding: var(--s4); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--panel); box-shadow: var(--shadow); }
 @media (max-width: 40rem) { .wall { --cell: 11px; --cell-gap: 2px; padding: var(--s3); } }
 .wall-shelves { display: grid; gap: var(--s4); }
 .wall-shelf-title { margin: 0 0 var(--s2); color: var(--faint); font: 700 var(--t-label)/1.4 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
@@ -2996,19 +2998,25 @@ button.text-link {
 .wall-cell i:not(:first-child) { border-top-left-radius: 1px; border-bottom-left-radius: 1px; }
 .wall-cell i:not(:last-child) { border-top-right-radius: 1px; border-bottom-right-radius: 1px; }
 .wall-cell:focus-visible, .wall-cell[data-shown] { outline: 2px solid var(--gold-soft); outline-offset: 2px; }
-.wall-cell[data-state="verified"] i, .wall-key[data-state="verified"] { background: var(--lit); box-shadow: var(--lit-glow); }
+.wall-cell[data-state="verified"] i, .wall-key[data-state="verified"] { background: var(--tile); box-shadow: var(--lit-glow); }
 /* Three shapes, so no state rests on colour: filled, outlined with a dot, dashed and hollow. */
 .wall-cell[data-state="before"] i, .wall-key[data-state="before"] { display: grid; place-items: center; border: 1.5px solid var(--warn); }
 .wall-cell[data-state="before"] i::after, .wall-key[data-state="before"]::after { content: ""; width: 3px; height: 3px; border-radius: 50%; background: var(--warn); }
 .wall-key[data-state="before"] { display: grid; place-items: center; }
-.wall-cell[data-state="none"] i, .wall-key[data-state="none"] { border: 1.5px dashed var(--line-control); }
+.wall-cell[data-state="none"] i, .wall-key[data-state="none"] { border: 1.5px dashed var(--hollow); }
+.wall-cell:hover i, .wall-cell:focus-visible i, .wall-cell[data-shown] i { border-color: var(--gold-soft); }
+.wall-cell[data-state="verified"]:hover i, .wall-cell[data-state="verified"]:focus-visible i, .wall-cell[data-state="verified"][data-shown] i { background: var(--gold-soft); }
 /* A dimmed mark keeps its shape and loses its colour. */
 .wall-cell[data-dim] i { box-shadow: none; }
 .wall-cell[data-dim][data-state="verified"] i { background: var(--cool); }
 .wall-cell[data-dim][data-state="before"] i, .wall-cell[data-dim][data-state="none"] i { border-color: var(--cool); }
 .wall-cell[data-dim][data-state="before"] i::after { background: var(--cool); }
-.wall-card { display: grid; align-content: start; gap: 0.2rem; min-height: 8.5rem; padding: var(--s3) var(--s4); border: 1px solid var(--line); border-radius: var(--r-in); background: var(--recess); font-size: var(--t-small); color: var(--muted); }
-.wall-card strong { color: var(--ink); font-size: var(--t-body); }
+.wall-card { display: flex; flex-wrap: wrap; align-content: start; align-items: baseline; gap: 0.15rem var(--s4); min-height: 5.25rem; padding: var(--s2) var(--s4); border: 1px solid var(--line); border-radius: var(--r-in); background: var(--recess); font-size: var(--t-small); color: var(--muted); }
+.wall-card strong { flex: 1 0 70%; min-width: 0; color: var(--ink); font-size: var(--t-body); }
+@media (max-width: 40rem) { .wall-card { min-height: 9.5rem; } } /* room for a title on two lines, so the legend stays put */
+@media (min-width: 1101px) { .wall-card strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
+.wall-card > :not(strong) { order: 2; }
+.wall-card > .text-link { order: 1; flex: none; margin-inline-start: auto; }
 .wall-card-status { color: var(--ink); font-weight: 650; }
 .wall-card-hint { margin: 0; }
 .wall-legend { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); margin: 0; padding: 0; list-style: none; color: var(--muted); font-size: var(--t-small); }
@@ -3247,10 +3255,9 @@ button.text-link {
   .matrix td:not(:empty)::before { display: block; margin: var(--s2) 0; color: var(--faint); content: attr(data-label); font-size: var(--t-label); }
 }
 
-/* Motion: all of it off under reduced motion (the wall is then in its final state on first paint). */
+/* Motion: all of it off under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .wall-cell i, .wall-cell i::after { transition: background-color var(--base) var(--ease), box-shadow var(--base) var(--ease), border-color var(--base) var(--ease); }
-  .wall[data-ignite="playing"] .wall-cell i, .wall[data-ignite="playing"] .wall-cell i::after { transition-duration: 300ms; transition-delay: calc(var(--i) / var(--n) * 1100ms); }
   .wall-card { animation: card-in var(--fast) var(--ease); }
   .caret { animation: caret-blink 1.1s steps(1) 4; }
 }

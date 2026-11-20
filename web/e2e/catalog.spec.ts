@@ -202,32 +202,22 @@ test("home page never shows numbers when the summary is missing, malformed or em
 });
 
 
-test("the number roll starts from blank, ends at the final value, and is silent for screen readers", async ({ page }) => {
+test("the count is the real number on first paint, with no roll from zero", async ({ page }) => {
   await page.goto("/");
-  const first = page.locator(".answer .rolling-number");
-  await first.scrollIntoViewIfNeeded();
-  // While rolling: moving digits hidden from assistive technology, one visually hidden final value.
-  await expect(first).toHaveAttribute("data-phase", /armed|playing/, { timeout: 2000 }).catch(() => undefined);
-  if ((await first.getAttribute("data-phase")) !== "final") {
-    await expect(first.locator(".visually-hidden")).toHaveText("4");
-    await expect(first.locator(".rolling-digits")).toHaveAttribute("aria-hidden", "true");
-  }
-  // And it always ends on the true number, with no strips left over.
-  await expect(first).toHaveAttribute("data-phase", "final", { timeout: 5000 });
+  // Immediate and non-retrying: a count-up on load would already have strips in the DOM.
+  expect(await page.locator(".answer .rolling-strip").count()).toBe(0);
   await expect(page.locator(".answer")).toHaveText(ANSWER);
-  await expect(page.locator(".answer .rolling-strip")).toHaveCount(0);
 });
 
-
-test("rolling numbers do not animate under reduced motion", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
+test("the count rolls when the visitor changes the pick", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator(".rolling-number").first()).toHaveAttribute("data-phase", "final");
-  await expect(page.locator(".answer")).toHaveText(ANSWER);
-  await expect(page.locator(".answer .rolling-strip")).toHaveCount(0);
-  await expect(page.locator(".rolling-number .visually-hidden")).toHaveCount(0);
+  const picker = page.getByRole("group", { name: "How many Sparks do you have?" });
+  await picker.getByRole("button", { name: /^1 Spark/ }).click();
+  const strip = page.locator(".answer .rolling-number .rolling-strip").first();
+  await expect(strip).toBeAttached();
+  await expect.poll(() => strip.evaluate((element) => element.getAnimations().length)).toBeGreaterThan(0);
+  await expect(page.locator(".answer .rolling-number .rolling-strip")).toHaveCount(0, { timeout: 4000 });
 });
-
 
 test("minimum supported viewport does not overflow", async ({ page }) => {
   for (const width of [320, 393]) {
