@@ -166,11 +166,13 @@ test("provides the current signed controller and Spark installation path", () =>
   render(<App />);
 
   expect(screen.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
-  expect(screen.getByRole("heading", { name: "Prepare the controller" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Lab mode: from this page to a signed-in Controller" })).toBeVisible();
+  expect(screen.getByRole("heading", { name: "Run the Secure remote installer" })).toBeVisible();
   expect(screen.getByText(/this laptop for a lab/i)).toBeVisible();
   const preflightHeading = screen.getByRole("heading", { name: "Complete private HTTPS setup first." });
-  const controllerCommand = screen.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh");
-  expect(preflightHeading.compareDocumentPosition(controllerCommand) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  const [labCommand, secureCommand] = screen.getAllByText("curl -fsSL https://install.vonkforge.ai/nas | sh") as [HTMLElement, HTMLElement];
+  expect(labCommand.compareDocumentPosition(preflightHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  expect(preflightHeading.compareDocumentPosition(secureCommand) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   expect(screen.getByText(/MagicDNS and HTTPS certificates/i)).toBeVisible();
   expect(screen.getByText(/OAuth client with only/)).toHaveTextContent(/auth_keys.*tag:vonk-gateway/i);
   expect(screen.getByText(/Production and development use these same unsuffixed names/i)).toBeVisible();
@@ -239,9 +241,16 @@ test("offers lab and secure remote install modes with current enrollment command
   window.history.replaceState({}, "", "/install");
   render(<App />);
 
-  expect(screen.getByRole("heading", { name: "Lab on your LAN, or secure remote." })).toBeVisible();
-  expect(screen.getByRole("heading", { name: "Lab mode" })).toBeVisible();
-  expect(screen.getByRole("heading", { name: "Secure remote" })).toBeVisible();
+  const labHeading = screen.getByRole("heading", { name: "Lab mode: from this page to a signed-in Controller" });
+  const secureHeading = screen.getByRole("heading", { name: "Secure remote with Tailscale" });
+  expect(labHeading.compareDocumentPosition(secureHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  const secureSection = document.getElementById("controller")!;
+  for (const section of [document.getElementById("lab")!, secureSection]) {
+    expect(within(section).getByText(/sudo docker compose up -d --wait --remove-orphans/)).toBeVisible();
+  }
+  expect(screen.getAllByText(/vonk-forge\/secrets\/admin-password/, { selector: "code" }).length).toBeGreaterThan(0);
+  expect(screen.getByText("https://vonk-forge.local:8443", { selector: "code" })).toBeVisible();
+  expect(screen.queryByText(/Fleet page/)).not.toBeInTheDocument();
   expect(screen.getByText(/Lab mode skips this section/)).toBeVisible();
   expect(screen.getByRole("link", { name: /Lab quickstart/ })).toHaveAttribute("href", "https://github.com/CarstVaartjes/vonk-forge/blob/main/docs/QUICKSTART.md");
   expect(screen.getByText(/vonkctl fleet enroll Atlas --output atlas-grant\.json/)).toBeVisible();

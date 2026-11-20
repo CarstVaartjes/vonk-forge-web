@@ -8,6 +8,11 @@ const repository = "https://github.com/CarstVaartjes/vonk-forge/blob/main";
 const tailscaleRunbook = `${repository}/docs/runbooks/tailscale.md`;
 const uninstallRunbook = `${repository}/docs/operations/uninstall.md`;
 
+// The Lab commands are carried verbatim from vonk-forge docs/QUICKSTART.md, and the start
+// commands from vonk-forge README.md:127-129; those runbooks are the one source.
+const composeStartCommand = `cd vonk-forge
+sudo docker compose pull
+sudo docker compose up -d --wait --remove-orphans`;
 
 
 export function InstallPage() {
@@ -17,14 +22,16 @@ export function InstallPage() {
       <section className="guide-hero" aria-labelledby="install-title">
         <h1 id="install-title">Install Vonk Forge</h1>
         <p>
-          Prepare the controller project on a macOS or Linux workstation, run it
-          on any local computer with Docker Compose—even that same laptop—then
-          enroll one or more Sparks. Routine operation needs neither SSH nor a Git checkout.
+          Start with Lab mode: one signed command, one Compose project on your
+          own LAN, a signed-in Controller, then enroll one or more Sparks.
+          Secure remote over Tailscale follows as the second path. Routine
+          operation needs neither SSH nor a Git checkout.
         </p>
         <div className="guide-jump" aria-label="Installation steps">
-          <a href="#controller">1 · Controller <span>Prepare control plane</span></a>
-          <a href="#control">2 · Control <span>Browser or CLI</span></a>
-          <a href="#fleet">3 · Sparks <span>Enroll 1…N nodes</span></a>
+          <a href="#lab">1 · Lab mode <span>LAN, no Tailscale</span></a>
+          <a href="#secure-remote">2 · Secure remote <span>Tailscale</span></a>
+          <a href="#control">3 · Control <span>Browser or CLI</span></a>
+          <a href="#fleet">4 · Sparks <span>Enroll 1…N nodes</span></a>
         </div>
       </section>
 
@@ -37,22 +44,46 @@ export function InstallPage() {
         </div>
       </section>
 
-      <section className="install-modes" aria-labelledby="install-modes-title">
-        <div className="section-heading compact"><h2 id="install-modes-title">Lab on your LAN, or secure remote.</h2></div>
-        <div className="install-mode-grid">
-          <article>
-            <span className="path-number">lab</span>
-            <h3>Lab mode</h3>
-            <p>LAN only, no Tailscale. Answer <code>lab</code> at the install mode prompt, give the controller host&apos;s reserved LAN address, and the installer generates the local CA, passwords, and keys. Skip the Tailscale preflight below and open <code>https://vonk-forge.local:8443</code>.</p>
-            <a className="text-link" href="https://github.com/CarstVaartjes/vonk-forge/blob/main/docs/QUICKSTART.md">Lab quickstart on GitHub</a>
-          </article>
-          <article>
-            <span className="path-number">default</span>
-            <h3>Secure remote</h3>
-            <p>Private HTTPS over your Tailscale tailnet, reachable from any authorized device. Complete the four preflight checks below before running the installer.</p>
-            <a className="text-link" href="#tailscale-preflight">Go to the Tailscale preflight</a>
-          </article>
+      <section id="lab" className="install-lane development-lane" aria-labelledby="lab-title">
+        <header><div><h2 id="lab-title">Lab mode: from this page to a signed-in Controller</h2><span className="guide-meta">Path 1 · LAN only, no Tailscale</span></div><span>Signed installer</span></header>
+        <p className="lane-intro">
+          Lab mode runs the Controller on your LAN without Tailscale. It is an
+          explicit choice: you answer <code>lab</code> at the install mode prompt.
+          HTTPS uses a local CA created by the installer, and all internal
+          passwords and signing keys are generated locally. The LiteLLM upstream
+          key and the Hugging Face token are optional; without an upstream key,
+          local model routes still work.
+        </p>
+        <ol className="install-steps">
+          <li><span>01</span><div><h3>Run the signed installer</h3><p>On Intel or ARM macOS or Linux, provide <code>curl</code>, <code>openssl</code> and an installed <code>uv</code>, then run the installer. It verifies one portable Python setup wheel and its payload; <code>uv</code> manages the isolated Python 3.14 runtime.</p></div></li>
+        </ol>
+        <CommandBlock label="Workstation terminal">{controllerInstallCommand}</CommandBlock>
+        <ol className="install-steps">
+          <li><span>02</span><div><h3>Answer the prompts</h3><p>Answer <code>lab</code> at the install mode prompt (the default, Secure remote, needs Tailscale), enter the controller host&apos;s reserved LAN IPv4 address, and optionally enter a LiteLLM upstream key and a Hugging Face token for gated models. The project is created in <code>vonk-forge/</code>.</p></div></li>
+          <li><span>03</span><div><h3>Find the administrator password</h3><p>The administrator username is <code>admin</code>. Its generated password is saved in <code>vonk-forge/secrets/admin-password</code>.</p></div></li>
+          <li><span>04</span><div><h3>Add LAN DNS records</h3><p>Add LAN DNS records for <code>vonk-forge.local</code>, <code>enroll.vonk-forge.local</code>, <code>agents.vonk-forge.local</code>, and <code>registry.vonk-forge.local</code>, all pointing to the controller host&apos;s address. On a small lab network, equivalent host-file entries can be used. The Spark management network defaults to the controller host&apos;s own /24; to narrow it, edit <code>VONK_MANAGEMENT_CIDRS</code> in <code>.env</code>.</p></div></li>
+          <li><span>05</span><div><h3>Start the Compose project</h3><p>Run these commands on the controller host, in the directory that contains <code>vonk-forge/</code>.</p></div></li>
+        </ol>
+        <CommandBlock label="Controller host terminal">{composeStartCommand}</CommandBlock>
+        <ol className="install-steps">
+          <li><span>06</span><div><h3>Trust HTTPS and sign in</h3><p>Import <code>secrets/step-ca/root-certificate</code> into the trust store used by your browser and Spark clients. Then open <code>https://vonk-forge.local:8443</code> and sign in as <code>admin</code> with the password in <code>secrets/admin-password</code>.</p></div></li>
+        </ol>
+        <div className="control-note install-update-note">
+          <strong>Keep the LAN listener on the LAN</strong>
+          <p>The LAN listener is bound to the address you entered. Keep the host firewall limited to your trusted LAN and do not forward port 8443 from the internet. Upgrades use the same installer command; the public URL retains <code>/nas</code>, but the generated Compose project is not NAS-specific.</p>
         </div>
+        <a className="text-link" href={`${repository}/docs/QUICKSTART.md`}>Lab quickstart on GitHub</a>
+      </section>
+
+      <section id="secure-remote" className="install-modes" aria-labelledby="secure-remote-title">
+        <div className="section-heading compact"><h2 id="secure-remote-title">Secure remote with Tailscale</h2><span className="guide-meta">Path 2 · Private HTTPS from any authorized device</span></div>
+        <p className="lane-intro">
+          Private HTTPS over your Tailscale tailnet, reachable from any
+          authorized device. It is the installer&apos;s default mode. Complete the
+          four preflight checks below before running the installer. To enable it
+          after a Lab install, create a Secure remote project through the
+          installer rather than starting Tailscale services by hand.
+        </p>
       </section>
 
       <section id="tailscale-preflight" className="tailscale-preflight" aria-labelledby="tailscale-preflight-title">
@@ -98,11 +129,11 @@ export function InstallPage() {
       </section>
 
       <section id="controller" className="install-lane development-lane" aria-labelledby="controller-title">
-        <header><div><h2 id="controller-title">Prepare the controller</h2><span className="guide-meta">Step 1 · Workstation</span></div><span>Signed installer</span></header>
+        <header><div><h2 id="controller-title">Run the Secure remote installer</h2><span className="guide-meta">Path 2 · Workstation</span></div><span>Signed installer</span></header>
         <p className="lane-intro">
-          Run the interactive installer on your workstation. It downloads and
-          verifies the current immutable release before producing a small,
-          self-contained controller project directory.
+          Run the same interactive installer and keep the default Secure remote
+          mode. It downloads and verifies the current immutable release before
+          producing a small, self-contained controller project directory.
         </p>
         <p className="installer-gate"><strong>Preflight complete?</strong> Confirm the four checks above before copying this command.</p>
         <CommandBlock label="Workstation terminal">{controllerInstallCommand}</CommandBlock>
@@ -110,12 +141,9 @@ export function InstallPage() {
           <li><span>01</span><div><h3>Answer the guided prompts</h3><p>The installer prepares local identity, configuration, and secrets without changing the eventual controller host or requiring Docker on the workstation.</p></div></li>
           <li><span>02</span><div><h3>Check the generated directory</h3><p>The output is exactly <code>vonk-forge/docker-compose.yaml</code>, <code>vonk-forge/.env</code>, and <code>vonk-forge/secrets/</code>. Keep the directory private and back it up securely.</p></div></li>
           <li><span>03</span><div><h3>Place it on the controller host</h3><p>Keep the complete <code>vonk-forge/</code> directory on this laptop, or move it to another local computer. Do not copy individual secret values into an image or command line.</p></div></li>
-          <li><span>04</span><div><h3>Start the Compose project</h3><p>Run <code>docker-compose.yaml</code> with Docker Compose on that host. Named volumes retain PostgreSQL and service state.</p></div></li>
+          <li><span>04</span><div><h3>Start the Compose project</h3><p>Run these commands on that host. Named volumes retain PostgreSQL and service state.</p></div></li>
         </ol>
-        <div className="control-note install-update-note">
-          <strong>Upgrades use the same command</strong>
-          <p>Run the controller installer again on the workstation. It prepares the new immutable release while preserving locally owned identity and secrets. The public URL retains <code>/nas</code>, but the generated Compose project is not NAS-specific.</p>
-        </div>
+        <CommandBlock label="Controller host terminal">{composeStartCommand}</CommandBlock>
       </section>
 
       <section className="tailscale-verification" aria-labelledby="tailscale-verification-title">
@@ -155,17 +183,17 @@ curl --fail --show-error --silent \\
       </section>
 
       <section id="control" className="install-lane control-install" aria-labelledby="install-control-title">
-        <header><div><h2 id="install-control-title">Choose a control path</h2><span className="guide-meta">Step 2 · Operator access</span></div><span>Use either or both</span></header>
+        <header><div><h2 id="install-control-title">Choose a control path</h2><span className="guide-meta">Step 3 · Operator access</span></div><span>Use either or both</span></header>
         <p className="lane-intro">
           There is one local controller and two complete ways to operate it.
-          Both use the same Fleet, Library, Activity, authentication, and persisted state.
+          Both use the same authentication and persisted state.
         </p>
         <div className="control-path-grid compact-paths">
           <article>
             <span className="path-number">01</span>
             <h3>Web Controller</h3>
             <span className="guide-meta">Visual and guided</span>
-            <p>Open the controller&apos;s private HTTPS URL, sign in with the administrator account, and use the Fleet, Library, and Activity pages.</p>
+            <p>Open the controller&apos;s private HTTPS URL, sign in as <code>admin</code> (the password is in <code>vonk-forge/secrets/admin-password</code>), and use the Web Controller.</p>
             <a className="button secondary" href="/control#web-controller">Web instructions</a>
           </article>
           <article>
@@ -180,26 +208,26 @@ curl --fail --show-error --silent \\
       </section>
 
       <section id="fleet" className="fleet-install" aria-labelledby="fleet-title">
-        <div className="section-heading compact"><h2 id="fleet-title">Enroll one Spark or many.</h2><span className="guide-meta">Step 3 · Spark fleet</span></div>
+        <div className="section-heading compact"><h2 id="fleet-title">Enroll one Spark or many.</h2><span className="guide-meta">Step 4 · Spark fleet</span></div>
         <p className="lane-intro">
-          Create a one-use enrollment grant in the Web Controller&apos;s Fleet page,
-          or create one from the CLI. Then run the generated Spark command on the
+          Create a one-use enrollment grant with <strong>Enroll Spark</strong> on the
+          Controller&apos;s Overview, or create one from the CLI. Then run the generated Spark command on the
           node you are enrolling.
         </p>
         <CommandBlock label="CLI alternative for creating the grant">{`vonkctl fleet enroll Atlas --output atlas-grant.json
 vonkctl fleet enrollment status GRANT_UUID`}</CommandBlock>
         <CommandBlock label="Spark terminal">{sparkInstallCommand}</CommandBlock>
         <ol className="install-steps fleet-steps">
-          <li><span>01</span><div><h3>Use the controller&apos;s stable LAN address</h3><p>Replace <code>192.168.1.231</code> with the address reserved for your laptop, NAS, or other controller host. The controller hostnames remain in place for TLS while the installer creates the local mapping.</p></div></li>
+          <li><span>01</span><div><h3>Use the controller&apos;s stable LAN address</h3><p>Replace <code>192.168.1.231</code> with the address reserved for your laptop, NAS, or other controller host. The controller hostnames remain in place for TLS while the installer creates the local mapping. In Lab mode the Spark must resolve the <code>enroll</code>, <code>agents</code>, and <code>registry</code> hostnames to that same address, and any client that connects to Spark-facing HTTPS endpoints needs the local CA certificate imported.</p></div></li>
           <li><span>02</span><div><h3>Complete the pairing prompts</h3><p>Enter the one-use grant values and the requested Spark management and fabric addresses. The installer writes the agent and firewall configuration.</p></div></li>
-          <li><span>03</span><div><h3>Verify the node in Fleet</h3><p>The signed Rust agent connects outbound. Confirm that the node is connected and healthy in either control path before installing workloads.</p></div></li>
+          <li><span>03</span><div><h3>Verify the node</h3><p>The signed Rust agent connects outbound. Confirm that the node is connected and healthy in either control path before installing workloads.</p></div></li>
           <li><span>04</span><div><h3>Repeat for each additional Spark</h3><p>Create a separate one-use grant per node. Adding a Spark adds one identity and local model cache—not another controller, database, or secret set.</p></div></li>
         </ol>
         <div className="fleet-choice">
           <article><div><span>1</span><h3>One Spark</h3></div><p>Use a single-node recipe profile and enter only the fabric values that actually exist.</p></article>
           <article><div><span>N</span><h3>Many Sparks</h3></div><p>Repeat the signed installer per node; multi-node recipes select compatible ranks and declared fabric.</p></article>
         </div>
-        <p className="fleet-note">Running the Spark installer again on an installed node performs an in-place agent upgrade. A certificate replacement uses Fleet re-enrollment in the browser or <code>vonkctl fleet re-enroll Atlas --output atlas-replacement.json --yes</code>.</p>
+        <p className="fleet-note">Running the Spark installer again on an installed node performs an in-place agent upgrade. A certificate replacement uses re-enrollment in the Web Controller or <code>vonkctl fleet re-enroll Atlas --output atlas-replacement.json --yes</code>.</p>
       </section>
 
       <section id="uninstall" className="fleet-install" aria-labelledby="uninstall-title">

@@ -2399,43 +2399,8 @@ a {
   }
 }
 
-/* Install modes: lab on the LAN or secure remote, side by side before the Tailscale preflight. */.install-modes {
+/* Secure remote intro: heading and lead-in before the Tailscale preflight. */.install-modes {
   padding: clamp(2.5rem, 5vw, 4rem) 0 0;
-}
-
-.install-mode-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1px;
-  margin-top: 1.5rem;
-  border: 1px solid var(--line);
-  background: var(--line);
-}
-
-.install-mode-grid article {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1.5rem;
-  background: var(--panel);
-}
-
-.install-mode-grid h3 {
-  margin: 0.5rem 0 0;
-  font-size: var(--t-h3);
-}
-
-.install-mode-grid p {
-  flex: 1 1 auto;
-  margin: 0;
-  color: var(--muted);
-  font-size: var(--t-small);
-  line-height: 1.65;
-}
-
-.install-mode-grid code {
-  color: var(--green-text);
-  overflow-wrap: anywhere;
 }
 
 /* The CLI's contract for scripts and agents, stated once beside the commands. */.agent-contract {
@@ -2486,7 +2451,6 @@ a {
 }
 
 @media (max-width: 720px) {
-  .install-mode-grid,
   .agent-contract ul {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -2496,13 +2460,6 @@ a {
 .credential-warning code,
 .agent-contract code {
   overflow-wrap: anywhere;
-}
-
-.install-mode-grid .path-number {
-  color: var(--gold-soft);
-  font: 700 var(--t-label)/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
 }
 
 /* Start from your setup: Spark tiles and facet strips above both catalog lists. */
