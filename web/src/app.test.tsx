@@ -325,3 +325,18 @@ test("Escape closes the open menu and returns focus to its button", () => {
   expect(button).toHaveAttribute("aria-expanded", "false");
   expect(document.activeElement).toBe(button);
 });
+
+
+test("an unknown address says not found, offers the way back and asks search engines to skip it", () => {
+  window.history.replaceState({}, "", "/no-such-page");
+  const view = render(<App />);
+
+  expect(screen.getByRole("heading", { name: "Not found" })).toBeVisible();
+  const main = within(screen.getByRole("main"));
+  expect(main.getByRole("link", { name: "Home" })).toHaveAttribute("href", "/");
+  expect(main.getByRole("link", { name: "Recipes" })).toHaveAttribute("href", "/recipes");
+  expect(main.getByRole("link", { name: "Install" })).toHaveAttribute("href", "/install");
+  expect(document.querySelector('meta[name="robots"]')?.getAttribute("content")).toBe("noindex");
+  view.unmount();
+  expect(document.querySelector('meta[name="robots"]')).toBeNull();
+});

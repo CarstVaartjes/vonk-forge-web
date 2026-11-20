@@ -12,8 +12,21 @@ import { RecipesPage } from "./pages/recipes";
 import { ShowcasePage } from "./pages/showcase";
 import { ModelDetailPage, ModelsPage } from "./pages/models";
 import { ThemeIcon } from "./icons";
+import { useNoindex, usePageMeta } from "./page-meta";
 import { applyTheme, chooseTheme, currentTheme, followSystem, type Theme } from "./theme";
 
+
+function NotFoundPage() {
+  usePageMeta("Not found", "This page does not exist on the Vonk Forge site.");
+  useNoindex();
+  return (
+    <main className="status-panel">
+      <h1>Not found</h1>
+      <p>This spark has not been forged. Try one of these instead.</p>
+      <p className="status-actions"><a className="text-link" href="/">Home</a> · <a className="text-link" href="/recipes">Recipes</a> · <a className="text-link" href="/install">Install</a></p>
+    </main>
+  );
+}
 
 function CurrentPage() {
   const parts = window.location.pathname.split("/").filter(Boolean);
@@ -32,7 +45,7 @@ function CurrentPage() {
   if (parts[0] === "publish") {
     return <PublishingGuidePage />;
   }
-  return <main className="status-panel"><h1>Not found</h1><p>This spark has not been forged.</p></main>;
+  return <NotFoundPage />;
 }
 
 function dateLabel(value: string, options: Intl.DateTimeFormatOptions): string {
