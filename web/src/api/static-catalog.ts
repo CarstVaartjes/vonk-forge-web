@@ -167,12 +167,12 @@ function modelMetadata(document: RecipeDefinition, index: LibraryIndex): { publi
   const versionSlug = identity?.slug ?? "unknown";
   const versionPublisher = identity?.publisher ?? "unknown";
   const group = entity && modelGroups(index).byEntity.get(entity);
-  const slug = group?.slug ?? versionSlug;
+  // A recipe's first model always has lineage (the recipe library's check-model-families); no other path.
   return {
-    publisher: group?.publisher ?? versionPublisher,
-    slug,
-    title: group?.title ?? displayTitle(undefined, slug),
-    family: (entity && familyTitle(index, entity.display)) || group?.title || slug,
+    publisher: group?.publisher ?? "unknown",
+    slug: group?.slug ?? "unknown",
+    title: group?.title ?? "unknown",
+    family: (entity && familyTitle(index, entity.display)) || group?.title || "unknown",
     versionPublisher,
     versionSlug,
     versionTitle: versionSlug,
