@@ -170,6 +170,7 @@ describe("static recipe library adapter", () => {
       family: "Gemma",
       tags: ["google", "gemma", "language", "instruction-tuned", "candidate"],
       // The ggml-org variant of the same lineage model sits inside it, not beside it.
+      recipe_count: 2,
       runs: { spark_counts: [1], engines: ["llama-cpp", "vllm"], creators: ["NVIDIA", "ggml-org"] },
       versions: [{
         slug: "gemma-4-e2b-it-4adf1574",
@@ -197,30 +198,17 @@ describe("static recipe library adapter", () => {
     expect((await listStaticModels(indexUrl)).items.map((item) => item.types)).toEqual([["language", "vision", "audio"], ["language", "vision", "audio"], ["3d"]]);
   });
 
-  test("keeps published model entities visible when no recipe selects them", async () => {
-    const standalone = structuredClone(index.catalog_entities[3]!);
-    standalone.content_sha256 = "4".repeat(64);
-    standalone.document.identity = { ...standalone.document.identity, publisher: "standalone", slug: "standalone-v1", model: { publisher: "standalone", slug: "standalone" } };
-    standalone.display.lineage = null;
-    serve({ ...index, catalog_entities: [...index.catalog_entities, standalone] });
+  test("a variant without lineage is in no Model: no row, no duplicate title", async () => {
+    const helper = structuredClone(index.catalog_entities[0]!);
+    helper.content_sha256 = "a".repeat(64);
+    helper.display.lineage = null;
+    helper.document.identity = { ...helper.document.identity, publisher: "helper", slug: "helper-drafter" };
+    serve({ ...index, catalog_entities: [...index.catalog_entities, helper] });
     const page = await listStaticModels(indexUrl);
-    expect(page.items).toHaveLength(4);
-    expect(page.items.find((item) => item.publisher === "standalone")).toMatchObject({ slug: "standalone", family: undefined, recipe_count: 0, versions: [{ recipe_slugs: [] }] });
-  });
-
-  test("variants without lineage group by their logical model, under no family", async () => {
-    const make = (tag: string) => {
-      const entity = structuredClone(index.catalog_entities[0]!);
-      entity.content_sha256 = tag.repeat(64);
-      entity.display.lineage = null;
-      entity.document.identity = { ...entity.document.identity, publisher: "helper", slug: `helper-${tag}`, model: { publisher: "helper", slug: "drafter" } };
-      return entity;
-    };
-    serve({ ...index, catalog_entities: [...index.catalog_entities, make("a"), make("b")] });
-    const helper = (await listStaticModels(indexUrl)).items.filter((item) => item.publisher === "helper");
-    expect(helper).toHaveLength(1);
-    expect(helper[0]).toMatchObject({ slug: "drafter", family: undefined });
-    expect(helper[0]!.versions).toHaveLength(2);
+    expect(page.items).toHaveLength(index.families!.flatMap((family) => family.lines.flatMap((line) => line.models)).length);
+    const titles = page.items.map((item) => item.title);
+    expect(new Set(titles).size).toBe(titles.length);
+    expect(page.items.flatMap((item) => item.versions.map((version) => version.slug))).not.toContain("helper-drafter");
   });
 
   test("two lineage Models whose variants share a logical model keep separate addresses", async () => {

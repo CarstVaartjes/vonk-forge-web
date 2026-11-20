@@ -131,9 +131,10 @@ function familyTitle(index: LibraryIndex, display: CatalogModelEntry["display"])
   return displayTitle(index.families?.find((family) => family.slug === slug)?.title);
 }
 
-// One hierarchy Model: the variants that share a lineage (family, line, model). Its page address is built from
-// that key, which the contract makes unique. A variant without lineage (a drafter, encoder or other helper) has
-// no place in the hierarchy; those group by their logical model as before and show under no family.
+// One hierarchy Model: the variants that share a lineage (family, line, model), the unique triple of the contract
+// (the slug pattern allows "--", but no published slug contains it). Its page address and the catalog `model`
+// parameter are built from that key. A variant without lineage (a drafter, encoder or other helper) has no place in
+// the hierarchy: it is in no Model and has no row.
 interface ModelGroup { publisher: string; slug: string; title: string; entities: CatalogModelEntry[] }
 
 const groupsByIndex = new WeakMap<LibraryIndex, { groups: ModelGroup[]; byEntity: Map<CatalogModelEntry, ModelGroup> }>();
@@ -144,17 +145,13 @@ function modelGroups(index: LibraryIndex): NonNullable<ReturnType<typeof groupsB
   const keyed = new Map<string, CatalogModelEntry[]>();
   for (const entity of index.catalog_entities) {
     const { lineage } = entity.display;
-    const { model } = entity.document.identity;
-    const key = lineage ? `${lineage.family}\0${lineage.line}\0${lineage.model}` : `\0${model.publisher}\0${model.slug}`;
+    if (!lineage) continue;
+    const key = `${lineage.family}\0${lineage.line}\0${lineage.model}`;
     keyed.set(key, [...(keyed.get(key) ?? []), entity]);
   }
   const groups = Array.from(keyed.values()).map((entities): ModelGroup => {
     const first = entities[0]!;
-    const { lineage } = first.display;
-    if (!lineage) {
-      const { model } = first.document.identity;
-      return { publisher: model.publisher, slug: model.slug, title: displayTitle(first.display.model_title, model.slug), entities };
-    }
+    const lineage = first.display.lineage!;
     const named = index.families?.find((family) => family.slug === lineage.family)?.lines.find((line) => line.slug === lineage.line)?.models.find((model) => model.slug === lineage.model)?.title;
     return { publisher: lineage.family, slug: `${lineage.line}--${lineage.model}`, title: displayTitle(named || first.display.model_title, lineage.model), entities };
   });
