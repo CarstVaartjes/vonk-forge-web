@@ -81,11 +81,44 @@ test("the catalog rows are not headings: the Recipes page has only its two secti
   await expect(page.locator("tbody tr").first().getByRole("link").first()).toBeVisible();
 });
 
-test("with reduced motion the wall is in its final state on first paint", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
+test("the wall is lit from the first paint: no ignition phase, nothing dimmed", async ({ page }) => {
   await page.goto("/");
-  await expect(page.locator(".wall")).toHaveAttribute("data-ignite", "done");
+  await expect(page.locator(".wall")).not.toHaveAttribute("data-ignite", /.*/);
   await expect(page.locator("a.wall-cell[data-dim]")).toHaveCount(0);
+});
+
+// The first screen at 1440x900: both hero actions and the wall's detail bar sit above the fold with room to spare.
+for (const scheme of ["dark", "light"] as const) {
+  test(`home first screen at 1440x900 in ${scheme}: hero actions and the wall detail bar are fully visible`, async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.emulateMedia({ colorScheme: scheme });
+    await load(page, "/");
+    for (const target of [page.locator(".hero-actions").first().getByRole("link", { name: "Install" }), page.locator(".hero-actions").first().getByRole("link", { name: "Browse what runs" }), page.locator(".wall-card").first()]) {
+      const box = (await target.boundingBox())!;
+      expect(box.y + box.height).toBeLessThanOrEqual(900 - 24);
+    }
+  });
+}
+
+test("home at 390x844: the Install action is fully visible without scrolling", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await load(page, "/");
+  const box = (await page.locator(".hero-actions").first().getByRole("link", { name: "Install" }).boundingBox())!;
+  expect(box.y + box.height).toBeLessThanOrEqual(844 - 24);
+});
+
+test("command blocks and terminal code scroll inside themselves with end padding, so long commands never clip", async ({ page }) => {
+  await load(page, "/");
+  for (const pre of await page.locator(".command-block pre, .agent-session-frame pre").all()) {
+    expect(await pre.evaluate((element) => { const style = getComputedStyle(element); return [style.overflowX, parseFloat(style.paddingInlineEnd) >= 16]; })).toEqual(["auto", true]);
+  }
+});
+
+test("no fixture.invalid address is left anywhere in the rendered DOM of any route", async ({ page }) => {
+  for (const path of await sitePaths(page)) {
+    await load(page, path);
+    expect(await page.content(), path).not.toContain("fixture.invalid");
+  }
 });
 
 test("home transfers under 200 kB of JavaScript and data, gzipped, and never requests the full catalog index", async ({ page }) => {

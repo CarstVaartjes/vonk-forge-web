@@ -202,32 +202,23 @@ test("home page never shows numbers when the summary is missing, malformed or em
 });
 
 
-test("the number roll starts from blank, ends at the final value, and is silent for screen readers", async ({ page }) => {
+test("the count is the real number on first paint, with no roll from zero", async ({ page }) => {
   await page.goto("/");
-  const first = page.locator(".answer .rolling-number");
-  await first.scrollIntoViewIfNeeded();
-  // While rolling: moving digits hidden from assistive technology, one visually hidden final value.
-  await expect(first).toHaveAttribute("data-phase", /armed|playing/, { timeout: 2000 }).catch(() => undefined);
-  if ((await first.getAttribute("data-phase")) !== "final") {
-    await expect(first.locator(".visually-hidden")).toHaveText("4");
-    await expect(first.locator(".rolling-digits")).toHaveAttribute("aria-hidden", "true");
-  }
-  // And it always ends on the true number, with no strips left over.
-  await expect(first).toHaveAttribute("data-phase", "final", { timeout: 5000 });
   await expect(page.locator(".answer")).toHaveText(ANSWER);
-  await expect(page.locator(".answer .rolling-strip")).toHaveCount(0);
-});
-
-
-test("rolling numbers do not animate under reduced motion", async ({ page }) => {
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/");
-  await expect(page.locator(".rolling-number").first()).toHaveAttribute("data-phase", "final");
-  await expect(page.locator(".answer")).toHaveText(ANSWER);
-  await expect(page.locator(".answer .rolling-strip")).toHaveCount(0);
+  await expect(page.locator(".rolling-number .rolling-strip")).toHaveCount(0);
   await expect(page.locator(".rolling-number .visually-hidden")).toHaveCount(0);
 });
 
+test("the count rolls only when the Spark count changes, and not under reduced motion", async ({ page }) => {
+  await page.goto("/");
+  const picker = page.getByRole("group", { name: "How many Sparks do you have?" });
+  await picker.getByRole("button", { name: /^1 Spark/ }).click();
+  await expect(page.locator(".answer .rolling-number .rolling-strip").first()).toBeAttached();
+  await expect(page.locator(".answer .rolling-number .rolling-strip")).toHaveCount(0, { timeout: 4000 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await picker.getByRole("button", { name: /^2 Sparks/ }).click();
+  await expect(page.locator(".answer .rolling-strip")).toHaveCount(0);
+});
 
 test("minimum supported viewport does not overflow", async ({ page }) => {
   for (const width of [320, 393]) {

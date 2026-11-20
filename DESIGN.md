@@ -147,7 +147,7 @@ Eyebrows and kickers, thick side-tab borders, generic Unicode icons, and Space G
 
 The palette is taken from the DGX Spark itself: a graphite dark system with NVIDIA green as the one functional action voice and the chassis champagne gold as one tightly bounded public-source exception. The tokens are the Controller dashboard's, same names and values, so the site and the product are one family. Dark is the default; a designed light theme (`:root[data-theme="light"]`, warm paper `#f3f1ea`, white cards, near-black ink) follows `prefers-color-scheme` until the visitor picks with the header switch (see Navigation). Light is a selected theme, not an inversion: `green-text` and `gold-soft` darken for text, the model ink flips to near-black, and `styles.test.ts` measures every text and mark pair in both themes (4.5:1 for text, 3:1 for marks such as `--lit` and the control rule; `--cool` is a dim state, exempt from 3:1, and only has to stay visible against the panel at 1.2:1).
 
-The catalog wall adds three tokens: `--lit` (a verified Spark cell), `--cool` (a dimmed cell) and the cell size and gap (`--cell`, `--cell-gap`).
+The catalog wall adds these tokens: `--lit` (a verified Spark cell: warm matte ivory at 78% in dark, never pure white), `--lit-hover` (the existing gold accent, for the hovered, focused or shown cell), `--hollow` (the dashed stroke of a cell with no pass yet), `--cool` (a dimmed cell) and the cell size and gap (`--cell`, `--cell-gap`). Every verified cell has the same weight in every Spark tier.
 
 ### Primary
 
@@ -206,7 +206,7 @@ The stylesheet uses these sizes and only these (`--t-display`, `--t-h2`, `--t-h3
 
 ### Named Rules
 
-**The Definition First Rule.** A large heading should state what the product or section is; do not precede it with an eyebrow, kicker, or category slogan. One owner-directed exception: the home page headline is the live counts line ("N recipes verified on DGX Spark. M model families. K creators.", all three over verified recipes, set in Display with the numbers in Ready Green and rolling up once on first view). The definition sentence ("Vonk Forge is the open-source Controller for NVIDIA DGX Spark. …") stays directly under it, and the install and CLI paths stay in the first screen.
+**The Definition First Rule.** A large heading should state what the product or section is; do not precede it with an eyebrow, kicker, or category slogan. One owner-directed exception: the home page headline is the live counts line ("N recipes verified on DGX Spark. M model families. K creators.", all three over verified recipes, set in Display with the numbers in Ready Green and painted as plain text from the first render; a count rolls only when the visitor changes the Spark count). The definition sentence ("Vonk Forge is the open-source Controller for NVIDIA DGX Spark. …") stays directly under it, and the install and CLI paths stay in the first screen.
 
 **The One Family Rule.** Onest Variable owns both display and body roles. Do not reintroduce Space Grotesk or use a novelty display face to manufacture personality.
 
@@ -317,7 +317,7 @@ The ten creators with the most verified recipes, from the summary's `topCreators
 
 ### Motion
 
-All of it sits inside `prefers-reduced-motion: no-preference`; with reduced motion the page is in its final state on first paint. The wall ignites once, in release order, when it first scrolls into view (marks start dimmed, then a CSS transition delayed by each mark's index lights them in about 1.4 s); marks cool and relight in 240 ms when the picker changes; the wall's detail card fades in over 120 ms; the terminal caret blinks. There is no parallax, no scroll-driven animation and no autoplay.
+All of it sits inside `prefers-reduced-motion: no-preference`; with reduced motion the page is in its final state on first paint. The wall has no ignition: every mark is lit on first paint. Rolling numbers are plain text on first paint and roll (digit slots exactly 1em tall, strips moved in whole ems) only when the visitor changes the Spark count; marks cool and relight in 240 ms when the picker changes; the wall's detail card fades in over 120 ms; the terminal caret blinks. There is no parallax, no scroll-driven animation and no autoplay.
 
 ### Role Colours
 
