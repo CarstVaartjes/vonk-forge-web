@@ -115,17 +115,43 @@ test("a link to the page's own list from a filtered list resets the filters and 
   expect(await page.evaluate(() => history.length)).toBe(entries + 1);
 });
 
-test("an in-page anchor keeps the page and the focus where the visitor put it", async ({ page }) => {
+test("an in-page anchor is the browser's own: the page stays mounted, focus stays, and Back keeps the filtered page", async ({ page }) => {
   await page.goto("/recipes", { waitUntil: "networkidle" });
-  await page.evaluate(() => { document.querySelector("main")!.setAttribute("data-mounted", "yes"); });
+  const word = ((await page.locator("tbody tr").first().getByRole("link").first().innerText()).split(/\s+/)[0])!;
+  await page.getByRole("searchbox", { name: "Search recipes" }).fill(word);
+  await expect(page).toHaveURL(/q=/);
+  await page.evaluate(() => {
+    document.querySelector("main")!.setAttribute("data-mounted", "yes");
+    const seen = window as unknown as { __prevented: boolean | null };
+    seen.__prevented = null;
+    // Runs after the router's document listener: the click was not claimed.
+    window.addEventListener("click", (event) => { seen.__prevented = event.defaultPrevented; });
+  });
   const entries = await page.evaluate(() => history.length);
-  const badge = page.locator("a.badge-link").first();
-  await badge.click();
+  await page.locator("a.badge-link").first().click();
   await expect(page).toHaveURL(/#/);
-  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => (window as unknown as { __prevented: boolean | null }).__prevented)).toBe(false);
   await expect(page.locator("main[data-mounted=yes]")).toHaveCount(1);
   await expect(page.getByRole("heading", { level: 1 })).not.toBeFocused();
   expect(await page.evaluate(() => history.length)).toBe(entries + 1);
+
+  await page.goBack();
+  await expect(page).not.toHaveURL(/#/);
+  await expect(page).toHaveURL(/q=/);
+  await expect(page.locator("main[data-mounted=yes]")).toHaveCount(1);
+  await expect(page.getByRole("searchbox", { name: "Search recipes" })).toHaveValue(word);
+});
+
+test("a page chunk that is always missing ends in the Reload panel, after one reload and no loop", async ({ page }) => {
+  let requests = 0;
+  await page.route("**/assets/recipes-*.js", (route) => { requests += 1; return route.fulfill({ status: 404, body: "gone" }); });
+  await page.goto("/recipes");
+  await expect(page.getByRole("heading", { level: 1, name: "This page could not be loaded" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Reload" })).toBeVisible();
+  const settled = requests;
+  await page.waitForLoadState("networkidle");
+  expect(requests, "no further reload").toBe(settled);
+  expect(requests).toBeGreaterThanOrEqual(2);
 });
 
 // A page reached by an in-app navigation is the same page: no serious accessibility issue, no overflow.
