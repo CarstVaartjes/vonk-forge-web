@@ -204,7 +204,7 @@ uv tool uninstall vonk-cluster-profiles`}</CommandBlock>
           address and alias filled in.
         </p>
         <p className="fleet-note">
-          An alias comes from <code>vonkctl run RECIPE --as coder</code>;{" "}
+          An alias comes from <code>vonkctl --profile 2 run RECIPE --as coder</code>;{" "}
           <code>vonkctl profile endpoint</code> lists them.
         </p>
         <CommandBlock label="Create a key and set the address">{String.raw`vonkctl key create NAME --output CLIENT_KEY_FILE

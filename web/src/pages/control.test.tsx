@@ -33,7 +33,7 @@ test("the Control page explains jobs with the runbook's job run and job contract
 test("Connect your tools says where an alias comes from", () => {
   render(<ControlPage />);
   const section = screen.getByRole("region", { name: "Connect your tools" });
-  expect(section.textContent).toContain("An alias comes from vonkctl run RECIPE --as coder; vonkctl profile endpoint lists them.");
+  expect(section.textContent).toContain("An alias comes from vonkctl --profile 2 run RECIPE --as coder; vonkctl profile endpoint lists them.");
 });
 
 test("the site says load, not apply, for a profile", () => {
