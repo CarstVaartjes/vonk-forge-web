@@ -107,7 +107,7 @@ function PublicCatalogExplainer() {
       <section className="controller-handoff" aria-labelledby="controller-handoff-heading">
         <header>
           <h3 id="controller-handoff-heading">From the catalog to your Controller</h3>
-          <p>The catalog describes what is available. Your Controller prepares the files on your Controller; running starts when you choose Run.</p>
+          <p>The catalog describes what is available. Your Controller downloads and caches the files; running starts when you choose Run.</p>
         </header>
         <div className="availability-map" aria-label="Global catalog to local run">
           <section className="availability-column availability-global" aria-labelledby="availability-global-heading">
