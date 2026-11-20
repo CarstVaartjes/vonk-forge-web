@@ -6,7 +6,7 @@ import { CatalogWall } from "../catalog-wall";
 import { fitsPick, useMySparks, type MySparks } from "../my-sparks";
 import { FitAnswerView, FitResults, SparkSegments, TypeChips } from "../spark-picker";
 import { CommandBlock } from "../command-block";
-import { controllerInstallCommand, sparkInstallCommand } from "./install";
+import { controllerInstallCommand } from "./install";
 import { KeptCurrent, VerifiedOnHardware } from "../home-evidence";
 
 
@@ -275,9 +275,9 @@ export function HomePage() {
         </div>
         <div className="quickstart-commands">
           <CommandBlock label="1 · Controller, on your workstation">{controllerInstallCommand}</CommandBlock>
-          <CommandBlock label="2 · Each Spark, on the Spark">{sparkInstallCommand}</CommandBlock>
+          <p className="quickstart-note"><strong>2 · Each Spark.</strong> Choose <strong>Enroll Spark</strong> on the Controller&apos;s Overview; it shows the exact install command to copy and run on the Spark.</p>
         </div>
-        <p className="quickstart-note">Replace the address with your Controller&apos;s reserved LAN address. <a className="text-link" href="/install">Full install guide</a> · <a className="text-link" href="/models#model-recipe-explainer">See how models, recipes, and your Controller fit together</a></p>
+        <p className="quickstart-note"><a className="text-link" href="/install">Full install guide</a> · <a className="text-link" href="/models#model-recipe-explainer">See how models, recipes, and your Controller fit together</a></p>
       </section>
 
       <section className="security-section" aria-labelledby="security-title">

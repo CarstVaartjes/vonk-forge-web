@@ -62,7 +62,7 @@ test("defines the product and puts installation first", () => {
   expect(screen.getAllByRole("link", { name: "Install" })[0]).toHaveAttribute("href", "/install");
   expect(screen.getByRole("link", { name: "Browse what runs" })).toHaveAttribute("href", "/recipes");
   expect(screen.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
-  expect(screen.getByText(/install\.vonkforge\.ai\/spark \| VONK_CONTROLLER_ADDRESS=/)).toBeVisible();
+  expect(screen.getByText("Enroll Spark", { selector: "strong" })).toBeVisible();
   expect(screen.getAllByAltText(/Controller Overview on an example fleet/i)[0]).toBeVisible();
 });
 
@@ -188,7 +188,8 @@ test("provides the current signed controller and Spark installation path", () =>
   expect(screen.getByRole("heading", { name: /vonkctl CLI/i })).toBeVisible();
   expect(screen.getByRole("heading", { name: "One Spark" })).toBeVisible();
   expect(screen.getByRole("heading", { name: "Many Sparks" })).toBeVisible();
-  expect(screen.getByText(/VONK_CONTROLLER_ADDRESS=192\.168\.1\.231/)).toBeVisible();
+  expect(screen.getByText(/this site cannot show a complete command/)).toBeVisible();
+  expect(screen.queryByText(/VONK_CONTROLLER_ADDRESS/)).not.toBeInTheDocument();
   expect(screen.getByRole("heading", { name: "Prove the private route before enrolling Sparks." })).toBeVisible();
   expect(screen.getByText(/docker compose exec tailscale-gateway tailscale status --json/)).toBeVisible();
   expect(screen.getByText(/tailscale ping vonk-forge\.<TAILNET_DNS_SUFFIX>\.ts\.net/)).toBeVisible();

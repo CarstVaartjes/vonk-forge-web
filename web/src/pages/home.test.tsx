@@ -58,13 +58,13 @@ describe("home page", () => {
     expect(ledger.getByText(/^and 2 more creators/)).toBeVisible();
   });
 
-  test("shows the two install commands, each with a Copy button", async () => {
+  test("shows the Controller install command with a Copy button and the Enroll Spark step", async () => {
     getCatalogSummary.mockResolvedValue(summary());
     render(<HomePage />);
     const quickstart = within(await screen.findByRole("region", { name: /Start on the computer/ }));
     expect(quickstart.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh")).toBeVisible();
-    expect(quickstart.getByText(/install\.vonkforge\.ai\/spark \| VONK_CONTROLLER_ADDRESS=/)).toBeVisible();
-    expect(quickstart.getAllByRole("button", { name: "Copy" })).toHaveLength(2);
+    expect(quickstart.getByText("Enroll Spark", { selector: "strong" })).toBeVisible();
+    expect(quickstart.getAllByRole("button", { name: "Copy" })).toHaveLength(1);
   });
 
   test("kept current and verified sections draw only summary facts, with no receipt when no recipe qualifies", async () => {
