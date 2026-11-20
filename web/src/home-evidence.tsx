@@ -1,8 +1,6 @@
 import { BarSeries, type BarPoint } from "./bar-series";
-import { engineLabel } from "./catalog-filters";
-import type { CatalogSummary, RecipeRow } from "./catalog-stats";
+import type { CatalogSummary } from "./catalog-stats";
 import { EvidenceReceipt } from "./evidence-receipt";
-import { fitAnswer } from "./my-sparks";
 import { RollingNumber } from "./rolling-number";
 
 const number = new Intl.NumberFormat("en");
@@ -12,24 +10,10 @@ const label = (day: string) => short.format(new Date(day));
 const weekEnd = (start: string) => new Date(Date.parse(start) + 6 * DAY).toISOString();
 const weekRange = (start: string) => `${label(start)} to ${label(weekEnd(start))}`;
 
-function Newest({ row }: { row: RecipeRow }) {
-  return (
-    <li>
-      <time dateTime={row.released}>{label(row.released)}</time>
-      <div>
-        <a href={`/recipes/${row.publisher}/${row.slug}`}>{row.title}</a>
-        <span className="fit-meta">{row.creator ? <><span className="src">{row.creator}</span> · </> : null}{row.engine ? `${engineLabel(row.engine)} · ` : ""}{row.sparks === 1 ? "1 Spark" : `${row.sparks} Sparks`}</span>
-      </div>
-      <span className="status ok">{row.status}</span>
-    </li>
-  );
-}
-
-// Section 2: the catalog moves. Recipes released per week and the newest verified recipes.
+// Section 2: the catalog moves. Recipes released per week.
 export function KeptCurrent({ summary }: { summary: CatalogSummary }) {
   const weeks: BarPoint[] = summary.releasedPerWeek.map((week) => ({ range: weekRange(week.start), count: week.count }));
   const lastWeek = summary.releasedPerWeek.at(-1)?.count ?? 0;
-  const newest = fitAnswer(summary, { sparks: "", type: "" }, 6).newest;
   return (
     <section className="home-section" aria-labelledby="kept-current-title">
       <div className="home-section-heading">
@@ -41,10 +25,6 @@ export function KeptCurrent({ summary }: { summary: CatalogSummary }) {
           <p className="fig"><RollingNumber value={lastWeek} /> <small>{lastWeek === 1 ? "recipe" : "recipes"} released in the 7 days to {label(weekEnd(summary.releasedPerWeek.at(-1)!.start))}</small></p>
           <p className="chart-sub">Recipes by release date, per week, last {weeks.length} weeks.</p>
           <BarSeries title="Recipes released per week" noun={["recipe", "recipes"]} points={weeks} axis={[`week of ${label(summary.releasedPerWeek[0]!.start)}`, `week of ${label(summary.releasedPerWeek.at(-1)!.start)}`]} />
-        </div>
-        <div className="card fresh">
-          <div className="fit-results-head"><h3>Newest verified recipes</h3><a className="text-link" href="/recipes">All recipes</a></div>
-          <ul>{newest.map((row) => <Newest key={`${row.publisher}/${row.slug}`} row={row} />)}</ul>
         </div>
       </div>
     </section>

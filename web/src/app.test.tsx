@@ -73,8 +73,14 @@ test("tells one story: what it does, with the vonkctl session behind it", () => 
   for (const title of ["Know what fits.", "Stay current.", "Run the mix you need."]) {
     expect(screen.getByRole("heading", { name: title })).toBeVisible();
   }
-  expect(screen.getAllByText("vonkctl recipe library --fits-fleet --json")[0]).toBeVisible();
-  expect(screen.getByText("vonkctl --profile 2 profile load --yes --json")).toBeVisible();
+  const session = document.querySelector(".agent-session code")!;
+  expect(session.textContent).toContain("vonkctl fleet\n");
+  expect(session.textContent).toContain("vonkctl recipe library --fits-fleet --limit 5\n");
+  expect(session.textContent).toContain('vonkctl --profile 2 run "Qwen Code"\n');
+  expect(session.textContent).toContain("vonkctl profile endpoint\n");
+  expect(session.textContent).not.toContain("profile load");
+  expect(screen.queryByText("Newest verified recipes")).not.toBeInTheDocument();
+  expect(screen.getByRole("region", { name: "Which recipes fit your Sparks" })).toBeVisible();
   expect(document.body.textContent).not.toMatch(/15 minutes/);
   expect(document.querySelectorAll("main section").length).toBeLessThanOrEqual(7);
 });
