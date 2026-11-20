@@ -56,8 +56,9 @@ const TEXT: [string, string][] = [
   ["--faint", "--bg"], ["--faint", "--panel"], ["--green-text", "--bg"], ["--green-text", "--panel"],
   ["--gold-soft", "--panel"], ["--ok", "--panel"], ["--warn", "--panel"], ["--bad", "--panel"], ["--info", "--panel"],
   ["--green-ink", "--green"], ["--bg", "--ink"],
+  ["--link", "--bg"], ["--link", "--panel"], ["--link", "--recess"], ["--link-hover", "--panel"],
 ];
-const MARKS: [string, string][] = [["--lit", "--panel"], ["--tile", "--panel"], ["--hollow", "--panel"], ["--cool", "--panel"], ["--line-control", "--panel"], ["--line-control", "--bg"]];
+const MARKS: [string, string][] = [["--lit", "--panel"], ["--tile", "--panel"], ["--hollow", "--panel"], ["--cool", "--panel"], ["--line-control", "--panel"], ["--line-control", "--bg"], ["--focus", "--bg"], ["--focus", "--panel"], ["--focus", "--recess"]];
 
 test.each(["dark", "light"])("token pairs meet contrast in the %s theme (text 4.5:1, marks 3:1)", (theme) => {
   const tokens = new Map([...block(":root,\n:root[data-theme=\"dark\"]"), ...(theme === "light" ? block(":root[data-theme=\"light\"]") : [])]);
