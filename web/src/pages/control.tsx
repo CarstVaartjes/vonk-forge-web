@@ -15,7 +15,7 @@ export function ControlPage() {
         <h1 id="control-title">Click it, or script it.</h1>
         <p>
           The Web Controller and the local <code>vonkctl</code> CLI operate the same
-          Fleet, Library, and Profiles through the same authenticated API. Use
+          Sparks, Library, and saved profiles through the same authenticated API. Use
           either path, or both, without creating a second controller. The CLI is
           written for scripts and AI agents: one JSON document per call, a
           read-only review of every change, and explicit consent.
@@ -74,7 +74,7 @@ export function ControlPage() {
           website is documentation and catalog—not your controller.
         </p>
         <div className="usage-grid">
-          <article><span>Fleet</span><h3>Enroll and watch Sparks</h3><p>Create one-use enrollment grants, inspect health, free memory, and warnings, search nodes, choose telemetry ranges, rename, re-enroll, and remove.</p></article>
+          <article><span>Overview</span><h3>Enroll and watch Sparks</h3><p>Create one-use enrollment grants with <strong>Enroll Spark</strong>, inspect health, free memory, and warnings, search nodes, choose telemetry ranges, rename, re-enroll, and remove.</p></article>
           <article id="library-import"><span>Library</span><h3>See what fits, then run it</h3><p>Search published models and recipes; the recipe repository syncs automatically, or choose <strong>Update from Vonk Forge remote</strong>. Each recipe shows whether it fits your Sparks right now and why. Download exact model assets and recipe images, then run or switch a saved profile with durable progress and per-Spark results.</p></article>
           <article><span>Profiles</span><h3>Keep the mix you need</h3><p>Assign recipes to Sparks, save the set as a profile, review the exact plan—what stops, starts, and installs—then apply. A running install is marked stale when a newer recipe revision lands; you decide when to update.</p></article>
         </div>

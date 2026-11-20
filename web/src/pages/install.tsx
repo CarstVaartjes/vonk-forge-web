@@ -8,8 +8,8 @@ const repository = "https://github.com/CarstVaartjes/vonk-forge/blob/main";
 const tailscaleRunbook = `${repository}/docs/runbooks/tailscale.md`;
 const uninstallRunbook = `${repository}/docs/operations/uninstall.md`;
 
-// Every command below is carried verbatim from vonk-forge docs/QUICKSTART.md (Lab) and
-// docs/runbooks/tailscale.md (Secure remote); those runbooks are the one source.
+// The Lab commands are carried verbatim from vonk-forge docs/QUICKSTART.md, and the start
+// commands from vonk-forge README.md:127-129; those runbooks are the one source.
 const composeStartCommand = `cd vonk-forge
 sudo docker compose pull
 sudo docker compose up -d --wait --remove-orphans`;
@@ -193,7 +193,7 @@ curl --fail --show-error --silent \\
             <span className="path-number">01</span>
             <h3>Web Controller</h3>
             <span className="guide-meta">Visual and guided</span>
-            <p>Open the controller&apos;s private HTTPS URL, sign in as <code>admin</code> (in Lab mode the password is in <code>vonk-forge/secrets/admin-password</code>), and use the Web Controller.</p>
+            <p>Open the controller&apos;s private HTTPS URL, sign in as <code>admin</code> (the password is in <code>vonk-forge/secrets/admin-password</code>), and use the Web Controller.</p>
             <a className="button secondary" href="/control#web-controller">Web instructions</a>
           </article>
           <article>
@@ -210,8 +210,8 @@ curl --fail --show-error --silent \\
       <section id="fleet" className="fleet-install" aria-labelledby="fleet-title">
         <div className="section-heading compact"><h2 id="fleet-title">Enroll one Spark or many.</h2><span className="guide-meta">Step 4 · Spark fleet</span></div>
         <p className="lane-intro">
-          Create a one-use enrollment grant in the Web Controller,
-          or create one from the CLI. Then run the generated Spark command on the
+          Create a one-use enrollment grant with <strong>Enroll Spark</strong> on the
+          Controller&apos;s Overview, or create one from the CLI. Then run the generated Spark command on the
           node you are enrolling.
         </p>
         <CommandBlock label="CLI alternative for creating the grant">{`vonkctl fleet enroll Atlas --output atlas-grant.json

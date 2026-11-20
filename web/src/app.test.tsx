@@ -244,7 +244,10 @@ test("offers lab and secure remote install modes with current enrollment command
   const labHeading = screen.getByRole("heading", { name: "Lab mode: from this page to a signed-in Controller" });
   const secureHeading = screen.getByRole("heading", { name: "Secure remote with Tailscale" });
   expect(labHeading.compareDocumentPosition(secureHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  expect(screen.getAllByText(/sudo docker compose up -d --wait --remove-orphans/)).toHaveLength(2);
+  const secureSection = document.getElementById("controller")!;
+  for (const section of [document.getElementById("lab")!, secureSection]) {
+    expect(within(section).getByText(/sudo docker compose up -d --wait --remove-orphans/)).toBeVisible();
+  }
   expect(screen.getAllByText(/vonk-forge\/secrets\/admin-password/, { selector: "code" }).length).toBeGreaterThan(0);
   expect(screen.getByText("https://vonk-forge.local:8443", { selector: "code" })).toBeVisible();
   expect(screen.queryByText(/Fleet page/)).not.toBeInTheDocument();
