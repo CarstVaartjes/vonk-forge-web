@@ -29,3 +29,16 @@ test("the Control page explains jobs with the runbook's job run and job contract
     "vonkctl job contract --run RUN_UUID",
   ]);
 });
+
+test("Connect your tools says where an alias comes from", () => {
+  render(<ControlPage />);
+  const section = screen.getByRole("region", { name: "Connect your tools" });
+  expect(section.textContent).toContain("An alias comes from vonkctl --profile 2 run RECIPE --as coder; vonkctl profile endpoint lists them.");
+});
+
+test("the site says load, not apply, for a profile", () => {
+  render(<ControlPage />);
+  expect(document.body.textContent).toContain("then load it.");
+  expect(document.body.textContent).not.toMatch(/then apply|applies the plan|nothing is applied/);
+  expect(document.body.textContent).toContain("vonkctl update --apply");
+});

@@ -98,3 +98,10 @@ describe("home page", () => {
     expect(screen.queryByRole("group", { name: /The recipe catalog/ })).toBeNull();
   });
 });
+
+test("the story says load it, not apply it", () => {
+  getCatalogSummary.mockResolvedValue(summary());
+  render(<HomePage />);
+  expect(document.body.textContent).toContain("review the exact plan, load it, and switch profiles");
+  expect(document.body.textContent).not.toContain("apply it");
+});
