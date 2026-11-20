@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { usePageMeta } from "../page-meta";
 
-import { loadRecipeCatalog, type RecipeSummary } from "../api/client";
+import { loadRecipeCatalog, peekRecipeCatalog, type RecipeSummary } from "../api/client";
 import { gibLabel } from "../catalog-filters";
 import {
   ROLE_CLASS,
@@ -47,15 +47,19 @@ function Column({ name, members, recipes }: { name: string; members: ShowcaseMem
   );
 }
 
+function showcaseRecipes(items: RecipeSummary[] | null): Catalog {
+  return items && new Map(items.filter((item) => item.publisher === SHOWCASE_PUBLISHER).map((item) => [item.slug, item]));
+}
+
 export function ShowcasePage() {
   usePageMeta("Example setup", "An example setup: 3D game generation on two DGX Sparks, with the models and recipes it uses.");
-  const [recipes, setRecipes] = useState<Catalog>(null);
+  const [recipes, setRecipes] = useState<Catalog>(() => showcaseRecipes(peekRecipeCatalog()));
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const controller = new AbortController();
     loadRecipeCatalog(controller.signal)
-      .then((items) => setRecipes(new Map(items.filter((item) => item.publisher === SHOWCASE_PUBLISHER).map((item) => [item.slug, item]))))
+      .then((items) => setRecipes(showcaseRecipes(items)))
       .catch((reason: unknown) => {
         if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : "The public recipe index could not be loaded.");
       });

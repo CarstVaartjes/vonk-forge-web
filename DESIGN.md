@@ -271,6 +271,8 @@ Navigation is compact Onest text on the workbench ground: Catalog, Models, Contr
 
 **The Theme Switch Rule.** The theme follows `prefers-color-scheme` until the visitor picks; the pick is remembered in `localStorage` (`vonk-theme`). `public/theme-init.js` sets `data-theme` before first paint (an external script, CSP stays `script-src 'self'`), and `src/theme.ts` owns the same rule in the app.
 
+Moving between pages never reloads or flashes a loading state. `web/src/router.ts` is the one owner of in-app navigation: a plain click on a same-origin link to a route in `routes.ts` pushes history and swaps the page (Cmd/Ctrl/Shift/Alt/middle clicks, new tabs, downloads, other origins, unknown paths and same-page `#anchors` stay with the browser). The page's code chunk is loaded before it is shown; focus moves to the new page's heading (the content container holds it until a heading is visible); scroll goes to the top, or to the anchor, and Back restores the saved position; the tab title, description, canonical and noindex follow the page (home puts back the `index.html` ones). A page opened after the catalog loaded starts from it (`peek*` in `api/client.ts`) and draws no loading panel.
+
 ### Command Strip
 
 A command strip is a one-pixel green-bounded surface with the `control` radius. Its environment label is small neutral metadata; the command itself uses the monospace role in Ready Green and scrolls horizontally rather than wrapping into an invalid command.

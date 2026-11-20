@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { usePageMeta } from "../page-meta";
 
-import { getModel, getVocabulary, listModels, loadRecipeCatalog, type ModelSummary, type ModelVersionSummary, type RecipeDetail } from "../api/client";
+import { getModel, getVocabulary, listModels, loadRecipeCatalog, peekModel, peekModels, peekRecipeCatalog, peekVocabulary, type ModelSummary, type ModelVersionSummary, type RecipeDetail } from "../api/client";
 import { WaysMatrix } from "../ways-matrix";
 import { FacetStrip, MoreFiltersSummary, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
 import { EMPTY_FILTERS, SPARK_OPTIONS, engineLabel, nodeCountMatches, recipeMatches, sortRecipes, type SparkFilter } from "../catalog-filters";
@@ -202,8 +202,8 @@ function initialFilters() {
 
 export function ModelsPage() {
   usePageMeta("Models", "Browse models with their exact versions, variants and the recipes that run them on DGX Spark.");
-  const [models, setModels] = useState<ModelSummary[] | null>(null);
-  const [vocabulary, setVocabulary] = useState<Vocabulary | null>(null);
+  const [models, setModels] = useState<ModelSummary[] | null>(peekModels);
+  const [vocabulary, setVocabulary] = useState<Vocabulary | null>(peekVocabulary);
   const [filters, setFilters] = useState(initialFilters);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
@@ -221,8 +221,8 @@ export function ModelsPage() {
   // Counts for the setup picker: every other filter applied, the picked facet left open.
   const facetCount = (omit: SetupFacet, predicate: (model: ModelSummary) => boolean) => (models ?? []).filter((model) => predicate(model) && baseMatches(model, filters) && setupMatches(model, filters, omit)).length;
   const typeCount = (predicate: (model: ModelSummary) => boolean) => (models ?? []).filter((model) => predicate(model) && baseMatches(model, filters, "type") && setupMatches(model, filters, null)).length;
-  const typeCounts = Object.fromEntries((vocabulary?.categories ?? []).map((type) => [type.id, typeCount((model) => model.types.includes(type.id))]));
-  const sparkCounts = Object.fromEntries([...SPARK_OPTIONS.map((option) => option.value), ""].map((value) => [value, facetCount("sparks", (model) => runsOn(model, filters, value as SparkFilter))])) as Record<SparkFilter, number>;
+  const typeCounts = useMemo(() => Object.fromEntries((vocabulary?.categories ?? []).map((type) => [type.id, typeCount((model) => model.types.includes(type.id))])), [models, filters, vocabulary]);
+  const sparkCounts = useMemo(() => Object.fromEntries([...SPARK_OPTIONS.map((option) => option.value), ""].map((value) => [value, facetCount("sparks", (model) => runsOn(model, filters, value as SparkFilter))])) as Record<SparkFilter, number>, [models, filters]);
   const families = useMemo(() => Array.from(new Set((models ?? []).flatMap((model) => model.family ? [model.family] : []))).sort(), [models]);
   const engines = useMemo(() => Array.from(new Set((models ?? []).flatMap((model) => model.runs.engines))).sort(), [models]);
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
@@ -301,12 +301,12 @@ function ModelRecipes({ model, recipes }: { model: ModelSummary; recipes: Recipe
 }
 
 export function ModelDetailPage({ publisher, slug }: { publisher: string; slug: string }) {
-  const [model, setModel] = useState<ModelSummary | null>(null);
-  const [detailVocabulary, setDetailVocabulary] = useState<Vocabulary | null>(null);
+  const [model, setModel] = useState<ModelSummary | null>(() => peekModel(publisher, slug));
+  const [detailVocabulary, setDetailVocabulary] = useState<Vocabulary | null>(peekVocabulary);
   const [error, setError] = useState<"missing" | "failed" | null>(null);
   const [attempt, setAttempt] = useState(0);
   // Every recipe, for the matrix of every way to run this model's family; if it cannot be read the matrix is not shown.
-  const [allRecipes, setAllRecipes] = useState<RecipeDetail[]>([]);
+  const [allRecipes, setAllRecipes] = useState<RecipeDetail[]>(() => peekRecipeCatalog() ?? []);
   useEffect(() => { const controller = new AbortController(); loadRecipeCatalog(controller.signal).then(setAllRecipes).catch(() => undefined); return () => controller.abort(); }, []);
   useEffect(() => { const controller = new AbortController(); setError(null); Promise.all([getModel(publisher, slug, controller.signal), getVocabulary(controller.signal)]).then(([found, words]) => { setModel(found); setDetailVocabulary(words); }).catch((reason: unknown) => { if (!controller.signal.aborted) setError(reason instanceof Error && reason.message.startsWith("Model not found") ? "missing" : "failed"); }); return () => controller.abort(); }, [publisher, slug, attempt]);
   usePageMeta(model ? `${model.title} · Models` : "Model", model ? `${model.title}: published versions, variants and the recipes that run it on NVIDIA DGX Spark.` : "A model in the Vonk Forge catalog.");

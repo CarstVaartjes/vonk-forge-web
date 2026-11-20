@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePageMeta } from "../page-meta";
 
-import { getVocabulary, loadRecipeCatalog, type RecipeSummary } from "../api/client";
+import { getVocabulary, loadRecipeCatalog, peekRecipeCatalog, peekVocabulary, type RecipeSummary } from "../api/client";
 import { capabilityLabel, statusMeaning, typeLabel, type Vocabulary } from "../vocabulary";
 import { CatalogTabs } from "../catalog-tabs";
 import { readMySparks, saveMySparks } from "../my-sparks";
@@ -73,12 +73,17 @@ export function RecipesPage() {
     return start;
   });
   // The recipes and the words of the release they came from, loaded together.
-  const [loaded, setLoaded] = useState<{ recipes: RecipeSummary[]; vocabulary: Vocabulary } | null>(null);
+  const [loaded, setLoaded] = useState<{ recipes: RecipeSummary[]; vocabulary: Vocabulary } | null>(() => {
+    // Already loaded by an earlier page: start from it, no loading state.
+    const recipes = peekRecipeCatalog();
+    const words = peekVocabulary();
+    return recipes && words ? { recipes, vocabulary: words } : null;
+  });
   const catalog = loaded?.recipes ?? null;
   const vocabulary = loaded?.vocabulary ?? null;
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
-  const filters = filtersFromParameters(parameters);
+  const filters = useMemo(() => filtersFromParameters(parameters), [parameters]);
   const offset = Math.max(0, Number.parseInt(parameters.get("cursor") ?? "0", 10) || 0);
 
   useEffect(() => {
@@ -176,9 +181,10 @@ export function RecipesPage() {
   const disks = useMemo(() => capacityBuckets(available.map(diskOf)), [available]);
   const memories = useMemo(() => capacityBuckets(available.map(memoryOf)), [available]);
 
-  const typeCounts = Object.fromEntries((vocabulary?.categories ?? []).map((type) => [type.id, count("type", (recipe) => recipe.catalog.types.includes(type.id))]));
+  // Facet counts scan every recipe: they change only with the catalog, the words or the filters.
+  const typeCounts = useMemo(() => Object.fromEntries((vocabulary?.categories ?? []).map((type) => [type.id, count("type", (recipe) => recipe.catalog.types.includes(type.id))])), [vocabulary, available, filters]);
   const capabilityName = (name: string) => vocabulary ? capabilityLabel(vocabulary, name) : humanize(name);
-  const sparkCounts = Object.fromEntries([...SPARK_OPTIONS.map((option) => option.value), ""].map((value) => [value, count("sparks", (recipe) => nodeCountMatches(recipe.catalog.node_count, value as typeof filters.sparks))])) as Record<typeof filters.sparks, number>;
+  const sparkCounts = useMemo(() => Object.fromEntries([...SPARK_OPTIONS.map((option) => option.value), ""].map((value) => [value, count("sparks", (recipe) => nodeCountMatches(recipe.catalog.node_count, value as typeof filters.sparks))])) as Record<typeof filters.sparks, number>, [available, filters]);
 
   const applied: ActiveFilter[] = [];
   const addApplied = (key: string, label: string, parameter: string) => applied.push({ key, label, remove: () => update(parameter, "") });

@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "@fontsource-variable/onest";
 
-import { App } from "./app";
+import { App, preparePage } from "./app";
 import "./styles.css";
 
 
@@ -12,8 +12,11 @@ if (root === null) {
   throw new Error("Missing root element");
 }
 
-createRoot(root).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-);
+// The first page's code is loaded before the first render, so a direct visit draws no loading state either.
+preparePage(window.location.pathname).catch(() => undefined).then(() => {
+  createRoot(root).render(
+    <StrictMode>
+      <App />
+    </StrictMode>,
+  );
+});
