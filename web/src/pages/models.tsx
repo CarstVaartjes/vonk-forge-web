@@ -5,7 +5,7 @@ import { getModel, getVocabulary, listModels, loadRecipeCatalog, type ModelSumma
 import { WaysMatrix } from "../ways-matrix";
 import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
 import { EMPTY_FILTERS, SPARK_OPTIONS, engineLabel, nodeCountMatches, recipeMatches, sortRecipes, type SparkFilter } from "../catalog-filters";
-import { readMySparks } from "../my-sparks";
+import { readMySparks, saveMySparks } from "../my-sparks";
 import { capabilityLabel, type Vocabulary } from "../vocabulary";
 import { CatalogTabs } from "../catalog-tabs";
 
@@ -154,7 +154,7 @@ function VersionRow({ version, vocabulary }: { version: ModelVersionSummary; voc
       <div><dt>Recipes</dt><dd>{version.recipe_slugs.length ? <span className="model-recipe-links">{version.recipe_slugs.map((path) => <a key={path} href={`/recipes/${path}`}>{path}</a>)}</span> : "No public recipe"}</dd></div>
     </dl>
     <div className="model-version-capabilities"><strong>Capabilities</strong><CapabilityFacts version={version} vocabulary={vocabulary} /></div>
-    {version.license?.spdx ? <p className="model-license">License: <a href={version.license.url}>{version.license.spdx}</a>{version.license.notice ? <span className="kv-note">{version.license.notice} Shown for information. Use is your call.</span> : null}</p> : null}
+    {version.license?.spdx ? <p className="model-license">License: {version.license.url ? <a href={version.license.url}>{version.license.spdx}</a> : version.license.spdx}{version.license.notice ? <span className="kv-note">{version.license.notice} Shown for information. Use is your call.</span> : null}</p> : null}
   </article>;
 }
 
@@ -195,9 +195,9 @@ function baseMatches(model: ModelSummary, filters: ModelFilters, omit: "type" | 
 
 function initialFilters() {
   const params = new URLSearchParams(window.location.search);
-  const sparks = params.get("sparks") ?? "";
-  const type = params.get("type") ?? "";
-  return { type, verified: params.get("verified") !== "0", query: params.get("q") ?? "", publisher: params.get("publisher") ?? "", capability: params.get("capability") ?? "", recipes: params.get("recipes") ?? "", family: params.get("family") ?? "", engine: params.get("engine") ?? "", sparks: (SPARK_OPTIONS.some((option) => option.value === sparks) ? sparks : "") as SparkFilter, sort: params.get("sort") ?? "name", page: Math.max(1, Number(params.get("page")) || 1) };
+  // The URL wins; without a Spark count or type in it, the pick remembered from the home page or the catalog fills them in.
+  const { sparks, type } = readMySparks(window.location.search);
+  return { type, verified: params.get("verified") !== "0", query: params.get("q") ?? "", publisher: params.get("publisher") ?? "", capability: params.get("capability") ?? "", recipes: params.get("recipes") ?? "", family: params.get("family") ?? "", engine: params.get("engine") ?? "", sparks, sort: params.get("sort") ?? "name", page: Math.max(1, Number(params.get("page")) || 1) };
 }
 
 export function ModelsPage() {
@@ -231,6 +231,7 @@ export function ModelsPage() {
   function updateFilters(next: Partial<typeof filters>) {
     const updated = { ...filters, ...next, page: next.page ?? 1 };
     setFilters(updated);
+    if (updated.sparks !== filters.sparks || updated.type !== filters.type) saveMySparks({ sparks: updated.sparks, type: updated.type });
     const params = new URLSearchParams();
     if (updated.type) params.set("type", updated.type);
     if (!updated.verified) params.set("verified", "0");
