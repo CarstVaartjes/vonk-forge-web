@@ -197,7 +197,8 @@ function mapModelVersion(entity: CatalogModelEntry, index: LibraryIndex): ModelV
   const { document, display } = entity;
   const { identity, source, format } = document;
   const recipeSlugs = index.recipes
-    .filter((recipe) => recipe.document.models.some((selection) => sameReference(selection.model, entity)))
+    // A recipe runs its first model; a drafter or companion does not make it run that Model.
+    .filter((recipe) => selectedEntity(recipe.document, index) === entity)
     .map((recipe) => `${recipe.document.identity.publisher}/${recipe.document.identity.slug}`)
     .sort();
   return {

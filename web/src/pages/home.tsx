@@ -168,7 +168,7 @@ function CatalogSections({ state, retry }: { state: CatalogState; retry: () => v
     return (
       <div className="status-panel error" role="alert">
         <h2>The recipe library could not be read.</h2>
-        <p>The live numbers are not shown rather than guessed. Try again, or open the catalog directly.</p>
+        <p>The live numbers are not shown rather than guessed. Try again, or open the recipes directly.</p>
         <button className="button" type="button" onClick={retry}>Retry</button>
       </div>
     );

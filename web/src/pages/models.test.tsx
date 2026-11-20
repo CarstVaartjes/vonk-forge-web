@@ -57,7 +57,7 @@ describe("public model browse", () => {
 
   test("Models is a tab of the catalog, next to Recipes", () => {
     render(<ModelsPage />);
-    const tabs = within(screen.getByRole("navigation", { name: "Catalog views" }));
+    const tabs = within(screen.getByRole("navigation", { name: "Recipes and Models views" }));
     expect(tabs.getByRole("link", { name: "Models" })).toHaveAttribute("aria-current", "page");
     expect(tabs.getByRole("link", { name: "Recipes" })).toHaveAttribute("href", "/recipes");
   });
@@ -252,7 +252,7 @@ describe("model page leads with its recipes", () => {
     const section = (await screen.findByRole("heading", { name: "Recipes that run this model" })).closest("section")!;
     expect(within(section).getAllByRole("listitem").map((row) => row.textContent)).toEqual(expect.arrayContaining(["one-sparkeugrvLLM1 SparkWorking", "two-sparkseugrvLLM2 SparksNot yet verified"]));
     expect(within(section).getAllByRole("listitem")).toHaveLength(2);
-    expect(within(section).getByRole("link", { name: "Compare recipes" })).toHaveAttribute("href", "/recipes?model=publisher%2Fmodel-1");
+    expect(within(section).getByRole("link", { name: "Compare recipes" })).toHaveAttribute("href", "/recipes?model=publisher%2Fmodel-1&verified=0");
     expect(screen.queryByText(/Immutable model identity/)).not.toBeInTheDocument();
   });
 
@@ -262,6 +262,6 @@ describe("model page leads with its recipes", () => {
     const section = (await screen.findByRole("heading", { name: "Recipes that run this model" })).closest("section")!;
     expect(within(section).getAllByRole("listitem")).toHaveLength(1);
     expect(within(section).getByText("1 of 2 recipes, fitting 1 Spark.")).toBeVisible();
-    expect(within(section).getByRole("link", { name: "Compare recipes" })).toHaveAttribute("href", "/recipes?model=publisher%2Fmodel-1&sparks=1");
+    expect(within(section).getByRole("link", { name: "Compare recipes" })).toHaveAttribute("href", "/recipes?model=publisher%2Fmodel-1&verified=0&sparks=1");
   });
 });

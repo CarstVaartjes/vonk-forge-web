@@ -237,6 +237,17 @@ describe("static recipe library adapter", () => {
     expect(recipe.catalog).toMatchObject({ model_title: "Gemma 4 E2B", capabilities: ["audio-understanding", "chat", "image-understanding", "reasoning", "text-generation", "tool-use"] });
   });
 
+  test("a recipe counts for its first model only, not for a companion model it also lists", async () => {
+    const copy = structuredClone(index);
+    const gemma = copy.recipes.find((recipe) => recipe.document.identity.slug === nvidia)!;
+    const skin = copy.recipes.find((recipe) => recipe.document.identity.slug === "skintokens-pytorch-single")!;
+    gemma.document.models.push(skin.document.models[0]!);
+    serve(copy);
+    const skintokens = (await listStaticModels(indexUrl)).items.find((item) => item.publisher === "skintokens")!;
+    expect(skintokens.recipe_count).toBe(1);
+    expect(skintokens.versions.flatMap((version) => version.recipe_slugs)).toEqual(["vonk-forge/skintokens-pytorch-single"]);
+  });
+
   test("drops a dangling separator from a catalog title and keeps real names whole", async () => {
     expect(displayTitle("SkinTokens /")).toBe("SkinTokens");
     expect(displayTitle("GLM 5.3 Flash - ")).toBe("GLM 5.3 Flash");

@@ -286,7 +286,7 @@ function ModelRecipes({ model, recipes }: { model: ModelSummary; recipes: Recipe
   const { sparks } = readMySparks(window.location.search);
   const own = recipes.filter((recipe) => recipeMatches(recipe, { ...EMPTY_FILTERS, verified: false, model: key }));
   const shown = sortRecipes(own.filter((recipe) => recipeMatches(recipe, { ...EMPTY_FILTERS, verified: false, model: key, sparks })), "catalog");
-  const compare = new URLSearchParams({ model: key });
+  const compare = new URLSearchParams({ model: key, verified: "0" });
   if (sparks) compare.set("sparks", sparks);
   const pick = SPARK_OPTIONS.find((option) => option.value === sparks);
   if (!own.length) return <section className="model-recipes" aria-labelledby="model-recipes-title"><h2 id="model-recipes-title">Recipes that run this model</h2><p className="model-unknown">No public recipe runs this model yet.</p></section>;

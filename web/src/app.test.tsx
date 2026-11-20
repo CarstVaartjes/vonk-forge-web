@@ -80,7 +80,7 @@ test("tells one story: what it does, with the vonkctl session behind it", () => 
 });
 
 
-test("top menu is Catalog, Models, Controller, Docs beside Install; Publish and Example setup live in the footer", () => {
+test("top menu is Recipes, Models, Controller, Docs beside Install; Publish and Example setup live in the footer", () => {
   render(<App />);
 
   const primaryNavigation = within(screen.getByRole("navigation", { name: "Primary navigation" }));
