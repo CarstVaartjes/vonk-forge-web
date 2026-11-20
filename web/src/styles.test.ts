@@ -56,7 +56,7 @@ const TEXT: [string, string][] = [
   ["--faint", "--bg"], ["--faint", "--panel"], ["--green-text", "--bg"], ["--green-text", "--panel"],
   ["--gold-soft", "--panel"], ["--ok", "--panel"], ["--warn", "--panel"], ["--bad", "--panel"], ["--info", "--panel"],
   ["--green-ink", "--green"], ["--bg", "--ink"],
-  ["--link", "--bg"], ["--link", "--panel"], ["--link", "--recess"], ["--link-hover", "--panel"],
+  ["--link", "--bg"], ["--link", "--panel"], ["--link", "--recess"], ["--muted", "--raised"], ["--link-hover", "--panel"],
 ];
 const MARKS: [string, string][] = [["--lit", "--panel"], ["--tile", "--panel"], ["--hollow", "--panel"], ["--cool", "--panel"], ["--line-control", "--panel"], ["--line-control", "--bg"], ["--focus", "--bg"], ["--focus", "--panel"], ["--focus", "--recess"]];
 

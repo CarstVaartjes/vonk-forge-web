@@ -26,7 +26,6 @@ export function SparkPicker({ value, counts, noun, onChange }: {
   noun: string;
   onChange: (value: SparkFilter) => void;
 }) {
-  const number = new Intl.NumberFormat("en");
   return (
     <fieldset className="setup-sparks">
       <legend>How many Sparks do you have?</legend>
