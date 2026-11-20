@@ -2,7 +2,6 @@ import { CommandBlock } from "../command-block";
 import { usePageMeta } from "../page-meta";
 
 export const controllerInstallCommand = "curl -fsSL https://install.vonkforge.ai/nas | sh";
-export const sparkInstallCommand = "curl -fsSL https://install.vonkforge.ai/spark | VONK_CONTROLLER_ADDRESS=192.168.1.231 sh";
 
 const repository = "https://github.com/CarstVaartjes/vonk-forge/blob/main";
 const tailscaleRunbook = `${repository}/docs/runbooks/tailscale.md`;
@@ -211,14 +210,13 @@ curl --fail --show-error --silent \\
         <div className="section-heading compact"><h2 id="fleet-title">Enroll one Spark or many.</h2><span className="guide-meta">Step 4 · Spark fleet</span></div>
         <p className="lane-intro">
           Create a one-use enrollment grant with <strong>Enroll Spark</strong> on the
-          Controller&apos;s Overview, or create one from the CLI. Then run the generated Spark command on the
-          node you are enrolling.
+          Controller&apos;s Overview, or create one from the CLI. Then copy the install command that the grant screen shows and run it on the
+          node you are enrolling. It carries your Controller's address, enrollment URL and CA fingerprint, so this site cannot show a complete command.
         </p>
         <CommandBlock label="CLI alternative for creating the grant">{`vonkctl fleet enroll Atlas --output atlas-grant.json
 vonkctl fleet enrollment status GRANT_UUID`}</CommandBlock>
-        <CommandBlock label="Spark terminal">{sparkInstallCommand}</CommandBlock>
         <ol className="install-steps fleet-steps">
-          <li><span>01</span><div><h3>Use the controller&apos;s stable LAN address</h3><p>Replace <code>192.168.1.231</code> with the address reserved for your laptop, NAS, or other controller host. The controller hostnames remain in place for TLS while the installer creates the local mapping. In Lab mode the Spark must resolve the <code>enroll</code>, <code>agents</code>, and <code>registry</code> hostnames to that same address, and any client that connects to Spark-facing HTTPS endpoints needs the local CA certificate imported.</p></div></li>
+          <li><span>01</span><div><h3>Use the controller&apos;s stable LAN address</h3><p>Reserve a fixed address for your laptop, NAS, or other controller host. The controller hostnames remain in place for TLS while the installer creates the local mapping. In Lab mode the Spark must resolve the <code>enroll</code>, <code>agents</code>, and <code>registry</code> hostnames to that same address, and any client that connects to Spark-facing HTTPS endpoints needs the local CA certificate imported.</p></div></li>
           <li><span>02</span><div><h3>Complete the pairing prompts</h3><p>Enter the one-use grant values and the requested Spark management and fabric addresses. The installer writes the agent and firewall configuration.</p></div></li>
           <li><span>03</span><div><h3>Verify the node</h3><p>The signed Rust agent connects outbound. Confirm that the node is connected and healthy in either control path before installing workloads.</p></div></li>
           <li><span>04</span><div><h3>Repeat for each additional Spark</h3><p>Create a separate one-use grant per node. Adding a Spark adds one identity and local model cache—not another controller, database, or secret set.</p></div></li>

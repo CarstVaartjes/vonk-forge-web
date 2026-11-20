@@ -310,7 +310,7 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
   await expect(page.getByRole("heading", { name: "Choose a control path" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "One Spark", exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Many Sparks", exact: true })).toBeVisible();
-  await expect(page.getByText(/VONK_CONTROLLER_ADDRESS=192\.168\.1\.231/)).toBeVisible();
+  await expect(page.getByText(/this site cannot show a complete command/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Prove the private route before enrolling Sparks." })).toBeVisible();
   await expect(page.locator(".verification-grid").getByText("Self.PrimaryRoutes")).toBeVisible();
   await expect(page.locator('[aria-label="Exact Tailscale Serve map"]')).toContainText("svc:vonk-forgeHTTPS 443 → http://caddy:8080");
