@@ -7,6 +7,37 @@ import { getStaticCatalogSummary, getStaticLibraryRelease, getStaticModel, getSt
 export interface Licence {
   spdx?: string;
   url?: string;
+  // The regional notice the licence carries (where it does not apply), shown as information.
+  notice?: string;
+}
+
+// What a job recipe takes and gives, as the catalog published it: the slots a job fills and the options it accepts.
+export interface JobSlot {
+  id: string;
+  label: string;
+  description: string;
+  media_types: string[];
+  extensions: string[];
+  min_files: number;
+  max_files: number;
+}
+
+export interface JobOption {
+  key: string;
+  label: string;
+  description?: string;
+  unit?: string;
+  default: string | number | boolean;
+  minimum?: number;
+  maximum?: number;
+  step?: number;
+  allowed_values?: (string | number | boolean)[];
+}
+
+export interface JobContract {
+  inputs: JobSlot[];
+  outputs: JobSlot[];
+  options: JobOption[];
 }
 
 export interface RecipeSummary {
@@ -80,6 +111,8 @@ export interface RecipeDetail extends RecipeSummary {
   credits: string[];
   // The recipe's own defaults for the settings the page shows.
   settings: { context_tokens?: number; concurrency?: number };
+  // Present only for a job recipe (images, video, audio, 3D): what goes in, what comes out, and its options.
+  job?: JobContract;
   license: Licence;
   latest_revision: {
     content_sha256: string;

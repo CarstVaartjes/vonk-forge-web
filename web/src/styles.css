@@ -3330,3 +3330,7 @@ a {
 
 .model-recipe-list { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: .5rem; }
 .model-recipe-list li { display: flex; flex-wrap: wrap; gap: .25rem 1rem; align-items: baseline; }
+
+.job-contract h3 { margin: var(--s3) 0 var(--s2); font-size: var(--t-small); color: var(--muted); }
+.job-slots { display: grid; gap: var(--s2); margin: 0; padding: 0; list-style: none; }
+.job-slots small { display: block; color: var(--muted); }

@@ -161,6 +161,52 @@ describe("static recipe library adapter", () => {
     expect(recipe.license).toEqual({ spdx: "Apache-2.0", url: "https://ai.google.dev/gemma/docs/gemma_4_license" });
   });
 
+  // The fixture's 3D job recipe (SkinTokens) given the H3 recipe's real knobs and display labels, and its model the
+  // H3 regional notice, in the shapes the published index uses.
+  function withH3Options(): CatalogIndex {
+    const copy = structuredClone(index);
+    const recipe = copy.recipes.find((entry) => entry.document.identity.slug === "skintokens-pytorch-single")!;
+    if (recipe.document.settings.kind !== "job") throw new Error("fixture recipe is not a job");
+    recipe.document.settings.knobs = {
+      "num-frames": { change_effect: "none", maximum: 345, minimum: 124, step: 17, value: 124 },
+      "num-inference-steps": { change_effect: "none", maximum: 51, minimum: 2, value: 31 },
+    };
+    recipe.display.knobs = { "num-frames": { label: "Frames", unit: "frames", description: "Video length at 24 fps." } };
+    const model = copy.catalog_entities.find((entity) => entity.document.identity.slug === "skintokens")!;
+    model.display.license.territorial_restrictions = { denied_jurisdictions: ["EU", "GB", "KR", "US"], notice: "The MiniMax H3 Community License Agreement excludes the European Union, United Kingdom, Republic of Korea, and United States of America from its Applicable Territory." };
+    return copy;
+  }
+
+  test("a job recipe carries its input and output slots and typed options with the display labels; a chat recipe carries none", async () => {
+    serve(withH3Options());
+    const recipe = await getStaticRecipe(indexUrl, "vonk-forge", "skintokens-pytorch-single");
+    expect(recipe.job!.inputs).toEqual([{ id: "mesh", label: "Character mesh", description: "One GLB character mesh to rig with SkinTokens.", media_types: ["model/gltf-binary"], extensions: [".glb"], min_files: 1, max_files: 1 }]);
+    expect(recipe.job!.outputs).toEqual([{ id: "mesh", label: "Rigged mesh", description: "The rigged SkinTokens binary glTF mesh.", media_types: ["model/gltf-binary"], extensions: [".glb"], min_files: 1, max_files: 1 }]);
+    expect(recipe.job!.options).toEqual([
+      { key: "num-frames", label: "Frames", description: "Video length at 24 fps.", unit: "frames", default: 124, minimum: 124, maximum: 345, step: 17 },
+      { key: "num-inference-steps", label: "num-inference-steps", default: 31, minimum: 2, maximum: 51 },
+    ]);
+    expect(recipe.settings).toEqual({});
+    expect((await getStaticRecipe(indexUrl, "vonk-forge", nvidia)).job).toBeUndefined();
+  });
+
+  test("the regional licence notice reaches the recipe and the model version", async () => {
+    serve(withH3Options());
+    const notice = "The MiniMax H3 Community License Agreement excludes the European Union, United Kingdom, Republic of Korea, and United States of America from its Applicable Territory.";
+    expect((await getStaticRecipe(indexUrl, "vonk-forge", "skintokens-pytorch-single")).license.notice).toBe(notice);
+    const versions = (await listStaticModels(indexUrl)).items.flatMap((model) => model.versions);
+    expect(versions.find((version) => version.slug === "skintokens")!.license!.notice).toBe(notice);
+    expect((await getStaticRecipe(indexUrl, "vonk-forge", nvidia)).license.notice).toBeUndefined();
+  });
+
+  test("a model whose quantization is the literal none has no quantization, not one called NONE", async () => {
+    const recipe = await getStaticRecipe(indexUrl, "vonk-forge", "skintokens-pytorch-single");
+    expect(recipe.catalog.quantizations).toEqual([]);
+    const versions = (await listStaticModels(indexUrl)).items.flatMap((model) => model.versions);
+    expect(versions.find((version) => version.slug === "skintokens")!.format?.quantization).toBeUndefined();
+    expect((await getStaticRecipe(indexUrl, "vonk-forge", eight)).catalog.quantizations).toEqual(["NVFP4"]);
+  });
+
   test("links model versions to recipes and preserves declared capabilities, licence and file sizes", async () => {
     const page = await listStaticModels(indexUrl);
     expect(page.items.map((item) => `${item.publisher}/${item.slug}`)).toEqual(["gemma/gemma-e2b--gemma-4-e2b", "inkling/inkling-975b-a41b--inkling-975b-a41b", "skintokens/skintokens--skintokens"]);
