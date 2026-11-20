@@ -29,6 +29,7 @@ test("recipes, a recipe and back: one document, one index request, no loading te
   const link = page.locator("tbody tr").last().getByRole("link").first();
   await link.scrollIntoViewIfNeeded();
   const scrolled = await page.evaluate(() => window.scrollY);
+  expect(scrolled, "the list was scrolled before leaving").toBeGreaterThan(0);
   const href = await link.getAttribute("href");
   await link.click();
   await expect(page).toHaveURL(new RegExp(`${href}$`));
@@ -63,18 +64,68 @@ test("a modified click is left to the browser and opens a new tab", async ({ pag
   const opened = context.waitForEvent("page");
   await link.click({ modifiers: ["ControlOrMeta"] });
   const tab = await opened;
-  expect(new URL(tab.url()).pathname === href || tab.url() === "about:blank" || tab.url().includes(href)).toBe(true);
+  await expect(tab).toHaveURL(new RegExp(`${href}$`));
   expect(new URL(page.url()).pathname, "this tab stays where it was").toBe("/recipes");
   await tab.close();
 });
 
-test("an unknown address and a file are left to the browser", async ({ page }) => {
+async function addLink(page: Page, href: string): Promise<void> {
+  await page.evaluate((target) => { const link = document.createElement("a"); link.href = target; link.id = "added-link"; link.textContent = "added"; document.querySelector("main")!.append(link); }, href);
+}
+
+test("a file is left to the browser", async ({ page }) => {
   await page.goto("/install", { waitUntil: "networkidle" });
-  await page.evaluate(() => { const link = document.createElement("a"); link.href = "/catalog/release.json"; link.id = "file-link"; link.textContent = "file"; document.querySelector("main")!.append(link); });
+  await addLink(page, "/catalog/release.json");
   await watchNavigation(page);
-  await page.locator("#file-link").click();
+  await page.locator("#added-link").click();
   await expect(page).toHaveURL(/\/catalog\/release\.json$/);
   expect(await sameDocument(page)).toBe(false);
+});
+
+test("an unknown address is left to the browser, which shows the not-found page", async ({ page }) => {
+  await page.goto("/install", { waitUntil: "networkidle" });
+  await addLink(page, "/no-such-page");
+  await watchNavigation(page);
+  await page.locator("#added-link").click();
+  await expect(page.getByRole("heading", { level: 1, name: "Not found" })).toBeVisible();
+  expect(await sameDocument(page), "a full load").toBe(false);
+});
+
+test("a page chunk that fails to load after a deploy is cured by a full load of that address", async ({ page }) => {
+  await page.goto("/install", { waitUntil: "networkidle" });
+  await watchNavigation(page);
+  let failed = 0;
+  await page.route("**/assets/recipes-*.js", (route) => { if (failed++ === 0) return route.fulfill({ status: 404, body: "gone" }); return route.continue(); });
+  await page.getByRole("link", { name: "Recipes", exact: true }).first().click();
+  await expect(page).toHaveURL(/\/recipes$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Find the right recipe." })).toBeVisible();
+  await expect(page.locator("tbody tr").first()).toBeVisible();
+  expect(await sameDocument(page), "a full load, not a blank page").toBe(false);
+  expect(failed).toBeGreaterThan(0);
+});
+
+test("a link to the page's own list from a filtered list resets the filters and adds one history entry", async ({ page }) => {
+  await page.goto("/recipes", { waitUntil: "networkidle" });
+  await page.getByRole("searchbox", { name: "Search recipes" }).fill("zzzz-no-match");
+  await expect(page).toHaveURL(/q=zzzz/);
+  const entries = await page.evaluate(() => history.length);
+  await page.getByRole("navigation", { name: "Footer navigation" }).getByRole("link", { name: "Recipes", exact: true }).click();
+  await expect(page).toHaveURL(/\/recipes$/);
+  await expect(page.getByRole("searchbox", { name: "Search recipes" })).toHaveValue("");
+  expect(await page.evaluate(() => history.length)).toBe(entries + 1);
+});
+
+test("an in-page anchor keeps the page and the focus where the visitor put it", async ({ page }) => {
+  await page.goto("/recipes", { waitUntil: "networkidle" });
+  await page.evaluate(() => { document.querySelector("main")!.setAttribute("data-mounted", "yes"); });
+  const entries = await page.evaluate(() => history.length);
+  const badge = page.locator("a.badge-link").first();
+  await badge.click();
+  await expect(page).toHaveURL(/#/);
+  await page.waitForTimeout(300);
+  await expect(page.locator("main[data-mounted=yes]")).toHaveCount(1);
+  await expect(page.getByRole("heading", { level: 1 })).not.toBeFocused();
+  expect(await page.evaluate(() => history.length)).toBe(entries + 1);
 });
 
 // A page reached by an in-app navigation is the same page: no serious accessibility issue, no overflow.

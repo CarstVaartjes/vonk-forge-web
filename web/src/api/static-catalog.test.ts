@@ -44,6 +44,15 @@ describe("static recipe library adapter", () => {
     expect(models.items).toHaveLength(index.families!.flatMap((family) => family.lines.flatMap((line) => line.models)).length);
   });
 
+  test("a recipe or model missing from the cached index drops it, so the next read fetches it again", async () => {
+    const fetchMock = serve(index);
+    await expect(getStaticRecipe(indexUrl, "vonk-forge", "no-such-recipe")).rejects.toThrow("Recipe not found");
+    await expect(getStaticModel(indexUrl, "no", "such")).rejects.toThrow("Model not found");
+    const fetches = fetchMock.mock.calls.length;
+    expect((await getStaticRecipe(indexUrl, "vonk-forge", nvidia)).slug).toBe(nvidia);
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(fetches);
+  });
+
   test("one caller aborting never cancels the shared index fetch", async () => {
     const fetchMock = serve(index);
     const signals: Array<AbortSignal | undefined> = [];

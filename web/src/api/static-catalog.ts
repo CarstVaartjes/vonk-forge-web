@@ -573,12 +573,24 @@ export async function listStaticModels(url: string, signal?: AbortSignal): Promi
   return { items: modelsFromIndex(await loadIndex(url, signal)) };
 }
 
-export async function getStaticModel(url: string, publisher: string, slug: string, signal?: AbortSignal): Promise<ModelSummary> {
-  return modelFromIndex(await loadIndex(url, signal), publisher, slug);
+// A miss is a miss: the cached index may belong to an older release than the entry asked for, so it is
+// dropped before the error, and Retry or the next page reads the index again.
+async function fromIndex<T>(url: string, signal: AbortSignal | undefined, pick: (index: LibraryIndex) => T): Promise<T> {
+  const index = await loadIndex(url, signal);
+  try {
+    return pick(index);
+  } catch (error) {
+    if (loadedIndexes.get(url) === index) { loadedIndexes.delete(url); cachedIndexes.delete(url); }
+    throw error;
+  }
 }
 
-export async function getStaticRecipe(url: string, publisher: string, slug: string, signal?: AbortSignal): Promise<RecipeDetail> {
-  return recipeFromIndex(await loadIndex(url, signal), publisher, slug);
+export function getStaticModel(url: string, publisher: string, slug: string, signal?: AbortSignal): Promise<ModelSummary> {
+  return fromIndex(url, signal, (index) => modelFromIndex(index, publisher, slug));
+}
+
+export function getStaticRecipe(url: string, publisher: string, slug: string, signal?: AbortSignal): Promise<RecipeDetail> {
+  return fromIndex(url, signal, (index) => recipeFromIndex(index, publisher, slug));
 }
 
 // What a page that opens after the index loaded starts from, so moving between pages draws no loading

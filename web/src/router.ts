@@ -10,9 +10,13 @@ type Listener = () => void;
 type Pending = { kind: "push" | "pop"; hash: string; scrollY: number };
 
 const listeners = new Set<Listener>();
-// What the app shows. Only this module changes it: a page that rewrites its own query string with
-// replaceState must not remount itself.
-let current = locationKey();
+// What the app shows: a counter plus the address. Only this module changes it, so a page that rewrites its
+// own query string with replaceState does not remount itself; every navigation that changes the path or the
+// query bumps the counter, so it always remounts (a link to /recipes from a filtered /recipes resets it).
+let serial = 0;
+let current = `${serial}|${locationKey()}`;
+// The path and query of the last address seen, kept true through the pages' own replaceState (see startRouter).
+let lastAddress = locationKey();
 let pending: Pending | null = null;
 let ticket = 0;
 
@@ -21,7 +25,9 @@ function locationKey(): string {
 }
 
 function setCurrent(): void {
-  current = locationKey();
+  serial += 1;
+  current = `${serial}|${locationKey()}`;
+  lastAddress = locationKey();
   for (const listener of listeners) listener();
 }
 
@@ -74,7 +80,7 @@ function focusHeading(main: HTMLElement | null): void {
   if (!main) return;
   const visibleHeading = () => {
     const found = main.querySelector<HTMLElement>("h1");
-    return found?.checkVisibility() ? found : null;
+    return found && (found.checkVisibility?.() ?? found.getClientRects().length > 0) ? found : null;
   };
   const focus = (target: HTMLElement) => { target.tabIndex = -1; target.focus({ preventScroll: true }); };
   const first = visibleHeading();
@@ -91,22 +97,36 @@ function focusHeading(main: HTMLElement | null): void {
 }
 
 // `prepare` loads what a route needs (its code chunk) before it is shown, so a page never flashes a spinner.
+// If that fails (a deploy replaced the chunk since this page opened) the browser loads the address itself.
 export function startRouter(prepare: (pathname: string) => Promise<unknown>): () => void {
   const previousRestoration = window.history.scrollRestoration;
   window.history.scrollRestoration = "manual";
+  // A page rewrites its own query with replaceState; keep the last address true.
+  const replaceState = window.history.replaceState;
+  window.history.replaceState = function (this: History, ...args: Parameters<History["replaceState"]>) {
+    replaceState.apply(this, args);
+    lastAddress = locationKey();
+  };
 
   async function show(url: URL, kind: Pending["kind"], scrollY = 0): Promise<void> {
     const mine = ++ticket;
-    await prepare(url.pathname).catch(() => undefined);
+    try {
+      await prepare(url.pathname);
+    } catch {
+      if (mine !== ticket) return;
+      if (kind === "push") window.location.assign(url.href); else window.location.reload();
+      return;
+    }
     if (mine !== ticket) return;
+    const address = `${url.pathname}${url.search}`;
+    // A link to the page we are on (path and query) adds no history entry and keeps the page.
+    const samePage = kind === "push" && address === locationKey();
     if (kind === "push") {
-      const address = `${url.pathname}${url.search}${url.hash}`;
-      // A link to the page we are on adds no history entry.
-      if (`${url.pathname}${url.search}` === locationKey()) window.history.replaceState(window.history.state, "", address);
-      else { rememberScroll(); window.history.pushState({ scrollY: 0 }, "", address); }
+      if (samePage) window.history.replaceState(window.history.state, "", `${address}${url.hash}`);
+      else { rememberScroll(); window.history.pushState({ scrollY: 0 }, "", `${address}${url.hash}`); }
     }
     pending = { kind, hash: url.hash, scrollY };
-    if (locationKey() === current) settleNavigation(); else setCurrent();
+    if (samePage) settleNavigation(); else setCurrent();
   }
 
   const onClick = (event: MouseEvent) => {
@@ -116,16 +136,18 @@ export function startRouter(prepare: (pathname: string) => Promise<unknown>): ()
     void show(url, "push");
   };
   const onPopState = () => {
-    const url = new URL(window.location.href);
-    // A hash change on the same page needs nothing from us.
-    if (locationKey() === current) return;
-    void show(url, "pop", (window.history.state as { scrollY?: number } | null)?.scrollY ?? 0);
+    const before = lastAddress;
+    lastAddress = locationKey();
+    // A step that changes only the hash is the browser's own scroll to an anchor: nothing to show.
+    if (lastAddress === before) return;
+    void show(new URL(window.location.href), "pop", (window.history.state as { scrollY?: number } | null)?.scrollY ?? 0);
   };
   document.addEventListener("click", onClick);
   window.addEventListener("popstate", onPopState);
   return () => {
     document.removeEventListener("click", onClick);
     window.removeEventListener("popstate", onPopState);
+    window.history.replaceState = replaceState;
     window.history.scrollRestoration = previousRestoration;
   };
 }

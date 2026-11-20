@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useLayoutEffect, useState, type ComponentType } from "react";
+import { Component, Suspense, lazy, useEffect, useLayoutEffect, useState, type ComponentType, type ReactNode } from "react";
 
 import { getLibraryRelease, type LibraryRelease } from "./api/client";
 import { HomePage } from "./pages/home";
@@ -19,6 +19,22 @@ function NotFoundPage() {
       <p className="status-actions"><a className="text-link" href="/">Home</a> · <a className="text-link" href="/recipes">Recipes</a> · <a className="text-link" href="/install">Install</a></p>
     </main>
   );
+}
+
+// A page whose code cannot load or whose render throws leaves a way out instead of a blank site.
+class PageBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  override state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  override render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <main className="status-panel error" role="alert">
+        <h1>This page could not be loaded</h1>
+        <p>The site may have been updated while this page was open.</p>
+        <p className="status-actions"><button type="button" className="button" onClick={() => window.location.reload()}>Reload</button></p>
+      </main>
+    );
+  }
 }
 
 type PageProps = RouteMatch["params"];
@@ -151,9 +167,11 @@ export function App() {
           </div>
         </header>
         <div id="main-content" tabIndex={-1}>
-          <Suspense fallback={null}>
-            <CurrentPage key={location} />
-          </Suspense>
+          <PageBoundary key={location}>
+            <Suspense fallback={null}>
+              <CurrentPage />
+            </Suspense>
+          </PageBoundary>
         </div>
         <footer className="site-footer">
           <div>

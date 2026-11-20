@@ -84,7 +84,7 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   `web/src/api/static-catalog.ts` together with everything derived from it (recipes, Models, model documents by
   reference, all built once per index with `Map` joins, never a `.find` per row); a page starts from the `peek*` accessors
   in `api/client.ts`, so moving between pages makes no request and draws no loading panel. A page reads its URL at mount
-  (the router remounts it per address), writes its own filters with `history.replaceState` only, and an in-app link is a
+  (the router remounts it on every navigation that changes the path or the query, even back to the same list address), writes its own filters with `history.replaceState` only, and an in-app link is a
   plain `<a href>`: do not add click handlers that navigate. `e2e/client-routing.spec.ts` covers one index request,
   no loading text, focus on the heading, scroll on Back, and modified clicks.
 - The public site never builds or executes a container, accepts model weights,
