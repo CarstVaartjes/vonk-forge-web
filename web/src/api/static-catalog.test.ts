@@ -13,15 +13,6 @@ const indexUrl = "https://example.test/catalog/catalog-index.json";
 const nvidia = "gemma-4-e2b-it-nvidia-vllm-single";
 const eight = "inkling-975b-a41b-nvfp4-sglang-eight";
 
-// The Models the index's hierarchy defines: one per lineage model, plus one per variant without lineage.
-function expectedModelCount(body: CatalogIndex): number {
-  const keys = body.catalog_entities.map(({ display, document }) => {
-    const { lineage } = display;
-    return lineage ? `${lineage.family}/${lineage.line}/${lineage.model}` : `${document.identity.publisher}/${document.identity.slug}`;
-  });
-  return new Set(keys).size;
-}
-
 // Serve the verified release the Pages build writes: the index and its manifest.
 function serve(indexBody: unknown, releaseBody: unknown = release) {
   const fetchMock = vi.fn(async (url: string) => {
@@ -49,7 +40,8 @@ describe("static recipe library adapter", () => {
     ]);
     expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(recipe.package).not.toHaveProperty("url");
-    expect(models.items).toHaveLength(expectedModelCount(index));
+    // The index's own `families` document is the oracle: one row per hierarchy Model.
+    expect(models.items).toHaveLength(index.families!.flatMap((family) => family.lines.flatMap((line) => line.models)).length);
   });
 
   test("resolves the default same-origin index path against the page", async () => {
@@ -74,7 +66,7 @@ describe("static recipe library adapter", () => {
       .mockImplementation(async (url: string) => ({ ok: true, json: async () => (url.endsWith("release.json") ? release : index) }));
     vi.stubGlobal("fetch", fetchMock);
     await expect(listStaticModels(indexUrl)).rejects.toThrow("returned 503");
-    expect((await listStaticModels(indexUrl)).items).toHaveLength(expectedModelCount(index));
+    expect((await listStaticModels(indexUrl)).items).toHaveLength(3);
     expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
@@ -92,8 +84,8 @@ describe("static recipe library adapter", () => {
       capacity: { profile_node_counts: [1], maximum_installed_bytes_per_node: 60278835678, maximum_runtime_memory_bytes_per_node: 119063746765 },
       catalog: {
         description: index.recipes[0]!.display.description,
-        model_publisher: "google",
-        model_slug: "gemma-4-e2b",
+        model_publisher: "gemma",
+        model_slug: "gemma-e2b--gemma-4-e2b",
         model_title: "Gemma 4 E2B",
         model_version_slug: "gemma-4-e2b-it-4adf1574",
         model_family: "Gemma",
@@ -171,7 +163,7 @@ describe("static recipe library adapter", () => {
 
   test("links model versions to recipes and preserves declared capabilities, licence and file sizes", async () => {
     const page = await listStaticModels(indexUrl);
-    expect(page.items.map((item) => `${item.publisher}/${item.slug}`)).toEqual(["google/gemma-4-e2b", "thinkingmachines/inkling-975b-a41b", "vast-ai/skintokens"]);
+    expect(page.items.map((item) => `${item.publisher}/${item.slug}`)).toEqual(["gemma/gemma-e2b--gemma-4-e2b", "inkling/inkling-975b-a41b--inkling-975b-a41b", "skintokens/skintokens--skintokens"]);
     expect(page.items[0]).toMatchObject({
       title: "Gemma 4 E2B",
       description: "Exact public Google Gemma 4 E2B instruction-tuned checkpoint.",
@@ -181,7 +173,6 @@ describe("static recipe library adapter", () => {
       runs: { spark_counts: [1], engines: ["llama-cpp", "vllm"], creators: ["NVIDIA", "ggml-org"] },
       versions: [{
         slug: "gemma-4-e2b-it-4adf1574",
-        model_slug: "gemma-4-e2b",
         requires_token: false,
         variant: "IT 4adf1574",
         source_repository: "https://huggingface.co/google/gemma-4-E2B-it",
@@ -192,10 +183,10 @@ describe("static recipe library adapter", () => {
       }, { slug: "gemma-4-e2b-it-q8-0-63f6c6f2" }],
     });
     // The eight-Spark model has a recipe but none verified.
-    const inkling = page.items.find((item) => item.slug === "inkling-975b-a41b")!;
+    const inkling = page.items.find((item) => item.publisher === "inkling")!;
     expect(inkling).toMatchObject({ recipe_count: 1, verified_recipe_count: 0, verified_runs: { spark_counts: [], engines: [], creators: [] }, runs: { spark_counts: [8] } });
     expect(inkling.versions[0]!.sizes).toEqual({ download_bytes: expect.any(Number), installed_bytes: expect.any(Number) });
-    await expect(getStaticModel(indexUrl, "google", "missing")).rejects.toThrow("Model not found");
+    await expect(getStaticModel(indexUrl, "gemma", "missing")).rejects.toThrow("Model not found");
   });
 
   test("reads the words of the release from the same index", async () => {
@@ -213,25 +204,40 @@ describe("static recipe library adapter", () => {
     standalone.display.lineage = null;
     serve({ ...index, catalog_entities: [...index.catalog_entities, standalone] });
     const page = await listStaticModels(indexUrl);
-    expect(page.items).toHaveLength(expectedModelCount(index) + 1);
-    expect(page.items.find((item) => item.publisher === "standalone")).toMatchObject({ slug: "standalone-v1", family: undefined, recipe_count: 0, versions: [{ recipe_slugs: [] }] });
+    expect(page.items).toHaveLength(4);
+    expect(page.items.find((item) => item.publisher === "standalone")).toMatchObject({ slug: "standalone", family: undefined, recipe_count: 0, versions: [{ recipe_slugs: [] }] });
   });
 
-  test("a variant without lineage is its own model, and a variant's old address still opens its model", async () => {
-    const first = structuredClone(index.catalog_entities[0]!);
-    const second = structuredClone(first);
-    for (const [entity, tag] of [[first, "a"], [second, "b"]] as const) {
+  test("variants without lineage group by their logical model, under no family", async () => {
+    const make = (tag: string) => {
+      const entity = structuredClone(index.catalog_entities[0]!);
       entity.content_sha256 = tag.repeat(64);
       entity.display.lineage = null;
-      entity.document.identity = { ...entity.document.identity, publisher: "unlined", slug: `unlined-${tag}`, model: { publisher: "unlined", slug: "shared" } };
-    }
-    serve({ ...index, catalog_entities: [...index.catalog_entities, first, second] });
+      entity.document.identity = { ...entity.document.identity, publisher: "helper", slug: `helper-${tag}`, model: { publisher: "helper", slug: "drafter" } };
+      return entity;
+    };
+    serve({ ...index, catalog_entities: [...index.catalog_entities, make("a"), make("b")] });
+    const helper = (await listStaticModels(indexUrl)).items.filter((item) => item.publisher === "helper");
+    expect(helper).toHaveLength(1);
+    expect(helper[0]).toMatchObject({ slug: "drafter", family: undefined });
+    expect(helper[0]!.versions).toHaveLength(2);
+  });
+
+  test("two lineage Models whose variants share a logical model keep separate addresses", async () => {
+    const entity = structuredClone(index.catalog_entities[0]!);
+    entity.content_sha256 = "c".repeat(64);
+    entity.document.identity = { ...entity.document.identity, publisher: "other", slug: "other-variant" };
+    entity.display.lineage = { ...entity.display.lineage!, model: "gemma-4-e2b-next" };
+    // The same logical model as the first Gemma variant, a different hierarchy Model.
+    const body = { ...index, catalog_entities: [entity, ...index.catalog_entities] };
+    serve(body);
     const page = await listStaticModels(indexUrl);
-    expect(page.items).toHaveLength(expectedModelCount(index) + 2);
-    expect(page.items.filter((item) => item.publisher === "unlined").map((item) => item.family)).toEqual([undefined, undefined]);
-    const grouped = await getStaticModel(indexUrl, "ggml-org", "gemma-4-e2b");
-    expect(grouped.slug).toBe("gemma-4-e2b");
-    expect(grouped.versions.length).toBeGreaterThan(1);
+    const addresses = page.items.map((item) => `${item.publisher}/${item.slug}`);
+    expect(new Set(addresses).size).toBe(addresses.length);
+    expect(addresses).toContain("gemma/gemma-e2b--gemma-4-e2b-next");
+    expect((await getStaticModel(indexUrl, "gemma", "gemma-e2b--gemma-4-e2b")).versions).toHaveLength(2);
+    const recipes = await listStaticRecipeCatalog(indexUrl);
+    expect(recipes.find((recipe) => recipe.slug === nvidia)!.catalog).toMatchObject({ model_publisher: "gemma", model_slug: "gemma-e2b--gemma-4-e2b" });
   });
 
   test("does not join same-slug entities when their immutable digests differ", async () => {

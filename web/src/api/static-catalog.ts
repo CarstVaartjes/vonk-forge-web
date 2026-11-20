@@ -131,9 +131,9 @@ function familyTitle(index: LibraryIndex, display: CatalogModelEntry["display"])
   return displayTitle(index.families?.find((family) => family.slug === slug)?.title);
 }
 
-// One hierarchy Model: the variants that share a lineage (family, line, model). A variant without
-// lineage is a Model of its own, so none is dropped. Its page address is that of its first variant's
-// logical model (a variant without lineage: its own).
+// One hierarchy Model: the variants that share a lineage (family, line, model). Its page address is built from
+// that key, which the contract makes unique. A variant without lineage (a drafter, encoder or other helper) has
+// no place in the hierarchy; those group by their logical model as before and show under no family.
 interface ModelGroup { publisher: string; slug: string; title: string; entities: CatalogModelEntry[] }
 
 const groupsByIndex = new WeakMap<LibraryIndex, { groups: ModelGroup[]; byEntity: Map<CatalogModelEntry, ModelGroup> }>();
@@ -144,16 +144,19 @@ function modelGroups(index: LibraryIndex): NonNullable<ReturnType<typeof groupsB
   const keyed = new Map<string, CatalogModelEntry[]>();
   for (const entity of index.catalog_entities) {
     const { lineage } = entity.display;
-    const { publisher, slug } = entity.document.identity;
-    const key = lineage ? `${lineage.family}\0${lineage.line}\0${lineage.model}` : `\0${publisher}\0${slug}`;
+    const { model } = entity.document.identity;
+    const key = lineage ? `${lineage.family}\0${lineage.line}\0${lineage.model}` : `\0${model.publisher}\0${model.slug}`;
     keyed.set(key, [...(keyed.get(key) ?? []), entity]);
   }
   const groups = Array.from(keyed.values()).map((entities): ModelGroup => {
     const first = entities[0]!;
     const { lineage } = first.display;
-    const logical = lineage ? first.document.identity.model : first.document.identity;
-    const named = lineage && index.families?.find((family) => family.slug === lineage.family)?.lines.find((line) => line.slug === lineage.line)?.models.find((model) => model.slug === lineage.model)?.title;
-    return { publisher: logical.publisher, slug: logical.slug, title: displayTitle(named || first.display.model_title, logical.slug), entities };
+    if (!lineage) {
+      const { model } = first.document.identity;
+      return { publisher: model.publisher, slug: model.slug, title: displayTitle(first.display.model_title, model.slug), entities };
+    }
+    const named = index.families?.find((family) => family.slug === lineage.family)?.lines.find((line) => line.slug === lineage.line)?.models.find((model) => model.slug === lineage.model)?.title;
+    return { publisher: lineage.family, slug: `${lineage.line}--${lineage.model}`, title: displayTitle(named || first.display.model_title, lineage.model), entities };
   });
   const byEntity = new Map(groups.flatMap((group) => group.entities.map((entity) => [entity, group] as const)));
   const built = { groups, byEntity };
@@ -206,7 +209,6 @@ function mapModelVersion(entity: CatalogModelEntry, index: LibraryIndex): ModelV
     title: identity.slug,
     version: identity.version,
     revision_id: entity.content_sha256,
-    model_publisher: identity.model.publisher,
     model_slug: identity.model.slug,
     variant: identity.variant || undefined,
     requires_token: document.requires_token,
@@ -485,9 +487,7 @@ export async function listStaticModels(url: string, signal?: AbortSignal): Promi
 
 export async function getStaticModel(url: string, publisher: string, slug: string, signal?: AbortSignal): Promise<ModelSummary> {
   const page = await listStaticModels(url, signal);
-  // The model's own address, or the address one of its variants' logical models had before they were grouped.
-  const model = page.items.find((item) => item.publisher === publisher && item.slug === slug)
-    ?? page.items.find((item) => item.versions.some((version) => version.model_publisher === publisher && version.model_slug === slug));
+  const model = page.items.find((item) => item.publisher === publisher && item.slug === slug);
   if (!model) throw new Error("Model not found in the public library");
   return model;
 }

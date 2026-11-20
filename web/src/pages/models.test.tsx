@@ -41,7 +41,6 @@ function model(number: number, publisher = "publisher"): ModelSummary {
       title: `Model ${number} v1`,
       version: "1",
       revision_id: String(number).padStart(64, "0"),
-      model_publisher: publisher,
       model_slug: `model-${number}`,
       variant: "bf16",
       requires_token: false,

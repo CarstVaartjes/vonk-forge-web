@@ -53,10 +53,11 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   `localStorage` by `web/src/my-sparks.ts`; the catalog page reads it when its URL carries neither,
   and saves a change to either, so home and catalog share one "My Sparks".
 - A Model is the hierarchy's Model (Family → Line → Model → Variant), not a variant. The Models page counts
-  and lists hierarchy Models, with their variants inside; the variants of one `lineage` (family, line,
-  model) are one Model (`modelGroups` in `web/src/api/static-catalog.ts`). A variant without lineage is a Model of its own,
-  never dropped and never given an invented family ("Other" in the facet). The catalog's `model`
-  parameter matches a Model (every variant), as `publisher/slug` of that Model's page address.
+  and lists hierarchy Models, with their variants inside. The variants of one `lineage` (family, line, model) are
+  one Model, and its page address and the catalog `model` parameter are built from that key
+  (`modelGroups` in `web/src/api/static-catalog.ts`), which the contract makes unique. A variant without
+  lineage is a helper (drafter, encoder) with no place in the hierarchy: it groups by its logical model and
+  shows under "Other", never under an invented family.
 - The home page reads one file, `catalog-summary.json` (`summary_version: 2`),
   which the same Pages build derives from the verified index with the code the pages
   use (`web/src/catalog-stats.ts`): totals, statuses in vocabulary order, shelves per
