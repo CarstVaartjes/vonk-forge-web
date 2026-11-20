@@ -38,8 +38,7 @@ export function SparkPicker({ value, counts, noun, onChange }: {
           );
         })}
         <button type="button" className="setup-tile setup-tile-any" aria-pressed={value === ""} onClick={() => onChange("")}>
-          <strong aria-hidden="true">Any</strong>
-          <span>Every count</span>{" "}
+          <strong>Any</strong>{" "}
           <small>{countOf(counts[""], noun)}</small>
         </button>
       </div>

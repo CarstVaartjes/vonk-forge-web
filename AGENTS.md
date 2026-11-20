@@ -52,6 +52,11 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   a Controller follow-up will match this meaning. The exact count is the catalog's `uses=N` parameter
   (recipes needing exactly N Sparks); the home picker links one count per way to use the picked
   Sparks (`/recipes?sparks=2&uses=1`, `uses=2`). The pick (Spark count and type) is remembered in
+- The catalog's Memory per Spark, Disk per Spark and Download filters mean "at most N GiB": `CAPACITY_BUCKETS_GIB` in
+  `web/src/catalog-filters.ts` is the one owner of the bounds, the matching, the labels and the offered set (the URL
+  carries the bound, or `unknown` for a size not declared; an exact-byte value is not a filter). The table's filters live
+  in one toolbar (search plus a "More filters" disclosure), not in the table header; "Reset filters" returns to the
+  default Verified on Spark filter.
   `localStorage` by `web/src/my-sparks.ts`; the catalog page reads it when its URL carries neither,
   and saves a change to either, so home and catalog share one "My Sparks".
 - A Model is the hierarchy's Model (Family → Line → Model → Variant), not a variant. The Models page counts

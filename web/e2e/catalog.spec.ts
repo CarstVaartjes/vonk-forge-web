@@ -151,7 +151,7 @@ test("the Spark count picked on the home page is the catalog's first filter, and
   await expect(sparks.getByRole("button", { name: /^1 Spark \d/ })).toHaveAttribute("aria-pressed", "true");
   const all = page.getByRole("region", { name: "Recipe results" }).getByText(/of \d+ recipes/);
   const narrowed = await all.textContent();
-  await sparks.getByRole("button", { name: /^Every count/ }).click();
+  await sparks.getByRole("button", { name: /^Any/ }).click();
   await expect(all).not.toHaveText(narrowed!);
   await page.reload();
   await expect(sparks.getByRole("button", { name: /^1 Spark \d/ })).toHaveAttribute("aria-pressed", "false");
@@ -334,29 +334,17 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
 
 test("facets remain in the URL and exact trust facts survive navigation", async ({ page }) => {
   await page.goto("/recipes?sparks=2&abliterated=false&capability=chat");
-  await expect(page.getByLabel("Filter by Sparks you have")).toHaveValue("2");
   await expect(page.getByRole("group", { name: "How many Sparks do you have?" }).getByRole("button", { name: /2 Sparks/ })).toHaveAttribute("aria-pressed", "true");
   await page.getByText("More filters").click();
-  // On a phone the column filters sit behind one "Filters" button.
-  const phoneToggle = page.getByRole("button", { name: "Filters", exact: true });
-  if (await phoneToggle.isVisible()) await phoneToggle.click();
   await expect(page.getByRole("group", { name: "Engine" }).getByRole("button", { name: /vLLM/ })).toBeVisible();
   await expect(page.getByLabel("Filter by abliterated")).toHaveValue("false");
-  await expect(page.getByLabel("Filter by capability")).toContainText("1 selected");
-  await expect(page.getByLabel("Filter by model family")).toBeVisible();
-  await expect(page.getByLabel("Filter by model", { exact: true })).toBeVisible();
-  await expect(page.getByLabel("Filter by quantization")).toBeVisible();
-  await expect(page.getByLabel("Filter by Sparks you have")).toBeVisible();
-  await expect(page.getByLabel("Filter by recipe creator")).toBeVisible();
-  await expect(page.getByLabel("Filter by updated date")).toBeVisible();
-  await expect(page.getByLabel("Filter by execution readiness")).toBeVisible();
-  await expect(page.getByLabel("Filter by original repository")).toBeVisible();
-  await expect(page.getByLabel("Filter by download size")).toBeVisible();
-  await expect(page.getByLabel("Filter by disk per Spark")).toBeVisible();
-  await expect(page.getByLabel("Filter by memory per Spark")).toBeVisible();
-  await expect(page.getByRole("columnheader")).toHaveCount(16);
-  const compactRecipeRows = await page.evaluate(() => window.innerWidth < 700);
-  await expect(page.getByRole("row").nth(1).getByRole("cell")).toHaveCount(compactRecipeRows ? 8 : 16);
+  await expect(page.getByRole("group", { name: "Capabilities" }).getByRole("button", { pressed: true })).toHaveCount(1);
+  await expect(page.getByRole("group", { name: "Model family" })).toBeVisible();
+  for (const label of ["Filter by model", "Filter by updated date", "Filter by execution readiness", "Filter by original repository", "Filter by download size", "Filter by disk per spark", "Filter by memory per spark"]) await expect(page.getByLabel(label, { exact: true })).toBeVisible();
+  if (!(await page.evaluate(() => window.innerWidth < 700))) {
+    await expect(page.getByRole("columnheader")).toHaveCount(6);
+    await expect(page.getByRole("row").nth(1).getByRole("cell")).toHaveCount(6);
+  }
   await expect(page.getByRole("link", { name: "Qwen Fast" })).toBeVisible();
   await expect(page.getByText(/Source verified/)).toBeVisible();
   await page.getByRole("link", { name: "Qwen Fast" }).click();
@@ -411,7 +399,8 @@ test("the model type is the first choice on the recipes and models pages", async
   await expect(types.getByRole("button")).toHaveText(["All 4", "Language 3", "Code 1", "Vision 1", "Image 0", "Video 0", "Audio 0", "3D 1", "Other 0"]);
   await expect(types.getByRole("button", { name: /^Code/ })).toHaveAttribute("aria-pressed", "true");
   // The words come from the release vocabulary: all 26 capabilities are offered, and the legend gives a status its published meaning.
-  await expect(page.getByLabel("Filter by capability").locator("option")).toHaveCount(27);
+  await page.getByText("More filters").click();
+  await expect(page.getByRole("group", { name: "Capabilities" }).getByRole("button")).toHaveCount(26);
   await expect(page.locator("#how-recipes-are-verified")).toContainText("Passed on a real DGX Spark for this exact recipe, runtime image and model.");
   await expect(page.getByRole("link", { name: "Acme Coder" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Acme Vision" })).toHaveCount(0);
@@ -461,16 +450,66 @@ test("the first recipe is on the first screen on desktop and on a phone, with th
   expect(await firstRecipeTop()).toBeLessThan(720);
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await firstRecipeTop()).toBeLessThan(844);
-  const toggle = page.getByRole("button", { name: "Filters", exact: true });
-  await expect(toggle).toHaveAttribute("aria-expanded", "false");
-  // Search stays in view; the other column filters wait behind the button.
+  const toggle = page.getByText("More filters", { exact: true });
+  // Search stays in view; the other filters wait behind the one button.
   await expect(page.getByRole("searchbox", { name: "Search recipes" })).toBeVisible();
-  await expect(page.getByLabel("Filter by capability")).toBeHidden();
+  await expect(page.getByLabel("Filter by updated date")).toBeHidden();
   await toggle.click();
-  await expect(toggle).toHaveAttribute("aria-expanded", "true");
-  await expect(page.getByLabel("Filter by capability")).toBeVisible();
+  await expect(page.getByLabel("Filter by updated date")).toBeVisible();
   // The refinements stay one click away, and a link to the status legend opens them.
-  await expect(page.locator(".catalog-more")).not.toHaveAttribute("open", "");
   await page.goto("/recipes#how-recipes-are-verified");
   await expect(page.locator("#how-recipes-are-verified")).toBeVisible();
+});
+
+
+test("the recipe table has few Tab stops before its first row, and its filters sit behind one disclosure", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/recipes");
+  const stops = await page.getByRole("region", { name: "Recipe results" }).evaluate((section) => {
+    const focusable = [...section.querySelectorAll<HTMLElement>("a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), summary, [tabindex]")]
+      .filter((element) => element.tabIndex >= 0 && element.checkVisibility());
+    const firstRow = section.querySelector("tbody tr");
+    return focusable.filter((element) => !firstRow || Boolean(element.compareDocumentPosition(firstRow) & Node.DOCUMENT_POSITION_FOLLOWING)).length;
+  });
+  expect(stops).toBeLessThanOrEqual(10);
+  await expect(page.getByRole("columnheader")).toHaveCount(6);
+  await expect(page.locator("thead select, thead input")).toHaveCount(0);
+});
+
+test("Reset filters brings back Verified on Spark and says so", async ({ page }) => {
+  await page.goto("/recipes?verified=0&type=code");
+  await expect(page.getByLabel("Applied filters")).not.toContainText("Verified on Spark");
+  const reset = page.getByRole("button", { name: /^Reset filters/ });
+  await expect(reset).toContainText("to Verified on Spark");
+  await reset.click();
+  await expect(page).toHaveURL(/\/recipes$/);
+  await expect(page.getByLabel("Applied filters")).toContainText("Verified on Spark");
+  await expect(page.getByRole("button", { name: /^Reset filters/ })).toHaveCount(0);
+});
+
+test("a phone shows a model type strip, a five-segment Spark bar, one tall Filters button and two recipe cards above the fold", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/recipes?verified=0");
+  const bar = page.getByRole("group", { name: "How many Sparks do you have?" }).getByRole("button");
+  await expect(bar).toHaveCount(5);
+  const widths = await bar.evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().width));
+  expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(2);
+  // The visible text starts each accessible name (WCAG 2.5.3).
+  await expect(bar.nth(3)).toHaveAccessibleName(/^4\+/);
+  await expect(bar.nth(4)).toHaveAccessibleName(/^Any/);
+  const strip = page.getByRole("group", { name: "Model type" });
+  expect(await strip.evaluate((element) => element.scrollWidth > element.clientWidth && element.getBoundingClientRect().height < 80)).toBe(true);
+  expect((await page.locator(".catalog-more > summary").boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  const above = await page.locator("tbody tr").evaluateAll((rows) => rows.filter((row) => row.getBoundingClientRect().bottom <= window.innerHeight).length);
+  expect(above).toBeGreaterThanOrEqual(2);
+});
+
+test("the table fits its panel just above and below the phone breakpoint", async ({ page }) => {
+  for (const width of [701, 768]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/recipes?verified=0");
+    await expect(page.locator("tbody tr").first()).toBeVisible();
+    const fit = await page.evaluate(() => ({ table: document.querySelector(".catalog-table")!.scrollWidth, panel: document.querySelector(".catalog-browser")!.clientWidth }));
+    expect(fit.table, `${width}px`).toBeLessThanOrEqual(fit.panel);
+  }
 });
