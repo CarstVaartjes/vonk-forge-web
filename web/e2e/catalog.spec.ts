@@ -151,7 +151,7 @@ test("the Spark count picked on the home page is the catalog's first filter, and
   await expect(sparks.getByRole("button", { name: /^1 Spark \d/ })).toHaveAttribute("aria-pressed", "true");
   const all = page.getByRole("region", { name: "Recipe results" }).getByText(/of \d+ recipes/);
   const narrowed = await all.textContent();
-  await sparks.getByRole("button", { name: /^Every count/ }).click();
+  await sparks.getByRole("button", { name: /^Any/ }).click();
   await expect(all).not.toHaveText(narrowed!);
   await page.reload();
   await expect(sparks.getByRole("button", { name: /^1 Spark \d/ })).toHaveAttribute("aria-pressed", "false");
@@ -487,16 +487,29 @@ test("Reset filters brings back Verified on Spark and says so", async ({ page })
   await expect(page.getByRole("button", { name: /^Reset filters/ })).toHaveCount(0);
 });
 
-test("a phone shows a capability strip, a five-segment Spark bar, one tall Filters button and two recipe cards above the fold", async ({ page }) => {
+test("a phone shows a model type strip, a five-segment Spark bar, one tall Filters button and two recipe cards above the fold", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/recipes?verified=0");
   const bar = page.getByRole("group", { name: "How many Sparks do you have?" }).getByRole("button");
   await expect(bar).toHaveCount(5);
   const widths = await bar.evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().width));
   expect(Math.max(...widths) - Math.min(...widths)).toBeLessThan(2);
+  // The visible text starts each accessible name (WCAG 2.5.3).
+  await expect(bar.nth(3)).toHaveAccessibleName(/^4\+/);
+  await expect(bar.nth(4)).toHaveAccessibleName(/^Any/);
   const strip = page.getByRole("group", { name: "Model type" });
   expect(await strip.evaluate((element) => element.scrollWidth > element.clientWidth && element.getBoundingClientRect().height < 80)).toBe(true);
-  expect((await page.getByText("More filters", { exact: true }).boundingBox())!.height).toBeGreaterThanOrEqual(44);
+  expect((await page.locator(".catalog-more > summary").boundingBox())!.height).toBeGreaterThanOrEqual(44);
   const above = await page.locator("tbody tr").evaluateAll((rows) => rows.filter((row) => row.getBoundingClientRect().bottom <= window.innerHeight).length);
   expect(above).toBeGreaterThanOrEqual(2);
+});
+
+test("the table fits its panel just above and below the phone breakpoint", async ({ page }) => {
+  for (const width of [701, 768]) {
+    await page.setViewportSize({ width, height: 900 });
+    await page.goto("/recipes?verified=0");
+    await expect(page.locator("tbody tr").first()).toBeVisible();
+    const fit = await page.evaluate(() => ({ table: document.querySelector(".catalog-table")!.scrollWidth, panel: document.querySelector(".catalog-browser")!.clientWidth }));
+    expect(fit.table, `${width}px`).toBeLessThanOrEqual(fit.panel);
+  }
 });

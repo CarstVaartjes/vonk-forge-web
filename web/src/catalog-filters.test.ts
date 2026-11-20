@@ -1,7 +1,7 @@
 import { describe, expect, test } from "vitest";
 
 import type { RecipeSummary } from "./api/client";
-import { CAPACITY_BUCKETS_GIB, EMPTY_FILTERS, capacityBucketMatches, capacityBuckets, capacityLabel, filtersFromParameters, nodeCountMatches, recipeMatches, sortRecipes, sparksFewerLabel } from "./catalog-filters";
+import { EMPTY_FILTERS, capacityBucketMatches, capacityBuckets, capacityLabel, filtersFromParameters, nodeCountMatches, recipeMatches, SORT_CHOICES, sortRecipes, sparksFewerLabel } from "./catalog-filters";
 import { catalogFacts } from "./vocabulary.fixture";
 
 
@@ -77,7 +77,6 @@ describe("capacity buckets", () => {
     expect(new Set(labels).size).toBe(labels.length);
     expect(labels.slice(0, 4)).toEqual(["≤ 16 GiB", "≤ 32 GiB", "≤ 64 GiB", "≤ 128 GiB"]);
     expect(capacityBuckets([gib(5)])).toEqual(["16"]);
-    expect(CAPACITY_BUCKETS_GIB.map(String)).toEqual(expect.arrayContaining(buckets.filter((bucket) => bucket !== "unknown")));
   });
 
   test("the URL accepts only a bucket; an old exact-byte link means no filter", () => {
@@ -92,8 +91,8 @@ describe("capacity buckets", () => {
 
 describe("public catalog Controller-parity filters", () => {
   test("parses the shared filter vocabulary and validates enumerated values", () => {
-    const filters = filtersFromParameters(new URLSearchParams("model_family=GLM+5.3+Flash&model=models%2Fboth-v1&abliterated=true&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&capability=chat&capability=reasoning&capability=chat&download=64&disk=unknown&memory=200&sort=download&direction=desc"));
-    expect(filters).toMatchObject({ modelFamily: "GLM 5.3 Flash", model: "models/both-v1", abliterated: "true", sourceOwner: "owner", quantization: "NVFP4", updated: "30", sparks: "4+", capabilities: ["chat", "reasoning"], download: "64", disk: "unknown", memory: "", sort: "download", direction: "desc" });
+    const filters = filtersFromParameters(new URLSearchParams("model_family=GLM+5.3+Flash&model=models%2Fboth-v1&abliterated=true&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&capability=chat&capability=reasoning&capability=chat&download=64&disk=unknown&memory=200&sort=memory&direction=desc"));
+    expect(filters).toMatchObject({ modelFamily: "GLM 5.3 Flash", model: "models/both-v1", abliterated: "true", sourceOwner: "owner", quantization: "NVFP4", updated: "30", sparks: "4+", capabilities: ["chat", "reasoning"], download: "64", disk: "unknown", memory: "", sort: "memory", direction: "desc" });
     expect(filtersFromParameters(new URLSearchParams("abliterated=unknown&sort=bogus")).abliterated).toBe("");
     expect(filtersFromParameters(new URLSearchParams("type=code")).type).toBe("code");
     // Type and capability names are the release vocabulary's, so the URL parser keeps them as given.
@@ -142,13 +141,12 @@ describe("public catalog Controller-parity filters", () => {
     expect(recipeMatches(abliterated, { ...EMPTY_FILTERS, abliterated: "false" })).toBe(false);
   });
 
-  test("uses the Controller sort modes", () => {
-    const large = recipe("zeta", { model_title: "Zeta", node_count: 4, expected_download_bytes: 400 });
-    const small = recipe("alpha", { model_title: "Alpha", node_count: 1, expected_download_bytes: 100 });
-    expect(sortRecipes([large, small], "model").map((item) => item.slug)).toEqual(["alpha", "zeta"]);
+  test("sorts by the table's columns in both directions; the Sort choices are exactly those", () => {
+    const large = recipe("zeta", { node_count: 4 });
+    const small = recipe("alpha", { node_count: 1 });
     expect(sortRecipes([large, small], "sparks").map((item) => item.slug)).toEqual(["alpha", "zeta"]);
-    expect(sortRecipes([large, small], "download").map((item) => item.slug)).toEqual(["alpha", "zeta"]);
-    expect(sortRecipes([large, small], "model", "desc").map((item) => item.slug)).toEqual(["zeta", "alpha"]);
-    expect(sortRecipes([large, small], "creator").map((item) => item.slug)).toEqual(["alpha", "zeta"]);
+    expect(sortRecipes([large, small], "sparks", "desc").map((item) => item.slug)).toEqual(["zeta", "alpha"]);
+    expect(SORT_CHOICES.map((choice) => choice.value)).toEqual(["catalog:desc", "recipe:asc", "recipe:desc", "sparks:asc", "sparks:desc", "memory:asc", "memory:desc", "runtime:asc", "runtime:desc", "qualification:asc", "qualification:desc"]);
+    expect(filtersFromParameters(new URLSearchParams("sort=creator")).sort).toBe("catalog");
   });
 });

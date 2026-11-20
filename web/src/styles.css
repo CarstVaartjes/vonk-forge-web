@@ -1455,7 +1455,7 @@ button.text-link {
 .catalog-toolbar { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--line); }
 .catalog-search { flex: 1 1 16rem; min-width: 0; height: 2.75rem; padding: 0 0.85rem; border: 1px solid var(--line-control); border-radius: var(--r-ctl); color: var(--ink); background: var(--bg); font: 650 var(--t-small)/1.2 Onest Variable, Helvetica Neue, sans-serif; }
 .catalog-search:focus-visible { border-color: var(--green); outline: 2px solid rgb(118 185 0 / 35%); outline-offset: 1px; }
-.catalog-toolbar .catalog-more { flex: 0 0 auto; margin: 0; }
+.catalog-toolbar .catalog-more { flex: 0 0 auto; }
 .catalog-toolbar .catalog-more[open] { flex-basis: 100%; }
 .catalog-toolbar .catalog-more > summary { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 1rem; border: 1px solid var(--line-control); border-radius: var(--r-ctl); color: var(--ink); cursor: pointer; list-style: none; }
 .catalog-toolbar .catalog-more > summary::-webkit-details-marker { display: none; }
@@ -1470,7 +1470,7 @@ button.text-link {
 .catalog-more-field option:disabled { color: var(--faint); }
 .catalog-sort-field { display: none; }
 .catalog-clear small { color: var(--muted); font-size: var(--t-label); font-weight: 400; }
-.catalog-table-scroll { width: 100%; }
+.catalog-table-scroll { width: 100%; overflow-x: auto; }
 .catalog-table { width: 100%; border-collapse: collapse; font-size: var(--t-small); }
 .catalog-table th { padding: 0.35rem 0.75rem; border-bottom: 1px solid var(--line-strong); color: var(--faint); background: var(--raised); text-align: left; vertical-align: middle; font-size: var(--t-label); font-weight: 800; letter-spacing: 0.045em; text-transform: uppercase; }
 .catalog-sort { display: inline-flex; align-items: center; gap: 0.35rem; min-height: 2.5rem; padding: 0; border: 0; color: inherit; background: transparent; font: inherit; letter-spacing: inherit; text-transform: inherit; }
@@ -1491,30 +1491,31 @@ button.catalog-sort:focus-visible { outline: 2px solid var(--green); outline-off
 .catalog-table-number { font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 @media (max-width: 700px) {
-  .catalog-toolbar { padding: 0.5rem 1rem; gap: 0.5rem; }
+  .catalog-toolbar { padding: 0.4rem 0.75rem; gap: 0.5rem; }
   .catalog-search { flex: 1 1 9rem; }
-  .catalog-toolbar .catalog-more[open] { flex-basis: 100%; }
   .catalog-sort-field { display: grid; }
-  .catalog-browser .catalog-results-heading { grid-template-columns: 1fr auto; align-items: center; gap: 0.5rem 0.75rem; padding: 0.5rem 1rem; }
-  .catalog-local-note { display: none; }
-  .catalog-applied { padding: 0.4rem 1rem; }
+  .catalog-browser .catalog-results-heading { grid-template-columns: auto 1fr; align-items: center; gap: 0.5rem 0.75rem; padding: 0.3rem 0.75rem; }
+  .catalog-browser .catalog-local-note { grid-column: auto; justify-self: end; text-align: right; }
+  .catalog-results-heading p strong { font-size: var(--t-body); }
+  .catalog-results-heading p:first-child { white-space: nowrap; }
+  .catalog-applied { flex-wrap: nowrap; overflow-x: auto; padding: 0.2rem 0.75rem; }
+  .catalog-applied button { flex: 0 0 auto; }
   .catalog-table-scroll { overflow: visible; }
   .catalog-table, .catalog-table thead, .catalog-table tbody, .catalog-table tr { display: block; }
   .catalog-table thead { display: none; }
   .catalog-table tbody { display: grid; gap: 0.6rem; margin: 0.6rem 0 0; }
   .catalog-table tbody tr { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: var(--r-in); background: var(--panel); }
-  .catalog-table tbody td { min-width: 0; padding: 0.35rem 0.75rem; border: 0; background: transparent; }
+  .catalog-table tbody td { min-width: 0; padding: 0.2rem 0.75rem; border: 0; background: transparent; }
   .catalog-table tbody tr:hover td { background: transparent; }
   .catalog-table td[data-label]::before { content: attr(data-label); display: block; color: var(--faint); font-size: var(--t-label); font-weight: 800; letter-spacing: 0.045em; text-transform: uppercase; }
   .catalog-table td.catalog-table-recipe, .catalog-table td.catalog-table-capabilities, .catalog-table td.catalog-table-status { grid-column: 1 / -1; }
-  .catalog-table td.catalog-table-recipe { padding-top: 0.6rem; }
+  .catalog-table td.catalog-table-recipe { padding-top: 0.5rem; }
   .catalog-table td.catalog-table-recipe a { font-size: var(--t-small); }
-  .catalog-table td.catalog-table-capabilities { display: none; }
-  .catalog-table td.catalog-table-status { padding-bottom: 0.5rem; }
-  .catalog-table td.catalog-table-status { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.6rem; }
+  .catalog-table td.catalog-table-capabilities::before { display: none; }
+  .catalog-table td.catalog-table-capabilities { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .catalog-table td.catalog-table-status { padding-bottom: 0.4rem; display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.6rem; }
   .catalog-table-substatus { margin-top: 0; }
 }
-.catalog-source-link { color: var(--gold-soft); text-underline-offset: 0.18rem; }
 .catalog-readiness { display: inline-flex; align-items: center; min-height: 1.6rem; padding: 0.2rem 0.45rem; border: 1px solid var(--line-strong); border-radius: 0.3rem; color: var(--muted); font-size: var(--t-label); white-space: nowrap; }
 .catalog-readiness.readiness-executable { border-color: rgb(118 185 0 / 45%); color: var(--green-text); }
 
@@ -3233,10 +3234,6 @@ button.catalog-sort:focus-visible { outline: 2px solid var(--green); outline-off
 @keyframes card-in { from { opacity: 0; } }
 @keyframes caret-blink { 50% { opacity: 0; } }
 
-.catalog-more { margin-top: 1rem; }
-.catalog-more > summary { color: var(--muted); font-size: var(--t-small); font-weight: 800; cursor: pointer; }
-.catalog-more[open] > summary { margin-bottom: 0.75rem; }
-
 /* The recipe catalog's first screen: search, type, Sparks and the count; the rest sits in "More filters". */
 .recipes-page { padding-top: clamp(1.25rem, 3vw, 2.5rem); }
 .recipes-page .catalog-tabs { margin-bottom: 0.75rem; }
@@ -3245,13 +3242,23 @@ button.catalog-sort:focus-visible { outline: 2px solid var(--green); outline-off
 .catalog-setup-compact .setup-sparks legend { margin-bottom: 0.4rem; }
 .catalog-setup-compact .setup-tile { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.5rem; min-height: 0; padding: 0.55rem 0.9rem; }
 .catalog-setup-compact .setup-tile strong { font-size: var(--t-h3); }
+/* One segment per count, no repeated numeral beside its label. */
+.catalog-setup-compact .setup-tile:not(.setup-tile-any) strong { display: none; }
 .catalog-more-note { margin: 0 0 0.75rem; color: var(--muted); font-size: var(--t-small); line-height: 1.6; }
 @media (max-width: 600px) {
   .recipes-page { padding-top: 0.5rem; }
   .recipes-page .catalog-type { margin: 0.5rem 0; }
-  .catalog-setup-compact { margin-bottom: 0.5rem; padding: 0.75rem 1rem; }
-  .catalog-setup-compact .setup-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .catalog-setup-compact .setup-tile { padding: 0.5rem 0.6rem; }
+  .catalog-setup-compact { margin-bottom: 0.5rem; padding: 0.5rem 0.75rem; }
+  .catalog-setup-compact .setup-sparks legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .catalog-setup-compact .setup-tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .catalog-setup-compact .setup-tile { display: grid; place-items: center; min-height: 2.75rem; padding: 0.35rem 0.25rem; }
+  .catalog-setup-compact .setup-tile:not(.setup-tile-any) strong, .catalog-setup-compact .setup-tile-any strong { display: block; }
+  .catalog-setup-compact .setup-tile span, .catalog-setup-compact .setup-tile small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .recipes-page .catalog-intro > p { display: none; }
+  .recipes-page .catalog-intro { margin-bottom: 0; }
+  /* The model types are one row you scroll sideways. */
+  .recipes-page .type-tabs { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .recipes-page .type-tabs button { flex: 0 0 auto; min-height: 2.75rem; padding: 0.4rem 0.9rem; }
 }
 
 /* After a Spark pick above one: the answer is the two ways to use them, each a link to its catalog list. */
@@ -3268,19 +3275,3 @@ button.catalog-sort:focus-visible { outline: 2px solid var(--green); outline-off
 .job-contract h3 { margin: var(--s3) 0 var(--s2); font-size: var(--t-small); color: var(--muted); }
 .job-slots { display: grid; gap: var(--s2); margin: 0; padding: 0; list-style: none; }
 .job-slots small { display: block; color: var(--muted); }
-
-/* The Spark bar on the catalog pages: one segment per count, no repeated numeral. */
-.catalog-setup-compact .setup-tile:not(.setup-tile-any) strong { display: none; }
-@media (max-width: 600px) {
-  .catalog-setup-compact .setup-tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-  .catalog-setup-compact .setup-tile { display: grid; place-items: center; min-height: 2.75rem; padding: 0.35rem 0.25rem; }
-  .catalog-setup-compact .setup-tile:not(.setup-tile-any) strong { display: block; font-size: var(--t-h3); }
-  .catalog-setup-compact .setup-tile span, .catalog-setup-compact .setup-tile small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .catalog-setup-compact .setup-tile-any strong { font-size: var(--t-h3); }
-  /* The model types are one row you scroll sideways. */
-  .recipes-page .catalog-intro > p { display: none; }
-  .recipes-page .catalog-intro { margin-bottom: 0; }
-  .catalog-setup-compact .setup-sparks legend { margin-bottom: 0.2rem; }
-  .recipes-page .type-tabs { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
-  .recipes-page .type-tabs button { flex: 0 0 auto; min-height: 2.75rem; padding: 0.4rem 0.9rem; }
-}

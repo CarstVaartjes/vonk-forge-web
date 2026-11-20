@@ -77,6 +77,19 @@ test("shows sizing, immutable identity, and evidence provenance", async () => {
 });
 
 
+test("the phone Sort select reflects the URL sort, in either direction", async () => {
+  window.history.replaceState(null, "", "/recipes?verified=0&sort=recipe&direction=desc");
+  render(<RecipesPage />);
+  await screen.findByRole("link", { name: "Qwen Fast" });
+  const sort = screen.getByLabelText("Sort by") as HTMLSelectElement;
+  expect(sort.selectedOptions[0]?.textContent).toBe("Recipe Z to A");
+  fireEvent.change(sort, { target: { value: "memory:asc" } });
+  await waitFor(() => expect(window.location.search).toContain("sort=memory&direction=asc"));
+  fireEvent.change(sort, { target: { value: "catalog:desc" } });
+  await waitFor(() => expect(window.location.search).not.toContain("sort="));
+  expect(sort.selectedOptions[0]?.textContent).toBe("Newest");
+});
+
 test("the executable-contract badge shows only on a row that deviates from it", async () => {
   loadRecipeCatalog.mockResolvedValue([{ ...recipe, catalog: { ...recipe.catalog, execution_readiness: "executable" } }]);
   render(<RecipesPage />);
@@ -157,7 +170,7 @@ describe("My Sparks", () => {
     await screen.findByRole("link", { name: "Qwen Fast" });
     fireEvent.click(screen.getByRole("button", { name: "2 Sparks 1 recipe" }));
     expect(readMySparks("")).toEqual({ sparks: "2", type: "" });
-    fireEvent.click(screen.getByRole("button", { name: "Every count 1 recipe" }));
+    fireEvent.click(screen.getByRole("button", { name: "Any 1 recipe" }));
     expect(readMySparks("")).toEqual({ sparks: "", type: "" });
   });
 
@@ -230,7 +243,7 @@ describe("type-first filtering", () => {
     fireEvent.click(types().getByRole("button", { name: "Language 0" }));
     expect(window.location.search).toBe("?sparks=1");
 
-    fireEvent.click(screen.getByRole("button", { name: "Every count 2 recipes" }));
+    fireEvent.click(screen.getByRole("button", { name: "Any 2 recipes" }));
     await waitFor(() => expect(window.location.search).toBe(""));
     fireEvent.click(within(screen.getByRole("group", { name: "Creator" })).getByRole("button", { name: "eugr: 1" }));
     await waitFor(() => expect(types().getByRole("button", { name: "Language 0" })).toHaveAttribute("aria-disabled", "true"));

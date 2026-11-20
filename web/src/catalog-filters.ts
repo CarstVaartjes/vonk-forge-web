@@ -18,7 +18,7 @@ export const SPARK_OPTIONS: ReadonlyArray<{ value: Exclude<SparkFilter, "">; num
   { value: "1", numeral: "1", label: "1 Spark" },
   { value: "2", numeral: "2", label: "2 Sparks" },
   { value: "3", numeral: "3", label: "3 Sparks" },
-  { value: "4+", numeral: "4+", label: "4 or more" },
+  { value: "4+", numeral: "4+", label: "4+ Sparks" },
 ];
 
 // "I have N Sparks" matches every recipe that needs N or fewer; "4+" matches them all (the library
@@ -50,7 +50,9 @@ export function engineLabel(value: string): string {
   return ENGINE_LABELS[value] ?? humanize(value);
 }
 export type UpdatedFilter = "" | "7" | "30" | "90" | "365";
-export type RecipeSort = "catalog" | "recipe" | "modelFamily" | "model" | "quantization" | "runtime" | "abliterated" | "sparks" | "creator" | "updated" | "readiness" | "capability" | "qualification" | "repository" | "download" | "disk" | "memory";
+// The sorts the recipe table offers: the five sortable headers, and the newest-first default.
+export const COLUMN_SORTS = ["recipe", "sparks", "memory", "runtime", "qualification"] as const;
+export type RecipeSort = "catalog" | (typeof COLUMN_SORTS)[number];
 export type SortDirection = "asc" | "desc";
 export type FilterFacet = "type" | "verified" | "modelFamily" | "model" | "abliterated" | "sourceOwner" | "repository" | "sparks" | "runtime" | "quantization" | "updated" | "qualification" | "readiness" | "capability" | "download" | "disk" | "memory";
 
@@ -106,7 +108,7 @@ export const EMPTY_FILTERS: CatalogFilters = {
 };
 
 const VALID_SPARKS = new Set<string>(["1", "2", "3", "4+"]);
-const VALID_SORTS = new Set<string>(["catalog", "recipe", "modelFamily", "model", "quantization", "runtime", "abliterated", "sparks", "creator", "updated", "readiness", "capability", "qualification", "repository", "download", "disk", "memory"]);
+const VALID_SORTS = new Set<string>(["catalog", ...COLUMN_SORTS]);
 const VALID_DIRECTIONS = new Set<string>(["asc", "desc"]);
 
 const VALID_READINESS = new Set<string>(READINESS_OPTIONS.map((option) => option.value));
@@ -276,23 +278,31 @@ export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, om
     && (omitted === "memory" || capacityBucketMatches(recipe.capacity?.maximum_runtime_memory_bytes_per_node, filters.memory));
 }
 
+const SORT_WORDS: Record<(typeof COLUMN_SORTS)[number], [name: string, ascending: string, descending: string]> = {
+  recipe: ["Recipe", "A to Z", "Z to A"],
+  sparks: ["Sparks", "fewest first", "most first"],
+  memory: ["Memory", "low to high", "high to low"],
+  runtime: ["Engine", "A to Z", "Z to A"],
+  qualification: ["Status", "A to Z", "Z to A"],
+};
+
+// Every sort the table can be in, in both directions, as "sort:direction" values with their words:
+// the phone's Sort select lists exactly these, so it always reflects the URL.
+export const SORT_CHOICES: ReadonlyArray<{ value: string; label: string }> = [
+  { value: "catalog:desc", label: "Newest" },
+  ...COLUMN_SORTS.flatMap((sort) => (["asc", "desc"] as const).map((direction) => ({
+    value: `${sort}:${direction}`,
+    label: `${SORT_WORDS[sort][0]} ${SORT_WORDS[sort][direction === "asc" ? 1 : 2]}`,
+  }))),
+];
+
 export function sortRecipes(recipes: RecipeSummary[], sort: RecipeSort, direction: SortDirection = sort === "catalog" ? "desc" : "asc"): RecipeSummary[] {
   const value = (recipe: RecipeSummary): string | number => {
     const facts = recipe.catalog;
     if (sort === "recipe") return recipe.title;
-    if (sort === "modelFamily") return modelFamilyTitle(recipe);
-    if (sort === "model") return facts.model_version_title;
-    if (sort === "creator") return facts.source_owner ?? "";
-    if (sort === "quantization") return facts.quantizations.join(", ");
-    if (sort === "abliterated") return recipeIsAbliterated(recipe) ? "true" : "false";
     if (sort === "sparks") return facts.node_count;
     if (sort === "runtime") return facts.runtime_distribution;
-    if (sort === "readiness") return facts.execution_readiness;
     if (sort === "qualification") return facts.qualification;
-    if (sort === "capability") return facts.capabilities.join(", ");
-    if (sort === "repository") return facts.source_repository ?? "";
-    if (sort === "download") return facts.expected_download_bytes;
-    if (sort === "disk") return recipe.capacity?.maximum_installed_bytes_per_node ?? 0;
     if (sort === "memory") return recipe.capacity?.maximum_runtime_memory_bytes_per_node ?? 0;
     return recipe.published_at;
   };

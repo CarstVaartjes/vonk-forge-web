@@ -9,6 +9,7 @@ import { STATUS_LEGEND_ID, StatusLegend } from "../status-legend";
 import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
 import {
   READINESS_OPTIONS,
+  SORT_CHOICES,
   SPARK_OPTIONS,
   capacityBucketMatches,
   capacityBuckets,
@@ -35,11 +36,6 @@ import {
 } from "../catalog-filters";
 
 const PAGE_SIZE = 24;
-
-function updatedLabel(value: string): string {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "Unknown" : new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
-}
 
 // One sort control per header: first press ascending, second descending, third back to newest.
 function SortHeader({ label, sort, activeSort, direction, onSort }: {
@@ -211,9 +207,10 @@ export function RecipesPage() {
   // Reset restores the defaults, Verified on Spark included; it is offered when anything differs from them.
   const clearable = applied.filter((item) => item.key !== "verified");
   const resettable = clearable.length > 0 || !filters.verified;
+  // The badge counts what is set inside the disclosure; search, type and Sparks sit outside it.
+  const inMore = clearable.filter((item) => !["query", "type", "sparks", "uses"].includes(item.key)).length + (filters.verified ? 0 : 1);
   const resetFilters = () => replace(new URLSearchParams());
 
-  const sortChoices: Array<[string, string]> = [["catalog:desc", "Newest"], ["recipe:asc", "Recipe A to Z"], ["memory:asc", "Memory, low to high"], ["memory:desc", "Memory, high to low"], ["sparks:asc", "Sparks, fewest first"], ["runtime:asc", "Engine"], ["qualification:asc", "Status"]];
   const select = (label: string, value: string, onChange: (value: string) => void, options: ReactNode, anyLabel = "Any") => (
     <label className="catalog-more-field"><span>{label}</span><select aria-label={`Filter by ${label.toLowerCase()}`} value={value} onChange={(event) => onChange(event.target.value)}><option value="">{anyLabel}</option>{options}</select></label>
   );
@@ -252,7 +249,7 @@ export function RecipesPage() {
         <div className="catalog-toolbar">
           <input type="search" className="catalog-search" aria-label="Search recipes" value={filters.query} onChange={(event) => update("q", event.target.value)} placeholder="Search recipes…" />
           <details className="catalog-more">
-            <summary>More filters{clearable.length ? <span className="catalog-more-count">{clearable.length}</span> : null}</summary>
+            <summary>More filters{inMore ? <span className="catalog-more-count" aria-hidden="true">{inMore}</span> : null}{inMore ? <span className="visually-hidden"> ({inMore} active)</span> : null}</summary>
             <p className="catalog-more-note">My Sparks: pick how many you have and the list narrows to recipes that need that many or fewer. The pick is remembered on this device and shared with the home page. Your Controller makes the same check against the live capacity of your Sparks.</p>
             <VerifiedToggle checked={filters.verified} onChange={setVerified} />
             <div className="catalog-setup-facets">
@@ -279,8 +276,8 @@ export function RecipesPage() {
               {select("Model", filters.model, (value) => update("model", value), models.map(([value, label]) => <option key={value} value={value} disabled={count("model", (recipe) => modelKey(recipe) === value) === 0}>{label}</option>), "All")}
               {select("Original repository", filters.repository, (value) => update("repository", value), repositories.map((value) => <option key={value} value={value} disabled={count("repository", (recipe) => recipe.catalog.source_repository === value) === 0}>{sourceLabel(value)}</option>), "All")}
               <label className="catalog-more-field catalog-sort-field"><span>Sort by</span>
-                <select aria-label="Sort recipes" value={`${filters.sort === "updated" ? "catalog" : filters.sort}:${filters.direction}`} onChange={(event) => { const [sort, direction] = event.target.value.split(":") as [RecipeSort, SortDirection]; updateSort(sort, direction); }}>
-                  {sortChoices.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                <select aria-label="Sort by" value={filters.sort === "catalog" ? "catalog:desc" : `${filters.sort}:${filters.direction}`} onChange={(event) => { const [sort, direction] = event.target.value.split(":") as [RecipeSort, SortDirection]; updateSort(sort, direction); }}>
+                  {SORT_CHOICES.map((choice) => <option key={choice.value} value={choice.value}>{choice.label}</option>)}
                 </select>
               </label>
             </div>
