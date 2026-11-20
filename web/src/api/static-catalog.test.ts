@@ -46,14 +46,16 @@ describe("static recipe library adapter", () => {
 
   test("one caller aborting never cancels the shared index fetch", async () => {
     const fetchMock = serve(index);
+    const signals: Array<AbortSignal | undefined> = [];
+    const served = fetchMock.getMockImplementation()!;
+    vi.stubGlobal("fetch", vi.fn(async (url: string, init?: RequestInit) => { signals.push(init?.signal ?? undefined); return served(url); }));
     const first = new AbortController();
     const aborted = listStaticModels(indexUrl, first.signal);
     const kept = listStaticModels(indexUrl, new AbortController().signal);
     first.abort(new Error("page left"));
     await expect(aborted).rejects.toThrow("page left");
     expect((await kept).items.length).toBeGreaterThan(0);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls.every(([, init]) => (init as { signal?: AbortSignal }).signal === undefined)).toBe(true);
+    expect(signals).toEqual([undefined, undefined]);
   });
 
   test("resolves the default same-origin index path against the page", async () => {
