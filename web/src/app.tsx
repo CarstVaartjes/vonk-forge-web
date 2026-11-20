@@ -118,7 +118,7 @@ export function App() {
             <NavigationLink href="/recipes">Recipes</NavigationLink>
             <NavigationLink href="/models">Models</NavigationLink>
             <NavigationLink href="/control">Controller</NavigationLink>
-            <NavigationLink href="/architecture">Docs</NavigationLink>
+            <NavigationLink href="/architecture">How it works</NavigationLink>
           </nav>
           <div className="site-header-end">
             {release && <a className="release-pill" href={releaseUrl(release)}>Catalog <b>{release.version}</b> · updated {dateLabel(release.updated_at, { day: "numeric", month: "short" })}</a>}
@@ -140,7 +140,7 @@ export function App() {
             <a href="/models">Models</a>
             <a href="/install">Install</a>
             <a href="/architecture">How it works</a>
-            <a href="/control">Control</a>
+            <a href="/control">Controller</a>
             <a href="/example-setup">Example setup</a>
             <a href="/publish">Publish</a>
             <a href="/privacy">Privacy</a>

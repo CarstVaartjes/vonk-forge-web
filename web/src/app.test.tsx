@@ -86,16 +86,17 @@ test("tells one story: what it does, with the vonkctl session behind it", () => 
 });
 
 
-test("top menu is Recipes, Models, Controller, Docs beside Install; Publish and Example setup live in the footer", () => {
+test("top menu is Recipes, Models, Controller, How it works beside Install; Publish and Example setup live in the footer", () => {
   render(<App />);
 
   const primaryNavigation = within(screen.getByRole("navigation", { name: "Primary navigation" }));
-  expect(primaryNavigation.getAllByRole("link").map((link) => link.textContent)).toEqual(["Recipes", "Models", "Controller", "Docs"]);
+  expect(primaryNavigation.getAllByRole("link").map((link) => link.textContent)).toEqual(["Recipes", "Models", "Controller", "How it works"]);
   expect(primaryNavigation.getByRole("link", { name: "Recipes" })).toHaveAttribute("href", "/recipes");
   expect(within(siteHeader()).getByRole("link", { name: "Install" })).toHaveAttribute("href", "/install");
-  expect(primaryNavigation.getByRole("link", { name: "Docs" })).toHaveAttribute("href", "/architecture");
+  expect(primaryNavigation.getByRole("link", { name: "How it works" })).toHaveAttribute("href", "/architecture");
 
   const footer = within(screen.getByRole("navigation", { name: "Footer navigation" }));
+  ["Recipes", "Models", "Controller", "How it works"].forEach((label) => expect(footer.getByRole("link", { name: label })).toBeInTheDocument());
   expect(footer.getByRole("link", { name: "Publish" })).toHaveAttribute("href", "/publish");
   expect(footer.getByRole("link", { name: "Example setup" })).toHaveAttribute("href", "/example-setup");
 });

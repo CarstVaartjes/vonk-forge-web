@@ -275,7 +275,7 @@ test("models page explains the public to local boundary on demand", async ({ pag
 test("architecture, installation, and control guides stay navigable at 1…N scale", async ({ page }) => {
   await page.goto("/architecture");
   // Below 64rem the links sit behind the Menu button, so address the link by its place, not its role.
-  await expect(page.locator("#primary-nav a", { hasText: "Docs" })).toHaveAttribute("aria-current", "page");
+  await expect(page.locator("#primary-nav a", { hasText: "How it works" })).toHaveAttribute("aria-current", "page");
   await expect(page.getByRole("heading", { name: /one control plane.*one to many sparks/i })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Spark fleet" })).toBeVisible();
   await expect(page.getByText("NVIDIA fabric", { exact: true })).toBeVisible();
