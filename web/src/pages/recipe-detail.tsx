@@ -153,9 +153,9 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
             {chat ? <div><dt>API</dt><dd>{chat.endpoints.join(" · ")}</dd></div> : null}
             {recipe.served_names.length ? <div><dt>Served as</dt><dd>{recipe.served_names.join(" · ")}</dd></div> : null}
             <div>
-              <dt>Licence</dt>
+              <dt>License</dt>
               <dd>
-                {license.spdx ?? "Not declared"}{license.url ? <> · <a href={license.url}>read the licence</a></> : null}
+                {license.spdx ?? "Not declared"}{license.url ? <> · <a href={license.url}>read the license</a></> : null}
                 {license.notice ? <span className="kv-note">{license.notice}</span> : null}
                 <span className="kv-note">Shown for information. Use is your call.</span>
               </dd>

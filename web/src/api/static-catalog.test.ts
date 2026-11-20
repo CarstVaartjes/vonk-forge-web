@@ -159,7 +159,7 @@ describe("static recipe library adapter", () => {
     expect(recipes.filter((item) => item.capacity?.measured_memory_bytes_per_node !== undefined)).toHaveLength(index.recipes.filter((item) => item.measured_memory).length);
   });
 
-  test("detail carries the newest hardware pass, the chat API, the setting defaults and the licence from the index", async () => {
+  test("detail carries the newest hardware pass, the chat API, the setting defaults and the license from the index", async () => {
     const recipe = await getStaticRecipe(indexUrl, "vonk-forge", nvidia);
     const pass = index.recipes[0]!.qualification.last_pass!;
     expect(recipe.evidence).toEqual({
@@ -202,7 +202,7 @@ describe("static recipe library adapter", () => {
     expect((await getStaticRecipe(indexUrl, "vonk-forge", nvidia)).job).toBeUndefined();
   });
 
-  test("the regional licence notice reaches the recipe and the model version", async () => {
+  test("the regional license notice reaches the recipe and the model version", async () => {
     serve(withH3Options());
     const notice = "The MiniMax H3 Community License Agreement excludes the European Union, United Kingdom, Republic of Korea, and United States of America from its Applicable Territory.";
     expect((await getStaticRecipe(indexUrl, "vonk-forge", "skintokens-pytorch-single")).license.notice).toBe(notice);
@@ -219,7 +219,7 @@ describe("static recipe library adapter", () => {
     expect((await getStaticRecipe(indexUrl, "vonk-forge", eight)).catalog.quantizations).toEqual(["NVFP4"]);
   });
 
-  test("links model versions to recipes and preserves declared capabilities, licence and file sizes", async () => {
+  test("links model versions to recipes and preserves declared capabilities, license and file sizes", async () => {
     const page = await listStaticModels(indexUrl);
     expect(page.items.map((item) => `${item.publisher}/${item.slug}`)).toEqual(["gemma/gemma-e2b--gemma-4-e2b", "inkling/inkling-975b-a41b--inkling-975b-a41b", "skintokens/skintokens--skintokens"]);
     expect(page.items[0]).toMatchObject({
