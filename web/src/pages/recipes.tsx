@@ -208,6 +208,7 @@ export function RecipesPage() {
   if (filters.quantization) addApplied("quantization", `Format: ${filters.quantization}`, "quantization");
   if (filters.abliterated) addApplied("abliterated", `Abliterated: ${filters.abliterated === "true" ? "True" : "False"}`, "abliterated");
   if (filters.sparks) addApplied("sparks", filters.sparks === "4+" ? "Recipes for any number of Sparks" : `Recipes for up to ${filters.sparks} ${filters.sparks === "1" ? "Spark" : "Sparks"}`, "sparks");
+  if (filters.uses) addApplied("uses", `Uses exactly ${filters.uses} ${filters.uses === 1 ? "Spark" : "Sparks"}`, "uses");
   if (filters.sourceOwner) addApplied("sourceOwner", `Creator: ${filters.sourceOwner}`, "creator");
   if (filters.updated) addApplied("updated", `Updated: last ${filters.updated} days`, "updated");
   if (filters.readiness) addApplied("readiness", `Readiness: ${READINESS_OPTIONS.find((option) => option.value === filters.readiness)?.label ?? filters.readiness}`, "readiness");

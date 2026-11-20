@@ -31,9 +31,24 @@ test("answers with the verified total until a count is picked, then names the co
   fireEvent.click(one);
   expect(one).toHaveAttribute("aria-pressed", "true");
   expect(answer()).toHaveTextContent("3verified recipes run on one Spark.");
-  expect(container.querySelector(".answer-breakdown")).toHaveTextContent("3 use one. Your Controller checks the exact memory and disk fit before it runs anything.");
+  expect(container.querySelector(".answer-breakdown")).toHaveTextContent("Your Controller checks the exact memory and disk fit before it runs anything.");
   fireEvent.click(screen.getByRole("button", { name: "2 Sparks" }));
-  expect(answer()).toHaveTextContent("3verified recipes run on 2 Sparks.");
+  expect(answer()).toHaveTextContent("3 verified recipes run on 2 Sparks.");
+});
+
+test("picking 2 Sparks shows one linked count per way to use them, adding up to the total, each with its newest recipe", () => {
+  const { container } = render(<Harness />);
+  fireEvent.click(screen.getByRole("button", { name: "2 Sparks" }));
+  const choices = within(screen.getByRole("list", { name: "How to use your Sparks" })).getAllByRole("listitem");
+  const links = choices.map((item) => within(item).getAllByRole("link"));
+  const counts = links.map(([choice]) => Number(choice!.querySelector(".big")!.textContent));
+  expect(counts.reduce((sum, count) => sum + count, 0)).toBe(3);
+  expect(links.map(([choice]) => choice!.getAttribute("href"))).toEqual(
+    summaryFixture.recipes.filter((row) => row.verified && row.sparks <= 2).map((row) => row.sparks).filter((n, i, all) => all.indexOf(n) === i).sort().map((n) => `/recipes?sparks=2&uses=${n}`),
+  );
+  expect(links[0]![0]).toHaveTextContent("run on one Spark (keep the others free)");
+  expect(links[0]![1]!.getAttribute("href")).toMatch(/^\/recipes\/[^/]+\/[^/]+$/);
+  expect(container.querySelector(".answer-total")).toHaveTextContent("3 verified recipes run on 2 Sparks.");
 });
 
 test("the choice lands in the URL and is remembered; a type narrows the answer and links the filtered catalog", () => {
@@ -42,7 +57,7 @@ test("the choice lands in the URL and is remembered; a type narrows the answer a
   fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: /^3D/ }));
   expect(window.location.search).toBe("?sparks=2&type=3d");
   expect(localStorage.getItem("vonk-my-sparks")).toBe("sparks=2&type=3d");
-  expect(container.querySelector(".answer")).toHaveTextContent("1verified 3D recipes run on 2 Sparks.");
+  expect(container.querySelector(".answer")).toHaveTextContent("1 verified 3D recipes run on 2 Sparks.");
   expect(screen.getByRole("link", { name: "See all 1 in the catalog" })).toHaveAttribute("href", "/recipes?sparks=2&type=3d");
 });
 
