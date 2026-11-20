@@ -166,7 +166,6 @@ describe("static recipe library adapter", () => {
     expect(page.items.map((item) => `${item.publisher}/${item.slug}`)).toEqual(["gemma/gemma-e2b--gemma-4-e2b", "inkling/inkling-975b-a41b--inkling-975b-a41b", "skintokens/skintokens--skintokens"]);
     expect(page.items[0]).toMatchObject({
       title: "Gemma 4 E2B",
-      description: "Exact public Google Gemma 4 E2B instruction-tuned checkpoint.",
       family: "Gemma",
       tags: ["google", "gemma", "language", "instruction-tuned", "candidate"],
       // The ggml-org variant of the same lineage model sits inside it, not beside it.
@@ -174,6 +173,7 @@ describe("static recipe library adapter", () => {
       runs: { spark_counts: [1], engines: ["llama-cpp", "vllm"], creators: ["NVIDIA", "ggml-org"] },
       versions: [{
         slug: "gemma-4-e2b-it-4adf1574",
+        description: "Exact public Google Gemma 4 E2B instruction-tuned checkpoint.",
         requires_token: false,
         variant: "IT 4adf1574",
         source_repository: "https://huggingface.co/google/gemma-4-E2B-it",

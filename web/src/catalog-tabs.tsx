@@ -1,5 +1,5 @@
 // Recipes and Models are two views of one catalog; the top menu has a single
-// "Catalog" entry and these tabs switch between the views.
+// "Recipes" and "Models" entries and these tabs switch between the views.
 export function CatalogTabs({ current }: { current: "recipes" | "models" }) {
   return (
     <nav className="catalog-tabs" aria-label="Catalog views">

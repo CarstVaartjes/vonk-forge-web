@@ -4,7 +4,8 @@ import { usePageMeta } from "../page-meta";
 import { getModel, getVocabulary, listModels, loadRecipeCatalog, type ModelSummary, type ModelVersionSummary, type RecipeDetail } from "../api/client";
 import { WaysMatrix } from "../ways-matrix";
 import { FacetStrip, SparkPicker, TypeTabs, VerifiedToggle } from "../catalog-setup";
-import { SPARK_OPTIONS, engineLabel, nodeCountMatches, type SparkFilter } from "../catalog-filters";
+import { EMPTY_FILTERS, SPARK_OPTIONS, engineLabel, nodeCountMatches, recipeMatches, sortRecipes, type SparkFilter } from "../catalog-filters";
+import { readMySparks } from "../my-sparks";
 import { capabilityLabel, type Vocabulary } from "../vocabulary";
 import { CatalogTabs } from "../catalog-tabs";
 
@@ -141,6 +142,7 @@ function VersionRow({ version, vocabulary }: { version: ModelVersionSummary; voc
     <div className="model-version-heading">
       <div><h3 id={`version-${version.publisher}-${version.slug}`}>{version.title}</h3><span className="model-meta">Model version</span><code>{version.publisher}/{version.slug}</code></div>
     </div>
+    {version.description ? <p className="model-version-description">{version.description}</p> : null}
     <dl className="model-fact-grid">
       <div><dt>Identity</dt><dd><code title={version.revision_id} aria-label={`Model identity ${version.revision_id}`}>{compactRevision(version.revision_id)}</code></dd></div>
       <div><dt>Version</dt><dd>{versionLabel(version.version)}</dd></div>
@@ -149,7 +151,7 @@ function VersionRow({ version, vocabulary }: { version: ModelVersionSummary; voc
       <div><dt>Format</dt><dd>{[version.format?.precision, version.format?.quantization].filter(Boolean).join(" · ") || "Not declared"}</dd></div>
       <div><dt>Weights</dt><dd>{bytes(version.sizes?.download_bytes)} download · {bytes(version.sizes?.installed_bytes)} installed</dd></div>
       <div><dt>Source</dt><dd>{version.source_repository ? <a href={version.source_repository}>Pinned source repository</a> : "Not declared"}{version.source_revision ? <code title={version.source_revision} aria-label={`Source revision ${version.source_revision}`}>{compactRevision(version.source_revision)}</code> : null}</dd></div>
-      <div><dt>Recipes</dt><dd>{version.recipe_slugs.length ? <span className="model-recipe-links">{version.recipe_slugs.map((path) => <a key={path} href={`/recipes?q=${encodeURIComponent(path)}`}>{path}</a>)}</span> : "No public recipe"}</dd></div>
+      <div><dt>Recipes</dt><dd>{version.recipe_slugs.length ? <span className="model-recipe-links">{version.recipe_slugs.map((path) => <a key={path} href={`/recipes/${path}`}>{path}</a>)}</span> : "No public recipe"}</dd></div>
     </dl>
     <div className="model-version-capabilities"><strong>Capabilities</strong><CapabilityFacts version={version} vocabulary={vocabulary} /></div>
     {version.license?.spdx ? <p className="model-license">License: <a href={version.license.url}>{version.license.spdx}</a></p> : null}
@@ -277,6 +279,25 @@ export function ModelsPage() {
   </main>;
 }
 
+// The recipes that run exactly this Model (any of its variants), narrowed to the visitor's remembered
+// Spark pick. Untested recipes stay in the list; the status word says what is known.
+function ModelRecipes({ model, recipes }: { model: ModelSummary; recipes: RecipeDetail[] }) {
+  const key = `${model.publisher}/${model.slug}`;
+  const { sparks } = readMySparks(window.location.search);
+  const own = recipes.filter((recipe) => recipeMatches(recipe, { ...EMPTY_FILTERS, verified: false, model: key }));
+  const shown = sortRecipes(own.filter((recipe) => recipeMatches(recipe, { ...EMPTY_FILTERS, verified: false, model: key, sparks })), "catalog");
+  const compare = new URLSearchParams({ model: key });
+  if (sparks) compare.set("sparks", sparks);
+  const pick = SPARK_OPTIONS.find((option) => option.value === sparks);
+  if (!own.length) return <section className="model-recipes" aria-labelledby="model-recipes-title"><h2 id="model-recipes-title">Recipes that run this model</h2><p className="model-unknown">No public recipe runs this model yet.</p></section>;
+  return <section className="model-recipes" aria-labelledby="model-recipes-title">
+    <h2 id="model-recipes-title">Recipes that run this model</h2>
+    <p>{shown.length ? `${shown.length} of ${own.length} ${own.length === 1 ? "recipe" : "recipes"}${pick && sparks !== "4+" ? `, fitting ${pick.label}` : ""}.` : `None of the ${own.length} ${own.length === 1 ? "recipe" : "recipes"} fits ${pick ? pick.label : "your Sparks"}.`}</p>
+    {shown.length ? <ul className="model-recipe-list">{shown.map((recipe) => <li key={`${recipe.publisher}/${recipe.slug}`}><a href={`/recipes/${recipe.publisher}/${recipe.slug}`}><strong>{recipe.title}</strong></a><span>{recipe.catalog.source_owner ?? "Creator not named"}</span><span>{engineLabel(recipe.catalog.runtime_distribution)}</span><span>{recipe.catalog.node_count === 1 ? "1 Spark" : `${recipe.catalog.node_count} Sparks`}</span><span>{recipe.catalog.qualification}</span></li>)}</ul> : null}
+    <a className="button" href={`/recipes?${compare.toString()}`}>Compare recipes</a>
+  </section>;
+}
+
 export function ModelDetailPage({ publisher, slug }: { publisher: string; slug: string }) {
   const [model, setModel] = useState<ModelSummary | null>(null);
   const [detailVocabulary, setDetailVocabulary] = useState<Vocabulary | null>(null);
@@ -289,5 +310,6 @@ export function ModelDetailPage({ publisher, slug }: { publisher: string; slug: 
   usePageMeta(model ? `${model.title} · Models` : "Model", model ? `${model.title}: published versions, variants and the recipes that run it on NVIDIA DGX Spark.` : "A model in the Vonk Forge catalog.");
   if (error) return <main className="status-panel error"><h1>Model unavailable</h1><p>This model is not present in the published index.</p>{error === "failed" ? <button className="button" type="button" onClick={() => { setModel(null); setAttempt((value) => value + 1); }}>Retry</button> : <a className="button" href="/models">All models</a>}</main>;
   if (!model || !detailVocabulary) return <main className="status-panel" role="status">Loading immutable model…</main>;
-  return <main className="model-detail-page"><header className="page-intro"><h1>{model.title}</h1>{model.family ? <p className="model-meta">{`Model family · ${model.family}`}</p> : null}<p className="recipe-path">{model.publisher}/{model.slug}</p><p className="model-detail-identity">Immutable model identity <code>{model.revision_id}</code></p><p>{model.description || "No description published."}</p></header><div className="model-detail-actions"><a className="button" href="/models">All models</a><a className="button" href={`/recipes?q=${encodeURIComponent(model.title)}`}>Compare recipes</a><a className="button primary" href="/control#library-import">Open Controller instructions</a></div><section className="model-detail-boundary"><div><h2>Versions and weight variants</h2><p>Each row is a published version and variant. Download size, source revision, format, license, access, and capabilities appear when the catalog declares them.</p></div><div className="model-version-list">{model.versions.map((version) => <VersionRow key={`${version.publisher}/${version.slug}-${version.revision_id}`} version={version} vocabulary={detailVocabulary} />)}</div></section>{model.family ? <WaysMatrix recipes={allRecipes} family={model.family} /> : null}</main>;
+  const capabilities = modelCapabilities(model);
+  return <main className="model-detail-page"><header className="page-intro"><h1>{model.title}</h1>{model.family ? <p className="model-meta">{`Model family · ${model.family}`}</p> : null}<p className="recipe-path">{model.publisher}/{model.slug}</p><p>{model.versions.length === 1 ? "1 variant" : `${model.versions.length} variants`}{capabilities.length ? ` · ${capabilities.map((name) => capabilityLabel(detailVocabulary, name)).join(", ")}` : ""}</p></header><ModelRecipes model={model} recipes={allRecipes} /><div className="model-detail-actions"><a className="button" href="/models">All models</a><a className="button primary" href="/control#library-import">Open Controller instructions</a></div><section className="model-detail-boundary"><div><h2>Versions and weight variants</h2><p>Each row is a published version and variant, with its own identity and description. Download size, source revision, format, license, access, and capabilities appear when the catalog declares them.</p></div><div className="model-version-list">{model.versions.map((version) => <VersionRow key={`${version.publisher}/${version.slug}-${version.revision_id}`} version={version} vocabulary={detailVocabulary} />)}</div></section>{model.family ? <WaysMatrix recipes={allRecipes} family={model.family} /> : null}</main>;
 }

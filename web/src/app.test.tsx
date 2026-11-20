@@ -84,8 +84,8 @@ test("top menu is Catalog, Models, Controller, Docs beside Install; Publish and 
   render(<App />);
 
   const primaryNavigation = within(screen.getByRole("navigation", { name: "Primary navigation" }));
-  expect(primaryNavigation.getAllByRole("link").map((link) => link.textContent)).toEqual(["Catalog", "Models", "Controller", "Docs"]);
-  expect(primaryNavigation.getByRole("link", { name: "Catalog" })).toHaveAttribute("href", "/recipes");
+  expect(primaryNavigation.getAllByRole("link").map((link) => link.textContent)).toEqual(["Recipes", "Models", "Controller", "Docs"]);
+  expect(primaryNavigation.getByRole("link", { name: "Recipes" })).toHaveAttribute("href", "/recipes");
   expect(within(siteHeader()).getByRole("link", { name: "Install" })).toHaveAttribute("href", "/install");
   expect(primaryNavigation.getByRole("link", { name: "Docs" })).toHaveAttribute("href", "/architecture");
 
@@ -105,7 +105,7 @@ test("marks the current top-level destination, grouping the pages under it", () 
     return marked;
   };
 
-  expect(current("/recipes/vonk/qwen-fast")).toEqual(["Catalog"]);
+  expect(current("/recipes/vonk/qwen-fast")).toEqual(["Recipes"]);
   expect(current("/models")).toEqual(["Models"]);
   expect(current("/install")).toEqual(["Install"]);
   expect(current("/control")).toEqual(["Controller"]);

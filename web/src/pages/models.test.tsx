@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test, vi } from "vitest";
 
 import type { ModelPage, ModelSummary } from "../api/client";
 import { typesOf } from "../vocabulary";
-import { vocabularyFixture } from "../vocabulary.fixture";
+import { catalogFacts, vocabularyFixture } from "../vocabulary.fixture";
 import { ModelDetailPage, ModelsPage } from "./models";
 
 const { getModel, getVocabulary, listModels, loadRecipeCatalog } = vi.hoisted(() => ({ getModel: vi.fn(), getVocabulary: vi.fn(), listModels: vi.fn<() => Promise<ModelPage>>(), loadRecipeCatalog: vi.fn() }));
@@ -26,14 +26,12 @@ function model(number: number, publisher = "publisher"): ModelSummary {
     publisher,
     slug: `model-${number}`,
     title: `Model ${number}`,
-    description: "Published model",
     family: number % 2 ? "Qwen" : "GLM",
     runs,
     verified_runs: runs,
     verified_recipe_count: number % 2,
     tags: [],
     types: typesOf(vocabularyFixture, [number % 2 ? "ocr" : "chat"]),
-    revision_id: String(number).padStart(64, "0"),
     recipe_count: number % 2,
     versions: [{
       publisher,
@@ -41,6 +39,7 @@ function model(number: number, publisher = "publisher"): ModelSummary {
       title: `Model ${number} v1`,
       version: "1",
       revision_id: String(number).padStart(64, "0"),
+      description: "Published variant",
       model_slug: `model-${number}`,
       variant: "bf16",
       requires_token: false,
@@ -229,5 +228,40 @@ describe("type-first model filtering", () => {
     await waitFor(() => expect(window.location.search).toBe("?verified=0"));
     expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked();
     expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument();
+  });
+});
+
+describe("model page leads with its recipes", () => {
+  function recipe(slug: string, modelSlug: string, nodes: number, status: string) {
+    return {
+      publisher: "vonk-forge", slug, title: slug, official: true, content_sha256: slug.padEnd(64, "0"), published_at: "2026-11-01", runtime: { adapter: "vllm" }, evidence: null,
+      catalog: catalogFacts({ description: "", tags: [], model_publisher: "publisher", model_slug: modelSlug, model_title: modelSlug, model_version_publisher: "publisher", model_version_slug: `${modelSlug}-v1`, model_version_title: modelSlug, model_family: "Qwen", source_owner: "eugr", source_repository: null, alignment: "standard", capabilities: [], qualification: status, qualification_reason: null, execution_readiness: "executable", runtime_distribution: "vllm", precision: null, quantizations: [], node_count: nodes, expected_download_bytes: 0 }),
+    };
+  }
+  const recipes = [recipe("one-spark", "model-1", 1, "Working"), recipe("two-sparks", "model-1", 2, "Not yet verified"), recipe("other-model", "model-3", 1, "Working")];
+
+  beforeEach(() => {
+    window.localStorage.clear();
+    window.history.replaceState({}, "", "/models/publisher/model-1");
+    getModel.mockResolvedValue(model(1));
+    loadRecipeCatalog.mockResolvedValue(recipes);
+  });
+
+  test("lists only this Model's recipes first, with no Spark pick all of them, and Compare carries the model", async () => {
+    render(<ModelDetailPage publisher="publisher" slug="model-1" />);
+    const section = (await screen.findByRole("heading", { name: "Recipes that run this model" })).closest("section")!;
+    expect(within(section).getAllByRole("listitem").map((row) => row.textContent)).toEqual(expect.arrayContaining(["one-sparkeugrvLLM1 SparkWorking", "two-sparkseugrvLLM2 SparksNot yet verified"]));
+    expect(within(section).getAllByRole("listitem")).toHaveLength(2);
+    expect(within(section).getByRole("link", { name: "Compare recipes" })).toHaveAttribute("href", "/recipes?model=publisher%2Fmodel-1");
+    expect(screen.queryByText(/Immutable model identity/)).not.toBeInTheDocument();
+  });
+
+  test("the remembered Spark pick narrows the list and the Compare link", async () => {
+    window.localStorage.setItem("vonk-my-sparks", "sparks=1");
+    render(<ModelDetailPage publisher="publisher" slug="model-1" />);
+    const section = (await screen.findByRole("heading", { name: "Recipes that run this model" })).closest("section")!;
+    expect(within(section).getAllByRole("listitem")).toHaveLength(1);
+    expect(within(section).getByText("1 of 2 recipes, fitting 1 Spark.")).toBeVisible();
+    expect(within(section).getByRole("link", { name: "Compare recipes" })).toHaveAttribute("href", "/recipes?model=publisher%2Fmodel-1&sparks=1");
   });
 });

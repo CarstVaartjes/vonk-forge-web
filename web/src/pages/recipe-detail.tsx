@@ -71,7 +71,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
       <meta itemProp="version" content={`sha256:${recipe.content_sha256}`} />
       <meta itemProp="applicationCategory" content="AIApplication" />
       <p className="crumb">
-        <a href="/recipes">Catalog</a> / <a href={`/models/${catalog.model_publisher}/${catalog.model_slug}`}>{catalog.model_family || catalog.model_title}</a> / {engineLabel(catalog.runtime_distribution)}, {sparksLabel}
+        <a href="/recipes">Recipes</a> / <a href={`/models/${catalog.model_publisher}/${catalog.model_slug}`}>{catalog.model_family || catalog.model_title}</a> / {engineLabel(catalog.runtime_distribution)}, {sparksLabel}
       </p>
       <header className="detail-head">
         <div>
