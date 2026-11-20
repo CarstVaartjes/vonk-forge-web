@@ -24,6 +24,10 @@
   --gold: #d9b56f;
   --gold-soft: #eacf9a;
   --gold-dim: #5e4e2b;
+  /* shared with the Controller: link ink and the one focus ring colour */
+  --link: #e8d8b0;
+  --link-hover: var(--green-text);
+  --focus: #d9b56f;
   --gold-wash: rgb(217 181 111 / 9%);
   /* status: always a shape and a word */
   --ok: var(--green-text);
@@ -77,6 +81,8 @@
   --gold: #d9b56f;
   --gold-soft: #7d5c12;
   --gold-dim: #cdb27a;
+  --link: #6b4a0a;
+  --focus: #7d5c12;
   --gold-wash: rgb(217 181 111 / 16%);
   --warn: #8f5200;
   --bad: #b3261e;
@@ -171,6 +177,18 @@ a {
   color: inherit;
 }
 
+/* Plain in-text links: the Controller's link ink (DESIGN.md, Links). Links with a class or a component rule keep their own colour. */
+a:where(:not([class])) {
+  color: var(--link);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:where(:not([class])):is(:hover, :focus-visible) {
+  color: var(--link-hover);
+  text-decoration-thickness: 2px;
+}
+
 button,
 input,
 select,
@@ -186,7 +204,7 @@ a {
 }
 
 :focus-visible {
-  outline: 2px solid var(--gold-soft);
+  outline: 3px solid var(--focus);
   outline-offset: 3px;
 }
 
@@ -423,14 +441,15 @@ button.text-link {
   transform: translateY(-1px);
 }
 
+/* Ghost: secondary row actions. Muted text, no border, a tonal fill on hover (same values as the Controller's .button.quiet). */
 .button.quiet {
   padding: 0 0.25rem;
   border-color: transparent;
-  color: var(--green-text);
+  color: var(--muted);
 }
 
 .button.quiet:hover {
-  background: transparent;
+  background: var(--raised);
   color: var(--ink);
 }
 
@@ -1551,7 +1570,7 @@ button.catalog-sort:focus-visible { outline: 2px solid var(--green); outline-off
 .model-row-capabilities { display: flex; flex-wrap: wrap; gap: 0.35rem; min-width: 0; }
 .model-row-capabilities > span { padding: 0.25rem 0.4rem; border: 1px solid var(--line-strong); border-radius: 0.25rem; color: var(--muted); font-size: var(--t-label); }
 .model-row-token { border-color: rgb(217 181 111 / 55%); color: var(--gold-soft); }
-.model-row-action { display: grid; justify-items: end; gap: 0.45rem; color: var(--green-text); font-size: var(--t-label); white-space: nowrap; }
+.model-row-action { display: grid; justify-items: end; gap: 0.45rem; color: var(--muted); font-size: var(--t-label); white-space: nowrap; }
 .model-version { padding: clamp(1.1rem, 2vw, 1.5rem); border: 1px solid var(--line); border-radius: var(--r-card); background: linear-gradient(150deg, rgb(255 255 255 / 3%), rgb(255 255 255 / 1%)), var(--panel); }
 .model-version:hover { border-color: var(--line-strong); }
 .model-version-heading { display: flex; align-items: start; justify-content: space-between; gap: 1rem; }
@@ -2472,77 +2491,63 @@ button.catalog-sort:focus-visible { outline: 2px solid var(--green); outline-off
 }
 
 .setup-tiles {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 1px;
-  overflow: hidden;
-  border: 1px solid var(--line);
+  display: flex;
+  gap: 0.2rem;
+  padding: 2px;
+  border: 1px solid var(--line-strong);
   border-radius: var(--r-in);
-  background: var(--line);
+  background: var(--recess);
 }
 
 .setup-tile {
-  display: grid;
-  gap: 0.15rem;
-  min-height: 6.5rem;
-  padding: 1rem 1.1rem;
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0 0.4rem;
+  min-height: 2.75rem;
+  padding: 0 0.9rem;
   border: 0;
+  border-radius: var(--r-ctl);
   color: var(--muted);
-  background: var(--bg);
+  background: transparent;
   font: inherit;
-  text-align: left;
   cursor: pointer;
 }
 
-.setup-tile strong {
-  color: var(--ink);
-  font-size: 2rem;
-  font-weight: 700;
-  letter-spacing: -0.04em;
-  line-height: 1;
+.setup-tile strong,
+.setup-tile span {
+  color: inherit;
+  font-size: var(--t-small);
+  font-weight: 750;
 }
 
-.setup-tile span {
-  color: var(--ink);
-  font-size: var(--t-small);
-  font-weight: 650;
+/* One segment per count, no repeated numeral beside its label. */
+.setup-tile:not(.setup-tile-any) strong {
+  display: none;
 }
 
 .setup-tile small {
-  color: var(--faint);
+  color: var(--muted);
   font-size: var(--t-label);
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
 
 .setup-tile:hover:not(:disabled) {
-  background: var(--raised);
+  color: var(--ink);
+  background: var(--panel);
 }
 
 .setup-tile:disabled {
-  color: var(--faint);
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
-.setup-tile:disabled strong,
-.setup-tile:disabled span {
-  color: var(--faint);
-}
-
 .setup-tile[aria-pressed="true"] {
-  background: var(--green-wash);
-  box-shadow: inset 0 0 0 1px var(--green);
-}
-
-.setup-tile[aria-pressed="true"] small {
-  color: var(--muted);
-}
-.setup-tile[aria-pressed="true"] strong {
-  color: var(--green-text);
-}
-
-.setup-tile-any strong {
-  font-size: 2rem;
-  line-height: 1.5;
+  color: var(--ink);
+  background: var(--raised);
+  box-shadow: inset 0 0 0 1px var(--line-control);
 }
 
 .catalog-setup-facets {
@@ -2625,24 +2630,6 @@ button.catalog-sort:focus-visible { outline: 2px solid var(--green); outline-off
     padding-top: 0;
   }
 
-  .setup-tiles {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 480px) {
-  .setup-tiles {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .setup-tile {
-    min-height: 5.5rem;
-    padding: 0.8rem 0.9rem;
-  }
-
-  .setup-tile strong {
-    font-size: 2rem;
-  }
 }
 
 .home-facts li a {
@@ -3225,18 +3212,16 @@ button.catalog-sort:focus-visible { outline: 2px solid var(--green); outline-off
 .recipes-page .catalog-type { margin: 1rem 0; gap: 0.5rem; }
 .catalog-setup-compact { margin-bottom: 1rem; padding: 1rem 1.25rem; }
 .catalog-setup-compact .setup-sparks legend { margin-bottom: 0.4rem; }
-.catalog-setup-compact .setup-tile { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0 0.5rem; min-height: 0; padding: 0.55rem 0.9rem; }
-.catalog-setup-compact .setup-tile strong { font-size: var(--t-h3); }
 /* One segment per count, no repeated numeral beside its label. */
-.catalog-setup-compact .setup-tile:not(.setup-tile-any) strong { display: none; }
 .catalog-more-note { margin: 0 0 0.75rem; color: var(--muted); font-size: var(--t-small); line-height: 1.6; }
 @media (max-width: 600px) {
   .recipes-page { padding-top: 0.5rem; }
   .recipes-page .catalog-type { margin: 0.5rem 0; }
   .catalog-setup-compact { margin-bottom: 0.5rem; padding: 0.5rem 0.75rem; }
   .catalog-setup-compact .setup-sparks legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  .catalog-setup-compact .setup-tiles { grid-template-columns: repeat(5, minmax(0, 1fr)); }
-  .catalog-setup-compact .setup-tile { display: grid; place-items: center; min-height: 2.75rem; padding: 0.35rem 0.25rem; }
+  .setup-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .catalog-setup-compact .setup-tile { display: grid; place-items: center; padding: 0.35rem 0.25rem; }
+  .catalog-setup-compact .setup-tile strong { font-size: var(--t-h3); }
   .catalog-setup-compact .setup-tile:not(.setup-tile-any) strong, .catalog-setup-compact .setup-tile-any strong { display: block; }
   .catalog-setup-compact .setup-tile span, .catalog-setup-compact .setup-tile small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .recipes-page .catalog-intro > p { display: none; }

@@ -5,6 +5,18 @@ import { SPARK_OPTIONS } from "./catalog-filters";
 // "1 recipe", "2 recipes": the nouns here are the plural "recipes" and "models".
 const countOf = (count: number, noun: string): string => `${new Intl.NumberFormat("en").format(count)} ${count === 1 ? noun.slice(0, -1) : noun}`;
 
+// The count sits inline and muted: the number is visible, the noun is read by screen readers ("12 recipes").
+function Count({ count, noun }: { count: number; noun: string }) {
+  const text = countOf(count, noun);
+  const split = text.indexOf(" ");
+  return (
+    <small>
+      {text.slice(0, split)}{" "}
+      <span className="visually-hidden">{text.slice(split + 1)}</span>
+    </small>
+  );
+}
+
 // The entry point of both catalog pages: say what you have, see what runs on
 // it. Counts come from the loaded index with the other filters applied, so a
 // tile never promises more than the list below can show.
@@ -14,7 +26,6 @@ export function SparkPicker({ value, counts, noun, onChange }: {
   noun: string;
   onChange: (value: SparkFilter) => void;
 }) {
-  const number = new Intl.NumberFormat("en");
   return (
     <fieldset className="setup-sparks">
       <legend>How many Sparks do you have?</legend>
@@ -33,13 +44,13 @@ export function SparkPicker({ value, counts, noun, onChange }: {
             >
               <strong aria-hidden="true">{option.numeral}</strong>
               <span>{option.label}</span>{" "}
-              <small>{countOf(count, noun)}</small>
+              <Count count={count} noun={noun} />
             </button>
           );
         })}
         <button type="button" className="setup-tile setup-tile-any" aria-pressed={value === ""} onClick={() => onChange("")}>
           <strong>Any</strong>{" "}
-          <small>{countOf(counts[""], noun)}</small>
+          <Count count={counts[""]} noun={noun} />
         </button>
       </div>
     </fieldset>
