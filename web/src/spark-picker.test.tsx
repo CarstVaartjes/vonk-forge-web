@@ -31,9 +31,19 @@ test("answers with the verified total until a count is picked, then names the co
   fireEvent.click(one);
   expect(one).toHaveAttribute("aria-pressed", "true");
   expect(answer()).toHaveTextContent("3verified recipes run on one Spark.");
-  expect(container.querySelector(".answer-breakdown")).toHaveTextContent("3 use one. Your Controller checks the exact memory and disk fit before it runs anything.");
+  expect(container.querySelector(".answer-breakdown")).toHaveTextContent("Your Controller checks the exact memory and disk fit before it runs anything.");
   fireEvent.click(screen.getByRole("button", { name: "2 Sparks" }));
-  expect(answer()).toHaveTextContent("3verified recipes run on 2 Sparks.");
+  expect(answer()).toHaveTextContent("3 verified recipes run on 2 Sparks.");
+});
+
+test("picking 2 Sparks links the one-Spark choice to its exact catalog list and names the newest recipe", () => {
+  render(<Harness />);
+  fireEvent.click(screen.getByRole("button", { name: "2 Sparks" }));
+  const [item] = within(screen.getByRole("list", { name: "How to use your Sparks" })).getAllByRole("listitem");
+  const [choice, newest] = within(item!).getAllByRole("link");
+  expect(choice).toHaveAttribute("href", "/recipes?sparks=2&uses=1");
+  expect(choice).toHaveTextContent("3 run on one Spark (keep the others free)");
+  expect(newest).toHaveTextContent("Gemma 4 E2B IT Q8_0 llama.cpp single Spark (ggml-org)");
 });
 
 test("the choice lands in the URL and is remembered; a type narrows the answer and links the filtered catalog", () => {
@@ -42,7 +52,7 @@ test("the choice lands in the URL and is remembered; a type narrows the answer a
   fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: /^3D/ }));
   expect(window.location.search).toBe("?sparks=2&type=3d");
   expect(localStorage.getItem("vonk-my-sparks")).toBe("sparks=2&type=3d");
-  expect(container.querySelector(".answer")).toHaveTextContent("1verified 3D recipes run on 2 Sparks.");
+  expect(container.querySelector(".answer")).toHaveTextContent("1 verified 3D recipes run on 2 Sparks.");
   expect(screen.getByRole("link", { name: "See all 1 in the catalog" })).toHaveAttribute("href", "/recipes?sparks=2&type=3d");
 });
 

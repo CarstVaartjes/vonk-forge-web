@@ -3321,3 +3321,11 @@ a {
   .catalog-setup-compact .setup-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .catalog-setup-compact .setup-tile { padding: 0.5rem 0.6rem; }
 }
+
+/* After a Spark pick above one: the answer is the two ways to use them, each a link to its catalog list. */
+.answer-total { grid-column: 1 / -1; color: var(--muted); font-size: var(--t-small); font-weight: 400; }
+.answer-choices { grid-column: 1 / -1; display: grid; gap: var(--s3); margin: 0; padding: 0; list-style: none; }
+.answer-choices li { display: grid; gap: 0.15rem; }
+.answer-choice { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--s3); color: inherit; text-decoration: none; font-weight: 650; }
+.answer-choice:hover span:last-child { text-decoration: underline; }
+.answer-choice .big { color: var(--model-ink); font: 700 var(--t-answer)/1 var(--sans); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }

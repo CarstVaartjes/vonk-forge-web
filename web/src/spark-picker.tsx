@@ -56,15 +56,35 @@ export function FitAnswerView({ summary, pick }: { summary: CatalogSummary; pick
   const sentence = option
     ? `verified ${typeLabel ? `${typeLabel} ` : ""}recipes run on ${where}.`
     : `${typeLabel ? `${typeLabel} ` : ""}recipes verified on a real DGX Spark, out of ${number.format(summary.recipes.filter((row) => fitsPick(row, pick)).length)} in the catalog.`;
-  const breakdown = [
-    ...answer.byUse.map((use) => `${number.format(use.count)} use ${word(use.sparks)}`),
-    ...(answer.moreUnverified > 0 ? [`${number.format(answer.moreUnverified)} more published for your Sparks, not verified yet`] : []),
-  ].join(" · ");
+  const moreUnverified = answer.moreUnverified > 0 ? `${number.format(answer.moreUnverified)} more published for your Sparks, not verified yet. ` : "";
+  const pickedMany = option !== undefined && pick.sparks !== "1" && answer.byUse.length > 0;
   return (
     <div className="answer" aria-live="polite" aria-atomic="true">
-      <span className="big"><RollingNumber value={answer.count} /></span>
-      <p>{sentence}</p>
-      {option ? <p className="answer-breakdown">{breakdown ? `${breakdown}. ` : ""}Your Controller checks the exact memory and disk fit before it runs anything.</p> : null}
+      {pickedMany ? (
+        <>
+          <p className="answer-total">{number.format(answer.count)} {sentence}</p>
+          <ul className="answer-choices" aria-label="How to use your Sparks">
+            {answer.byUse.map((use) => {
+              const query = new URLSearchParams({ sparks: pick.sparks, ...(pick.type ? { type: pick.type } : {}), uses: String(use.sparks) });
+              const label = use.sparks === 1 ? "run on one Spark (keep the others free)" : `use ${use.sparks === Number(pick.sparks) ? "all" : word(use.sparks)} of your Sparks for one model`;
+              return (
+                <li key={use.sparks}>
+                  <a className="answer-choice" href={`/recipes?${query}`}>
+                    <span className="big">{number.format(use.count)}</span> <span>{label}</span>
+                  </a>
+                  <span className="fit-meta">Newest: <a href={`/recipes/${use.newest.publisher}/${use.newest.slug}`}>{use.newest.title}</a></span>
+                </li>
+              );
+            })}
+          </ul>
+        </>
+      ) : (
+        <>
+          <span className="big"><RollingNumber value={answer.count} /></span>
+          <p>{sentence}</p>
+        </>
+      )}
+      {option ? <p className="answer-breakdown">{moreUnverified}Your Controller checks the exact memory and disk fit before it runs anything.</p> : null}
     </div>
   );
 }

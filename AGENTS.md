@@ -49,7 +49,9 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
 - The site's Spark-count filter means "needs that many Sparks or fewer" (4+ matches every
   recipe), in one function (`nodeCountMatches` in `web/src/catalog-filters.ts`) shared by the home
   picker, the catalog and the models page. The Controller's filter still matches the exact count;
-  a Controller follow-up will match this meaning. The pick (Spark count and type) is remembered in
+  a Controller follow-up will match this meaning. The exact count is the catalog's `uses=N` parameter
+  (recipes needing exactly N Sparks); the home picker links one count per way to use the picked
+  Sparks (`/recipes?sparks=2&uses=1`, `uses=2`). The pick (Spark count and type) is remembered in
   `localStorage` by `web/src/my-sparks.ts`; the catalog page reads it when its URL carries neither,
   and saves a change to either, so home and catalog share one "My Sparks".
 - The home page reads one file, `catalog-summary.json` (`summary_version: 2`),

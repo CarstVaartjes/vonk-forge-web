@@ -47,6 +47,15 @@ test("a Spark count matches recipes that need that many or fewer; 4+ and none ma
   expect(nodeCountMatches(8, "")).toBe(true);
 });
 
+test("uses=N lists exactly the recipes needing N Sparks; a malformed count is ignored", () => {
+  const [one, two] = [recipe("one", { node_count: 1 }), recipe("two", { node_count: 2 })];
+  const both = filtersFromParameters(new URLSearchParams("sparks=2&uses=2"));
+  expect(both).toMatchObject({ sparks: "2", uses: 2 });
+  expect([one, two].filter((item) => recipeMatches(item, both)).map((item) => item.slug)).toEqual(["two"]);
+  expect([one, two].filter((item) => recipeMatches(item, filtersFromParameters(new URLSearchParams("sparks=2&uses=1")))).map((item) => item.slug)).toEqual(["one"]);
+  expect(filtersFromParameters(new URLSearchParams("uses=x")).uses).toBe(0);
+});
+
 describe("public catalog Controller-parity filters", () => {
   test("parses the shared filter vocabulary and validates enumerated values", () => {
     const filters = filtersFromParameters(new URLSearchParams("model_family=GLM+5.3+Flash&model=models%2Fboth-v1&abliterated=true&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&capability=chat&capability=reasoning&capability=chat&download=100&disk=unknown&memory=200&sort=download&direction=desc"));

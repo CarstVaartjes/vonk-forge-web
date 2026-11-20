@@ -61,6 +61,8 @@ interface CatalogFilters {
   sourceOwner: string;
   repository: string;
   sparks: SparkFilter;
+  // Exactly this many Sparks per recipe (`uses=2`); 0 is any. The home picker's two choices link it.
+  uses: number;
   runtime: string;
   quantization: string;
   updated: UpdatedFilter;
@@ -84,6 +86,7 @@ export const EMPTY_FILTERS: CatalogFilters = {
   sourceOwner: "",
   repository: "",
   sparks: "",
+  uses: 0,
   runtime: "",
   quantization: "",
   updated: "",
@@ -122,6 +125,7 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
     sourceOwner: parameters.get("creator") ?? "",
     repository: parameters.get("repository") ?? "",
     sparks: VALID_SPARKS.has(sparks) ? sparks as SparkFilter : "",
+    uses: /^[1-9]\d?$/.test(parameters.get("uses") ?? "") ? Number(parameters.get("uses")) : 0,
     runtime: parameters.get("runtime") ?? "",
     quantization: parameters.get("quantization") ?? "",
     updated: VALID_UPDATED.has(parameters.get("updated") ?? "") ? parameters.get("updated") as UpdatedFilter : "",
@@ -225,6 +229,7 @@ export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, om
     && (omitted === "sourceOwner" || !filters.sourceOwner || sameCreator(facts.source_owner, filters.sourceOwner))
     && (omitted === "repository" || !filters.repository || facts.source_repository === filters.repository)
     && (omitted === "sparks" || sparksMatch(recipe, filters.sparks))
+    && (!filters.uses || facts.node_count === filters.uses)
     && (omitted === "runtime" || !filters.runtime || facts.runtime_distribution === filters.runtime)
     && (omitted === "quantization" || !filters.quantization || facts.quantizations.includes(filters.quantization))
     && (omitted === "updated" || updatedMatches(recipe, filters.updated))

@@ -120,6 +120,27 @@ test("home page shows the live numbers from the build-time summary and loads not
 });
 
 
+test("picking 2 Sparks offers two linked choices, each opening exactly that count in the catalog", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "2 Sparks" }).click();
+  const choices = page.getByRole("list", { name: "How to use your Sparks" });
+  await expect(choices.getByRole("listitem")).toHaveCount(2);
+  await expect(choices.getByRole("listitem").first()).toContainText("Newest: Acme Coder");
+  await choices.getByRole("link", { name: /^3\s*run on one Spark/ }).click();
+  await expect(page).toHaveURL(/\/recipes\?sparks=2&uses=1$/);
+  const results = page.getByRole("region", { name: "Recipe results" }).getByText(/of \d+ recipes/);
+  await expect(results).toHaveText(/^3 of /);
+  await expect(page.getByRole("link", { name: "Acme Coder" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Qwen Fast" })).toHaveCount(0);
+  await page.goto("/");
+  await page.getByRole("list", { name: "How to use your Sparks" }).getByRole("link", { name: /^1\s*use all of your Sparks/ }).click();
+  await expect(page).toHaveURL(/\/recipes\?sparks=2&uses=2$/);
+  await expect(page.getByRole("region", { name: "Recipe results" }).getByText(/of \d+ recipes/)).toHaveText(/^1 of /);
+  await expect(page.getByRole("link", { name: "Qwen Fast" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Acme Coder" })).toHaveCount(0);
+});
+
+
 test("the Spark count picked on the home page is the catalog's first filter, and clearing it restores the list", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "1 Spark", exact: true }).click();

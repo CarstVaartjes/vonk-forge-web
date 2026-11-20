@@ -66,7 +66,7 @@ export interface FitAnswer {
   // Verified recipes that fit.
   count: number;
   // Of those, how many need each Spark count, ascending.
-  byUse: Array<{ sparks: number; count: number }>;
+  byUse: Array<{ sparks: number; count: number; newest: RecipeRow }>;
   // Recipes that fit but are not verified (including those that passed before).
   moreUnverified: number;
   // The newest verified recipes that fit.
@@ -78,8 +78,10 @@ export function fitAnswer(summary: CatalogSummary, pick: MySparks, newest = 5): 
   const verified = fitting.filter((row) => row.verified);
   return {
     count: verified.length,
-    byUse: Array.from(new Set(verified.map((row) => row.sparks))).sort((left, right) => left - right)
-      .map((sparks) => ({ sparks, count: verified.filter((row) => row.sparks === sparks).length })),
+    byUse: Array.from(new Set(verified.map((row) => row.sparks))).sort((left, right) => left - right).map((sparks) => {
+      const group = verified.filter((row) => row.sparks === sparks).sort(newestFirst);
+      return { sparks, count: group.length, newest: group[0]! };
+    }),
     moreUnverified: fitting.length - verified.length,
     newest: [...verified].sort(newestFirst).slice(0, newest),
   };
