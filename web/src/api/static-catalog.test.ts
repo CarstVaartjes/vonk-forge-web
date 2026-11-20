@@ -44,6 +44,18 @@ describe("static recipe library adapter", () => {
     expect(models.items).toHaveLength(index.families!.flatMap((family) => family.lines.flatMap((line) => line.models)).length);
   });
 
+  test("one caller aborting never cancels the shared index fetch", async () => {
+    const fetchMock = serve(index);
+    const first = new AbortController();
+    const aborted = listStaticModels(indexUrl, first.signal);
+    const kept = listStaticModels(indexUrl, new AbortController().signal);
+    first.abort(new Error("page left"));
+    await expect(aborted).rejects.toThrow("page left");
+    expect((await kept).items.length).toBeGreaterThan(0);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls.every(([, init]) => (init as { signal?: AbortSignal }).signal === undefined)).toBe(true);
+  });
+
   test("resolves the default same-origin index path against the page", async () => {
     const fetchMock = vi.fn(async (url: string) => ({ ok: true, json: async () => (url.endsWith("release.json") ? release : index) }));
     vi.stubGlobal("fetch", fetchMock);

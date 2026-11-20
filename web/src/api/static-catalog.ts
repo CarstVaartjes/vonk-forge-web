@@ -469,15 +469,28 @@ export function parseLibraryIndex(rawBody: unknown, rawRelease: unknown): Librar
   return body as LibraryIndex;
 }
 
+// One fetch per URL, shared by every caller and never aborted: a caller's signal only ends that
+// caller's wait, so one page leaving cannot cancel the load another page is still waiting for.
 function loadIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
-  const cached = cachedIndexes.get(url);
-  if (cached) return cached;
-  const pending = readIndex(url, signal).catch((error: unknown) => {
-    if (cachedIndexes.get(url) === pending) cachedIndexes.delete(url);
-    throw error;
+  let shared = cachedIndexes.get(url);
+  if (!shared) {
+    const pending: Promise<LibraryIndex> = readIndex(url).catch((error: unknown) => {
+      if (cachedIndexes.get(url) === pending) cachedIndexes.delete(url);
+      throw error;
+    });
+    cachedIndexes.set(url, pending);
+    shared = pending;
+  }
+  return signal ? raceAbort(shared, signal) : shared;
+}
+
+function raceAbort<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) return Promise.reject(signal.reason);
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(signal.reason);
+    signal.addEventListener("abort", onAbort, { once: true });
+    work.then(resolve, reject).finally(() => signal.removeEventListener("abort", onAbort));
   });
-  cachedIndexes.set(url, pending);
-  return pending;
 }
 
 // The library version (its release tag, which is the contract version) and when
