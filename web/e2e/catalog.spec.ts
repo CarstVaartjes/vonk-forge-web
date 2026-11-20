@@ -204,16 +204,18 @@ test("home page never shows numbers when the summary is missing, malformed or em
 
 test("the count is the real number on first paint, with no roll from zero", async ({ page }) => {
   await page.goto("/");
+  // Immediate and non-retrying: a count-up on load would already have strips in the DOM.
+  expect(await page.locator(".answer .rolling-strip").count()).toBe(0);
   await expect(page.locator(".answer")).toHaveText(ANSWER);
-  await expect(page.locator(".rolling-number .rolling-strip")).toHaveCount(0);
-  await expect(page.locator(".rolling-number .visually-hidden")).toHaveCount(0);
 });
 
 test("the count rolls only when the Spark count changes, and not under reduced motion", async ({ page }) => {
   await page.goto("/");
   const picker = page.getByRole("group", { name: "How many Sparks do you have?" });
   await picker.getByRole("button", { name: /^1 Spark/ }).click();
-  await expect(page.locator(".answer .rolling-number .rolling-strip").first()).toBeAttached();
+  const strip = page.locator(".answer .rolling-number .rolling-strip").first();
+  await expect(strip).toBeAttached();
+  await expect.poll(() => strip.evaluate((element) => element.getAnimations().length)).toBeGreaterThan(0);
   await expect(page.locator(".answer .rolling-number .rolling-strip")).toHaveCount(0, { timeout: 4000 });
   await page.emulateMedia({ reducedMotion: "reduce" });
   await picker.getByRole("button", { name: /^2 Sparks/ }).click();

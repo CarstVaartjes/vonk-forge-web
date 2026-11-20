@@ -36,8 +36,8 @@
   --model-ink: #f2efe8;
   --track: #2a2e27;
   /* the catalog wall (one cell per Spark) */
-  --lit: rgb(245 240 228 / 78%); /* warm matte ivory, never pure white */
-  --lit-hover: var(--gold-soft);
+  --lit: #f2efe8;
+  --tile: rgb(245 240 228 / 78%); /* the wall's lit cell: warm matte ivory, never pure white */
   --hollow: rgb(245 240 228 / 45%);
   --lit-glow: 0 0 7px rgb(242 239 232 / 28%);
   --cool: rgb(242 239 232 / 13%);
@@ -86,7 +86,7 @@
   --model-ink: #171813;
   --track: #e6e2d8;
   --lit: #1f201b;
-  --lit-hover: var(--gold-soft);
+  --tile: var(--lit);
   --hollow: rgb(23 24 19 / 55%);
   --lit-glow: none;
   --cool: rgb(23 24 19 / 12%);
@@ -2290,10 +2290,6 @@ button.text-link {
 }
 
 @media (max-width: 520px) {
-  .home-hero {
-    padding-top: var(--s4);
-  }
-
   .product-shot figcaption {
     grid-template-columns: 1fr;
     gap: 0.3rem;
@@ -2716,6 +2712,7 @@ button.text-link {
 
 .rolling-number {
   display: inline-block;
+  letter-spacing: 0;
   color: var(--green-text);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
@@ -2732,7 +2729,7 @@ button.text-link {
 }
 
 .rolling-column {
-  width: 0.6em;
+  width: 0.673em; /* the tabular digit advance of Onest, so a rolling number is as wide as the plain one */
   overflow: hidden;
   text-align: center;
 }
@@ -2752,7 +2749,7 @@ button.text-link {
   line-height: 1;
 }
 
-.rolling-number[data-phase="playing"] .rolling-strip {
+.rolling-number[data-phase="go"] .rolling-strip {
   transition: transform 1100ms cubic-bezier(0.16, 1, 0.3, 1);
   transition-delay: calc(var(--column) * 90ms);
 }
@@ -2894,7 +2891,7 @@ button.text-link {
 
 
 @media (max-width: 720px) {
-  .home-hero { grid-template-columns: minmax(0, 1fr); padding-top: var(--s5); }
+  .home-hero { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* Product screenshot: a plain window with its fixture address, lifted once. */
@@ -3006,21 +3003,23 @@ button.text-link {
 .wall-cell i:not(:first-child) { border-top-left-radius: 1px; border-bottom-left-radius: 1px; }
 .wall-cell i:not(:last-child) { border-top-right-radius: 1px; border-bottom-right-radius: 1px; }
 .wall-cell:focus-visible, .wall-cell[data-shown] { outline: 2px solid var(--gold-soft); outline-offset: 2px; }
-.wall-cell[data-state="verified"] i, .wall-key[data-state="verified"] { background: var(--lit); box-shadow: var(--lit-glow); }
+.wall-cell[data-state="verified"] i, .wall-key[data-state="verified"] { background: var(--tile); box-shadow: var(--lit-glow); }
 /* Three shapes, so no state rests on colour: filled, outlined with a dot, dashed and hollow. */
 .wall-cell[data-state="before"] i, .wall-key[data-state="before"] { display: grid; place-items: center; border: 1.5px solid var(--warn); }
 .wall-cell[data-state="before"] i::after, .wall-key[data-state="before"]::after { content: ""; width: 3px; height: 3px; border-radius: 50%; background: var(--warn); }
 .wall-key[data-state="before"] { display: grid; place-items: center; }
 .wall-cell[data-state="none"] i, .wall-key[data-state="none"] { border: 1.5px dashed var(--hollow); }
-.wall-cell:hover i, .wall-cell:focus-visible i, .wall-cell[data-shown] i { border-color: var(--lit-hover); }
-.wall-cell[data-state="verified"]:hover i, .wall-cell[data-state="verified"]:focus-visible i, .wall-cell[data-state="verified"][data-shown] i { background: var(--lit-hover); }
+.wall-cell:hover i, .wall-cell:focus-visible i, .wall-cell[data-shown] i { border-color: var(--gold-soft); }
+.wall-cell[data-state="verified"]:hover i, .wall-cell[data-state="verified"]:focus-visible i, .wall-cell[data-state="verified"][data-shown] i { background: var(--gold-soft); }
 /* A dimmed mark keeps its shape and loses its colour. */
 .wall-cell[data-dim] i { box-shadow: none; }
 .wall-cell[data-dim][data-state="verified"] i { background: var(--cool); }
 .wall-cell[data-dim][data-state="before"] i, .wall-cell[data-dim][data-state="none"] i { border-color: var(--cool); }
 .wall-cell[data-dim][data-state="before"] i::after { background: var(--cool); }
 .wall-card { display: flex; flex-wrap: wrap; align-content: start; align-items: baseline; gap: 0.15rem var(--s4); min-height: 5.25rem; padding: var(--s2) var(--s4); border: 1px solid var(--line); border-radius: var(--r-in); background: var(--recess); font-size: var(--t-small); color: var(--muted); }
-.wall-card strong { flex: 1 0 70%; min-width: 0; overflow: hidden; color: var(--ink); font-size: var(--t-body); text-overflow: ellipsis; white-space: nowrap; }
+.wall-card strong { flex: 1 0 70%; min-width: 0; color: var(--ink); font-size: var(--t-body); }
+@media (max-width: 40rem) { .wall-card { min-height: 9.5rem; } } /* room for a title on two lines, so the legend stays put */
+@media (min-width: 1101px) { .wall-card strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
 .wall-card > :not(strong) { order: 2; }
 .wall-card > .text-link { order: 1; flex: none; margin-inline-start: auto; }
 .wall-card-status { color: var(--ink); font-weight: 650; }
@@ -3261,7 +3260,7 @@ button.text-link {
   .matrix td:not(:empty)::before { display: block; margin: var(--s2) 0; color: var(--faint); content: attr(data-label); font-size: var(--t-label); }
 }
 
-/* Motion: all of it off under reduced motion (the wall is then in its final state on first paint). */
+/* Motion: all of it off under reduced motion. */
 @media (prefers-reduced-motion: no-preference) {
   .wall-cell i, .wall-cell i::after { transition: background-color var(--base) var(--ease), box-shadow var(--base) var(--ease), border-color var(--base) var(--ease); }
   .wall-card { animation: card-in var(--fast) var(--ease); }

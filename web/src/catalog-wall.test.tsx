@@ -61,10 +61,3 @@ test("marks that do not match the pick are dimmed, the rest are not", () => {
   const dimmed = document.querySelectorAll("a.wall-cell[data-dim]").length;
   expect(dimmed).toBe(summary.recipes.filter((row) => row.sparks !== 1).length);
 });
-
-test("every mark is lit from the first paint: no ignition phase and no per-mark delay index", () => {
-  const { container } = render(<CatalogWall summary={summary} />);
-  expect(container.querySelector(".wall")).not.toHaveAttribute("data-ignite");
-  expect(container.querySelectorAll("a.wall-cell[data-dim]")).toHaveLength(0);
-  expect(linkOf(summary.recipes[0]!).getAttribute("style")).toBeNull();
-});

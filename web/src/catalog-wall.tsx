@@ -108,7 +108,7 @@ export function CatalogWall({ summary, match = () => true, before, after }: { su
 
   let index = -1;
   return (
-    <div className="wall" style={{ "--n": ordered.length } as React.CSSProperties}>
+    <div className="wall">
       {before}
       <p id="wall-summary" className="visually-hidden">
         {number.format(ordered.length)} recipes: {number.format(counts.verified)} {verifiedLabel}, {number.format(counts.before)} passed before and are not verified now, {number.format(counts.none)} with no hardware pass yet.

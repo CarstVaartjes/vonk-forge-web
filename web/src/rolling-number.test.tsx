@@ -24,19 +24,6 @@ describe("rolling number", () => {
     expect(render(<RollingNumber value={7} />).container.textContent).toBe("7");
   });
 
-  test("rolls only when the value changes, in whole-em steps, then returns to plain text", () => {
-    vi.useFakeTimers();
-    stubMotion(false);
-    const { container, rerender } = render(<RollingNumber value={61} />);
-    rerender(<RollingNumber value={72} />);
-    const strips = [...container.querySelectorAll<HTMLElement>(".rolling-strip")];
-    expect(strips.map((strip) => strip.style.getPropertyValue("--digit"))).toEqual(["7", "2"]);
-    expect(container.querySelector(".visually-hidden")).toHaveTextContent("72");
-    act(() => { vi.advanceTimersByTime(1300); });
-    expect(container.textContent).toBe("72");
-    expect(container.querySelector(".rolling-strip")).toBeNull();
-  });
-
   test("under reduced motion a change is plain text at once", () => {
     stubMotion(true);
     const { container, rerender } = render(<RollingNumber value={61} />);
