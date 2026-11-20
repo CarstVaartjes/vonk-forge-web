@@ -84,7 +84,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
           </p>
           <section className="run" aria-labelledby="run-title">
             <h2 id="run-title">Run it</h2>
-            <CommandBlock label="Workstation terminal">{`vonkctl run ${shellQuote(recipe.title)}`}</CommandBlock>
+            <CommandBlock label="Workstation terminal">{`vonkctl --profile 2 run ${shellQuote(recipe.title)}`}</CommandBlock>
             <div className="run-note">
               <p>Or open Library in your Controller and choose this recipe. Your Controller checks the memory and disk it needs against your Sparks before it runs anything.</p>
               <p>No Controller yet? <a className="text-link" href="/install">Install in two commands</a></p>
@@ -166,7 +166,7 @@ function creditLine(credits: string[]): string {
 
 const check = <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true" focusable="false"><path d="M3 8.5l3.2 3L13 4.5" /></svg>;
 
-// The title is the selector `vonkctl run` takes; quote it so any title pastes as one argument.
+// The title is the selector `vonkctl --profile N run` takes (runbook form); quote it so any title pastes as one argument.
 function shellQuote(title: string): string {
   return /["$`\\!]/.test(title) ? `'${title.replaceAll("'", "'\\''")}'` : `"${title}"`;
 }
