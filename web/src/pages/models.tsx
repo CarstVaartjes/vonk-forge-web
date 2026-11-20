@@ -257,17 +257,18 @@ export function ModelsPage() {
       </section>
     ) : null}
     {models ? (
-      <section className="catalog-setup" aria-labelledby="model-setup-title">
-        <div className="catalog-setup-heading">
-          <h2 id="model-setup-title">Then narrow it to your setup.</h2>
-          <p>Pick what you have. A model stays in the list while at least one of its public recipes runs on that many Sparks or fewer, with that engine.</p>
-        </div>
-        <VerifiedToggle checked={filters.verified} onChange={(checked) => updateFilters({ verified: checked })} />
+      <section className="catalog-setup catalog-setup-compact" aria-labelledby="model-setup-title">
+        <h2 id="model-setup-title" className="visually-hidden">Then narrow it to your setup.</h2>
         <SparkPicker value={filters.sparks} noun="models" counts={sparkCounts} onChange={(value) => updateFilters({ sparks: value })} />
+        <details className="catalog-more">
+        <summary>More filters</summary>
+        <p className="catalog-more-note">Pick how many Sparks you have. A model stays in the list while at least one of its public recipes runs on that many Sparks or fewer, with that engine.</p>
+        <VerifiedToggle checked={filters.verified} onChange={(checked) => updateFilters({ verified: checked })} />
         <div className="catalog-setup-facets">
           <FacetStrip label="Model family" value={filters.family} onChange={(value) => updateFilters({ family: value })} options={families.map((value) => ({ value, label: value, count: facetCount("family", (model) => model.family === value) }))} />
           <FacetStrip label="Engine" value={filters.engine} onChange={(value) => updateFilters({ engine: value })} options={engines.map((value) => ({ value, label: engineLabel(value), count: facetCount("engine", (model) => runsOf(model, filters).engines.includes(value)) }))} />
         </div>
+        </details>
       </section>
     ) : null}
     <section className="model-index-tools" aria-label="Model index controls"><label htmlFor="model-search">Find a model</label><input id="model-search" type="search" value={filters.query} onChange={(event) => updateFilters({ query: event.target.value })} placeholder="Search model, family, publisher, or tag" /><label htmlFor="model-publisher">Publisher</label><select id="model-publisher" value={filters.publisher} onChange={(event) => updateFilters({ publisher: event.target.value })}><option value="">All publishers</option>{publishers.map((publisher) => <option key={publisher} value={publisher}>{publisher}</option>)}</select><label htmlFor="model-capability">Capability</label><select id="model-capability" value={filters.capability} onChange={(event) => updateFilters({ capability: event.target.value })}><option value="">All declared capabilities</option>{(vocabulary?.capabilities ?? []).map((option) => <option key={option.name} value={option.name} title={option.description}>{option.label}</option>)}</select><label htmlFor="model-recipes">Recipe support</label><select id="model-recipes" value={filters.recipes} onChange={(event) => updateFilters({ recipes: event.target.value, ...(event.target.value === "none" ? { verified: false } : {}) })}><option value="">All models</option><option value="recipes">Has public recipes</option><option value="none">No public recipes</option></select><label htmlFor="model-sort">Sort</label><select id="model-sort" value={filters.sort} onChange={(event) => updateFilters({ sort: event.target.value })}><option value="name">Name</option><option value="versions">Most versions</option><option value="recipes">Most recipes</option></select><span aria-live="polite">{models ? `${filtered.length} of ${models.length} models` : error ? "Model index unavailable" : "Loading models…"}</span>{(filters.type || filters.query || filters.publisher || filters.capability || filters.recipes || filters.family || filters.engine || filters.sparks || filters.sort !== "name") ? <button className="text-button" type="button" onClick={clearFilters}>Clear filters</button> : null}</section>

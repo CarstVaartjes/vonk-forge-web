@@ -142,6 +142,7 @@ describe("public model browse", () => {
     expect(window.location.search).toBe("?sparks=1");
     expect(screen.getByText("7 of 13 models")).toBeVisible();
     expect(oneSpark).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(screen.getByText("More filters"));
     const families = screen.getByRole("group", { name: "Model family" });
     expect(within(families).getByRole("button", { name: "Qwen: 7" })).toBeVisible();
     expect(within(families).queryByRole("button", { name: /^GLM/ })).toBeNull();

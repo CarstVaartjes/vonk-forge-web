@@ -14,9 +14,10 @@ function dateLabel(value: string): string {
 }
 
 // The ticket for one hardware pass: the status, one lead line, the creator and the fields the
-// catalog holds for that pass. The three hashes sit behind "Details". A field the release does not
+// catalog holds for that pass. With `meaning` (the vocabulary's words for the status) a "What this means"
+// disclosure opens inline. The three hashes sit behind "Details". A field the release does not
 // carry is left out, never filled in. `showTitle` is off where the page already names the recipe.
-export function EvidenceReceipt({ facts, verified, showTitle = true }: { facts: ReceiptFacts; verified: boolean; showTitle?: boolean }) {
+export function EvidenceReceipt({ facts, verified, showTitle = true, meaning }: { facts: ReceiptFacts; verified: boolean; showTitle?: boolean; meaning?: string }) {
   const rows: Array<{ name: string; value: string; mono?: boolean }> = [];
   if (facts.hardwareClass) rows.push({ name: "Hardware", value: facts.hardwareClass });
   rows.push({ name: "Tested", value: dateLabel(facts.tested) });
@@ -40,6 +41,7 @@ export function EvidenceReceipt({ facts, verified, showTitle = true }: { facts: 
       <p className="receipt-lead">{evidenceLine(facts)}</p>
       {facts.creator ? <p className="receipt-by">Recipe by <span className="src">{facts.creator}</span></p> : null}
       {list(rows)}
+      {meaning ? <details className="receipt-details receipt-meaning-details"><summary>What this means</summary><p className="receipt-meaning">{meaning}</p></details> : null}
       <details className="receipt-details">
         <summary>Details</summary>
         {list(hashes)}

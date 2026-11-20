@@ -363,7 +363,7 @@ test("facets remain in the URL and exact trust facts survive navigation", async 
   // The header carries the verdict and the run command; the exact trust facts sit under Provenance.
   await expect(page.getByRole("heading", { level: 1, name: "Qwen Fast" })).toBeVisible();
   await expect(page.getByLabel("Hardware evidence")).toContainText("Working");
-  await expect(page.locator(".command-block code")).toHaveText("vonkctl --profile 2 run \"Qwen Fast\"");
+  await expect(page.locator(".command-block code")).toHaveText("vonkctl --profile 1 run \"Qwen Fast\"");
   await page.locator(".provenance > summary").click();
   await expect(page.getByRole("heading", { name: "Trust, precisely stated" })).toBeVisible();
   await expect(page.getByText("Source: canonical bundle verified by Vonk")).toBeVisible();
@@ -440,6 +440,7 @@ test("the model type is the first choice on the recipes and models pages", async
   await expect(page.getByRole("group", { name: "Model type" }).getByRole("button", { name: /^Vision/ })).toHaveAttribute("aria-pressed", "true");
   await expect(page.getByRole("link", { name: /Acme Vision/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /Acme Coder/ })).toHaveCount(0);
+  await page.getByText("More filters").click();
   await expect(page.getByRole("checkbox", { name: /Verified on Spark/ })).toBeChecked();
   for (const width of [320, 1280]) {
     await page.setViewportSize({ width, height: 900 });
