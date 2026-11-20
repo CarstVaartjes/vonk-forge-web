@@ -19,3 +19,13 @@ test("Connect your tools shows the Controller's curl and Python examples exactly
   expect([...section.querySelectorAll("button")].every((button) => button.textContent === "Copy")).toBe(true);
   expect(section.textContent).not.toMatch(/try (it|request)/i);
 });
+
+test("the Control page explains jobs with the runbook's job run and job contract commands", () => {
+  render(<ControlPage />);
+  const section = screen.getByRole("region", { name: "Make images, video, audio and 3D" });
+  const codes = [...section.querySelectorAll(".command-block code")].map((code) => code.textContent);
+  expect(codes).toEqual([
+    "vonkctl job run ALIAS --input prompt=prompt.txt --option steps=4 --output results",
+    "vonkctl job contract --run RUN_UUID",
+  ]);
+});

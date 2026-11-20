@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { getRecipe, getVocabulary, loadRecipeCatalog, type RecipeDetail } from "../api/client";
 import { CommandBlock } from "../command-block";
 import { engineLabel, gibLabel, modelFamilyTitle, sourceLabel } from "../catalog-filters";
+import { jobRunCommand, optionRange, optionType, slotCount } from "../job-recipe";
 import { WaysMatrix } from "../ways-matrix";
 import { receiptFacts } from "../catalog-stats";
 import { EvidenceReceipt } from "../evidence-receipt";
@@ -58,7 +59,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
   }, [recipe]);
   if (error) return <main className="status-panel error"><h1>Recipe unavailable</h1><p>It may be hidden, removed from listings, or the catalog may be offline.</p></main>;
   if (!recipe) return <main className="status-panel" role="status">Loading immutable recipe…</main>;
-  const { catalog, capacity, chat_api: chat, settings, license } = recipe;
+  const { catalog, capacity, chat_api: chat, settings, license, job } = recipe;
   const sparks = catalog.node_count;
   const receipt = receiptFacts(recipe, catalog.source_owner);
   const sparksLabel = sparks === 1 ? "single Spark" : `${sparks} Sparks`;
@@ -85,6 +86,10 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
           <section className="run" aria-labelledby="run-title">
             <h2 id="run-title">Run it</h2>
             <CommandBlock label="Workstation terminal">{`vonkctl --profile 2 run ${shellQuote(recipe.title)}`}</CommandBlock>
+            {job ? <>
+              <CommandBlock label="Then make one">{jobRunCommand(job)}</CommandBlock>
+              <p className="run-note">ALIAS is the name you gave this recipe in your profile; <code>vonkctl profile endpoint</code> lists them. The results land in the <code>results</code> folder.</p>
+            </> : null}
             <div className="run-note">
               <p>Or open Library in your Controller and choose this recipe. Your Controller checks the memory and disk it needs against your Sparks before it runs anything.</p>
               <p>No Controller yet? <a className="text-link" href="/install">Install in two commands</a></p>
@@ -108,10 +113,25 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
             <dl className="facts">
               <div><dt>Sparks</dt><dd>{sparks}<small>{sparksLabel}</small></dd></div>
               <div><dt>Disk per Spark</dt><dd>{gibLabel(capacity?.maximum_installed_bytes_per_node, 1)}<small>{gibLabel(catalog.expected_download_bytes || undefined, 1)} model files</small></dd></div>
-              <div><dt>Context</dt><dd>{settings.context_tokens === undefined ? "Not declared" : settings.context_tokens.toLocaleString("en")}<small>tokens, recipe default</small></dd></div>
-              <div><dt>Concurrent requests</dt><dd>{settings.concurrency === undefined ? "Not declared" : settings.concurrency}<small>recipe default</small></dd></div>
+              {job ? null : <>
+                <div><dt>Context</dt><dd>{settings.context_tokens === undefined ? "Not declared" : settings.context_tokens.toLocaleString("en")}<small>tokens, recipe default</small></dd></div>
+                <div><dt>Concurrent requests</dt><dd>{settings.concurrency === undefined ? "Not declared" : settings.concurrency}<small>recipe default</small></dd></div>
+              </>}
             </dl>
           </section>
+          {job ? (
+            <section className="card detail-block job-contract" aria-labelledby="job-title">
+              <h2 id="job-title" className="receipt-label">What you send / What you get</h2>
+              <h3>What you send</h3>
+              {job.inputs.length ? <ul className="job-slots">{job.inputs.map((slot) => <li key={slot.id}><strong>{slot.label}</strong> <code>{slot.id}</code> · {slot.min_files > 0 ? "required" : "optional"} · {slotCount(slot)} · {slot.media_types.join(", ")}<small>{slot.description}</small></li>)}</ul> : <p>Nothing: the recipe makes its output without an input file.</p>}
+              <h3>What you get</h3>
+              <ul className="job-slots">{job.outputs.map((slot) => <li key={slot.id}><strong>{slot.label}</strong> <code>{slot.id}</code> · {slotCount(slot)} · {slot.media_types.join(", ")}<small>{slot.description}</small></li>)}</ul>
+              {job.options.length ? <>
+                <h3>Options</h3>
+                <ul className="job-slots">{job.options.map((option) => <li key={option.key}><strong>{option.label}</strong> <code>{option.key}</code> · {optionType(option)} · default {option.default}{option.unit ? ` ${option.unit}` : ""}{optionRange(option) ? ` · ${optionRange(option)}` : ""}{option.description ? <small>{option.description}</small> : null}</li>)}</ul>
+              </> : null}
+            </section>
+          ) : null}
           <section className="card detail-block" aria-labelledby="about-title">
             <h2 id="about-title" className="receipt-label">About this recipe</h2>
             <p className={`desc${aboutOpen ? "" : " clamped"}`} ref={(element) => { if (element && !aboutOpen) setAboutCut(element.scrollHeight > element.clientHeight); }}>{catalog.description}</p>
@@ -136,6 +156,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
               <dt>Licence</dt>
               <dd>
                 {license.spdx ?? "Not declared"}{license.url ? <> · <a href={license.url}>read the licence</a></> : null}
+                {license.notice ? <span className="kv-note">{license.notice}</span> : null}
                 <span className="kv-note">Shown for information. Use is your call.</span>
               </dd>
             </div>

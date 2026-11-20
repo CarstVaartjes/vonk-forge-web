@@ -221,6 +221,23 @@ print(response.choices[0].message.content)`}</CommandBlock>
         <p className="fleet-note">Thinking and sampling settings are usually set per request, not in the recipe.</p>
       </section>
 
+      <section id="make-files" className="control-guide connect-guide" aria-labelledby="make-files-title">
+        <header>
+          <div><h2 id="make-files-title">Make images, video, audio and 3D</h2><span className="guide-meta">Jobs: files in, files out</span></div>
+          <code>job</code>
+        </header>
+        <p className="lane-intro">
+          A recipe that is not a chat model takes input files and returns output files. Load it,
+          give it an alias, and run one job with <code>vonkctl job run</code>. It uploads your
+          inputs, waits for the result and downloads it into the folder you name. Running the
+          same command again reconnects to the same job. <code>vonkctl job contract</code> shows
+          the inputs, outputs and options a running recipe accepts; each recipe page lists them too.
+        </p>
+        <CommandBlock label="Run one job">{String.raw`vonkctl job run ALIAS --input prompt=prompt.txt --option steps=4 --output results`}</CommandBlock>
+        <CommandBlock label="See what a running recipe accepts">{String.raw`vonkctl job contract --run RUN_UUID`}</CommandBlock>
+        <p className="fleet-note">Find ALIAS with <code>vonkctl profile endpoint</code> and the run id with <code>vonkctl fleet</code>.</p>
+      </section>
+
       <section className="guide-cta" aria-labelledby="control-next-title">
         <div><h2 id="control-next-title">Install the Forge, then choose either path.</h2></div>
         <a className="button primary" href="/install">Open the install guide</a>

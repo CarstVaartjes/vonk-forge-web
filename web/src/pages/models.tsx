@@ -154,7 +154,7 @@ function VersionRow({ version, vocabulary }: { version: ModelVersionSummary; voc
       <div><dt>Recipes</dt><dd>{version.recipe_slugs.length ? <span className="model-recipe-links">{version.recipe_slugs.map((path) => <a key={path} href={`/recipes/${path}`}>{path}</a>)}</span> : "No public recipe"}</dd></div>
     </dl>
     <div className="model-version-capabilities"><strong>Capabilities</strong><CapabilityFacts version={version} vocabulary={vocabulary} /></div>
-    {version.license?.spdx ? <p className="model-license">License: <a href={version.license.url}>{version.license.spdx}</a></p> : null}
+    {version.license?.spdx ? <p className="model-license">License: <a href={version.license.url}>{version.license.spdx}</a>{version.license.notice ? <span className="kv-note">{version.license.notice} Shown for information. Use is your call.</span> : null}</p> : null}
   </article>;
 }
 

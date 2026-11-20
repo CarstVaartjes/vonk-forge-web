@@ -116,3 +116,34 @@ test("the family matrix lists the other recipes and marks this one", async () =>
   expect(ways.getByRole("link", { name: /^Qwen Fast/ })).toHaveAttribute("aria-current", "page");
   expect(ways.getByRole("link", { name: /^Qwen Slow/ })).toHaveAttribute("href", "/recipes/vonk-forge/qwen-slow");
 });
+
+const h3Job: RecipeDetail["job"] = {
+  inputs: [
+    { id: "prompt", label: "Generation prompt", description: "Required UTF-8 text.", media_types: ["text/plain"], extensions: [".txt"], min_files: 1, max_files: 1 },
+    { id: "first-image", label: "First frame", description: "Optional image.", media_types: ["image/png"], extensions: [".png"], min_files: 0, max_files: 1 },
+  ],
+  outputs: [{ id: "video", label: "Synchronized video", description: "MP4 with sound.", media_types: ["video/mp4"], extensions: [".mp4"], min_files: 1, max_files: 1 }],
+  options: [{ key: "width", label: "Width", unit: "px", default: 960, minimum: 64, maximum: 2048, step: 32 }],
+};
+
+test("a job recipe says what you send and get, has no token fields, and shows the job command and the regional notice", async () => {
+  getRecipe.mockResolvedValue({ ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"), job: h3Job, license: { spdx: "LicenseRef-H3", notice: "Excludes the EU." } });
+  render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
+  expect(await screen.findByText("What you send")).toBeVisible();
+  expect(screen.getByText("Generation prompt")).toBeVisible();
+  expect(screen.getByText("Synchronized video")).toBeVisible();
+  expect(screen.getByText("Width")).toBeVisible();
+  expect(screen.getByText(/default 960 px · 64 to 2048, step 32/)).toBeVisible();
+  expect(screen.queryByText("Context")).not.toBeInTheDocument();
+  expect(screen.queryByText("Concurrent requests")).not.toBeInTheDocument();
+  expect(screen.getByText("Excludes the EU.")).toBeVisible();
+  expect(screen.getByText(/vonkctl job run ALIAS/)).toHaveTextContent("--input prompt=prompt.txt");
+});
+
+test("a chat recipe keeps its context and concurrency fields and no job block", async () => {
+  getRecipe.mockResolvedValue({ ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"), settings: { context_tokens: 262144, concurrency: 4 } });
+  render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
+  expect(await screen.findByText("Concurrent requests")).toBeVisible();
+  expect(screen.getByText("262,144")).toBeVisible();
+  expect(screen.queryByText("What you send")).not.toBeInTheDocument();
+});

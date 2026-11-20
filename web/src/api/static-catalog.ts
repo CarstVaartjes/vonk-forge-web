@@ -1,4 +1,4 @@
-import type { Licence, LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
+import type { JobSlot, Licence, LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
 
 
 // The release build (web/scripts/recipe-release.mjs) loads this module under Node, so
@@ -190,7 +190,35 @@ function modelSize(document: ModelDefinition, deduplicate: boolean): number {
 
 // An empty field is a missing one: the catalog writes "" where it has nothing to say.
 function licenceOf(display: CatalogModelEntry["display"]): Licence {
-  return { spdx: display.license.spdx || undefined, url: display.license.url || undefined };
+  return { spdx: display.license.spdx || undefined, url: display.license.url || undefined, notice: display.license.territorial_restrictions?.notice || undefined };
+}
+
+// The literal "none" says the model is not quantized: no quantization, not one called NONE.
+function quantizationOf(quantization: string | undefined): string | undefined {
+  return quantization && quantization !== "none" ? quantization : undefined;
+}
+
+// A job recipe's contract: its job interface's slots and its typed options, labelled by the display file.
+function jobContractOf(document: RecipeDefinition, display: CatalogRecipeEntry["display"]): RecipeDetail["job"] {
+  const { settings } = document;
+  if (settings.kind !== "job") return undefined;
+  const job = document.interfaces.find((entry) => entry.adapter !== "openai");
+  const slot = ({ id, label, description, media_types, extensions, min_files, max_files }: JobSlot): JobSlot => ({ id, label, description, media_types, extensions, min_files, max_files });
+  return {
+    inputs: (job?.input?.slots ?? []).map(slot),
+    outputs: (job?.output.slots ?? []).map(slot),
+    options: Object.entries(settings.knobs ?? {}).map(([key, knob]) => ({
+      key,
+      label: display.knobs?.[key]?.label || key,
+      description: display.knobs?.[key]?.description || undefined,
+      unit: display.knobs?.[key]?.unit || undefined,
+      default: knob.value,
+      minimum: knob.minimum ?? undefined,
+      maximum: knob.maximum ?? undefined,
+      step: knob.step ?? undefined,
+      allowed_values: knob.allowed_values ?? undefined,
+    })),
+  };
 }
 
 function mapModelVersion(entity: CatalogModelEntry, index: LibraryIndex): ModelVersionSummary {
@@ -213,7 +241,7 @@ function mapModelVersion(entity: CatalogModelEntry, index: LibraryIndex): ModelV
     requires_token: document.requires_token,
     source_repository: source.repository || undefined,
     source_revision: ("revision" in source ? source.revision : "") || undefined,
-    format: { precision: format.precision || undefined, quantization: format.quantization || undefined },
+    format: { precision: format.precision || undefined, quantization: quantizationOf(format.quantization) },
     sizes: { download_bytes: modelSize(document, true), installed_bytes: modelSize(document, false) },
     license: licenceOf(display),
     capabilities: declaredCapabilities(entity),
@@ -270,7 +298,7 @@ function publicMetadata(item: CatalogRecipeEntry, index: LibraryIndex, artifacts
   const model = modelMetadata(document, index);
   const source = canonicalSource(document.provenance.source_reference ?? "");
   const modelEntity = selectedEntity(document, index);
-  const quantization = modelEntity?.document.format.quantization ?? "";
+  const quantization = quantizationOf(modelEntity?.document.format.quantization);
   const capabilities = modelEntity ? declaredCapabilities(modelEntity) : [];
   return {
     description: display.description,
@@ -377,6 +405,7 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
     chat_api: chat ? { endpoints: chat.endpoints, streaming: chat.streaming, structured_output: chat.structured_output, image_input: chat.input_modalities.image, audio_input: chat.input_modalities.audio } : undefined,
     served_names: document.interfaces.flatMap((entry) => (entry.adapter === "openai" ? entry.model_aliases : [])),
     credits: document.provenance.attribution,
+    job: jobContractOf(document, display),
     settings: {
       context_tokens: "context_tokens" in settings ? settings.context_tokens.value : undefined,
       concurrency: "concurrency" in settings ? settings.concurrency?.value : undefined,
