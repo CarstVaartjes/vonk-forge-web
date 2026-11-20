@@ -1,3 +1,4 @@
+import { formatDate } from "./dates";
 import { TypeIcon } from "./icons";
 import { engineLabel, SPARK_OPTIONS, type SparkFilter } from "./catalog-filters";
 import type { CatalogSummary, RecipeRow } from "./catalog-stats";
@@ -9,7 +10,6 @@ const number = new Intl.NumberFormat("en");
 const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight"];
 const word = (count: number) => WORDS[count] ?? String(count);
 const sparkWord = (count: number) => (count === 1 ? "one Spark" : `${word(count)} Sparks`);
-const day = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 
 // "How many Sparks do you have?": the same choices as the catalog page (SPARK_OPTIONS), as one
 // segmented control. Pressing the pressed choice clears it.
@@ -119,7 +119,7 @@ export function FitResults({ summary, pick }: { summary: CatalogSummary; pick: M
               <a href={`/recipes/${row.publisher}/${row.slug}`}>{row.title}</a>
               <span className="fit-meta"><Pips uses={row.sparks} of={picked ?? row.sparks} /> {picked ? `${row.sparks} of ${picked} ${picked === 1 ? "Spark" : "Sparks"}` : sparkWord(row.sparks)}{row.creator ? <> · <span className="src">{row.creator}</span></> : null}{row.engine ? ` · ${engineLabel(row.engine)}` : ""}{memoryLine(row) ? ` · ${memoryLine(row)}` : ""}</span>
             </div>
-            <span className="fit-date">released {day.format(new Date(row.released))}</span>
+            <span className="fit-date">released {formatDate(row.released)}</span>
           </li>
         ))}
       </ul>

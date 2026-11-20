@@ -1,12 +1,12 @@
+import { formatDate } from "./dates";
 import { BarSeries, type BarPoint } from "./bar-series";
 import type { CatalogSummary } from "./catalog-stats";
 import { EvidenceReceipt } from "./evidence-receipt";
 import { RollingNumber } from "./rolling-number";
 
 const number = new Intl.NumberFormat("en");
-const short = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", timeZone: "UTC" });
 const DAY = 86_400_000;
-const label = (day: string) => short.format(new Date(day));
+const label = (day: string) => formatDate(day);
 const weekEnd = (start: string) => new Date(Date.parse(start) + 6 * DAY).toISOString();
 const weekRange = (start: string) => `${label(start)} to ${label(weekEnd(start))}`;
 
