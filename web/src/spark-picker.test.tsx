@@ -36,19 +36,14 @@ test("answers with the verified total until a count is picked, then names the co
   expect(answer()).toHaveTextContent("3 verified recipes run on 2 Sparks.");
 });
 
-test("picking 2 Sparks shows one linked count per way to use them, adding up to the total, each with its newest recipe", () => {
-  const { container } = render(<Harness />);
+test("picking 2 Sparks links the one-Spark choice to its exact catalog list and names the newest recipe", () => {
+  render(<Harness />);
   fireEvent.click(screen.getByRole("button", { name: "2 Sparks" }));
-  const choices = within(screen.getByRole("list", { name: "How to use your Sparks" })).getAllByRole("listitem");
-  const links = choices.map((item) => within(item).getAllByRole("link"));
-  const counts = links.map(([choice]) => Number(choice!.querySelector(".big")!.textContent));
-  expect(counts.reduce((sum, count) => sum + count, 0)).toBe(3);
-  expect(links.map(([choice]) => choice!.getAttribute("href"))).toEqual(
-    summaryFixture.recipes.filter((row) => row.verified && row.sparks <= 2).map((row) => row.sparks).filter((n, i, all) => all.indexOf(n) === i).sort().map((n) => `/recipes?sparks=2&uses=${n}`),
-  );
-  expect(links[0]![0]).toHaveTextContent("run on one Spark (keep the others free)");
-  expect(links[0]![1]!.getAttribute("href")).toMatch(/^\/recipes\/[^/]+\/[^/]+$/);
-  expect(container.querySelector(".answer-total")).toHaveTextContent("3 verified recipes run on 2 Sparks.");
+  const [item] = within(screen.getByRole("list", { name: "How to use your Sparks" })).getAllByRole("listitem");
+  const [choice, newest] = within(item!).getAllByRole("link");
+  expect(choice).toHaveAttribute("href", "/recipes?sparks=2&uses=1");
+  expect(choice).toHaveTextContent("3 run on one Spark (keep the others free)");
+  expect(newest).toHaveTextContent("Gemma 4 E2B IT Q8_0 llama.cpp single Spark (ggml-org)");
 });
 
 test("the choice lands in the URL and is remembered; a type narrows the answer and links the filtered catalog", () => {
