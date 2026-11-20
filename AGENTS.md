@@ -60,6 +60,10 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   page address and the catalog `model` parameter are built from it (`modelGroups` in
   `web/src/api/static-catalog.ts`). A variant without lineage (a drafter, encoder) has no place in the hierarchy:
   no row, no address. An address that is not a Model shows the not-found panel.
+  A Model page leads with the recipes that run exactly that Model (`recipeMatches` with the `model` filter), narrowed by
+  the visitor's remembered Spark pick; "Compare recipes" links `/recipes?model=<publisher>/<slug>` plus that pick. The Model
+  carries no description or identity hash of its own: those belong to each variant. The words are Recipes and Models
+  everywhere; "Catalog" names only the release.
 - The home page reads one file, `catalog-summary.json` (`summary_version: 2`),
   which the same Pages build derives from the verified index with the code the pages
   use (`web/src/catalog-stats.ts`): totals, statuses in vocabulary order, shelves per

@@ -115,7 +115,7 @@ export function App() {
             <span className="brand-name"><strong>Vonk</strong> Forge</span>
           </a>
           <nav aria-label="Primary navigation" className={menuOpen ? "is-open" : undefined} id="primary-nav">
-            <NavigationLink href="/recipes">Catalog</NavigationLink>
+            <NavigationLink href="/recipes">Recipes</NavigationLink>
             <NavigationLink href="/models">Models</NavigationLink>
             <NavigationLink href="/control">Controller</NavigationLink>
             <NavigationLink href="/architecture">Docs</NavigationLink>
@@ -136,7 +136,7 @@ export function App() {
             <LibraryVersion release={release} />
           </div>
           <nav aria-label="Footer navigation">
-            <a href="/recipes">Catalog</a>
+            <a href="/recipes">Recipes</a>
             <a href="/models">Models</a>
             <a href="/install">Install</a>
             <a href="/architecture">How it works</a>

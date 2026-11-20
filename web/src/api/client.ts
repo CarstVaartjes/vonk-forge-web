@@ -93,6 +93,8 @@ export interface ModelVersionSummary {
   title: string;
   version: string;
   revision_id: string;
+  // This variant's own description; a Model has none of its own.
+  description: string;
   model_slug: string;
   variant?: string;
   requires_token?: boolean;
@@ -117,7 +119,6 @@ export interface ModelSummary {
   publisher: string;
   slug: string;
   title: string;
-  description: string;
   // The lineage title (Qwen, GLM, DeepSeek Flash), falling back to its slug.
   family?: string;
   runs: ModelRuns;
@@ -126,7 +127,6 @@ export interface ModelSummary {
   tags: string[];
   // The model types of all its versions' capabilities.
   types: string[];
-  revision_id: string;
   versions: ModelVersionSummary[];
   recipe_count: number;
   // The same count over recipes that passed hardware checks on a DGX Spark.

@@ -1621,8 +1621,6 @@ a {
 .private-boundary strong { color: var(--ink); }
 .profile-note { margin: 0.65rem 0 0; color: var(--faint); font-size: var(--t-label); line-height: 1.55; }
 .profile-note a { color: var(--green-text); }
-.model-detail-identity { color: var(--muted); font-size: var(--t-label); }
-.model-detail-identity code { color: var(--ink); overflow-wrap: anywhere; }
 .model-pagination { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.5rem; color: var(--muted); font-size: var(--t-label); }
 .text-button { padding: 0; border: 0; color: var(--green-text); background: transparent; text-decoration: underline; text-underline-offset: 0.2rem; cursor: pointer; }
 .model-detail-page .page-intro { max-width: 60rem; }
@@ -3329,3 +3327,6 @@ a {
 .answer-choice { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--s3); color: inherit; text-decoration: none; font-weight: 650; }
 .answer-choice:hover span:last-child { text-decoration: underline; }
 .answer-choice .big { color: var(--model-ink); font: 700 var(--t-answer)/1 var(--sans); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+
+.model-recipe-list { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: .5rem; }
+.model-recipe-list li { display: flex; flex-wrap: wrap; gap: .25rem 1rem; align-items: baseline; }

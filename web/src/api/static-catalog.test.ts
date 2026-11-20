@@ -166,7 +166,6 @@ describe("static recipe library adapter", () => {
     expect(page.items.map((item) => `${item.publisher}/${item.slug}`)).toEqual(["gemma/gemma-e2b--gemma-4-e2b", "inkling/inkling-975b-a41b--inkling-975b-a41b", "skintokens/skintokens--skintokens"]);
     expect(page.items[0]).toMatchObject({
       title: "Gemma 4 E2B",
-      description: "Exact public Google Gemma 4 E2B instruction-tuned checkpoint.",
       family: "Gemma",
       tags: ["google", "gemma", "language", "instruction-tuned", "candidate"],
       // The ggml-org variant of the same lineage model sits inside it, not beside it.
@@ -174,6 +173,7 @@ describe("static recipe library adapter", () => {
       runs: { spark_counts: [1], engines: ["llama-cpp", "vllm"], creators: ["NVIDIA", "ggml-org"] },
       versions: [{
         slug: "gemma-4-e2b-it-4adf1574",
+        description: "Exact public Google Gemma 4 E2B instruction-tuned checkpoint.",
         requires_token: false,
         variant: "IT 4adf1574",
         source_repository: "https://huggingface.co/google/gemma-4-E2B-it",
@@ -235,6 +235,17 @@ describe("static recipe library adapter", () => {
     serve({ ...index, catalog_entities: [wrong, ...index.catalog_entities] });
     const recipe = await getStaticRecipe(indexUrl, "vonk-forge", nvidia);
     expect(recipe.catalog).toMatchObject({ model_title: "Gemma 4 E2B", capabilities: ["audio-understanding", "chat", "image-understanding", "reasoning", "text-generation", "tool-use"] });
+  });
+
+  test("a recipe counts for its first model only, not for a companion model it also lists", async () => {
+    const copy = structuredClone(index);
+    const gemma = copy.recipes.find((recipe) => recipe.document.identity.slug === nvidia)!;
+    const skin = copy.recipes.find((recipe) => recipe.document.identity.slug === "skintokens-pytorch-single")!;
+    gemma.document.models.push(skin.document.models[0]!);
+    serve(copy);
+    const skintokens = (await listStaticModels(indexUrl)).items.find((item) => item.publisher === "skintokens")!;
+    expect(skintokens.recipe_count).toBe(1);
+    expect(skintokens.versions.flatMap((version) => version.recipe_slugs)).toEqual(["vonk-forge/skintokens-pytorch-single"]);
   });
 
   test("drops a dangling separator from a catalog title and keeps real names whole", async () => {

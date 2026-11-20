@@ -197,7 +197,8 @@ function mapModelVersion(entity: CatalogModelEntry, index: LibraryIndex): ModelV
   const { document, display } = entity;
   const { identity, source, format } = document;
   const recipeSlugs = index.recipes
-    .filter((recipe) => recipe.document.models.some((selection) => sameReference(selection.model, entity)))
+    // A recipe runs its first model; a drafter or companion does not make it run that Model.
+    .filter((recipe) => selectedEntity(recipe.document, index) === entity)
     .map((recipe) => `${recipe.document.identity.publisher}/${recipe.document.identity.slug}`)
     .sort();
   return {
@@ -206,6 +207,7 @@ function mapModelVersion(entity: CatalogModelEntry, index: LibraryIndex): ModelV
     title: identity.slug,
     version: identity.version,
     revision_id: entity.content_sha256,
+    description: display.description,
     model_slug: identity.model.slug,
     variant: identity.variant || undefined,
     requires_token: document.requires_token,
@@ -250,14 +252,12 @@ function mapModels(index: LibraryIndex): ModelSummary[] {
       publisher,
       slug,
       title,
-      description: display.description,
       family: familyTitle(index, display) || undefined,
       runs: modelRuns(versionRows, recipes),
       verified_runs: runsOf(verifiedRecipes),
       verified_recipe_count: verifiedRecipes.length,
       tags: lowerTags(display.tags),
       types: typesOf(index.vocabulary, versionRows.flatMap((version) => version.capabilities)),
-      revision_id: first.content_sha256,
       versions: versionRows,
       recipe_count: new Set(versionRows.flatMap((version) => version.recipe_slugs)).size,
     };
