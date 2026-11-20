@@ -26,16 +26,17 @@ async function load(page: Page, path: string): Promise<void> {
 
 // Every route of the site, read from src/routes.ts. A parameterised route is visited at the first
 // entry its list page links to, so the pages are checked against whichever library is being served.
+async function firstEntry(page: Page, route: string): Promise<string> {
+  const list = route.slice(0, route.indexOf("/:"));
+  await load(page, list);
+  const href = await page.locator(`main a[href^="${list}/"]`).first().getAttribute("href");
+  expect(href, `${list} links to at least one entry`).not.toBeNull();
+  return href!;
+}
+
 async function sitePaths(page: Page): Promise<string[]> {
   const paths: string[] = [];
-  for (const route of ROUTES) {
-    if (!route.includes(":")) { paths.push(route); continue; }
-    const list = route.slice(0, route.indexOf("/:"));
-    await load(page, list);
-    const href = await page.locator(`main a[href^="${list}/"]`).first().getAttribute("href");
-    expect(href, `${list} links to at least one entry`).not.toBeNull();
-    paths.push(href!);
-  }
+  for (const route of ROUTES) paths.push(route.includes(":") ? await firstEntry(page, route) : route);
   return paths;
 }
 
@@ -55,21 +56,22 @@ for (const width of [1440, 400]) {
   }
 }
 
-test("an accessibility scan of every page reports no serious issue, in both themes", async ({ page }) => {
-  // Every page twice, with a full axe scan each.
-  test.setTimeout(150_000);
-  const errors = watch(page);
-  const paths = await sitePaths(page);
-  for (const scheme of ["dark", "light"] as const) {
-    await page.emulateMedia({ colorScheme: scheme });
-    for (const path of paths) {
+// One test per route and theme, so each fits the default timeout and a violation names its page.
+for (const scheme of ["dark", "light"] as const) {
+  for (const route of ROUTES) {
+    test(`${route} reports no serious accessibility issue in ${scheme}`, async ({ page }) => {
+      const errors = watch(page);
+      const path = route.includes(":") ? await firstEntry(page, route) : route;
+      await page.emulateMedia({ colorScheme: scheme });
       await load(page, path);
       const { violations } = await new AxeBuilder({ page }).analyze();
-      expect(violations.filter((violation) => violation.impact === "serious" || violation.impact === "critical").map((violation) => `${scheme} ${path} ${violation.id}: ${violation.nodes.map((node) => node.target.join(" ")).slice(0, 3).join(" | ")}`)).toEqual([]);
-    }
+      for (const violation of violations.filter((item) => item.impact === "serious" || item.impact === "critical")) {
+        expect.soft(violation.nodes.map((node) => node.target.join(" ")).slice(0, 3), `${scheme} ${path} ${violation.id}`).toEqual([]);
+      }
+      expect.soft(errors).toEqual([]);
+    });
   }
-  expect(errors).toEqual([]);
-});
+}
 
 test("the catalog rows are not headings: the Recipes page has only its two section headings under one h1", async ({ page }) => {
   await load(page, "/recipes");

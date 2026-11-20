@@ -16,12 +16,14 @@ default Pages hostname is `vonk-forge-web.pages.dev`.
    project.
 2. Create a narrowly scoped Cloudflare API token with Account → Cloudflare
    Pages → Edit permission.
-3. In the GitHub `production` environment, add:
+3. In the GitHub `production` environment, add the secrets, and add the variable as a
+   repository variable (the `build` job reads it to skip a current release and has no
+   environment):
 
    ```text
-   Secret:   CLOUDFLARE_ACCOUNT_ID
-   Secret:   CLOUDFLARE_API_TOKEN
-   Variable: CLOUDFLARE_PAGES_PROJECT=vonk-forge-web
+   Secret:              CLOUDFLARE_ACCOUNT_ID    (production environment)
+   Secret:              CLOUDFLARE_API_TOKEN     (production environment)
+   Repository variable: CLOUDFLARE_PAGES_PROJECT=vonk-forge-web
    ```
 4. In the Pages project, add the custom domain `vonkforge.ai`. Because this is
    an apex domain, the zone must use Cloudflare nameservers; Cloudflare then
