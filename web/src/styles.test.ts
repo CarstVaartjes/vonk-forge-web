@@ -1,6 +1,9 @@
 import { expect, test } from "vitest";
 
-import css from "./styles.css?raw";
+// Every module under styles/ as text (index.css only lists the import order); the token module is read on its own.
+const modules = import.meta.glob<string>("./styles/*.css", { query: "?raw", import: "default", eager: true });
+const css = Object.entries(modules).filter(([path]) => !path.endsWith("/index.css")).map(([, text]) => text).join("\n");
+const tokenCss = modules["./styles/tokens.css"]!;
 
 test("the stylesheet is read, not stubbed out", () => {
   expect(css).toContain("--r-card");
@@ -27,8 +30,8 @@ test("every font-size, and the size inside every font shorthand, is a scale toke
 
 // Token pairs that carry text (4.5:1) or non-text marks (3:1), checked in both themes.
 function block(selector: string): Map<string, string> {
-  const start = css.indexOf(`${selector} {`);
-  const body = css.slice(start, css.indexOf("\n}\n", start));
+  const start = tokenCss.indexOf(`${selector} {`);
+  const body = tokenCss.slice(start, tokenCss.indexOf("\n}\n", start));
   return new Map([...body.matchAll(/(--[a-z0-9-]+): ([^;]+);/g)].map((m) => [m[1]!, m[2]!.trim()]));
 }
 

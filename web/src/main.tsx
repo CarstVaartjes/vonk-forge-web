@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import "@fontsource-variable/onest";
 
 import { App, preparePage } from "./app";
-import "./styles.css";
+import "./styles/index.css";
 
 
 const root = document.getElementById("root");

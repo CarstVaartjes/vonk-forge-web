@@ -210,6 +210,15 @@ The stylesheet uses these sizes and only these (`--t-display`, `--t-h2`, `--t-h3
 
 **The One Family Rule.** Onest Variable owns both display and body roles. Do not reintroduce Space Grotesk or use a novelty display face to manufacture personality.
 
+## Where styles live
+
+The stylesheet is `web/src/styles/`: `index.css` is the one entry (imported by `main.tsx`) and lists every module with `@import`, in the order that is the cascade. Reordering the list, or moving a rule to a module that imports earlier or later, changes which rule wins; add a rule to the module of the page or component it styles and keep it where it already sits relative to the rules it overrides.
+
+- `tokens.css`: both themes' tokens (`:root`, dark, light); `styles.test.ts` reads this module for the contrast checks.
+- `base.css`: reset, typography, links, focus. `layout.css`: shell, header, footer navigation and the narrow-width header.
+- `components.css`: buttons, section headings, path grids, catalog tabs, footer. `status-and-publishing.css`: hash, status, tag, status panel, publishing path.
+- Pages: `guides.css` (architecture and guides) with `guides-responsive.css`, `control.css`, `install-command.css` (command block, privacy, install lanes), `agent-session.css`, `catalog.css`, `models.css`, `home.css`, `home-hero.css`, `home-wall.css`, `home-evidence.css`, `setup.css`, `recipe-detail.css`, `recipe-family.css`, `motion-and-picks.css`.
+
 ## Layout
 
 The site sits in a centered maximum-width work area (1220px) with fluid horizontal gutters (`clamp(2rem, 5vw, 5rem)`). Pages use strong two-column relationships for definition plus evidence, heading plus explanation, or choice plus choice. Cards are rounded slabs; tables keep square shared rules.

@@ -1,0 +1,77 @@
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  color: var(--green-ink);
+  background: var(--green-text);
+}
+
+html {
+  scroll-behavior: smooth;
+  scrollbar-color: var(--line-strong) var(--bg);
+  scrollbar-width: thin;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: clip;
+  background: var(--glow-page), var(--bg);
+}
+
+a {
+  color: inherit;
+}
+
+/* Plain in-text links: the Controller's link ink (DESIGN.md, Links). Links with a class or a component rule keep their own colour. */
+a:where(:not([class])) {
+  color: var(--link);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+a:where(:not([class])):is(:hover, :focus-visible) {
+  color: var(--link-hover);
+  text-decoration-thickness: 2px;
+}
+
+button,
+input,
+select,
+textarea {
+  accent-color: var(--green);
+  caret-color: var(--green-text);
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.skip-link {
+  position: fixed;
+  z-index: 100;
+  top: 0.75rem;
+  left: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: var(--bg);
+  background: var(--ink);
+  border-radius: var(--r-ctl);
+  font-weight: 800;
+  text-decoration: none;
+  transform: translateY(-180%);
+  transition: transform 160ms ease;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+

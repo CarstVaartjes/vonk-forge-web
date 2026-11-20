@@ -1,0 +1,48 @@
+/* Motion: all of it off under reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .wall-cell i, .wall-cell i::after { transition: background-color var(--base) var(--ease), box-shadow var(--base) var(--ease), border-color var(--base) var(--ease); }
+  .wall-card { animation: card-in var(--fast) var(--ease); }
+  .caret { animation: caret-blink 1.1s steps(1) 4; }
+}
+@keyframes card-in { from { opacity: 0; } }
+@keyframes caret-blink { 50% { opacity: 0; } }
+
+/* The recipe catalog's first screen: search, type, Sparks and the count; the rest sits in "More filters". */
+.recipes-page { padding-top: clamp(1.25rem, 3vw, 2.5rem); }
+.recipes-page .catalog-tabs { margin-bottom: 0.75rem; }
+.recipes-page .catalog-type { margin: 1rem 0; gap: 0.5rem; }
+.catalog-setup-compact { margin-bottom: 1rem; padding: 1rem 1.25rem; }
+.catalog-setup-compact .setup-sparks legend { margin-bottom: 0.4rem; }
+/* One segment per count, no repeated numeral beside its label. */
+.catalog-more-note { margin: 0 0 0.75rem; color: var(--muted); font-size: var(--t-small); line-height: 1.6; }
+@media (max-width: 600px) {
+  .recipes-page { padding-top: 0.5rem; }
+  .recipes-page .catalog-type { margin: 0.5rem 0; }
+  .catalog-setup-compact { margin-bottom: 0.5rem; padding: 0.5rem 0.75rem; }
+  .catalog-setup-compact .setup-sparks legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .setup-tiles { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .catalog-setup-compact .setup-tile { display: grid; place-items: center; padding: 0.35rem 0.25rem; }
+  .catalog-setup-compact .setup-tile strong { font-size: var(--t-h3); }
+  .catalog-setup-compact .setup-tile:not(.setup-tile-any) strong, .catalog-setup-compact .setup-tile-any strong { display: block; }
+  .catalog-setup-compact .setup-tile span, .catalog-setup-compact .setup-tile small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .recipes-page .catalog-intro > p { display: none; }
+  .recipes-page .catalog-intro { margin-bottom: 0; }
+  /* The model types are one row you scroll sideways. */
+  .recipes-page .type-tabs { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .recipes-page .type-tabs button { flex: 0 0 auto; min-height: 2.75rem; padding: 0.4rem 0.9rem; }
+}
+
+/* After a Spark pick above one: the answer is the two ways to use them, each a link to its catalog list. */
+.answer-total { grid-column: 1 / -1; color: var(--muted); font-size: var(--t-small); font-weight: 400; }
+.answer-choices { grid-column: 1 / -1; display: grid; gap: var(--s3); margin: 0; padding: 0; list-style: none; }
+.answer-choices li { display: grid; gap: 0.15rem; }
+.answer-choice { display: flex; align-items: baseline; flex-wrap: wrap; gap: 0 var(--s3); color: inherit; text-decoration: none; font-weight: 650; }
+.answer-choice:hover span:last-child { text-decoration: underline; }
+.answer-choice .big { color: var(--model-ink); font: 700 var(--t-answer)/1 var(--sans); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+
+.model-recipe-list { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: .5rem; }
+.model-recipe-list li { display: flex; flex-wrap: wrap; gap: .25rem 1rem; align-items: baseline; }
+
+.job-contract h3 { margin: var(--s3) 0 var(--s2); font-size: var(--t-small); color: var(--muted); }
+.job-slots { display: grid; gap: var(--s2); margin: 0; padding: 0; list-style: none; }
+.job-slots small { display: block; color: var(--muted); }

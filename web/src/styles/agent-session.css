@@ -1,0 +1,159 @@
+/* Agent session: the terminal counterpart of the Fleet screenshot. */.agent-session {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+}
+
+.agent-session-frame {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  border: 1px solid var(--line-strong);
+  background: var(--recess);
+  box-shadow: var(--shadow);
+  border-radius: var(--r-card);
+}
+
+.agent-session-label {
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--line-strong);
+  color: var(--faint);
+  font: 700 var(--t-label)/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.agent-session-frame pre {
+  flex: 1 1 auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 1.35rem 1.25rem;
+  padding-inline-end: 1rem;
+  overflow-x: auto;
+  scrollbar-color: var(--line-strong) transparent;
+  scrollbar-width: thin;
+  font: 600 var(--t-lead)/1.75 ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.agent-session-frame code {
+  font: inherit;
+}
+
+.agent-session-comment {
+  color: var(--faint);
+}
+
+.agent-session-command {
+  color: var(--green-text);
+}
+
+.agent-session-command::before {
+  content: "$ ";
+  color: var(--gold-soft);
+}
+
+.agent-session figcaption {
+  display: grid;
+  grid-template-columns: minmax(12rem, 0.65fr) minmax(15rem, 1.35fr);
+  gap: 1.5rem;
+  padding: 0.9rem 0.1rem 0;
+}
+
+.agent-session figcaption strong {
+  color: var(--ink);
+  font-size: var(--t-small);
+}
+
+.agent-session figcaption span {
+  color: var(--faint);
+  font-size: var(--t-label);
+  line-height: 1.5;
+}
+
+@media (max-width: 820px) {
+
+  /* Long commands wrap in the terminal panel instead of forcing horizontal scroll. */.agent-session-frame pre {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 520px) {
+  .agent-session-frame {
+    aspect-ratio: auto;
+  border-radius: var(--r-card);
+}
+
+  .agent-session figcaption {
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+  }
+}
+
+/* Secure remote intro: heading and lead-in before the Tailscale preflight. */.install-modes {
+  padding: clamp(2.5rem, 5vw, 4rem) 0 0;
+}
+
+/* The CLI's contract for scripts and agents, stated once beside the commands. */.agent-contract {
+  margin-top: 2.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--green-dim);
+  background: var(--recess);
+}
+
+.agent-contract h3 {
+  margin: 0 0 1rem;
+  font-size: var(--t-h3);
+}
+
+.agent-contract ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 2rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agent-contract li {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.agent-contract strong {
+  color: var(--ink);
+  font-size: var(--t-small);
+}
+
+.agent-contract strong code {
+  color: var(--green-text);
+}
+
+.agent-contract span {
+  color: var(--muted);
+  font-size: var(--t-small);
+  line-height: 1.6;
+}
+
+.agent-contract span code {
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .agent-contract ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Inline code in CLI prose (URLs, env names) wraps instead of widening the column at 320 px. */.cli-section p code,
+.credential-warning code,
+.agent-contract code {
+  overflow-wrap: anywhere;
+}
+
