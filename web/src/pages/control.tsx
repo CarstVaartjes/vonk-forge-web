@@ -5,8 +5,8 @@ const repository = "https://github.com/CarstVaartjes/vonk-forge";
 
 
 
-// Every command on this page comes from the vonk-forge vonkctl runbook
-// (docs/runbooks/vonkctl.md). Keep them in step with it.
+// Every command on this page is a command of the vonk-forge vonkctl runbook
+// (docs/runbooks/vonkctl.md); `--json` is the runbook's global flag. Keep them in step with it.
 export function ControlPage() {
   usePageMeta("Control", "Drive your Vonk Forge fleet from the Web Controller or from vonkctl, the JSON-first CLI built for scripts and AI agents.");
   return (
@@ -76,7 +76,7 @@ export function ControlPage() {
         <div className="usage-grid">
           <article><span>Overview</span><h3>Enroll and watch Sparks</h3><p>Create one-use enrollment grants with <strong>Enroll Spark</strong>, inspect health, free memory, and warnings, search nodes, choose telemetry ranges, rename, re-enroll, and remove.</p></article>
           <article id="library-import"><span>Library</span><h3>See what fits, then run it</h3><p>Search published models and recipes; the recipe repository syncs automatically, or choose <strong>Update from Vonk Forge remote</strong>. Each recipe shows whether it fits your Sparks right now and why. Download exact model assets and recipe images, then run or switch a saved profile with durable progress and per-Spark results.</p></article>
-          <article><span>Profiles</span><h3>Keep the mix you need</h3><p>Assign recipes to Sparks, save the set as a profile, review the exact plan—what stops, starts, and installs—then apply. A running install is marked stale when a newer recipe revision lands; you decide when to update.</p></article>
+          <article><span>Profiles</span><h3>Keep the mix you need</h3><p>Assign recipes to Sparks, save the set as a profile, review the exact plan—what stops, starts, and installs—then load it. A running install is marked stale when a newer recipe revision lands; you decide when to update.</p></article>
         </div>
         <div className="control-note">
           <strong>Private by design</strong>
@@ -132,7 +132,7 @@ vonkctl --check-connection --json`}</CommandBlock>
 vonkctl fleet detail Atlas --json
 vonkctl fleet activity --state needs-operator --json`}</CommandBlock>
           <CommandBlock label="Library">{`vonkctl model library --family Qwen --json
-vonkctl recipe library --fits-fleet --json
+vonkctl recipe library --fits-fleet --limit 5
 vonkctl recipe library --ready --engine vllm --sparks 2
 vonkctl recipe detail qwen-code --json
 vonkctl recipe sync-status`}</CommandBlock>
@@ -159,7 +159,7 @@ vonkctl --profile 2 profile endpoint`}</CommandBlock>
             placements, what stops, starts, or installs, and any blockers. In a
             terminal, <code>profile load</code> shows that review and asks once. For
             scripts, JSON, or redirected input, pass <code>--yes</code>; nothing is
-            asked and the Controller applies the plan that is current when it accepts
+            asked and the Controller loads the plan that is current when it accepts
             the request. Changing a profile always needs an explicit <code>--profile N</code>.
           </p>
         </div>
@@ -178,7 +178,7 @@ uv tool uninstall vonk-cluster-profiles`}</CommandBlock>
           <h3 id="agent-contract-title">Written for agents</h3>
           <ul>
             <li><strong><code>--json</code></strong><span>One result or one structured error on stdout; progress and prompts go to stderr. Errors carry <code>usage</code> and <code>recovery_actions</code>.</span></li>
-            <li><strong><code>--review</code> then <code>--yes</code></strong><span>Read the plan without changing anything, then consent explicitly. Without a terminal, nothing is applied unless <code>--yes</code> is given.</span></li>
+            <li><strong><code>--review</code> then <code>--yes</code></strong><span>Read the plan without changing anything, then consent explicitly. Without a terminal, nothing is loaded unless <code>--yes</code> is given.</span></li>
             <li><strong>Exit codes</strong><span><code>0</code> success or dry run · <code>1</code> awaited partial result · <code>2</code> failed, blocked, or invalid · <code>130</code> interrupted · <code>141</code> closed pipe. None cancels Controller work.</span></li>
             <li><strong>Reconnectable</strong><span>Every mutation prints a request key; <code>progress --request-key KEY --follow</code> resumes observation after a lost response.</span></li>
           </ul>
@@ -202,6 +202,10 @@ uv tool uninstall vonk-cluster-profiles`}</CommandBlock>
           your editor, agent or script at that alias. Switching the model behind it
           changes nothing in the tool. The Controller shows the same examples with your own
           address and alias filled in.
+        </p>
+        <p className="fleet-note">
+          An alias comes from <code>vonkctl run RECIPE --as coder</code>;{" "}
+          <code>vonkctl profile endpoint</code> lists them.
         </p>
         <CommandBlock label="Create a key and set the address">{String.raw`vonkctl key create NAME --output CLIENT_KEY_FILE
 export OPENAI_API_KEY="$(cat CLIENT_KEY_FILE)"

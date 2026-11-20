@@ -25,7 +25,7 @@ const points = [
   },
   {
     title: "Run the mix you need.",
-    body: "A coding model on two Sparks, a vision model on the third. Save it as a profile, review the exact plan, apply it, and switch profiles when the job changes.",
+    body: "A coding model on two Sparks, a vision model on the third. Save it as a profile, review the exact plan, load it, and switch profiles when the job changes.",
   },
 ];
 

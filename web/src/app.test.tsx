@@ -223,7 +223,7 @@ test("documents two equivalent control paths and complete CLI setup", () => {
   expect(screen.getByText(/VONK_CONTROL_TOKEN_FILE/)).toBeVisible();
   expect(screen.getByText(/vonkctl --check-connection --json/)).toBeVisible();
   expect(screen.getByText(/browser password is not a CLI credential/i)).toBeVisible();
-  expect(screen.getByText(/vonkctl recipe library --fits-fleet --json/)).toBeVisible();
+  expect(screen.getByText(/vonkctl recipe library --fits-fleet --limit 5/)).toBeVisible();
   expect(screen.getByText(/vonkctl --profile 2 profile load --review --json/)).toBeVisible();
   expect(screen.getByText(/recipe repository syncs automatically/i)).toBeVisible();
   expect(screen.queryByText(/vonkctl models (list|discover)/)).not.toBeInTheDocument();
