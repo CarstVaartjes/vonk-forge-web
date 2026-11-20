@@ -287,16 +287,17 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
   await page.getByRole("link", { name: "Open the install guide" }).click();
   await expect(page).toHaveURL(/\/install$/);
   await expect(page.getByRole("heading", { name: "Install Vonk Forge" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Prepare the controller" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Lab mode: from this page to a signed-in Controller" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Run the Secure remote installer" })).toBeVisible();
   await expect(page.getByText(/this laptop for a lab/i)).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Lab on your LAN, or secure remote." })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Secure remote with Tailscale" })).toBeVisible();
   const preflightHeading = page.getByRole("heading", { name: "Complete private HTTPS setup first." });
-  const controllerCommand = page.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh");
+  const controllerCommand = page.getByText("curl -fsSL https://install.vonkforge.ai/nas | sh").last();
   await expect(preflightHeading).toBeVisible();
   await expect(controllerCommand).toBeVisible();
   expect(await preflightHeading.evaluate((preflight) => {
     const command = [...document.querySelectorAll(".command-block code")]
-      .find((candidate) => candidate.textContent === "curl -fsSL https://install.vonkforge.ai/nas | sh");
+      .findLast((candidate) => candidate.textContent === "curl -fsSL https://install.vonkforge.ai/nas | sh");
     return Boolean(command && (preflight.compareDocumentPosition(command) & Node.DOCUMENT_POSITION_FOLLOWING));
   })).toBe(true);
   await expect(page.getByText(/MagicDNS and HTTPS certificates/i)).toBeVisible();
