@@ -236,9 +236,6 @@ test("documents two equivalent control paths and complete CLI setup", async () =
   expect(screen.getAllByRole("heading", { name: "Local CLI" })).toHaveLength(2);
   expect(screen.getByText(/curl -fsSL https:\/\/install\.vonkforge\.ai\/vonkctl \| sh/)).toBeVisible();
   expect(screen.queryByText(/uv tool install 'git\+https/)).not.toBeInTheDocument();
-  expect(screen.getByText(/VONK_CONTROL_TOKEN_FILE/)).toBeVisible();
-  expect(screen.getByText(/vonkctl --check-connection --json/)).toBeVisible();
-  expect(screen.getByText(/browser password is not a CLI credential/i)).toBeVisible();
   expect(screen.getByText(/vonkctl recipe library --fits-fleet --limit 5/)).toBeVisible();
   expect(screen.getByText(/vonkctl --profile 2 profile load --review --json/)).toBeVisible();
   expect(screen.getByText(/recipe repository syncs automatically/i)).toBeVisible();

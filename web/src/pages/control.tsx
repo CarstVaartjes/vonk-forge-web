@@ -106,22 +106,16 @@ vonkctl --version`}</CommandBlock>
 
         <div className="cli-section" aria-labelledby="cli-connect-title">
           <h3 id="cli-connect-title"><span>02</span> Connect safely</h3>
-          <p>In the Web Controller, open the operator menu under your user name and choose <strong>Download CLI token</strong>. Store the file privately and point the CLI at it:</p>
-          <CommandBlock label="Terminal">{`export VONK_CONTROL_URL='https://your-private-controller.example'
-install -d -m 700 "$HOME/.config/vonk-forge"
-mv "$HOME/Downloads/vonkctl-token" "$HOME/.config/vonk-forge/controller-token"
-chmod 600 "$HOME/.config/vonk-forge/controller-token"
-export VONK_CONTROL_TOKEN_FILE="$HOME/.config/vonk-forge/controller-token"
-vonkctl --check-connection --json`}</CommandBlock>
+          <p>Sign in once from a terminal. The CLI asks for the Controller administrator password without echoing it:</p>
+          <CommandBlock label="Terminal">{`vonkctl auth login https://your-private-controller.example
+vonkctl auth status`}</CommandBlock>
           <div className="credential-warning">
-            <strong>The browser password is not a CLI credential.</strong>
+            <strong>The password is asked once and never stored.</strong>
             <p>
-              The CLI reads a signed administrator bearer token from a private,
-              regular, non-symlink file. It never accepts a token in a command
-              argument, rejects an unsafe file, and keeps TLS validation on. The
-              token expires after 30 days; download a new file from the operator
-              menu when it does. Put the two <code>export</code> lines in your shell
-              configuration; keep the credential in the file.
+              The CLI keeps a 30-day token in <code>~/.config/vonkctl</code>, readable
+              only by you. <code>vonkctl auth status</code> shows the expiry, the CLI
+              warns before it runs out, and <code>vonkctl auth logout</code> removes it.
+              Never put a token in a command argument; TLS validation stays on.
             </p>
           </div>
         </div>
