@@ -93,9 +93,6 @@
   .has-wall .wall-slot { grid-column: 2; grid-row: 1; }
 }
 
-/* Reserved height, measured on the real release, so the wall arriving moves almost nothing. */
-.wall-slot { min-height: 80rem; }
-@media (max-width: 40rem) { .wall-slot { min-height: 95rem; } }
 .wall { display: grid; gap: var(--s3); padding: var(--s4); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--panel); box-shadow: var(--shadow); }
 @media (max-width: 40rem) { .wall { --cell: 11px; --cell-gap: 2px; padding: var(--s3); } }
 .wall-shelves { display: grid; gap: var(--s4); }
