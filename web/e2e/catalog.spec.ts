@@ -59,14 +59,10 @@ test("platform story stays navigable and bounded", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await expect(page.locator("html")).toHaveCSS("scroll-behavior", "auto");
 
-  // The faint ink on every surface, in both themes (the build may shorten #ffffff to #fff).
+  // The faint ink on every surface, in both themes, as the browser resolves it (tokens are light-dark() pairs, so read computed colours).
   const minimumFaintContrast = await page.evaluate(() => {
-    const parseHex = (value: string) => {
-      const digits = value.trim().replace("#", "");
-      const hex = digits.length === 3 ? [...digits].map((digit) => digit + digit).join("") : digits;
-      return [0, 2, 4].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16) / 255);
-    };
-    const luminance = (value: string) => parseHex(value)
+    const luminance = (value: string) => (value.match(/\d+(\.\d+)?/g) ?? []).slice(0, 3).map(Number)
+      .map((channel) => channel / 255)
       .map((channel) => channel <= 0.04045
         ? channel / 12.92
         : ((channel + 0.055) / 1.055) ** 2.4)
@@ -75,12 +71,19 @@ test("platform story stays navigable and bounded", async ({ page }) => {
       const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
       return (values[0] + 0.05) / (values[1] + 0.05);
     };
-    return Math.min(...["dark", "light"].flatMap((theme) => {
+    const probe = document.body.appendChild(document.createElement("i"));
+    probe.style.transition = "none"; // a transition would report the previous token's colour
+    const resolved = (token: string) => {
+      probe.style.color = `var(${token})`;
+      return getComputedStyle(probe).color;
+    };
+    const minimum = Math.min(...["dark", "light"].flatMap((theme) => {
       document.documentElement.setAttribute("data-theme", theme);
-      const styles = getComputedStyle(document.documentElement);
-      const foreground = styles.getPropertyValue("--faint");
-      return ["--bg", "--panel", "--raised"].map((token) => contrast(foreground, styles.getPropertyValue(token)));
+      const foreground = resolved("--faint");
+      return ["--bg", "--panel", "--raised"].map((token) => contrast(foreground, resolved(token)));
     }));
+    probe.remove();
+    return minimum;
   });
   expect(minimumFaintContrast).toBeGreaterThanOrEqual(4.5);
 });

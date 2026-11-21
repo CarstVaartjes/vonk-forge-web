@@ -1,112 +1,74 @@
-/* One token set, same names and values as the Controller dashboard. DESIGN.md lists the same values. Dark is the default; light follows the visitor's choice. */
-:root,
-:root[data-theme="dark"] {
-  color-scheme: dark;
+/* One token set, same names and values as the Controller dashboard. DESIGN.md lists the same values. Every colour is a light-dark() pair: the theme switch only sets color-scheme (theme-init.js sets it before paint; without it the browser follows the OS). */
+:root {
+  color-scheme: light dark;
   /* surfaces */
-  --bg: #090a09;
-  --recess: #060706;
-  --panel: #121412;
-    --raised: #1a1d19;
-  --line: #262924;
-  --line-strong: #3a3e36;
-  --line-control: #666b5f; /* 3:1 on every surface: borders that identify a control */
-  --edge: rgb(255 255 255 / 5%); /* 1px top highlight on cards */
+  --bg: light-dark(#f3f1ea, #090a09);
+  --recess: light-dark(#ebe8df, #060706);
+  --panel: light-dark(#ffffff, #121412);
+  --raised: light-dark(#f6f4ee, #1a1d19);
+  --line: light-dark(#e1ddd1, #262924);
+  --line-strong: light-dark(#cbc5b6, #3a3e36);
+  --line-control: light-dark(#857f70, #666b5f); /* 3:1 on every surface: borders that identify a control */
+  --edge: light-dark(rgb(255 255 255 / 0%), rgb(255 255 255 / 5%)); /* 1px top highlight on cards */
   /* ink */
-  --ink: #f2efe8;
-  --muted: #aaa396;
-  --faint: #958e80;
+  --ink: light-dark(#171813, #f2efe8);
+  --muted: light-dark(#55524a, #aaa396);
+  --faint: light-dark(#6b675d, #958e80);
   /* brand and action */
   --green: #76b900;
-  --green-text: #a3d93a;
+  --green-text: light-dark(#3d6a00, #a3d93a);
   --green-ink: #0b0d08;
-  --green-dim: #4a6b14;
-  --green-wash: rgb(118 185 0 / 12%);
+  --green-dim: light-dark(#9ccb4a, #4a6b14);
+  --green-wash: light-dark(rgb(118 185 0 / 14%), rgb(118 185 0 / 12%));
   --gold: #d9b56f;
-  --gold-soft: #eacf9a;
-  --gold-dim: #5e4e2b;
+  --gold-soft: light-dark(#7d5c12, #eacf9a);
+  --gold-dim: light-dark(#cdb27a, #5e4e2b);
   /* shared with the Controller: link ink and the one focus ring colour */
-  --link: #e8d8b0;
+  --link: light-dark(#6b4a0a, #e8d8b0);
   --link-hover: var(--green-text);
-  --focus: #d9b56f;
-  --gold-wash: rgb(217 181 111 / 9%);
+  --focus: light-dark(#7d5c12, #d9b56f);
+  --gold-wash: light-dark(rgb(217 181 111 / 16%), rgb(217 181 111 / 9%));
   /* status: always a shape and a word */
   --ok: var(--green-text);
-  --warn: #ffb347;
-  --bad: #ff7a6b;
-  --info: #8fc4ff;
-  --warn-wash: rgb(255 179 71 / 9%);
-  --bad-wash: rgb(255 122 107 / 10%);
+  --warn: light-dark(#8f5200, #ffb347);
+  --bad: light-dark(#b3261e, #ff7a6b);
+  --info: light-dark(#1c5fb0, #8fc4ff);
+  --warn-wash: light-dark(rgb(255 179 71 / 16%), rgb(255 179 71 / 9%));
+  --bad-wash: light-dark(rgb(179 38 30 / 8%), rgb(255 122 107 / 10%));
   /* data ink: the model is ivory (dark) or near-black (light) */
-  --model-ink: #f2efe8;
-  --track: #2a2e27;
+  --model-ink: light-dark(#171813, #f2efe8);
+  --track: light-dark(#e6e2d8, #2a2e27);
   /* the catalog wall (one cell per Spark) */
-  --lit: #f2efe8;
-  --tile: rgb(245 240 228 / 78%); /* the wall's lit cell: warm matte ivory, never pure white */
-  --hollow: rgb(245 240 228 / 45%);
+  --lit: light-dark(#1f201b, #f2efe8);
+  --tile: light-dark(#1f201b, rgb(245 240 228 / 78%)); /* the wall's lit cell: warm matte ivory, never pure white */
+  --hollow: light-dark(rgb(23 24 19 / 55%), rgb(245 240 228 / 45%));
   --lit-glow: 0 0 7px rgb(242 239 232 / 28%);
-  --cool: rgb(242 239 232 / 13%);
+  --cool: light-dark(rgb(23 24 19 / 12%), rgb(242 239 232 / 13%));
   /* depth */
   --shadow: 0 1px 0 var(--edge) inset, 0 18px 40px rgb(0 0 0 / 28%);
   --heat: 0 0.85rem 2.5rem rgb(76 120 0 / 18%);
   --glow-page: radial-gradient(circle at 12% 5%, rgb(217 181 111 / 14%), transparent 26rem);
-  --nav-bg: rgb(9 10 9 / 82%);
+  --nav-bg: light-dark(rgb(243 241 234 / 86%), rgb(9 10 9 / 82%));
   /* architecture diagram lanes and example-setup roles: identity only */
-  --lane-public: #9f8fff;
-  --lane-network: #5cc8ff;
-  --role-coder: #8ab4ff;
-  --role-image: #f0a0d8;
-  --role-three-d: #f2a65a;
-  --role-audio: #62d6c4;
-  --role-video: #c0a6ff;
+  --lane-public: light-dark(#5b49c9, #9f8fff);
+  --lane-network: light-dark(#0b6c9a, #5cc8ff);
+  --role-coder: light-dark(#2f5fb3, #8ab4ff);
+  --role-image: light-dark(#a8348a, #f0a0d8);
+  --role-three-d: light-dark(#a85a12, #f2a65a);
+  --role-audio: light-dark(#0d7d6e, #62d6c4);
+  --role-video: light-dark(#6d4cc0, #c0a6ff);
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+/* light-dark() takes colours only: the shapes that differ between the themes (shadow geometry, no glow on paper) are set here. */
 :root[data-theme="light"] {
   color-scheme: light;
-  --bg: #f3f1ea;
-  --recess: #ebe8df;
-  --panel: #ffffff;
-  --raised: #f6f4ee;
-  --line: #e1ddd1;
-  --line-strong: #cbc5b6;
-  --line-control: #857f70;
-  --edge: rgb(255 255 255 / 0%);
-  --ink: #171813;
-  --muted: #55524a;
-  --faint: #6b675d;
-  --green: #76b900;
-  --green-text: #3d6a00;
-  --green-ink: #0b0d08;
-  --green-dim: #9ccb4a;
-  --green-wash: rgb(118 185 0 / 14%);
-  --gold: #d9b56f;
-  --gold-soft: #7d5c12;
-  --gold-dim: #cdb27a;
-  --link: #6b4a0a;
-  --focus: #7d5c12;
-  --gold-wash: rgb(217 181 111 / 16%);
-  --warn: #8f5200;
-  --bad: #b3261e;
-  --info: #1c5fb0;
-  --warn-wash: rgb(255 179 71 / 16%);
-  --bad-wash: rgb(179 38 30 / 8%);
-  --model-ink: #171813;
-  --track: #e6e2d8;
-  --lit: #1f201b;
-  --tile: var(--lit);
-  --hollow: rgb(23 24 19 / 55%);
-  --lit-glow: none;
-  --cool: rgb(23 24 19 / 12%);
   --shadow: 0 1px 2px rgb(40 34 20 / 5%), 0 14px 34px rgb(40 34 20 / 7%);
   --heat: 0 0.85rem 2rem rgb(76 120 0 / 14%);
   --glow-page: linear-gradient(transparent, transparent);
-  --nav-bg: rgb(243 241 234 / 86%);
-  --lane-public: #5b49c9;
-  --lane-network: #0b6c9a;
-  --role-coder: #2f5fb3;
-  --role-image: #a8348a;
-  --role-three-d: #a85a12;
-  --role-audio: #0d7d6e;
-  --role-video: #6d4cc0;
+  --lit-glow: none;
 }
 
 :root {
