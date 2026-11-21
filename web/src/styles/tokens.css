@@ -1,0 +1,152 @@
+/* One token set, same names and values as the Controller dashboard. DESIGN.md lists the same values. Dark is the default; light follows the visitor's choice. */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  /* surfaces */
+  --bg: #090a09;
+  --recess: #060706;
+  --panel: #121412;
+    --raised: #1a1d19;
+  --line: #262924;
+  --line-strong: #3a3e36;
+  --line-control: #666b5f; /* 3:1 on every surface: borders that identify a control */
+  --edge: rgb(255 255 255 / 5%); /* 1px top highlight on cards */
+  /* ink */
+  --ink: #f2efe8;
+  --muted: #aaa396;
+  --faint: #958e80;
+  /* brand and action */
+  --green: #76b900;
+  --green-text: #a3d93a;
+  --green-ink: #0b0d08;
+  --green-dim: #4a6b14;
+  --green-wash: rgb(118 185 0 / 12%);
+  --gold: #d9b56f;
+  --gold-soft: #eacf9a;
+  --gold-dim: #5e4e2b;
+  /* shared with the Controller: link ink and the one focus ring colour */
+  --link: #e8d8b0;
+  --link-hover: var(--green-text);
+  --focus: #d9b56f;
+  --gold-wash: rgb(217 181 111 / 9%);
+  /* status: always a shape and a word */
+  --ok: var(--green-text);
+  --warn: #ffb347;
+  --bad: #ff7a6b;
+  --info: #8fc4ff;
+  --warn-wash: rgb(255 179 71 / 9%);
+  --bad-wash: rgb(255 122 107 / 10%);
+  /* data ink: the model is ivory (dark) or near-black (light) */
+  --model-ink: #f2efe8;
+  --track: #2a2e27;
+  /* the catalog wall (one cell per Spark) */
+  --lit: #f2efe8;
+  --tile: rgb(245 240 228 / 78%); /* the wall's lit cell: warm matte ivory, never pure white */
+  --hollow: rgb(245 240 228 / 45%);
+  --lit-glow: 0 0 7px rgb(242 239 232 / 28%);
+  --cool: rgb(242 239 232 / 13%);
+  /* depth */
+  --shadow: 0 1px 0 var(--edge) inset, 0 18px 40px rgb(0 0 0 / 28%);
+  --heat: 0 0.85rem 2.5rem rgb(76 120 0 / 18%);
+  --glow-page: radial-gradient(circle at 12% 5%, rgb(217 181 111 / 14%), transparent 26rem);
+  --nav-bg: rgb(9 10 9 / 82%);
+  /* architecture diagram lanes and example-setup roles: identity only */
+  --lane-public: #9f8fff;
+  --lane-network: #5cc8ff;
+  --role-coder: #8ab4ff;
+  --role-image: #f0a0d8;
+  --role-three-d: #f2a65a;
+  --role-audio: #62d6c4;
+  --role-video: #c0a6ff;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f3f1ea;
+  --recess: #ebe8df;
+  --panel: #ffffff;
+  --raised: #f6f4ee;
+  --line: #e1ddd1;
+  --line-strong: #cbc5b6;
+  --line-control: #857f70;
+  --edge: rgb(255 255 255 / 0%);
+  --ink: #171813;
+  --muted: #55524a;
+  --faint: #6b675d;
+  --green: #76b900;
+  --green-text: #3d6a00;
+  --green-ink: #0b0d08;
+  --green-dim: #9ccb4a;
+  --green-wash: rgb(118 185 0 / 14%);
+  --gold: #d9b56f;
+  --gold-soft: #7d5c12;
+  --gold-dim: #cdb27a;
+  --link: #6b4a0a;
+  --focus: #7d5c12;
+  --gold-wash: rgb(217 181 111 / 16%);
+  --warn: #8f5200;
+  --bad: #b3261e;
+  --info: #1c5fb0;
+  --warn-wash: rgb(255 179 71 / 16%);
+  --bad-wash: rgb(179 38 30 / 8%);
+  --model-ink: #171813;
+  --track: #e6e2d8;
+  --lit: #1f201b;
+  --tile: var(--lit);
+  --hollow: rgb(23 24 19 / 55%);
+  --lit-glow: none;
+  --cool: rgb(23 24 19 / 12%);
+  --shadow: 0 1px 2px rgb(40 34 20 / 5%), 0 14px 34px rgb(40 34 20 / 7%);
+  --heat: 0 0.85rem 2rem rgb(76 120 0 / 14%);
+  --glow-page: linear-gradient(transparent, transparent);
+  --nav-bg: rgb(243 241 234 / 86%);
+  --lane-public: #5b49c9;
+  --lane-network: #0b6c9a;
+  --role-coder: #2f5fb3;
+  --role-image: #a8348a;
+  --role-three-d: #a85a12;
+  --role-audio: #0d7d6e;
+  --role-video: #6d4cc0;
+}
+
+:root {
+  color: var(--ink);
+  background: var(--bg);
+  font-family: var(--sans);
+  font-synthesis: none;
+  /* type */
+  --sans: "Onest Variable", "Helvetica Neue", ui-sans-serif, system-ui, sans-serif;
+  --mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --t-display: clamp(2.5rem, 5.2vw, 4.5rem);
+  --t-h2: clamp(1.75rem, 3vw, 2.5rem);
+  --t-h3: 1.25rem;
+  --t-lead: clamp(1.05rem, 1.35vw, 1.2rem);
+  --t-body: 1rem;
+  --t-small: 0.875rem;
+  --t-label: 0.6875rem;
+  --t-answer: clamp(2.75rem, 5vw, 3.75rem); /* the picker's number */
+  /* space: 4px base */
+  --s1: 0.25rem;
+  --s2: 0.5rem;
+  --s3: 0.75rem;
+  --s4: 1rem;
+  --s5: 1.5rem;
+  --s6: 2rem;
+  --s7: 3rem;
+  --s8: 4rem;
+  --section: clamp(3rem, 5.5vw, 4.75rem);
+  /* shape */
+  --r-card: 1rem;
+  --r-in: 0.625rem;
+  --r-ctl: 0.5rem;
+  --r-pill: 999px;
+  /* the wall */
+  --cell: 16px;
+  --cell-gap: 3px;
+  /* motion */
+  --fast: 120ms;
+  --base: 240ms;
+  --slow: 600ms;
+  --ease: cubic-bezier(.2, .7, .2, 1);
+}
+

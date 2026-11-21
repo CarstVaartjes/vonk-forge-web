@@ -1,0 +1,128 @@
+/* Recipe detail: header with the verdict, four facts, the command, then capabilities and details. */
+.detail-page { padding-top: 0; }
+
+.detail-page .crumb {
+  margin: 0;
+  padding: var(--s6) 0 var(--s4);
+  color: var(--faint);
+  font-size: var(--t-small);
+}
+
+.detail-page .crumb a { color: var(--muted); text-decoration: none; }
+.detail-page .crumb a:hover { color: var(--ink); }
+
+.detail-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--s5) var(--s7);
+  padding-bottom: var(--s6);
+}
+@media (min-width: 64rem) { .detail-head { grid-template-columns: minmax(0, 1fr) minmax(0, 26rem); } }
+
+.detail-head h1 {
+  max-width: 18ch;
+  margin: 0;
+  font-size: var(--t-h2);
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.byline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 1rem;
+  margin: var(--s4) 0 0;
+  color: var(--muted);
+}
+
+.byline a { color: var(--gold-soft); font-weight: 600; text-underline-offset: 0.2em; }
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin: var(--s5) 0 0;
+  border: 1px solid var(--line);
+  border-radius: var(--r-in);
+  overflow: hidden;
+  background: var(--line);
+  font-variant-numeric: tabular-nums;
+}
+
+.facts > div { min-width: 0; padding: 1rem 1.1rem; background: var(--panel); }
+.facts dt { color: var(--faint); font: 700 var(--t-label)/1.4 var(--mono); letter-spacing: 0.05em; text-transform: uppercase; }
+.facts dd { margin: 0.35rem 0 0; font-size: var(--t-h3); font-weight: 700; letter-spacing: -0.02em; }
+.facts dd small { display: block; margin-top: 0.1rem; color: var(--muted); font-size: var(--t-small); font-weight: 400; letter-spacing: 0; }
+.detail-block h2 { margin: 0 0 var(--s4); }
+
+.detail-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--s5);
+}
+
+.detail-block { min-width: 0; margin-top: var(--s5); padding: var(--s5); }
+
+.caps { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0; padding: 0; list-style: none; }
+
+.caps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-height: 1.9rem;
+  padding: 0 0.65rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-ctl);
+  font-size: var(--t-small);
+  font-weight: 600;
+}
+
+.caps li svg { color: var(--green-text); }
+.caps li.no { border-color: var(--line); color: var(--faint); font-weight: 400; }
+.desc { max-width: 40rem; margin: 0; color: var(--muted); font-size: var(--t-small); overflow-wrap: anywhere; }
+
+.kv { margin: 0; border: 1px solid var(--line); background: var(--panel); font-variant-numeric: tabular-nums; border-radius: var(--r-card); overflow: hidden; }
+.kv > div { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: var(--s4); padding: 0.65rem 1.1rem; border-top: 1px solid var(--line); font-size: var(--t-small); }
+.kv > div:first-child { border-top: 0; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+.kv a { color: var(--gold-soft); text-underline-offset: 0.2em; }
+.kv-note { display: block; color: var(--muted); }
+
+.provenance { margin-top: var(--s5); border: 1px solid var(--line); background: var(--panel); border-radius: var(--r-card); overflow: hidden; }
+
+.provenance > summary {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.9rem 1.1rem;
+  font-weight: 700;
+  list-style: none;
+  cursor: pointer;
+}
+
+.provenance > summary::after { color: var(--muted); font-weight: 400; content: "+"; }
+.provenance > summary::-webkit-details-marker { display: none; }
+.provenance[open] > summary::after { content: "−"; }
+.provenance-body { display: grid; gap: var(--s5); padding: 0 1.1rem 1.1rem; font-size: var(--t-small); }
+.provenance-body h3 { margin: 0 0 var(--s2); font-size: var(--t-body); letter-spacing: -0.01em; }
+.provenance-body p { margin: 0.4rem 0; color: var(--muted); }
+.provenance-body ul { margin: 0; padding-left: 1.2rem; line-height: 1.8; }
+.provenance-body code,
+.provenance-body pre { display: block; max-width: 100%; margin: 0.3rem 0; padding: 0.6rem 0.8rem; overflow-x: auto; border-radius: var(--r-ctl); background: var(--recess); font: var(--t-label)/1.5 var(--mono); }
+.provenance-body .hero-actions { margin: var(--s3) 0; }
+.provenance-body details > summary { cursor: pointer; font-weight: 700; }
+.package-fact { display: block; color: var(--faint); overflow-wrap: anywhere; }
+
+@media (max-width: 1040px) {
+  .detail-columns { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 720px) {
+  .detail-head { grid-template-columns: minmax(0, 1fr); }
+  .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kv > div { grid-template-columns: minmax(0, 1fr); gap: 0.1rem; }
+}
+

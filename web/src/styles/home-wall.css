@@ -1,0 +1,135 @@
+/* Product screenshot: a plain window with its fixture address, lifted once. */
+.product-shot-frame {
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-ctl);
+  background: var(--recess);
+  box-shadow: var(--shadow);
+}
+
+.product-shot-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.8rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  color: var(--faint);
+  font: var(--t-label) var(--mono);
+}
+
+.product-shot-bar i {
+  width: 0.6rem;
+  height: 0.6rem;
+  flex: none;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-pill);
+}
+
+.product-shot-bar span {
+  min-width: 0;
+  margin-left: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root[data-theme="dark"] .shot-light,
+:root[data-theme="light"] .shot-dark { display: none; }
+
+.product-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+
+.type-icon { flex: none; color: var(--gold); }
+
+/* A card is a rounded slab; the gold is for creators and sources. */
+.card { border: 1px solid var(--line); border-radius: var(--r-card); background: var(--panel); box-shadow: var(--shadow); }
+.src { color: var(--gold-soft); }
+
+/* The picker and its answer. */
+.picker { display: grid; gap: var(--s3); margin-top: var(--s4); padding: var(--s4); max-width: 36rem; }
+.picker-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s3) var(--s4); }
+.picker-q { margin: 0; font-weight: 700; font-size: var(--t-body); letter-spacing: -0.01em; }
+.seg { display: inline-flex; gap: 2px; padding: 3px; border: 1px solid var(--line-strong); border-radius: var(--r-ctl); background: var(--recess); }
+.seg button { min-width: 2.75rem; height: 2.5rem; padding: 0 0.7rem; border: 0; border-radius: calc(var(--r-ctl) - 3px); color: var(--muted); background: transparent; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer; }
+.seg button:hover { color: var(--ink); }
+.seg button[aria-pressed="true"] { color: var(--bg); background: var(--ink); }
+.answer { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: var(--s1) var(--s4); padding-top: var(--s4); border-top: 1px solid var(--line); }
+.answer > * { min-width: 0; }
+.answer .big { color: var(--model-ink); font: 700 var(--t-answer)/1 var(--sans); letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
+.answer p { margin: 0; font-size: var(--t-body); line-height: 1.45; font-weight: 600; }
+.answer .answer-breakdown { grid-column: 1 / -1; color: var(--muted); font-size: var(--t-small); font-weight: 400; }
+.answer-placeholder { grid-column: 1 / -1; min-height: 7.5rem; }
+.command-block.compact pre { padding: 0.6rem 1rem 0.6rem 0.9rem; }
+.wall-lead { margin: 0; font-weight: 700; letter-spacing: -0.01em; }
+.type-chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.type-chips button { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.25rem 0.7rem; border: 1px solid var(--line-strong); border-radius: var(--r-pill); color: var(--muted); background: transparent; font-size: var(--t-small); font-weight: 500; cursor: pointer; }
+.type-chips button small { color: var(--faint); font-size: inherit; font-variant-numeric: tabular-nums; }
+.type-chips button svg { width: 14px; height: 14px; }
+.type-chips button[aria-pressed="true"] { color: var(--bg); background: var(--ink); border-color: var(--ink); }
+.type-chips button[aria-pressed="true"] small { color: var(--bg); opacity: 0.7; }
+.type-chips button[aria-disabled="true"] { opacity: 0.45; cursor: default; }
+.fit-results ul { margin: 0; padding: 0; list-style: none; }
+.fit-results-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s4); padding-bottom: var(--s2); }
+.fit-results-head .wall-shelf-title { margin: 0; }
+.fit-results li { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s4); padding: var(--s3) 0; border-top: 1px solid var(--line); }
+.fit-results li > div { display: grid; min-width: 0; gap: 0.15rem; }
+.fit-results li a { font-weight: 650; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.fit-meta, .fit-date { color: var(--muted); font-size: var(--t-small); }
+.fit-date { flex: none; }
+.pips { display: inline-flex; gap: 2px; margin-right: 0.3rem; vertical-align: -1px; }
+.pips i { box-sizing: border-box; width: 9px; height: 9px; border-radius: 2.5px; box-shadow: inset 0 0 0 1px var(--line-control); }
+.pips i[data-on] { background: var(--lit); box-shadow: none; }
+
+/* The catalog wall: one mark per recipe, shelves by Spark count (a joined mark per Spark). */
+.has-wall { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 64rem) {
+  .has-wall { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); align-items: start; }
+  .has-wall .home-hero-copy { grid-column: 1; grid-row: 1; }
+  .has-wall .wall-slot { grid-column: 2; grid-row: 1; }
+}
+
+/* Reserved height, measured on the real release, so the wall arriving moves almost nothing. */
+.wall-slot { min-height: 80rem; }
+@media (max-width: 40rem) { .wall-slot { min-height: 95rem; } }
+.wall { display: grid; gap: var(--s3); padding: var(--s4); border: 1px solid var(--line); border-radius: var(--r-card); background: var(--panel); box-shadow: var(--shadow); }
+@media (max-width: 40rem) { .wall { --cell: 11px; --cell-gap: 2px; padding: var(--s3); } }
+.wall-shelves { display: grid; gap: var(--s4); }
+.wall-shelf-title { margin: 0 0 var(--s2); color: var(--faint); font: 700 var(--t-label)/1.4 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+.wall-shelf-title span { margin-left: 0.5em; color: var(--muted); }
+.wall-cells { display: flex; flex-wrap: wrap; gap: var(--cell-gap); }
+.wall-cell { display: flex; gap: 1px; border-radius: 4px; }
+.wall-cell i { box-sizing: border-box; width: var(--cell); height: var(--cell); border-radius: 4px; }
+.wall-cell i:not(:first-child) { border-top-left-radius: 1px; border-bottom-left-radius: 1px; }
+.wall-cell i:not(:last-child) { border-top-right-radius: 1px; border-bottom-right-radius: 1px; }
+.wall-cell:focus-visible, .wall-cell[data-shown] { outline: 2px solid var(--gold-soft); outline-offset: 2px; }
+.wall-cell[data-state="verified"] i, .wall-key[data-state="verified"] { background: var(--tile); box-shadow: var(--lit-glow); }
+/* Three shapes, so no state rests on colour: filled, outlined with a dot, dashed and hollow. */
+.wall-cell[data-state="before"] i, .wall-key[data-state="before"] { display: grid; place-items: center; border: 1.5px solid var(--warn); }
+.wall-cell[data-state="before"] i::after, .wall-key[data-state="before"]::after { content: ""; width: 3px; height: 3px; border-radius: 50%; background: var(--warn); }
+.wall-key[data-state="before"] { display: grid; place-items: center; }
+.wall-cell[data-state="none"] i, .wall-key[data-state="none"] { border: 1.5px dashed var(--hollow); }
+.wall-cell:hover i, .wall-cell:focus-visible i, .wall-cell[data-shown] i { border-color: var(--gold-soft); }
+.wall-cell[data-state="verified"]:hover i, .wall-cell[data-state="verified"]:focus-visible i, .wall-cell[data-state="verified"][data-shown] i { background: var(--gold-soft); }
+/* A dimmed mark keeps its shape and loses its colour. */
+.wall-cell[data-dim] i { box-shadow: none; }
+.wall-cell[data-dim][data-state="verified"] i { background: var(--cool); }
+.wall-cell[data-dim][data-state="before"] i, .wall-cell[data-dim][data-state="none"] i { border-color: var(--cool); }
+.wall-cell[data-dim][data-state="before"] i::after { background: var(--cool); }
+.wall-card { display: flex; flex-wrap: wrap; align-content: start; align-items: baseline; gap: 0.15rem var(--s4); min-height: 5.25rem; padding: var(--s2) var(--s4); border: 1px solid var(--line); border-radius: var(--r-in); background: var(--recess); font-size: var(--t-small); color: var(--muted); }
+.wall-card strong { flex: 1 0 70%; min-width: 0; color: var(--ink); font-size: var(--t-body); }
+@media (max-width: 40rem) { .wall-card { min-height: 9.5rem; } } /* room for a title on two lines, so the legend stays put */
+@media (min-width: 1101px) { .wall-card strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } }
+.wall-card > :not(strong) { order: 2; }
+.wall-card > .text-link { order: 1; flex: none; margin-inline-start: auto; }
+.wall-card-status { color: var(--ink); font-weight: 650; }
+.wall-card-hint { margin: 0; }
+.wall-legend { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); margin: 0; padding: 0; list-style: none; color: var(--muted); font-size: var(--t-small); }
+.wall-legend li { display: inline-flex; align-items: center; gap: var(--s2); }
+.wall-legend b { color: var(--ink); font-variant-numeric: tabular-nums; }
+.wall-key { box-sizing: border-box; width: 14px; height: 14px; border-radius: 4px; }
+

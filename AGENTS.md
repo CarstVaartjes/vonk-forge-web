@@ -17,6 +17,8 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
 
 ## Working agreement
 
+- Styles live in `web/src/styles/` (module map in `DESIGN.md`, "Where styles live"). `index.css` imports the modules in cascade order; add a rule after the rules it overrides, in the module that holds them; never reorder the imports, and keep tokens in `tokens.css`.
+
 - Start from current `origin/main` in an isolated branch or worktree. Preserve
   other agents' changes.
 - Maintain one current catalog source and one current execution path. The
