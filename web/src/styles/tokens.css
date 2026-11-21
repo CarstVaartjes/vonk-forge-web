@@ -1,6 +1,6 @@
-/* One token set, same names and values as the Controller dashboard. DESIGN.md lists the same values. Every colour is a light-dark() pair: the theme switch only sets color-scheme (theme-init.js sets it before paint; without it the browser follows the OS). */
+/* One token set, same names and values as the Controller dashboard. DESIGN.md lists the same values. Every colour is a light-dark() pair; the page is dark unless data-theme=light sets color-scheme: light (theme-init.js sets data-theme before paint). */
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
   /* surfaces */
   --bg: light-dark(#f3f1ea, #090a09);
   --recess: light-dark(#ebe8df, #060706);
@@ -40,7 +40,7 @@
   --track: light-dark(#e6e2d8, #2a2e27);
   /* the catalog wall (one cell per Spark) */
   --lit: light-dark(#1f201b, #f2efe8);
-  --tile: light-dark(#1f201b, rgb(245 240 228 / 78%)); /* the wall's lit cell: warm matte ivory, never pure white */
+  --tile: light-dark(var(--lit), rgb(245 240 228 / 78%)); /* the wall's lit cell: warm matte ivory, never pure white */
   --hollow: light-dark(rgb(23 24 19 / 55%), rgb(245 240 228 / 45%));
   --lit-glow: 0 0 7px rgb(242 239 232 / 28%);
   --cool: light-dark(rgb(23 24 19 / 12%), rgb(242 239 232 / 13%));
@@ -59,9 +59,6 @@
   --role-video: light-dark(#6d4cc0, #c0a6ff);
 }
 
-:root[data-theme="dark"] {
-  color-scheme: dark;
-}
 /* light-dark() takes colours only: the shapes that differ between the themes (shadow geometry, no glow on paper) are set here. */
 :root[data-theme="light"] {
   color-scheme: light;

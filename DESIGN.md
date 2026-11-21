@@ -214,7 +214,7 @@ The stylesheet uses these sizes and only these (`--t-display`, `--t-h2`, `--t-h3
 
 The stylesheet is `web/src/styles/`: `index.css` is the one entry (imported by `main.tsx`) and lists every module with `@import`, in the order that is the cascade. The modules were cut from the old single file in source order and no rule was moved, so a component's rules can continue in a later module. Reordering the list, or moving a rule across modules, changes which rule wins.
 
-- `tokens.css`: both themes' tokens as `light-dark()` pairs under `color-scheme: light dark` (`[data-theme]` only sets `color-scheme`, plus the shadow and glow shapes that are not colours); `styles.test.ts` reads this module for the contrast checks.
+- `tokens.css`: both themes' tokens as `light-dark()` pairs under `color-scheme: dark` (dark is the default; `[data-theme=light]` sets `color-scheme: light`, plus the shadow and glow shapes that are not colours); `styles.test.ts` reads this module for the contrast checks.
 - `base.css`: reset, typography, plain links, focus ring, skip link, textarea.
 - `layout.css`: site shell, header, brand, navigation, release pill, theme switch and menu button, narrow-width header.
 - `components.css`: buttons, section headings, control-path and compact-path grids, catalog tabs, site footer.
