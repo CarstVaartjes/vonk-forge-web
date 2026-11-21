@@ -64,12 +64,17 @@ const TEXT: [string, string][] = [
 const MARKS: [string, string][] = [["--lit", "--panel"], ["--tile", "--panel"], ["--hollow", "--panel"], ["--cool", "--panel"], ["--line-control", "--panel"], ["--line-control", "--bg"], ["--focus", "--bg"], ["--focus", "--panel"], ["--focus", "--recess"]];
 
 test.each(["dark", "light"])("token pairs meet contrast in the %s theme (text 4.5:1, marks 3:1)", (theme) => {
-  const tokens = new Map([...block(":root,\n:root[data-theme=\"dark\"]"), ...(theme === "light" ? block(":root[data-theme=\"light\"]") : [])]);
+  const tokens = block(":root");
+  // A light-dark(light, dark) pair resolves to the side of the theme under test (the values hold no commas of their own).
+  const side = (value: string) => {
+    const pair = /^light-dark\((.+), ([^,]+)\)$/.exec(value);
+    return pair ? pair[theme === "light" ? 1 : 2]!.trim() : value;
+  };
   const resolve = (name: string): string => {
-    const value = tokens.get(name)!;
+    const value = tokens.get(name);
     if (!value) throw new Error(`missing ${name} of ${[...tokens.keys()].length}`);
-    const alias = /^var\((--[a-z0-9-]+)\)$/.exec(value);
-    return alias ? resolve(alias[1]!) : value;
+    const alias = /^var\((--[a-z0-9-]+)\)$/.exec(side(value));
+    return alias ? resolve(alias[1]!) : side(value);
   };
   const colour = (name: string, under = [0, 0, 0]) => channels(resolve(name), under);
   const over = (a: string, b: string) => contrast(colour(a, colour(b)), colour(b));
