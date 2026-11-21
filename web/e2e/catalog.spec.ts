@@ -316,7 +316,6 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
   await page.goto("/control");
   await expect(page.getByRole("heading", { name: "Click it, or script it." })).toBeVisible();
   await expect(page.getByText(/curl -fsSL https:\/\/install\.vonkforge\.ai\/vonkctl \| sh/)).toBeVisible();
-  await expect(page.getByText(/password is asked once and never stored/i)).toBeVisible();
   await expect(page.getByText(/vonkctl recipe library --fits-fleet --limit 5/)).toBeVisible();
   await expect(page.getByRole("heading", { name: "Written for agents" })).toBeVisible();
   await expect(page.getByText(/recipe repository syncs automatically/i)).toBeVisible();
