@@ -47,7 +47,7 @@ test("option ranges read as the contract gives them", () => {
       label: "Seed",
       default: 0,
       minimum: 0,
-      maximum: 9223372036854775807,
+      maximum: 2 ** 63,
     }),
   ).toBe("0 to any");
 });

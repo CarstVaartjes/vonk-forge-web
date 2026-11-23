@@ -25,6 +25,7 @@ export function SparkSegments({
       <p className="picker-q" id="picker-question">
         How many Sparks do you have?
       </p>
+      {/* biome-ignore lint/a11y/useSemanticElements: role=group names a styled wrapper; fieldset would need a user-agent style reset */}
       <div className="seg" role="group" aria-labelledby="picker-question">
         {SPARK_OPTIONS.map((option) => (
           <button
@@ -73,6 +74,7 @@ export function TypeChips({
     })),
   ];
   return (
+    // biome-ignore lint/a11y/useSemanticElements: role=group names a styled wrapper; fieldset would need a user-agent style reset
     <div className="type-chips" role="group" aria-label="Model type">
       {chips.map((chip) => (
         <button
@@ -174,6 +176,7 @@ function Pips({ uses, of }: { uses: number; of: number }) {
       aria-label={`Uses ${uses} of ${of} ${of === 1 ? "Spark" : "Sparks"}`}
     >
       {Array.from({ length: of }, (_, index) => (
+        // biome-ignore lint/suspicious/noArrayIndexKey: one dot per Spark in a fixed row, identified by its position
         <i key={index} data-on={index < uses ? "" : undefined} />
       ))}
     </span>

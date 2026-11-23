@@ -436,7 +436,7 @@ test("explains each status shown with the release's meaning, links every badge t
     "No hardware verdict yet; the reason is shown under the badge.",
   );
   expect(unknown).not.toHaveAttribute("title");
-  [known, unknown].forEach((link) =>
-    expect(link).toHaveAttribute("href", "#how-recipes-are-verified"),
-  );
+  for (const link of [known, unknown]) {
+    expect(link).toHaveAttribute("href", "#how-recipes-are-verified");
+  }
 });

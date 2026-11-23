@@ -108,6 +108,7 @@ type CatalogState =
 function useCatalogSummary(): [CatalogState, () => void] {
   const [state, setState] = useState<CatalogState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt re-runs the load on Retry
   useEffect(() => {
     const controller = new AbortController();
     getCatalogSummary(controller.signal)
@@ -271,10 +272,11 @@ function RunTheMix() {
           body="Example fleet · scripted screenshot, no live data"
         />
         <figure className="agent-session">
-          <div className="agent-session-frame" aria-label="Example vonkctl session">
+          <div className="agent-session-frame">
             <span className="agent-session-label">
               vonkctl · the same Controller, from a terminal or an agent
             </span>
+            {/* biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable code block must be keyboard focusable so it can be scrolled */}
             <pre tabIndex={0}>
               <code>
                 {agentSession.map((line) => (
@@ -335,6 +337,7 @@ function Creators({ summary }: { summary: CatalogSummary }) {
             <a className="src" href={`/recipes?creator=${encodeURIComponent(creator.name)}`}>
               {creator.name}
             </a>
+            {/* biome-ignore lint/a11y/useSemanticElements: a styled span; a native meter element cannot take this bar's styling */}
             <span
               className="meter"
               role="meter"
@@ -414,7 +417,7 @@ export function HomePage() {
             surface, and it never receives authority over your Sparks.
           </p>
         </div>
-        <div className="security-map" aria-label="Security boundary flow">
+        <div className="security-map">
           <article className="source-zone">
             <span>Public source</span>
             <h3>Catalog + verified releases</h3>

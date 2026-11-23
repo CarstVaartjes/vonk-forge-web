@@ -1,4 +1,4 @@
-import { act, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { RollingNumber } from "./rolling-number";

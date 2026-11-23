@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePageMeta } from "../page-meta";
 
 import {
@@ -93,6 +93,10 @@ function SortHeader({
 
 type ActiveFilter = { key: string; label: string; remove: () => void };
 
+const downloadOf = (recipe: RecipeSummary) => recipe.catalog.expected_download_bytes;
+const diskOf = (recipe: RecipeSummary) => recipe.capacity?.maximum_installed_bytes_per_node;
+const memoryOf = (recipe: RecipeSummary) => recipe.capacity?.maximum_runtime_memory_bytes_per_node;
+
 export function RecipesPage() {
   usePageMeta(
     "Recipes",
@@ -127,6 +131,7 @@ export function RecipesPage() {
   const filters = useMemo(() => filtersFromParameters(parameters), [parameters]);
   const offset = Math.max(0, Number.parseInt(parameters.get("cursor") ?? "0", 10) || 0);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: retry re-runs the load on Retry
   useEffect(() => {
     const controller = new AbortController();
     setError(null);
@@ -212,10 +217,12 @@ export function RecipesPage() {
     replace(next);
   }
 
-  function count(facet: FilterFacet, predicate: (recipe: RecipeSummary) => boolean): number {
-    return available.filter((recipe) => recipeMatches(recipe, filters, facet) && predicate(recipe))
-      .length;
-  }
+  const count = useCallback(
+    (facet: FilterFacet, predicate: (recipe: RecipeSummary) => boolean): number =>
+      available.filter((recipe) => recipeMatches(recipe, filters, facet) && predicate(recipe))
+        .length,
+    [available, filters],
+  );
 
   function capabilityCount(capability: string): number {
     const otherCapabilities = filters.capabilities.filter((value) => value !== capability);
@@ -298,10 +305,6 @@ export function RecipesPage() {
     () => Array.from(new Set(available.flatMap((recipe) => recipe.catalog.quantizations))).sort(),
     [available],
   );
-  const downloadOf = (recipe: RecipeSummary) => recipe.catalog.expected_download_bytes;
-  const diskOf = (recipe: RecipeSummary) => recipe.capacity?.maximum_installed_bytes_per_node;
-  const memoryOf = (recipe: RecipeSummary) =>
-    recipe.capacity?.maximum_runtime_memory_bytes_per_node;
   const downloads = useMemo(() => capacityBuckets(available.map(downloadOf)), [available]);
   const disks = useMemo(() => capacityBuckets(available.map(diskOf)), [available]);
   const memories = useMemo(() => capacityBuckets(available.map(memoryOf)), [available]);
@@ -315,7 +318,7 @@ export function RecipesPage() {
           count("type", (recipe) => recipe.catalog.types.includes(type.id)),
         ]),
       ),
-    [vocabulary, available, filters],
+    [vocabulary, count],
   );
   const capabilityName = (name: string) =>
     vocabulary ? capabilityLabel(vocabulary, name) : humanize(name);
@@ -329,7 +332,7 @@ export function RecipesPage() {
           ),
         ]),
       ) as Record<typeof filters.sparks, number>,
-    [available, filters],
+    [count],
   );
 
   const applied: ActiveFilter[] = [];
@@ -399,12 +402,12 @@ export function RecipesPage() {
   const bucketOptions = (
     facet: FilterFacet,
     buckets: string[],
-    valueOf: (recipe: RecipeSummary) => number | undefined,
+    measure: (recipe: RecipeSummary) => number | undefined,
   ) =>
     buckets
       .map((bucket) => ({
         bucket,
-        count: count(facet, (recipe) => capacityBucketMatches(valueOf(recipe), bucket)),
+        count: count(facet, (recipe) => capacityBucketMatches(measure(recipe), bucket)),
       }))
       .filter(
         (option) =>
@@ -579,6 +582,7 @@ export function RecipesPage() {
                     ),
                   }))}
                 />
+                {/* biome-ignore lint/a11y/useSemanticElements: role=group names a styled wrapper; fieldset would need a user-agent style reset */}
                 <div className="setup-facet" role="group" aria-label="Capabilities">
                   <span className="setup-facet-label">Capabilities</span>
                   <div className="setup-chips">
@@ -772,7 +776,8 @@ export function RecipesPage() {
             </p>
           </div>
           {applied.length ? (
-            <div className="catalog-applied" aria-label="Applied filters">
+            // biome-ignore lint/a11y/useSemanticElements: role=group names a styled wrapper; fieldset would need a user-agent style reset
+            <div className="catalog-applied" role="group" aria-label="Applied filters">
               {applied.map((item) => (
                 <button type="button" key={item.key} onClick={item.remove}>
                   {item.label}

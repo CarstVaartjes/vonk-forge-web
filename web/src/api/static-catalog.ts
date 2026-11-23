@@ -375,7 +375,7 @@ function runsOf(own: RecipeSummary[]): ModelRuns {
 }
 
 function mapModels(index: LibraryIndex): ModelSummary[] {
-  const recipes = recipesFromIndex(index);
+  recipesFromIndex(index);
   const byAddress = derived(index).recipesByAddress!;
   // A recipe runs its first model; a drafter or companion does not make it run that Model.
   const slugsByEntity = new Map<CatalogModelEntry, string[]>();

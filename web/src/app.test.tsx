@@ -142,9 +142,9 @@ test("top menu is Recipes, Models, Controller, How it works beside Install; Publ
   );
 
   const footer = within(screen.getByRole("navigation", { name: "Footer navigation" }));
-  ["Recipes", "Models", "Controller", "How it works"].forEach((label) =>
-    expect(footer.getByRole("link", { name: label })).toBeInTheDocument(),
-  );
+  for (const label of ["Recipes", "Models", "Controller", "How it works"]) {
+    expect(footer.getByRole("link", { name: label })).toBeInTheDocument();
+  }
   expect(footer.getByRole("link", { name: "Publish" })).toHaveAttribute("href", "/publish");
   expect(footer.getByRole("link", { name: "Example setup" })).toHaveAttribute(
     "href",

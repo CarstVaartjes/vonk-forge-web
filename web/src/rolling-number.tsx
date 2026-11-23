@@ -41,6 +41,7 @@ export function RollingNumber({ value }: { value: number }) {
   const digits = text.split("").map((character, position) => {
     if (!/\d/.test(character))
       return (
+        // biome-ignore lint/suspicious/noArrayIndexKey: a digit column is identified by its position in the number
         <span className="rolling-separator" key={position}>
           {character}
         </span>
@@ -51,6 +52,7 @@ export function RollingNumber({ value }: { value: number }) {
       "--column": column++,
     } as React.CSSProperties;
     return (
+      // biome-ignore lint/suspicious/noArrayIndexKey: a digit column is identified by its position in the number
       <span className="rolling-column" key={position}>
         <span className="rolling-strip" style={style}>
           {DIGITS.map((digit) => (

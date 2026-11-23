@@ -40,6 +40,7 @@ export function CommandBlock({
           {copied ? "Copied" : ""}
         </span>
       </div>
+      {/* biome-ignore lint/a11y/noNoninteractiveTabindex: a scrollable code block must be keyboard focusable so it can be scrolled */}
       <pre tabIndex={0}>
         <code className={prompt ? "prompted" : undefined}>{children}</code>
       </pre>

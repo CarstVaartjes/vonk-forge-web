@@ -169,6 +169,7 @@ export function CatalogWall({
         {number.format(counts.before)} passed before and are not verified now,{" "}
         {number.format(counts.none)} with no hardware pass yet.
       </p>
+      {/* biome-ignore lint/a11y/useSemanticElements: role=group names a styled wrapper; fieldset would need a user-agent style reset */}
       <div
         className="wall-shelves"
         role="group"
@@ -209,6 +210,7 @@ export function CatalogWall({
                     onMouseEnter={() => setShown(mine)}
                   >
                     {Array.from({ length: row.sparks }, (_, spark) => (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: one mark per Spark in a fixed row, identified by its position
                       <i key={spark} />
                     ))}
                   </a>

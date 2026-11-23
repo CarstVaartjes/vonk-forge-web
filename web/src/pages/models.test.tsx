@@ -232,7 +232,7 @@ describe("public model browse", () => {
     getModel.mockResolvedValueOnce(detail);
     render(<ModelDetailPage publisher="publisher" slug="model-1" />);
     await waitFor(() => expect(screen.getByRole("heading", { name: "Model 1" })).toBeVisible());
-    const sourceCode = screen.getByLabelText(`Source revision ${sourceRevision}`);
+    const sourceCode = screen.getByTitle(sourceRevision);
     expect(sourceCode).toHaveTextContent("aaaaaaaa…");
     expect(sourceCode).toHaveAttribute("title", sourceRevision);
   });

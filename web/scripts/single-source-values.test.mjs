@@ -34,6 +34,7 @@ describe("single source values", () => {
     ["scripts/install.mjs", 'const nodeVersion = "24.1.0"'],
     ["tools/.nvmrc", "24.1.0"],
     ["package.json", '{"engines":{"node":"24.1.0"}}'],
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: fixture source text, not a template
     ["workflow.yml", "node-version: ${{ matrix.node }}"],
     [".tool-versions", "nodejs 24.1.0"],
     ["guide.md", "```sh\nfnm install 24.1.0\n```"],
@@ -155,6 +156,7 @@ describe("single source values", () => {
       ["const a = `Working`;", "Working"],
       ['const options = [{ value: "chat", label: "Chat" }];', "chat"],
       ["const a = 'Working';", "Working"],
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: fixture source text, not a template
       ["const a = `Working ${b}`.length; const c = `${b}Working`;", "Working"],
       ["const a = <span>Working</span>;", "Working"],
       ['const a = <span title="Working" />;', "Working"],
@@ -209,6 +211,7 @@ describe("single source values", () => {
       "if (2 === index.schema_version) throw new Error();",
       'if (index["schema_version"] != 2) throw new Error();',
       "if (semver(tag)[0] !== 3) fail();",
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: fixture source text, not a template
       "if (semver(`v${index.contract_version}`)?.[0] !== 3) fail();",
       "if (contractMajor(body.contract_version) !== 3) fail();",
       "interface A { package_contract: { media_type: string; schema_version: 2 } }",

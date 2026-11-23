@@ -47,6 +47,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
       .catch(() => undefined);
     return () => controller.abort();
   }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt re-runs the load on Retry
   useEffect(() => {
     const controller = new AbortController();
     setError(false);
@@ -471,6 +472,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
                 <p>Weights</p>
                 {recipe.artifacts?.map((artifact, index) => (
                   <code
+                    // biome-ignore lint/suspicious/noArrayIndexKey: the index tells apart artifacts that repeat the same revision and size
                     key={`${artifact.repository}/${artifact.revision}/${artifact.download_bytes}/${index}`}
                   >
                     {artifact.repository}@{artifact.revision} · {artifact.download_bytes} bytes

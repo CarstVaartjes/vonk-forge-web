@@ -375,7 +375,7 @@ curl --fail --show-error --silent \\
   --output /dev/null`}</CommandBlock>
           </article>
         </div>
-        <div className="diagnostic-strip" aria-label="Tailscale failure diagnostics">
+        <div className="diagnostic-strip">
           <div>
             <strong>Service shows 0 hosts</strong>
             <span>Check the exact unsuffixed name, gateway state, and configurator health.</span>

@@ -3,7 +3,7 @@ import { gzipSync } from "node:zlib";
 
 import { expect, test } from "@playwright/test";
 
-import { catalogIndex, catalogSummary, routeRelease } from "./release-fixture.ts";
+import { catalogSummary, routeRelease } from "./release-fixture.ts";
 import { recipeDigest, sourceCommit } from "../src/api/e2e-catalog.fixture.ts";
 
 const recipeImportUri = `vonk://catalog/vonk-forge/qwen-fast@sha256:${recipeDigest}`;

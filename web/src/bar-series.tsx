@@ -25,6 +25,7 @@ export function BarSeries({
   const total = points.reduce((sum, point) => sum + point.count, 0);
   const newest = points.length - 1;
   return (
+    // biome-ignore lint/a11y/useSemanticElements: the group role names the chart for readers and the tests
     <figure
       className="bar-series"
       role="group"

@@ -10,7 +10,7 @@ test("every pull request CI job skips Dependabot pull requests", () => {
   const workflow = readFileSync(new URL("../../.github/workflows/ci.yml", import.meta.url), "utf8");
   const jobs = workflow
     .split(/^jobs:\n/m)[1]
-    .split(/^(?=  [\w-]+:\n)/m)
+    .split(/^(?= {2}[\w-]+:\n)/m)
     .filter((job) => job.trim());
   expect(jobs.length).toBeGreaterThan(0);
   for (const job of jobs) expect(job.split("\n")).toContain(SKIP);

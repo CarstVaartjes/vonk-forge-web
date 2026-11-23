@@ -118,6 +118,7 @@ export function FacetStrip({
   if (ranked.length === 0) return null;
   const number = new Intl.NumberFormat("en");
   return (
+    // biome-ignore lint/a11y/useSemanticElements: role=group names a styled wrapper; fieldset would need a user-agent style reset
     <div className="setup-facet" role="group" aria-label={label}>
       <span className="setup-facet-label">{label}</span>
       <div className="setup-chips">
@@ -174,6 +175,7 @@ export function TypeTabs({
     ...types.map((type) => ({ id: type.id, label: type.label, count: counts[type.id] ?? 0 })),
   ];
   return (
+    // biome-ignore lint/a11y/useSemanticElements: role=group names a styled wrapper; fieldset would need a user-agent style reset
     <div className="type-tabs" role="group" aria-label="Model type">
       {options.map((option) => (
         <button

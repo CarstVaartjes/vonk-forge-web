@@ -109,7 +109,7 @@ export function ArchitecturePage() {
               Runs the selected workload through the native NVIDIA container stack. Prepared assets
               are distributed as needed; a sharded model does not mean a full copy on every Spark.
             </p>
-            <div className="spark-row" aria-label="Example scalable Spark fleet">
+            <div className="spark-row">
               <span>Spark 01</span>
               <i aria-hidden="true" />
               <span>Spark 02</span>
@@ -283,7 +283,7 @@ export function ArchitecturePage() {
           </aside>
         </div>
 
-        <div className="contract-ownership" aria-label="Contract ownership">
+        <div className="contract-ownership">
           <article>
             <span>Control owns</span>
             <p>Identity · placement · policy · lifecycle · health evidence · route publication</p>

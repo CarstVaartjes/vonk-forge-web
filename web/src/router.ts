@@ -62,7 +62,7 @@ function linkTarget(event: MouseEvent): URL | null {
   )
     return null;
   const anchor = (event.target as Element | null)?.closest?.("a");
-  if (!anchor || !anchor.hasAttribute("href") || anchor.hasAttribute("download")) return null;
+  if (!anchor?.hasAttribute("href") || anchor.hasAttribute("download")) return null;
   if (anchor.target && anchor.target !== "_self") return null;
   const url = new URL(anchor.href, window.location.href);
   if (url.origin !== window.location.origin || !matchRoute(url.pathname)) return null;

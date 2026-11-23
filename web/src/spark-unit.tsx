@@ -35,6 +35,7 @@ export function SparkUnit({
       {sparks > 1 ? <div className="spark-unit-bracket" aria-hidden="true" /> : null}
       <ul className="spark-unit-slabs" data-sparks={sparks}>
         {Array.from({ length: sparks }, (_, index) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: one slab per Spark, identified by its position
           <li key={index}>
             <h3>Spark {index + 1}</h3>
             {scale === 0 ? (

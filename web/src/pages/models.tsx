@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePageMeta } from "../page-meta";
 
 import {
@@ -128,7 +128,7 @@ function PublicCatalogExplainer() {
       onToggle={(event) => setOpen(event.currentTarget.open)}
     >
       <summary>How global availability becomes a local run</summary>
-      <div className="public-contract-content" aria-labelledby="public-contract-heading">
+      <section className="public-contract-content" aria-labelledby="public-contract-heading">
         <header className="public-contract-heading">
           <h2 id="public-contract-heading">Pick a model. Choose how to run it.</h2>
           <p>
@@ -136,7 +136,7 @@ function PublicCatalogExplainer() {
             your Sparks.
           </p>
         </header>
-        <div className="model-recipe-relationship" aria-label="One model can have several recipes">
+        <div className="model-recipe-relationship">
           <article className="explainer-entity explainer-model">
             <h3>Model</h3>
             <p className="explainer-label">Global catalog · one exact release</p>
@@ -198,7 +198,7 @@ function PublicCatalogExplainer() {
               files; running starts when you choose Run.
             </p>
           </header>
-          <div className="availability-map" aria-label="Global catalog to local run">
+          <div className="availability-map">
             <section
               className="availability-column availability-global"
               aria-labelledby="availability-global-heading"
@@ -262,7 +262,7 @@ function PublicCatalogExplainer() {
             </a>
           </p>
         </section>
-      </div>
+      </section>
     </details>
   );
 }
@@ -295,9 +295,7 @@ function VersionRow({
         <div>
           <dt>Identity</dt>
           <dd>
-            <code title={version.revision_id} aria-label={`Model identity ${version.revision_id}`}>
-              {compactRevision(version.revision_id)}
-            </code>
+            <code title={version.revision_id}>{compactRevision(version.revision_id)}</code>
           </dd>
         </div>
         <div>
@@ -336,10 +334,7 @@ function VersionRow({
               "Not declared"
             )}
             {version.source_revision ? (
-              <code
-                title={version.source_revision}
-                aria-label={`Source revision ${version.source_revision}`}
-              >
+              <code title={version.source_revision}>
                 {compactRevision(version.source_revision)}
               </code>
             ) : null}
@@ -477,6 +472,7 @@ export function ModelsPage() {
   const [filters, setFilters] = useState(initialFilters);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt re-runs the load on Retry
   useEffect(() => {
     const controller = new AbortController();
     setError(false);
@@ -509,18 +505,24 @@ export function ModelsPage() {
     );
   }, [filters, models]);
   // Counts for the setup picker: every other filter applied, the picked facet left open.
-  const facetCount = (omit: SetupFacet, predicate: (model: ModelSummary) => boolean) =>
-    (models ?? []).filter(
-      (model) =>
-        predicate(model) && baseMatches(model, filters) && setupMatches(model, filters, omit),
-    ).length;
-  const typeCount = (predicate: (model: ModelSummary) => boolean) =>
-    (models ?? []).filter(
-      (model) =>
-        predicate(model) &&
-        baseMatches(model, filters, "type") &&
-        setupMatches(model, filters, null),
-    ).length;
+  const facetCount = useCallback(
+    (omit: SetupFacet, predicate: (model: ModelSummary) => boolean) =>
+      (models ?? []).filter(
+        (model) =>
+          predicate(model) && baseMatches(model, filters) && setupMatches(model, filters, omit),
+      ).length,
+    [models, filters],
+  );
+  const typeCount = useCallback(
+    (predicate: (model: ModelSummary) => boolean) =>
+      (models ?? []).filter(
+        (model) =>
+          predicate(model) &&
+          baseMatches(model, filters, "type") &&
+          setupMatches(model, filters, null),
+      ).length,
+    [models, filters],
+  );
   const typeCounts = useMemo(
     () =>
       Object.fromEntries(
@@ -529,7 +531,7 @@ export function ModelsPage() {
           typeCount((model) => model.types.includes(type.id)),
         ]),
       ),
-    [models, filters, vocabulary],
+    [vocabulary, typeCount],
   );
   const sparkCounts = useMemo(
     () =>
@@ -539,7 +541,7 @@ export function ModelsPage() {
           facetCount("sparks", (model) => runsOn(model, filters, value as SparkFilter)),
         ]),
       ) as Record<SparkFilter, number>,
-    [models, filters],
+    [filters, facetCount],
   );
   const families = useMemo(
     () =>
@@ -839,7 +841,7 @@ export function ModelsPage() {
                       value={versionsLabel(model)}
                     />
                   </span>
-                  <span className="model-row-capabilities" aria-label="Declared capabilities">
+                  <span className="model-row-capabilities">
                     {model.versions.some((item) => item.requires_token) ? (
                       <span className="model-row-token">Token required</span>
                     ) : null}
@@ -962,6 +964,7 @@ export function ModelDetailPage({ publisher, slug }: { publisher: string; slug: 
       .catch(() => undefined);
     return () => controller.abort();
   }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt re-runs the load on Retry
   useEffect(() => {
     const controller = new AbortController();
     setError(null);

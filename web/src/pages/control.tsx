@@ -20,7 +20,7 @@ export function ControlPage() {
           without creating a second controller. The CLI is written for scripts and AI agents: one
           JSON document per call, a read-only review of every change, and explicit consent.
         </p>
-        <div className="guide-jump two-up" aria-label="Control paths">
+        <div className="guide-jump two-up">
           <a href="#web-controller">
             Web Controller <span>Visual · a few clicks</span>
           </a>
@@ -147,7 +147,7 @@ export function ControlPage() {
           , which manages the isolated Python 3.14 environment the CLI runs in.
         </p>
 
-        <div className="cli-section" aria-labelledby="cli-install-title">
+        <section className="cli-section" aria-labelledby="cli-install-title">
           <h3 id="cli-install-title">
             <span>01</span> Install
           </h3>
@@ -160,9 +160,9 @@ vonkctl --version`}</CommandBlock>
             channel. If <code>vonkctl</code> is not on <code>PATH</code>, run{" "}
             <code>uv tool update-shell</code>, then open a new terminal.
           </p>
-        </div>
+        </section>
 
-        <div className="cli-section" aria-labelledby="cli-connect-title">
+        <section className="cli-section" aria-labelledby="cli-connect-title">
           <h3 id="cli-connect-title">
             <span>02</span> Connect safely
           </h3>
@@ -181,9 +181,9 @@ vonkctl auth status`}</CommandBlock>
               argument; TLS validation stays on.
             </p>
           </div>
-        </div>
+        </section>
 
-        <div className="cli-section" aria-labelledby="cli-read-title">
+        <section className="cli-section" aria-labelledby="cli-read-title">
           <h3 id="cli-read-title">
             <span>03</span> See what fits your Sparks
           </h3>
@@ -202,9 +202,9 @@ vonkctl recipe sync-status`}</CommandBlock>
             explains the verdict and lists the other recipes for the same model. Run{" "}
             <code>vonkctl GROUP --help</code> at any level; help works offline.
           </p>
-        </div>
+        </section>
 
-        <div className="cli-section" aria-labelledby="cli-change-title">
+        <section className="cli-section" aria-labelledby="cli-change-title">
           <h3 id="cli-change-title">
             <span>04</span> Run the mix you need
           </h3>
@@ -223,9 +223,9 @@ vonkctl --profile 2 profile endpoint`}</CommandBlock>
             plan that is current when it accepts the request. Changing a profile always needs an
             explicit <code>--profile N</code>.
           </p>
-        </div>
+        </section>
 
-        <div className="cli-section" aria-labelledby="cli-maintain-title">
+        <section className="cli-section" aria-labelledby="cli-maintain-title">
           <h3 id="cli-maintain-title">
             <span>05</span> Stay current
           </h3>
@@ -240,9 +240,9 @@ uv tool uninstall vonk-cluster-profiles`}</CommandBlock>
             channel and installs only with <code>--apply</code>; it never touches the Controller or
             Sparks.
           </p>
-        </div>
+        </section>
 
-        <div className="agent-contract" aria-labelledby="agent-contract-title">
+        <section className="agent-contract" aria-labelledby="agent-contract-title">
           <h3 id="agent-contract-title">Written for agents</h3>
           <ul>
             <li>
@@ -280,7 +280,7 @@ uv tool uninstall vonk-cluster-profiles`}</CommandBlock>
               </span>
             </li>
           </ul>
-        </div>
+        </section>
 
         <div className="runbook-links">
           <a href={`${repository}/blob/main/docs/runbooks/vonkctl.md`}>
@@ -313,14 +313,14 @@ uv tool uninstall vonk-cluster-profiles`}</CommandBlock>
           An alias comes from <code>vonkctl --profile 2 run RECIPE --as coder</code>;{" "}
           <code>vonkctl profile endpoint</code> lists them.
         </p>
-        <CommandBlock label="Create a key and set the address">{String.raw`vonkctl key create NAME --output CLIENT_KEY_FILE
+        <CommandBlock label="Create a key and set the address">{`vonkctl key create NAME --output CLIENT_KEY_FILE
 export OPENAI_API_KEY="$(cat CLIENT_KEY_FILE)"
 export OPENAI_BASE_URL='https://vonk-forge.example.ts.net/v1'`}</CommandBlock>
         <CommandBlock label="curl">{String.raw`curl "$OPENAI_BASE_URL/chat/completions" \
   -H "Authorization: Bearer $OPENAI_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{"model":"qwen-code","messages":[{"role":"user","content":"Hello"}]}'`}</CommandBlock>
-        <CommandBlock label="Python" prompt={false}>{String.raw`from openai import OpenAI
+        <CommandBlock label="Python" prompt={false}>{`from openai import OpenAI
 
 client = OpenAI()
 response = client.chat.completions.create(
@@ -352,8 +352,8 @@ print(response.choices[0].message.content)`}</CommandBlock>
           command again reconnects to the same job. <code>vonkctl job contract</code> shows the
           inputs, outputs and options a running recipe accepts; each recipe page lists them too.
         </p>
-        <CommandBlock label="Run one job">{String.raw`vonkctl job run ALIAS --input prompt=prompt.txt --option steps=4 --output results`}</CommandBlock>
-        <CommandBlock label="See what a running recipe accepts">{String.raw`vonkctl job contract --run RUN_UUID`}</CommandBlock>
+        <CommandBlock label="Run one job">{`vonkctl job run ALIAS --input prompt=prompt.txt --option steps=4 --output results`}</CommandBlock>
+        <CommandBlock label="See what a running recipe accepts">{`vonkctl job contract --run RUN_UUID`}</CommandBlock>
         <p className="fleet-note">
           Find ALIAS with <code>vonkctl profile endpoint</code> and the run id with{" "}
           <code>vonkctl fleet</code>.
