@@ -5,7 +5,8 @@ export const SITE_NAME = "Vonk Forge";
 // The site-wide title and description index.html ships, read before any page changes them: the home page
 // puts them back when a visitor navigates to it from another page.
 const SITE_TITLE = document.title;
-const SITE_DESCRIPTION = document.querySelector<HTMLMetaElement>('meta[name="description"]')?.content ?? "";
+const SITE_DESCRIPTION =
+  document.querySelector<HTMLMetaElement>('meta[name="description"]')?.content ?? "";
 
 function descriptionTag(): HTMLMetaElement {
   let tag = document.querySelector<HTMLMetaElement>('meta[name="description"]');

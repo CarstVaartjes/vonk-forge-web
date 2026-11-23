@@ -1,7 +1,19 @@
 import type { CatalogSummary } from "../catalog-stats";
 import type { Vocabulary } from "../vocabulary";
-import { getStaticCatalogSummary, peekStaticModel, peekStaticModels, peekStaticRecipe, peekStaticRecipeCatalog, peekStaticVocabulary, getStaticLibraryRelease, getStaticModel, getStaticRecipe, getStaticVocabulary, listStaticModels, listStaticRecipeCatalog } from "./static-catalog";
-
+import {
+  getStaticCatalogSummary,
+  peekStaticModel,
+  peekStaticModels,
+  peekStaticRecipe,
+  peekStaticRecipeCatalog,
+  peekStaticVocabulary,
+  getStaticLibraryRelease,
+  getStaticModel,
+  getStaticRecipe,
+  getStaticVocabulary,
+  listStaticModels,
+  listStaticRecipeCatalog,
+} from "./static-catalog";
 
 // A model's license as the catalog published it: shown for information, never a gate.
 export interface License {
@@ -103,9 +115,21 @@ export interface RecipeSummary {
 
 export interface RecipeDetail extends RecipeSummary {
   // The newest hardware pass the library recorded for this recipe: when, and on how many Sparks.
-  evidence: { tested_at: string; spark_count?: number; hardware_class?: string; evidence_ref?: string; image_digest?: string } | null;
+  evidence: {
+    tested_at: string;
+    spark_count?: number;
+    hardware_class?: string;
+    evidence_ref?: string;
+    image_digest?: string;
+  } | null;
   // What the recipe's chat API serves; absent for a recipe that is not a chat API.
-  chat_api?: { endpoints: string[]; streaming: boolean; structured_output: boolean; image_input: boolean; audio_input: boolean };
+  chat_api?: {
+    endpoints: string[];
+    streaming: boolean;
+    structured_output: boolean;
+    image_input: boolean;
+    audio_input: boolean;
+  };
   // The model names the recipe's API answers to, and the people and projects it credits.
   served_names: string[];
   credits: string[];
@@ -184,7 +208,11 @@ export function loadRecipeCatalog(signal?: AbortSignal): Promise<RecipeDetail[]>
   return listStaticRecipeCatalog(RECIPE_LIBRARY_INDEX_URL, signal);
 }
 
-export function getRecipe(publisher: string, slug: string, signal?: AbortSignal): Promise<RecipeDetail> {
+export function getRecipe(
+  publisher: string,
+  slug: string,
+  signal?: AbortSignal,
+): Promise<RecipeDetail> {
   return getStaticRecipe(RECIPE_LIBRARY_INDEX_URL, publisher, slug, signal);
 }
 
@@ -192,7 +220,11 @@ export function listModels(signal?: AbortSignal): Promise<ModelPage> {
   return listStaticModels(RECIPE_LIBRARY_INDEX_URL, signal);
 }
 
-export function getModel(publisher: string, slug: string, signal?: AbortSignal): Promise<ModelSummary> {
+export function getModel(
+  publisher: string,
+  slug: string,
+  signal?: AbortSignal,
+): Promise<ModelSummary> {
   return getStaticModel(RECIPE_LIBRARY_INDEX_URL, publisher, slug, signal);
 }
 
@@ -210,8 +242,13 @@ export function getLibraryRelease(signal?: AbortSignal): Promise<LibraryRelease>
 
 // The same data, only when the index has already loaded; a page starts from it so that moving between
 // pages draws no loading state and makes no request.
-export const peekRecipeCatalog = (): RecipeDetail[] | null => peekStaticRecipeCatalog(RECIPE_LIBRARY_INDEX_URL);
-export const peekRecipe = (publisher: string, slug: string): RecipeDetail | null => peekStaticRecipe(RECIPE_LIBRARY_INDEX_URL, publisher, slug);
-export const peekModels = (): ModelSummary[] | null => peekStaticModels(RECIPE_LIBRARY_INDEX_URL)?.items ?? null;
-export const peekModel = (publisher: string, slug: string): ModelSummary | null => peekStaticModel(RECIPE_LIBRARY_INDEX_URL, publisher, slug);
-export const peekVocabulary = (): Vocabulary | null => peekStaticVocabulary(RECIPE_LIBRARY_INDEX_URL);
+export const peekRecipeCatalog = (): RecipeDetail[] | null =>
+  peekStaticRecipeCatalog(RECIPE_LIBRARY_INDEX_URL);
+export const peekRecipe = (publisher: string, slug: string): RecipeDetail | null =>
+  peekStaticRecipe(RECIPE_LIBRARY_INDEX_URL, publisher, slug);
+export const peekModels = (): ModelSummary[] | null =>
+  peekStaticModels(RECIPE_LIBRARY_INDEX_URL)?.items ?? null;
+export const peekModel = (publisher: string, slug: string): ModelSummary | null =>
+  peekStaticModel(RECIPE_LIBRARY_INDEX_URL, publisher, slug);
+export const peekVocabulary = (): Vocabulary | null =>
+  peekStaticVocabulary(RECIPE_LIBRARY_INDEX_URL);

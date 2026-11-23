@@ -10,13 +10,23 @@ import { checkSingleSources, registrations } from "./single-source-values.mjs";
 
 const repositoryRoot = fileURLToPath(new URL("../..", import.meta.url));
 
-export function readSources(listing, read = (file) => readFileSync(path.join(repositoryRoot, file), "utf8")) {
-  return new Map(listing.split("\0").filter(Boolean).map((file) => [file, read(file)]));
+export function readSources(
+  listing,
+  read = (file) => readFileSync(path.join(repositoryRoot, file), "utf8"),
+) {
+  return new Map(
+    listing
+      .split("\0")
+      .filter(Boolean)
+      .map((file) => [file, read(file)]),
+  );
 }
 
 // Empty or failed input names no registration; that must fail, never pass.
 export function problems(files) {
-  return registrations(files).length ? checkSingleSources(files) : ["no *.single-source.json registration in the input"];
+  return registrations(files).length
+    ? checkSingleSources(files)
+    : ["no *.single-source.json registration in the input"];
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

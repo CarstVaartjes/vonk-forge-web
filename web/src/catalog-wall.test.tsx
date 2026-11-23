@@ -8,7 +8,8 @@ import { CatalogWall, cellState } from "./catalog-wall";
 // measured peak, and an eight-Spark recipe that is not verified.
 const summary = summaryFixture;
 
-const linkOf = (row: { publisher: string; slug: string }) => document.querySelector(`a[href="/recipes/${row.publisher}/${row.slug}"]`)!;
+const linkOf = (row: { publisher: string; slug: string }) =>
+  document.querySelector(`a[href="/recipes/${row.publisher}/${row.slug}"]`)!;
 
 test("draws one link per recipe with the legend counts of the summary", () => {
   render(<CatalogWall summary={summary} />);
@@ -16,7 +17,9 @@ test("draws one link per recipe with the legend counts of the summary", () => {
   const legend = within(screen.getByRole("list", { name: "What the marks mean" }));
   expect(legend.getByText(/^Working/)).toHaveTextContent(`Working ${summary.verified}`);
   const states = summary.recipes.map(cellState);
-  expect(legend.getByText(/^No hardware pass yet/)).toHaveTextContent(`No hardware pass yet ${states.filter((state) => state === "none").length}`);
+  expect(legend.getByText(/^No hardware pass yet/)).toHaveTextContent(
+    `No hardware pass yet ${states.filter((state) => state === "none").length}`,
+  );
   expect(states.filter((state) => state === "verified")).toHaveLength(summary.verified);
 });
 
@@ -38,7 +41,9 @@ test("is one tab stop; arrow keys move between marks and the card names the reci
   expect(links[0]!.tabIndex).toBe(-1);
   fireEvent.keyDown(links[1]!, { key: "End" });
   expect(document.activeElement).toBe(links.at(-1));
-  const row = summary.recipes.find((item) => links.at(-1)!.getAttribute("href") === `/recipes/${item.publisher}/${item.slug}`)!;
+  const row = summary.recipes.find(
+    (item) => links.at(-1)!.getAttribute("href") === `/recipes/${item.publisher}/${item.slug}`,
+  )!;
   const card = within(screen.getByText("Open recipe").closest(".wall-card") as HTMLElement);
   expect(card.getByText(row.title)).toBeVisible();
   expect(card.getByText(row.status)).toBeVisible();
@@ -46,9 +51,14 @@ test("is one tab stop; arrow keys move between marks and the card names the reci
 
 test("the card says measured only for a recipe the summary has a measured peak for", () => {
   const measured = summary.recipes.find((row) => row.measuredBytes !== null)!;
-  const declared = summary.recipes.find((row) => row.measuredBytes === null && row.memoryBytes !== null)!;
+  const declared = summary.recipes.find(
+    (row) => row.measuredBytes === null && row.memoryBytes !== null,
+  )!;
   render(<CatalogWall summary={summary} />);
-  for (const [row, word] of [[measured, "measured"], [declared, "declared"]] as const) {
+  for (const [row, word] of [
+    [measured, "measured"],
+    [declared, "declared"],
+  ] as const) {
     fireEvent.mouseEnter(linkOf(row));
     const card = screen.getByText("Open recipe").closest(".wall-card") as HTMLElement;
     expect(card).toHaveTextContent(`per Spark, ${word}`);

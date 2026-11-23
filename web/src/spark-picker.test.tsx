@@ -26,12 +26,16 @@ test("answers with the verified total until a count is picked, then names the co
   const { container } = render(<Harness />);
   const answer = () => container.querySelector(".answer")!;
   expect(answer()).toHaveAttribute("aria-live", "polite");
-  expect(answer()).toHaveTextContent("3recipes verified on a real DGX Spark, out of 4 in the catalog.");
+  expect(answer()).toHaveTextContent(
+    "3recipes verified on a real DGX Spark, out of 4 in the catalog.",
+  );
   const one = screen.getByRole("button", { name: "1 Spark" });
   fireEvent.click(one);
   expect(one).toHaveAttribute("aria-pressed", "true");
   expect(answer()).toHaveTextContent("3verified recipes run on one Spark.");
-  expect(container.querySelector(".answer-breakdown")).toHaveTextContent("Your Controller checks the exact memory and disk fit before it runs anything.");
+  expect(container.querySelector(".answer-breakdown")).toHaveTextContent(
+    "Your Controller checks the exact memory and disk fit before it runs anything.",
+  );
   fireEvent.click(screen.getByRole("button", { name: "2 Sparks" }));
   expect(answer()).toHaveTextContent("3 verified recipes run on 2 Sparks.");
 });
@@ -39,7 +43,9 @@ test("answers with the verified total until a count is picked, then names the co
 test("picking 2 Sparks links the one-Spark choice to its exact catalog list and names the newest recipe", () => {
   render(<Harness />);
   fireEvent.click(screen.getByRole("button", { name: "2 Sparks" }));
-  const [item] = within(screen.getByRole("list", { name: "How to use your Sparks" })).getAllByRole("listitem");
+  const [item] = within(screen.getByRole("list", { name: "How to use your Sparks" })).getAllByRole(
+    "listitem",
+  );
   const [choice, newest] = within(item!).getAllByRole("link");
   expect(choice).toHaveAttribute("href", "/recipes?sparks=2&uses=1");
   expect(choice).toHaveTextContent("3 run on one Spark (keep the others free)");
@@ -49,17 +55,35 @@ test("picking 2 Sparks links the one-Spark choice to its exact catalog list and 
 test("the choice lands in the URL and is remembered; a type narrows the answer and links the filtered catalog", () => {
   const { container } = render(<Harness />);
   fireEvent.click(screen.getByRole("button", { name: "2 Sparks" }));
-  fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: /^3D/ }));
+  fireEvent.click(
+    within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: /^3D/ }),
+  );
   expect(window.location.search).toBe("?sparks=2&type=3d");
   expect(localStorage.getItem("vonk-my-sparks")).toBe("sparks=2&type=3d");
-  expect(container.querySelector(".answer")).toHaveTextContent("1 verified 3D recipes run on 2 Sparks.");
-  expect(screen.getByRole("link", { name: "See all 1 in the catalog" })).toHaveAttribute("href", "/recipes?sparks=2&type=3d");
+  expect(container.querySelector(".answer")).toHaveTextContent(
+    "1 verified 3D recipes run on 2 Sparks.",
+  );
+  expect(screen.getByRole("link", { name: "See all 1 in the catalog" })).toHaveAttribute(
+    "href",
+    "/recipes?sparks=2&type=3d",
+  );
 });
 
 test("lists the five newest verified recipes that fit, newest first, each linking to its recipe", () => {
   const row = summaryFixture.recipes[0]!;
-  const six = { ...summaryFixture, recipes: Array.from({ length: 6 }, (_, index) => ({ ...row, slug: `r${index}`, released: `2026-11-0${index + 1}` })) };
+  const six = {
+    ...summaryFixture,
+    recipes: Array.from({ length: 6 }, (_, index) => ({
+      ...row,
+      slug: `r${index}`,
+      released: `2026-11-0${index + 1}`,
+    })),
+  };
   render(<FitResults summary={six} pick={{ sparks: "", type: "" }} />);
-  const items = within(screen.getByRole("region", { name: "Newest that fit" })).getAllByRole("listitem");
-  expect(items.map((item) => within(item).getAllByRole("link")[0]!.getAttribute("href"))).toEqual(["r5", "r4", "r3", "r2", "r1"].map((slug) => `/recipes/${row.publisher}/${slug}`));
+  const items = within(screen.getByRole("region", { name: "Newest that fit" })).getAllByRole(
+    "listitem",
+  );
+  expect(items.map((item) => within(item).getAllByRole("link")[0]!.getAttribute("href"))).toEqual(
+    ["r5", "r4", "r3", "r2", "r1"].map((slug) => `/recipes/${row.publisher}/${slug}`),
+  );
 });

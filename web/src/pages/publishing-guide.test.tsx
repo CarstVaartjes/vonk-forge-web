@@ -2,7 +2,6 @@ import { render, screen } from "@testing-library/react";
 
 import { PublishingGuidePage } from "./publishing-guide";
 
-
 test("points recipe authors to the repository workflow", () => {
   render(<PublishingGuidePage />);
 

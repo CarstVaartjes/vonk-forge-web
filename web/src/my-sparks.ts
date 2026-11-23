@@ -78,10 +78,12 @@ export function fitAnswer(summary: CatalogSummary, pick: MySparks, newest = 5): 
   const verified = fitting.filter((row) => row.verified);
   return {
     count: verified.length,
-    byUse: Array.from(new Set(verified.map((row) => row.sparks))).sort((left, right) => left - right).map((sparks) => {
-      const group = verified.filter((row) => row.sparks === sparks).sort(newestFirst);
-      return { sparks, count: group.length, newest: group[0]! };
-    }),
+    byUse: Array.from(new Set(verified.map((row) => row.sparks)))
+      .sort((left, right) => left - right)
+      .map((sparks) => {
+        const group = verified.filter((row) => row.sparks === sparks).sort(newestFirst);
+        return { sparks, count: group.length, newest: group[0]! };
+      }),
     moreUnverified: fitting.length - verified.length,
     newest: [...verified].sort(newestFirst).slice(0, newest),
   };

@@ -16,8 +16,18 @@ test("the URL wins over the remembered choice, which wins over nothing", () => {
 // The fixture release: three verified one-Spark recipes (two language/vision/audio, one 3D) and one
 // eight-Spark recipe that is not verified.
 test("counts verified recipes that need that many Sparks or fewer, and the unverified ones published for them", () => {
-  expect(fitAnswer(summaryFixture, { sparks: "2", type: "" })).toMatchObject({ count: 3, byUse: [{ sparks: 1, count: 3 }], moreUnverified: 0 });
-  expect(fitAnswer(summaryFixture, { sparks: "4+", type: "" })).toMatchObject({ count: 3, moreUnverified: 1 });
-  expect(fitAnswer(summaryFixture, { sparks: "1", type: "3d" })).toMatchObject({ count: 1, moreUnverified: 0 });
+  expect(fitAnswer(summaryFixture, { sparks: "2", type: "" })).toMatchObject({
+    count: 3,
+    byUse: [{ sparks: 1, count: 3 }],
+    moreUnverified: 0,
+  });
+  expect(fitAnswer(summaryFixture, { sparks: "4+", type: "" })).toMatchObject({
+    count: 3,
+    moreUnverified: 1,
+  });
+  expect(fitAnswer(summaryFixture, { sparks: "1", type: "3d" })).toMatchObject({
+    count: 1,
+    moreUnverified: 0,
+  });
   expect(fitAnswer(summaryFixture, { sparks: "", type: "" }).count).toBe(3);
 });

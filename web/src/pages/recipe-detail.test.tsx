@@ -4,16 +4,61 @@ import type { RecipeDetail } from "../api/client";
 import { RecipeDetailPage } from "./recipe-detail";
 import { catalogFacts, vocabularyFixture } from "../vocabulary.fixture";
 
-
-const { getRecipe, getVocabulary, loadRecipeCatalog } = vi.hoisted(() => ({ getRecipe: vi.fn(), getVocabulary: vi.fn(), loadRecipeCatalog: vi.fn() }));
-vi.mock("../api/client", () => ({ getRecipe, getVocabulary, loadRecipeCatalog, peekRecipe: () => null, peekRecipeCatalog: () => null, peekModel: () => null, peekModels: () => null, peekVocabulary: () => null }));
+const { getRecipe, getVocabulary, loadRecipeCatalog } = vi.hoisted(() => ({
+  getRecipe: vi.fn(),
+  getVocabulary: vi.fn(),
+  loadRecipeCatalog: vi.fn(),
+}));
+vi.mock("../api/client", () => ({
+  getRecipe,
+  getVocabulary,
+  loadRecipeCatalog,
+  peekRecipe: () => null,
+  peekRecipeCatalog: () => null,
+  peekModel: () => null,
+  peekModels: () => null,
+  peekVocabulary: () => null,
+}));
 
 function recipe(publisher: string, sourceRepository: string, sourceOwner: string): RecipeDetail {
   return {
-    publisher, slug: "qwen-fast", title: "Qwen Fast", official: publisher === "vonk-forge", content_sha256: "a".repeat(64), published_at: "2026-08-07", version: "1.0.0", runtime: { adapter: "vllm" },
+    publisher,
+    slug: "qwen-fast",
+    title: "Qwen Fast",
+    official: publisher === "vonk-forge",
+    content_sha256: "a".repeat(64),
+    published_at: "2026-08-07",
+    version: "1.0.0",
+    runtime: { adapter: "vllm" },
     facts: { source_bundle_observed: true },
-    catalog: catalogFacts({ description: "A recipe.", tags: [], model_publisher: "m", model_slug: "qwen", model_title: "Qwen", model_version_publisher: "m", model_version_slug: "qwen", model_version_title: "Qwen", model_family: "Qwen", source_owner: sourceOwner, source_repository: sourceRepository, alignment: "standard", capabilities: [], qualification: "Not yet verified", qualification_reason: null, execution_readiness: "executable", runtime_distribution: "vllm", precision: null, quantizations: [], node_count: 1, expected_download_bytes: 0 }),
-    evidence: null, served_names: [], credits: [], settings: {}, license: {},
+    catalog: catalogFacts({
+      description: "A recipe.",
+      tags: [],
+      model_publisher: "m",
+      model_slug: "qwen",
+      model_title: "Qwen",
+      model_version_publisher: "m",
+      model_version_slug: "qwen",
+      model_version_title: "Qwen",
+      model_family: "Qwen",
+      source_owner: sourceOwner,
+      source_repository: sourceRepository,
+      alignment: "standard",
+      capabilities: [],
+      qualification: "Not yet verified",
+      qualification_reason: null,
+      execution_readiness: "executable",
+      runtime_distribution: "vllm",
+      precision: null,
+      quantizations: [],
+      node_count: 1,
+      expected_download_bytes: 0,
+    }),
+    evidence: null,
+    served_names: [],
+    credits: [],
+    settings: {},
+    license: {},
     latest_revision: { content_sha256: "a".repeat(64), document: {} },
   };
 }
@@ -26,14 +71,22 @@ beforeEach(() => {
 });
 
 test("a community recipe is not tagged official, and the creator links to the host the source lives on", async () => {
-  getRecipe.mockResolvedValue(recipe("someone", "https://huggingface.co/someone/qwen-fast", "someone"));
+  getRecipe.mockResolvedValue(
+    recipe("someone", "https://huggingface.co/someone/qwen-fast", "someone"),
+  );
   render(<RecipeDetailPage publisher="someone" slug="qwen-fast" />);
-  expect(await screen.findByRole("link", { name: "someone" })).toHaveAttribute("href", "https://huggingface.co/someone/qwen-fast");
+  expect(await screen.findByRole("link", { name: "someone" })).toHaveAttribute(
+    "href",
+    "https://huggingface.co/someone/qwen-fast",
+  );
   expect(screen.getByText("Community recipe")).not.toHaveClass("official");
 });
 
 test("the evidence line names the Spark count only when the library recorded one", async () => {
-  const verified = { ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"), evidence: { tested_at: "2026-11-04T08:00:00Z" } };
+  const verified = {
+    ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"),
+    evidence: { tested_at: "2026-11-04T08:00:00Z" },
+  };
   verified.catalog = { ...verified.catalog, qualification: "Working", verified: true };
   getRecipe.mockResolvedValue(verified);
   render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
@@ -51,18 +104,36 @@ const GIB = 1024 ** 3;
 test("a verified recipe shows its receipt and the model across its Sparks, measured and declared", async () => {
   const verified: RecipeDetail = {
     ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"),
-    evidence: { tested_at: "2026-11-04T08:00:00Z", spark_count: 2, hardware_class: "GB10", evidence_ref: "e".repeat(64), image_digest: `sha256:${"f".repeat(64)}` },
-    capacity: { maximum_runtime_memory_bytes_per_node: 100 * GIB, measured_memory_bytes_per_node: 110 * GIB },
-    served_names: ["qwen-fast"], credits: ["Acme", "Qwen", "vLLM", "NVIDIA"], settings: { context_tokens: 262144, concurrency: 4 },
+    evidence: {
+      tested_at: "2026-11-04T08:00:00Z",
+      spark_count: 2,
+      hardware_class: "GB10",
+      evidence_ref: "e".repeat(64),
+      image_digest: `sha256:${"f".repeat(64)}`,
+    },
+    capacity: {
+      maximum_runtime_memory_bytes_per_node: 100 * GIB,
+      measured_memory_bytes_per_node: 110 * GIB,
+    },
+    served_names: ["qwen-fast"],
+    credits: ["Acme", "Qwen", "vLLM", "NVIDIA"],
+    settings: { context_tokens: 262144, concurrency: 4 },
   };
-  verified.catalog = { ...verified.catalog, qualification: "Working", verified: true, node_count: 2 };
+  verified.catalog = {
+    ...verified.catalog,
+    qualification: "Working",
+    verified: true,
+    node_count: 2,
+  };
   getRecipe.mockResolvedValue(verified);
   render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
   const receipt = within(await screen.findByLabelText("Hardware evidence"));
   expect(receipt.getByText("Passed on 2 Sparks · 110.0 GiB per Spark, measured")).toBeVisible();
   expect(receipt.queryByRole("heading", { level: 3 })).toBeNull();
   const needs = within(screen.getByRole("region", { name: "What it needs" }));
-  expect(needs.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["Spark 1", "Spark 2"]);
+  expect(needs.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(
+    ["Spark 1", "Spark 2"],
+  );
   expect(needs.getAllByText("Declared")).toHaveLength(2);
   expect(needs.getByText("262,144")).toBeVisible();
   const can = within(screen.getByRole("region", { name: "What it can do" }));
@@ -72,13 +143,18 @@ test("a verified recipe shows its receipt and the model across its Sparks, measu
 });
 
 test("a recipe without a pass shows the status meaning, no receipt and no measured word", async () => {
-  getRecipe.mockResolvedValue({ ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"), capacity: { maximum_runtime_memory_bytes_per_node: 100 * GIB } });
+  getRecipe.mockResolvedValue({
+    ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"),
+    capacity: { maximum_runtime_memory_bytes_per_node: 100 * GIB },
+  });
   render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
   const status = within(await screen.findByLabelText("Hardware status"));
   expect(status.getByText("Not yet verified")).toBeVisible();
   expect(status.getByText(/No hardware verdict yet/)).toBeVisible();
   expect(screen.queryByLabelText("Hardware evidence")).toBeNull();
-  expect(screen.getByRole("region", { name: "What it needs" }).textContent).not.toContain("easured");
+  expect(screen.getByRole("region", { name: "What it needs" }).textContent).not.toContain(
+    "easured",
+  );
 });
 
 // jsdom does no layout: stand in for a description the clamp cuts (scrollHeight above clientHeight) or not.
@@ -95,7 +171,10 @@ test("a description the clamp cuts is clamped until Read all", async () => {
   expect(screen.getByText("A recipe.")).toHaveClass("clamped");
   fireEvent.click(button);
   expect(screen.getByText("A recipe.")).not.toHaveClass("clamped");
-  expect(screen.getByRole("button", { name: "Show less" })).toHaveAttribute("aria-expanded", "true");
+  expect(screen.getByRole("button", { name: "Show less" })).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
 });
 
 test("a short description has no Read all", async () => {
@@ -108,26 +187,75 @@ test("a short description has no Read all", async () => {
 
 test("the family matrix lists the other recipes and marks this one", async () => {
   const mine = recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme");
-  const other = { ...recipe("vonk-forge", "https://github.com/acme/qwen-slow", "acme"), slug: "qwen-slow", title: "Qwen Slow" };
+  const other = {
+    ...recipe("vonk-forge", "https://github.com/acme/qwen-slow", "acme"),
+    slug: "qwen-slow",
+    title: "Qwen Slow",
+  };
   getRecipe.mockResolvedValue(mine);
   loadRecipeCatalog.mockResolvedValue([mine, other]);
   render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
-  const ways = within(await screen.findByRole("region", { name: "Every way to run Qwen: 2 recipes from 1 creator" }));
+  const ways = within(
+    await screen.findByRole("region", { name: "Every way to run Qwen: 2 recipes from 1 creator" }),
+  );
   expect(ways.getByRole("link", { name: /^Qwen Fast/ })).toHaveAttribute("aria-current", "page");
-  expect(ways.getByRole("link", { name: /^Qwen Slow/ })).toHaveAttribute("href", "/recipes/vonk-forge/qwen-slow");
+  expect(ways.getByRole("link", { name: /^Qwen Slow/ })).toHaveAttribute(
+    "href",
+    "/recipes/vonk-forge/qwen-slow",
+  );
 });
 
 const h3Job: RecipeDetail["job"] = {
   inputs: [
-    { id: "prompt", label: "Generation prompt", description: "Required UTF-8 text.", media_types: ["text/plain"], extensions: [".txt"], min_files: 1, max_files: 1 },
-    { id: "first-image", label: "First frame", description: "Optional image.", media_types: ["image/png"], extensions: [".png"], min_files: 0, max_files: 1 },
+    {
+      id: "prompt",
+      label: "Generation prompt",
+      description: "Required UTF-8 text.",
+      media_types: ["text/plain"],
+      extensions: [".txt"],
+      min_files: 1,
+      max_files: 1,
+    },
+    {
+      id: "first-image",
+      label: "First frame",
+      description: "Optional image.",
+      media_types: ["image/png"],
+      extensions: [".png"],
+      min_files: 0,
+      max_files: 1,
+    },
   ],
-  outputs: [{ id: "video", label: "Synchronized video", description: "MP4 with sound.", media_types: ["video/mp4"], extensions: [".mp4"], min_files: 1, max_files: 1 }],
-  options: [{ key: "width", label: "Width", unit: "px", default: 960, minimum: 64, maximum: 2048, step: 32 }],
+  outputs: [
+    {
+      id: "video",
+      label: "Synchronized video",
+      description: "MP4 with sound.",
+      media_types: ["video/mp4"],
+      extensions: [".mp4"],
+      min_files: 1,
+      max_files: 1,
+    },
+  ],
+  options: [
+    {
+      key: "width",
+      label: "Width",
+      unit: "px",
+      default: 960,
+      minimum: 64,
+      maximum: 2048,
+      step: 32,
+    },
+  ],
 };
 
 test("a job recipe says what you send and get, has no token fields, and shows the job command and the regional notice", async () => {
-  getRecipe.mockResolvedValue({ ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"), job: h3Job, license: { spdx: "LicenseRef-H3", notice: "Excludes the EU." } });
+  getRecipe.mockResolvedValue({
+    ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"),
+    job: h3Job,
+    license: { spdx: "LicenseRef-H3", notice: "Excludes the EU." },
+  });
   render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
   expect(await screen.findByText("What you send")).toBeVisible();
   expect(screen.getByText("Generation prompt")).toBeVisible();
@@ -141,16 +269,20 @@ test("a job recipe says what you send and get, has no token fields, and shows th
 });
 
 test("a chat recipe keeps its context and concurrency fields and no job block", async () => {
-  getRecipe.mockResolvedValue({ ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"), settings: { context_tokens: 262144, concurrency: 4 } });
+  getRecipe.mockResolvedValue({
+    ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"),
+    settings: { context_tokens: 262144, concurrency: 4 },
+  });
   render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
   expect(await screen.findByText("Concurrent requests")).toBeVisible();
   expect(screen.getByText("262,144")).toBeVisible();
   expect(screen.queryByText("What you send")).not.toBeInTheDocument();
 });
 
-
 test("a failed load offers Retry, which loads again, and a way back to Recipes", async () => {
-  getRecipe.mockRejectedValueOnce(new Error("offline")).mockResolvedValue(recipe("someone", "https://huggingface.co/someone/qwen-fast", "someone"));
+  getRecipe
+    .mockRejectedValueOnce(new Error("offline"))
+    .mockResolvedValue(recipe("someone", "https://huggingface.co/someone/qwen-fast", "someone"));
   render(<RecipeDetailPage publisher="someone" slug="qwen-fast" />);
   expect(await screen.findByRole("heading", { name: "Recipe unavailable" })).toBeVisible();
   expect(screen.getByRole("link", { name: "Back to Recipes" })).toHaveAttribute("href", "/recipes");

@@ -2,71 +2,136 @@ import { usePageMeta } from "../page-meta";
 
 const connections = [
   { className: "tailnet", label: "Tailscale HTTPS", detail: "Human browser access" },
-  { className: "management", label: "Management-LAN TLS / mTLS", detail: "Enrollment, claims, and evidence" },
+  {
+    className: "management",
+    label: "Management-LAN TLS / mTLS",
+    detail: "Enrollment, claims, and evidence",
+  },
   { className: "artifact", label: "Prepared assets", detail: "Model files and runtime images" },
   { className: "fabric", label: "NVIDIA fabric", detail: "Recipe-selected multi-node ranks" },
 ];
 
-
 export function ArchitecturePage() {
-  usePageMeta("How it works", "How the public catalog, your local Controller and your Spark fleet fit together, and what never leaves your network.");
+  usePageMeta(
+    "How it works",
+    "How the public catalog, your local Controller and your Spark fleet fit together, and what never leaves your network.",
+  );
   return (
     <main className="guide-page architecture-page">
       <section className="guide-hero" aria-labelledby="architecture-title">
-        <h1 id="architecture-title"><span>One control plane.</span><span>One to many Sparks.</span></h1>
+        <h1 id="architecture-title">
+          <span>One control plane.</span>
+          <span>One to many Sparks.</span>
+        </h1>
         <p>
-          Find a model by what it can do, then choose a recipe for its engine,
-          settings, and number of Sparks. Your local Controller tells you which
-          recipes fit the Sparks you have, prepares verified model files and
-          runtime images on a laptop, NAS, or local server, then distributes the
-          selected assets and placement needed to run the workload.
+          Find a model by what it can do, then choose a recipe for its engine, settings, and number
+          of Sparks. Your local Controller tells you which recipes fit the Sparks you have, prepares
+          verified model files and runtime images on a laptop, NAS, or local server, then
+          distributes the selected assets and placement needed to run the workload.
         </p>
       </section>
 
       <section className="architecture-section" aria-labelledby="placement-title">
         <div className="section-kicker">
-          <div><h2 id="placement-title">What runs where</h2></div>
+          <div>
+            <h2 id="placement-title">What runs where</h2>
+          </div>
         </div>
 
         <figure className="architecture-canvas" aria-labelledby="placement-title">
           <article className="architecture-zone zone-public">
-            <div className="zone-heading"><span>Public</span><h3>Public catalog</h3></div>
-            <p>Models, their capabilities, and recipes with the software and settings for one or more Sparks.</p>
-            <ul><li>Cloudflare Pages</li><li>GitHub + GHCR</li><li>Signed APT repository</li></ul>
+            <div className="zone-heading">
+              <span>Public</span>
+              <h3>Public catalog</h3>
+            </div>
+            <p>
+              Models, their capabilities, and recipes with the software and settings for one or more
+              Sparks.
+            </p>
+            <ul>
+              <li>Cloudflare Pages</li>
+              <li>GitHub + GHCR</li>
+              <li>Signed APT repository</li>
+            </ul>
           </article>
 
-          <div className="architecture-flow flow-download" aria-hidden="true"><span>verified metadata + artifacts</span></div>
+          <div className="architecture-flow flow-download" aria-hidden="true">
+            <span>verified metadata + artifacts</span>
+          </div>
 
           <article className="architecture-zone zone-operator">
-            <div className="zone-heading"><span>Your device</span><h3>Operator workstation</h3></div>
-            <p>Runs the installer and opens the private Controller, wherever you choose to host it.</p>
-            <ul><li>Browser + Tailscale</li><li>1Password</li><li>Local project files</li></ul>
+            <div className="zone-heading">
+              <span>Your device</span>
+              <h3>Operator workstation</h3>
+            </div>
+            <p>
+              Runs the installer and opens the private Controller, wherever you choose to host it.
+            </p>
+            <ul>
+              <li>Browser + Tailscale</li>
+              <li>1Password</li>
+              <li>Local project files</li>
+            </ul>
           </article>
 
-          <div className="architecture-flow flow-tailnet" aria-hidden="true"><span>private HTTPS</span></div>
+          <div className="architecture-flow flow-tailnet" aria-hidden="true">
+            <span>private HTTPS</span>
+          </div>
 
           <article className="architecture-zone zone-control">
-            <div className="zone-heading"><span>Operator owned</span><h3>Local controller</h3></div>
-            <p>Checks every recipe against the live capacity of your Sparks and keeps the signed recipe library in sync on its own. Prepares and caches verified model files and runtime images on your Controller, then keeps progress, updates, recovery, and profiles in one place.</p>
-            <ul><li>Fit checks + library sync</li><li>Policy + durable state</li><li>Placement + route authority</li></ul>
+            <div className="zone-heading">
+              <span>Operator owned</span>
+              <h3>Local controller</h3>
+            </div>
+            <p>
+              Checks every recipe against the live capacity of your Sparks and keeps the signed
+              recipe library in sync on its own. Prepares and caches verified model files and
+              runtime images on your Controller, then keeps progress, updates, recovery, and
+              profiles in one place.
+            </p>
+            <ul>
+              <li>Fit checks + library sync</li>
+              <li>Policy + durable state</li>
+              <li>Placement + route authority</li>
+            </ul>
           </article>
 
-          <div className="architecture-flow flow-management" aria-hidden="true"><span>outbound agent mTLS</span></div>
+          <div className="architecture-flow flow-management" aria-hidden="true">
+            <span>outbound agent mTLS</span>
+          </div>
 
           <article className="architecture-zone zone-fleet">
-            <div className="zone-heading"><span>1…N nodes</span><h3>Spark fleet</h3></div>
-            <p>Runs the selected workload through the native NVIDIA container stack. Prepared assets are distributed as needed; a sharded model does not mean a full copy on every Spark.</p>
-            <div className="spark-row" aria-label="Example scalable Spark fleet">
-              <span>Spark 01</span><i aria-hidden="true" /><span>Spark 02</span><i aria-hidden="true" /><span>Spark N</span>
+            <div className="zone-heading">
+              <span>1…N nodes</span>
+              <h3>Spark fleet</h3>
             </div>
-            <ul><li>Prepared assets as needed</li><li>Rootless source build</li><li>Recipe-selected ranks</li></ul>
+            <p>
+              Runs the selected workload through the native NVIDIA container stack. Prepared assets
+              are distributed as needed; a sharded model does not mean a full copy on every Spark.
+            </p>
+            <div className="spark-row" aria-label="Example scalable Spark fleet">
+              <span>Spark 01</span>
+              <i aria-hidden="true" />
+              <span>Spark 02</span>
+              <i aria-hidden="true" />
+              <span>Spark N</span>
+            </div>
+            <ul>
+              <li>Prepared assets as needed</li>
+              <li>Rootless source build</li>
+              <li>Recipe-selected ranks</li>
+            </ul>
           </article>
         </figure>
 
         <ul className="connection-legend" aria-label="Connection legend">
           {connections.map((connection) => (
             <li key={connection.label} className={connection.className}>
-              <i aria-hidden="true" /><span><strong>{connection.label}</strong>{connection.detail}</span>
+              <i aria-hidden="true" />
+              <span>
+                <strong>{connection.label}</strong>
+                {connection.detail}
+              </span>
             </li>
           ))}
         </ul>
@@ -74,48 +139,85 @@ export function ArchitecturePage() {
 
       <section className="architecture-section" aria-labelledby="scale-title">
         <div className="section-kicker">
-          <div><h2 id="scale-title">Scale changes placement, not trust.</h2></div>
+          <div>
+            <h2 id="scale-title">Scale changes placement, not trust.</h2>
+          </div>
         </div>
         <div className="scale-grid">
-          <article><span className="scale-count">1</span><h3>Single Spark</h3><p>One agent, one local cache, and no direct-fabric CIDR. Single-node recipes run without a peer network.</p></article>
-          <article><span className="scale-count">2</span><h3>Two Sparks</h3><p>A recipe can select two ranks and the declared NVIDIA fabric. This is the current reference acceptance shape—not a platform limit.</p></article>
-          <article><span className="scale-count">N</span><h3>Fleet</h3><p>Add signed agents independently. The scheduler chooses only compatible, present nodes for each recipe&apos;s declared profile.</p></article>
+          <article>
+            <span className="scale-count">1</span>
+            <h3>Single Spark</h3>
+            <p>
+              One agent, one local cache, and no direct-fabric CIDR. Single-node recipes run without
+              a peer network.
+            </p>
+          </article>
+          <article>
+            <span className="scale-count">2</span>
+            <h3>Two Sparks</h3>
+            <p>
+              A recipe can select two ranks and the declared NVIDIA fabric. This is the current
+              reference acceptance shape—not a platform limit.
+            </p>
+          </article>
+          <article>
+            <span className="scale-count">N</span>
+            <h3>Fleet</h3>
+            <p>
+              Add signed agents independently. The scheduler chooses only compatible, present nodes
+              for each recipe&apos;s declared profile.
+            </p>
+          </article>
         </div>
       </section>
 
       <section className="architecture-section runtime-contract" aria-labelledby="contract-title">
         <div className="section-kicker">
-          <div><h2 id="contract-title">One contract. Any reviewed runtime.</h2></div>
+          <div>
+            <h2 id="contract-title">One contract. Any reviewed runtime.</h2>
+          </div>
         </div>
         <p className="contract-intro">
-          The controller describes the exact outcome. The runtime decides how to
-          produce it. Between them is a small, versioned interface—not a shell
-          script, a Docker socket, or MIA-specific control code.
+          The controller describes the exact outcome. The runtime decides how to produce it. Between
+          them is a small, versioned interface—not a shell script, a Docker socket, or MIA-specific
+          control code.
         </p>
 
         <ol className="contract-pipeline" aria-label="Control to runtime handoff">
           <li>
             <span>01 · declares</span>
             <h3>Recipe</h3>
-            <p>Names immutable source, image and model identities, profiles, resources, endpoint, mounts, and security.</p>
+            <p>
+              Names immutable source, image and model identities, profiles, resources, endpoint,
+              mounts, and security.
+            </p>
             <code>desired outcome</code>
           </li>
           <li>
             <span>02 · compiles</span>
             <h3>Control plan</h3>
-            <p>Chooses exact nodes and roles, then resolves one role-specific typed workload for every rank.</p>
+            <p>
+              Chooses exact nodes and roles, then resolves one role-specific typed workload for
+              every rank.
+            </p>
             <code>signed intent</code>
           </li>
           <li>
             <span>03 · enforces</span>
             <h3>Spark enforcement</h3>
-            <p>The Rust agent verifies content and placement. A bounded root helper emits only the approved Docker shape.</p>
+            <p>
+              The Rust agent verifies content and placement. A bounded root helper emits only the
+              approved Docker shape.
+            </p>
             <code>native NVIDIA stack</code>
           </li>
           <li>
             <span>04 · adapts</span>
             <h3>Runtime adapter</h3>
-            <p>MIA, vLLM, llama.cpp, or another reviewed wrapper translates standard inputs into its own launch details.</p>
+            <p>
+              MIA, vLLM, llama.cpp, or another reviewed wrapper translates standard inputs into its
+              own launch details.
+            </p>
             <code>working endpoint</code>
           </li>
         </ol>
@@ -129,19 +231,38 @@ export function ArchitecturePage() {
             <div className="contract-fields">
               <section aria-labelledby="placement-fields">
                 <h4 id="placement-fields">Placement</h4>
-                <div><code>VONK_RANK</code><code>VONK_WORLD_SIZE</code><code>VONK_MASTER_ADDR</code><code>VONK_LOCAL_ADDR</code></div>
+                <div>
+                  <code>VONK_RANK</code>
+                  <code>VONK_WORLD_SIZE</code>
+                  <code>VONK_MASTER_ADDR</code>
+                  <code>VONK_LOCAL_ADDR</code>
+                </div>
               </section>
               <section aria-labelledby="filesystem-fields">
                 <h4 id="filesystem-fields">Filesystem</h4>
-                <div><code>/models · read-only</code><code>/state · private</code><code>/run/vonk/runtime.json</code></div>
+                <div>
+                  <code>/models · read-only</code>
+                  <code>/state · private</code>
+                  <code>/run/vonk/runtime.json</code>
+                </div>
               </section>
               <section aria-labelledby="endpoint-fields">
                 <h4 id="endpoint-fields">Endpoint</h4>
-                <div><code>OpenAI protocol</code><code>declared port</code><code>health path</code><code>model alias</code></div>
+                <div>
+                  <code>OpenAI protocol</code>
+                  <code>declared port</code>
+                  <code>health path</code>
+                  <code>model alias</code>
+                </div>
               </section>
               <section aria-labelledby="security-fields">
                 <h4 id="security-fields">Enforcement</h4>
-                <div><code>digest pinned</code><code>numeric non-root</code><code>read-only root</code><code>no capabilities</code></div>
+                <div>
+                  <code>digest pinned</code>
+                  <code>numeric non-root</code>
+                  <code>read-only root</code>
+                  <code>no capabilities</code>
+                </div>
               </section>
             </div>
           </article>
@@ -149,39 +270,76 @@ export function ArchitecturePage() {
           <aside className="contract-example" aria-labelledby="mia-change-title">
             <h3 id="mia-change-title">MIA adds a thinking budget</h3>
             <p>
-              MIA changes how reasoning tokens are handled inside its reviewed
-              wrapper. It still consumes the same rank, model, fabric, mounts,
-              and endpoint contract.
+              MIA changes how reasoning tokens are handled inside its reviewed wrapper. It still
+              consumes the same rank, model, fabric, mounts, and endpoint contract.
             </p>
             <div className="change-result">
               <span>Recipe source + digest change</span>
               <strong>No control-plane change</strong>
             </div>
-            <p className="change-note">Rebuild and verify the immutable runtime; keep placement and authority untouched.</p>
+            <p className="change-note">
+              Rebuild and verify the immutable runtime; keep placement and authority untouched.
+            </p>
           </aside>
         </div>
 
         <div className="contract-ownership" aria-label="Contract ownership">
-          <article><span>Control owns</span><p>Identity · placement · policy · lifecycle · health evidence · route publication</p></article>
-          <article><span>Runtime owns</span><p>Framework launch · model flags · fabric translation · implementation patches · inference</p></article>
+          <article>
+            <span>Control owns</span>
+            <p>Identity · placement · policy · lifecycle · health evidence · route publication</p>
+          </article>
+          <article>
+            <span>Runtime owns</span>
+            <p>
+              Framework launch · model flags · fabric translation · implementation patches ·
+              inference
+            </p>
+          </article>
         </div>
       </section>
 
       <section className="architecture-section trust-boundaries" aria-labelledby="trust-title">
         <div className="section-kicker">
-          <div><h2 id="trust-title">Authority stays narrow.</h2></div>
+          <div>
+            <h2 id="trust-title">Authority stays narrow.</h2>
+          </div>
         </div>
         <div className="trust-boundary-grid">
-          <article><h3>Catalog ≠ controller</h3><p>The public website cannot deploy, stop, or inspect your private workloads.</p></article>
-          <article><h3>Agent ≠ Docker socket</h3><p>The signed host agent uses bounded root helpers; no container starts arbitrary sibling containers.</p></article>
-          <article><h3>Images ≠ secrets</h3><p>Public development images contain code only. Runtime authority arrives from controller-owned files into per-service projections.</p></article>
-          <article><h3>Serve ≠ Funnel</h3><p>Tailscale Services provide private HTTPS. Funnel remains disabled, so the operator UI is not public internet ingress.</p></article>
+          <article>
+            <h3>Catalog ≠ controller</h3>
+            <p>The public website cannot deploy, stop, or inspect your private workloads.</p>
+          </article>
+          <article>
+            <h3>Agent ≠ Docker socket</h3>
+            <p>
+              The signed host agent uses bounded root helpers; no container starts arbitrary sibling
+              containers.
+            </p>
+          </article>
+          <article>
+            <h3>Images ≠ secrets</h3>
+            <p>
+              Public development images contain code only. Runtime authority arrives from
+              controller-owned files into per-service projections.
+            </p>
+          </article>
+          <article>
+            <h3>Serve ≠ Funnel</h3>
+            <p>
+              Tailscale Services provide private HTTPS. Funnel remains disabled, so the operator UI
+              is not public internet ingress.
+            </p>
+          </article>
         </div>
       </section>
 
       <section className="guide-cta">
-        <div><h2>Start with one. Add Sparks when a recipe needs them.</h2></div>
-        <a className="button primary" href="/install">Open the install guide</a>
+        <div>
+          <h2>Start with one. Add Sparks when a recipe needs them.</h2>
+        </div>
+        <a className="button primary" href="/install">
+          Open the install guide
+        </a>
       </section>
     </main>
   );

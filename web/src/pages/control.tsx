@@ -3,26 +3,30 @@ import { usePageMeta } from "../page-meta";
 
 const repository = "https://github.com/CarstVaartjes/vonk-forge";
 
-
-
 // Every command on this page is a command of the vonk-forge vonkctl runbook
 // (docs/runbooks/vonkctl.md); `--json` is the runbook's global flag. Keep them in step with it.
 export function ControlPage() {
-  usePageMeta("Control", "Drive your Vonk Forge fleet from the Web Controller or from vonkctl, the JSON-first CLI built for scripts and AI agents.");
+  usePageMeta(
+    "Control",
+    "Drive your Vonk Forge fleet from the Web Controller or from vonkctl, the JSON-first CLI built for scripts and AI agents.",
+  );
   return (
     <main className="guide-page control-page">
       <section className="guide-hero" aria-labelledby="control-title">
         <h1 id="control-title">Click it, or script it.</h1>
         <p>
-          The Web Controller and the local <code>vonkctl</code> CLI operate the same
-          Sparks, Library, and saved profiles through the same authenticated API. Use
-          either path, or both, without creating a second controller. The CLI is
-          written for scripts and AI agents: one JSON document per call, a
-          read-only review of every change, and explicit consent.
+          The Web Controller and the local <code>vonkctl</code> CLI operate the same Sparks,
+          Library, and saved profiles through the same authenticated API. Use either path, or both,
+          without creating a second controller. The CLI is written for scripts and AI agents: one
+          JSON document per call, a read-only review of every change, and explicit consent.
         </p>
         <div className="guide-jump two-up" aria-label="Control paths">
-          <a href="#web-controller">Web Controller <span>Visual · a few clicks</span></a>
-          <a href="#local-cli">Local CLI <span>Scriptable · agent friendly</span></a>
+          <a href="#web-controller">
+            Web Controller <span>Visual · a few clicks</span>
+          </a>
+          <a href="#local-cli">
+            Local CLI <span>Scriptable · agent friendly</span>
+          </a>
         </div>
       </section>
 
@@ -32,9 +36,9 @@ export function ControlPage() {
             <h2 id="choose-control-title">Use the path that fits the job.</h2>
           </div>
           <p>
-            Both paths manage the same operator-owned local control plane. Browser and CLI
-            actions appear in the same Activity history, and neither requires SSH
-            access to a Spark for routine operation.
+            Both paths manage the same operator-owned local control plane. Browser and CLI actions
+            appear in the same Activity history, and neither requires SSH access to a Spark for
+            routine operation.
           </p>
         </div>
         <div className="control-path-grid">
@@ -47,81 +51,142 @@ export function ControlPage() {
               <li>Best for setup, exploration, and visual monitoring</li>
               <li>Runs only on your private controller URL</li>
             </ul>
-            <a className="text-link" href="#web-controller">Use the Web Controller</a>
+            <a className="text-link" href="#web-controller">
+              Use the Web Controller
+            </a>
           </article>
           <article>
             <h3>Local CLI</h3>
             <span className="guide-meta">For operators, scripts, and AI agents</span>
-            <p>The same lists and choices in a terminal, with JSON output, read-only reviews, and meaningful exit codes.</p>
+            <p>
+              The same lists and choices in a terminal, with JSON output, read-only reviews, and
+              meaningful exit codes.
+            </p>
             <ul>
-              <li>Installed by the signed installer; <code>uv</code> manages Python 3.14</li>
+              <li>
+                Installed by the signed installer; <code>uv</code> manages Python 3.14
+              </li>
               <li>Best for repeatable work, automation, and agent tool use</li>
               <li>Authenticates with a downloaded token file, never a pasted token</li>
             </ul>
-            <a className="text-link" href="#local-cli">Install the CLI</a>
+            <a className="text-link" href="#local-cli">
+              Install the CLI
+            </a>
           </article>
         </div>
       </section>
 
       <section id="web-controller" className="control-guide" aria-labelledby="web-controller-title">
         <header>
-          <div><h2 id="web-controller-title">Web Controller</h2><span className="guide-meta">Control path 01</span></div>
+          <div>
+            <h2 id="web-controller-title">Web Controller</h2>
+            <span className="guide-meta">Control path 01</span>
+          </div>
           <span>Browser</span>
         </header>
         <p className="lane-intro">
-          Open the private HTTPS address configured for your local controller and
-          sign in with its administrator account. The public <code>vonkforge.ai</code>
+          Open the private HTTPS address configured for your local controller and sign in with its
+          administrator account. The public <code>vonkforge.ai</code>
           website is documentation and catalog—not your controller.
         </p>
         <div className="usage-grid">
-          <article><span>Overview</span><h3>Enroll and watch Sparks</h3><p>Create one-use enrollment grants with <strong>Enroll Spark</strong>, inspect health, free memory, and warnings, search nodes, choose telemetry ranges, rename, re-enroll, and remove.</p></article>
-          <article id="library-import"><span>Library</span><h3>See what fits, then run it</h3><p>Search published models and recipes; the recipe repository syncs automatically. Each recipe shows whether it fits your Sparks right now and why. Download exact model assets and recipe images, then load a saved profile with durable progress and per-Spark results.</p></article>
-          <article><span>Profiles</span><h3>Keep the mix you need</h3><p>Assign recipes to Sparks, save the set as a profile, review the exact plan—what stops, starts, and installs—then load it. A running install is marked stale when a newer recipe revision lands; you decide when to update.</p></article>
+          <article>
+            <span>Overview</span>
+            <h3>Enroll and watch Sparks</h3>
+            <p>
+              Create one-use enrollment grants with <strong>Enroll Spark</strong>, inspect health,
+              free memory, and warnings, search nodes, choose telemetry ranges, rename, re-enroll,
+              and remove.
+            </p>
+          </article>
+          <article id="library-import">
+            <span>Library</span>
+            <h3>See what fits, then run it</h3>
+            <p>
+              Search published models and recipes; the recipe repository syncs automatically. Each
+              recipe shows whether it fits your Sparks right now and why. Download exact model
+              assets and recipe images, then load a saved profile with durable progress and
+              per-Spark results.
+            </p>
+          </article>
+          <article>
+            <span>Profiles</span>
+            <h3>Keep the mix you need</h3>
+            <p>
+              Assign recipes to Sparks, save the set as a profile, review the exact plan—what stops,
+              starts, and installs—then load it. A running install is marked stale when a newer
+              recipe revision lands; you decide when to update.
+            </p>
+          </article>
         </div>
         <div className="control-note">
           <strong>Private by design</strong>
-          <p>Keep the controller behind private HTTPS such as Tailscale, or on a lab LAN behind its local CA. Do not expose it through Funnel or treat this public website as an admin login.</p>
+          <p>
+            Keep the controller behind private HTTPS such as Tailscale, or on a lab LAN behind its
+            local CA. Do not expose it through Funnel or treat this public website as an admin
+            login.
+          </p>
         </div>
       </section>
 
       <section id="local-cli" className="control-guide cli-guide" aria-labelledby="local-cli-title">
         <header>
-          <div><h2 id="local-cli-title">Local CLI</h2><span className="guide-meta">Control path 02</span></div>
+          <div>
+            <h2 id="local-cli-title">Local CLI</h2>
+            <span className="guide-meta">Control path 02</span>
+          </div>
           <code>vonkctl</code>
         </header>
         <p className="lane-intro">
-          Install <code>vonkctl</code> on the workstation or operator host from
-          which you can reach the controller. It needs <code>curl</code>,
-          <code> openssl</code>, Python 3, and
-          <a href="https://docs.astral.sh/uv/getting-started/installation/"> <code>uv</code></a>,
-          which manages the isolated Python 3.14 environment the CLI runs in.
+          Install <code>vonkctl</code> on the workstation or operator host from which you can reach
+          the controller. It needs <code>curl</code>,<code> openssl</code>, Python 3, and
+          <a href="https://docs.astral.sh/uv/getting-started/installation/">
+            {" "}
+            <code>uv</code>
+          </a>
+          , which manages the isolated Python 3.14 environment the CLI runs in.
         </p>
 
         <div className="cli-section" aria-labelledby="cli-install-title">
-          <h3 id="cli-install-title"><span>01</span> Install</h3>
+          <h3 id="cli-install-title">
+            <span>01</span> Install
+          </h3>
           <CommandBlock label="Terminal">{`curl -fsSL https://install.vonkforge.ai/vonkctl | sh
 vonkctl --version`}</CommandBlock>
-          <p>The signed installer verifies the release signature and the exact wheel digest before handing it to <code>uv tool install</code>. Use <code>https://install.vonkforge.ai/dev/vonkctl</code> for the accepted development channel. If <code>vonkctl</code> is not on <code>PATH</code>, run <code>uv tool update-shell</code>, then open a new terminal.</p>
+          <p>
+            The signed installer verifies the release signature and the exact wheel digest before
+            handing it to <code>uv tool install</code>. Use{" "}
+            <code>https://install.vonkforge.ai/dev/vonkctl</code> for the accepted development
+            channel. If <code>vonkctl</code> is not on <code>PATH</code>, run{" "}
+            <code>uv tool update-shell</code>, then open a new terminal.
+          </p>
         </div>
 
         <div className="cli-section" aria-labelledby="cli-connect-title">
-          <h3 id="cli-connect-title"><span>02</span> Connect safely</h3>
-          <p>Sign in once from a terminal. The CLI asks for the Controller administrator password without echoing it:</p>
+          <h3 id="cli-connect-title">
+            <span>02</span> Connect safely
+          </h3>
+          <p>
+            Sign in once from a terminal. The CLI asks for the Controller administrator password
+            without echoing it:
+          </p>
           <CommandBlock label="Terminal">{`vonkctl auth login https://your-private-controller.example
 vonkctl auth status`}</CommandBlock>
           <div className="credential-warning">
             <strong>The password is asked once and never stored.</strong>
             <p>
-              The CLI keeps a 30-day token in <code>~/.config/vonkctl</code>, readable
-              only by you. <code>vonkctl auth status</code> shows the expiry, the CLI
-              warns before it runs out, and <code>vonkctl auth logout</code> removes it.
-              Never put a token in a command argument; TLS validation stays on.
+              The CLI keeps a 30-day token in <code>~/.config/vonkctl</code>, readable only by you.{" "}
+              <code>vonkctl auth status</code> shows the expiry, the CLI warns before it runs out,
+              and <code>vonkctl auth logout</code> removes it. Never put a token in a command
+              argument; TLS validation stays on.
             </p>
           </div>
         </div>
 
         <div className="cli-section" aria-labelledby="cli-read-title">
-          <h3 id="cli-read-title"><span>03</span> See what fits your Sparks</h3>
+          <h3 id="cli-read-title">
+            <span>03</span> See what fits your Sparks
+          </h3>
           <CommandBlock label="Fleet">{`vonkctl fleet
 vonkctl fleet detail Atlas --json
 vonkctl fleet activity --state needs-operator --json`}</CommandBlock>
@@ -131,16 +196,18 @@ vonkctl recipe library --ready --engine vllm --sparks 2
 vonkctl recipe detail qwen-code --json
 vonkctl recipe sync-status`}</CommandBlock>
           <p>
-            <code>--fits-fleet</code> keeps only recipes with a complete placement that
-            fits the fresh capacity of the Sparks you have; <code>--ready</code> also
-            requires the exact model files and image on your Controller. <code>recipe detail</code>
-            explains the verdict and lists the other recipes for the same model.
-            Run <code>vonkctl GROUP --help</code> at any level; help works offline.
+            <code>--fits-fleet</code> keeps only recipes with a complete placement that fits the
+            fresh capacity of the Sparks you have; <code>--ready</code> also requires the exact
+            model files and image on your Controller. <code>recipe detail</code>
+            explains the verdict and lists the other recipes for the same model. Run{" "}
+            <code>vonkctl GROUP --help</code> at any level; help works offline.
           </p>
         </div>
 
         <div className="cli-section" aria-labelledby="cli-change-title">
-          <h3 id="cli-change-title"><span>04</span> Run the mix you need</h3>
+          <h3 id="cli-change-title">
+            <span>04</span> Run the mix you need
+          </h3>
           <CommandBlock label="One recipe, now">{`vonkctl --profile 2 run "Qwen Code" --spark Atlas --spark Boreal --yes --json`}</CommandBlock>
           <CommandBlock label="A saved profile">{`vonkctl --profile 2 profile add "Qwen Code" --spark Atlas --spark Boreal
 vonkctl --profile 2 profile add "GLM" --spark Cirrus --as vision
@@ -150,52 +217,97 @@ vonkctl --profile 2 profile progress --follow
 vonkctl --profile 2 profile endpoint`}</CommandBlock>
           <p>
             <code>--review</code> is read-only and prints the Controller&apos;s exact plan:
-            placements, what stops, starts, or installs, and any blockers. In a
-            terminal, <code>profile load</code> shows that review and asks once. For
-            scripts, JSON, or redirected input, pass <code>--yes</code>; nothing is
-            asked and the Controller loads the plan that is current when it accepts
-            the request. Changing a profile always needs an explicit <code>--profile N</code>.
+            placements, what stops, starts, or installs, and any blockers. In a terminal,{" "}
+            <code>profile load</code> shows that review and asks once. For scripts, JSON, or
+            redirected input, pass <code>--yes</code>; nothing is asked and the Controller loads the
+            plan that is current when it accepts the request. Changing a profile always needs an
+            explicit <code>--profile N</code>.
           </p>
         </div>
 
         <div className="cli-section" aria-labelledby="cli-maintain-title">
-          <h3 id="cli-maintain-title"><span>05</span> Stay current</h3>
+          <h3 id="cli-maintain-title">
+            <span>05</span> Stay current
+          </h3>
           <CommandBlock label="Recipes and models">{`vonkctl recipe update --all
 vonkctl model download qwen-3.8-nvfp4`}</CommandBlock>
           <CommandBlock label="The CLI itself">{`vonkctl update --apply
 # Remove the CLI and its isolated environment:
 uv tool uninstall vonk-cluster-profiles`}</CommandBlock>
-          <p><code>recipe update --all</code> refreshes every cached recipe to its current accepted revision and follows the work. <code>vonkctl update</code> checks the signed release channel and installs only with <code>--apply</code>; it never touches the Controller or Sparks.</p>
+          <p>
+            <code>recipe update --all</code> refreshes every cached recipe to its current accepted
+            revision and follows the work. <code>vonkctl update</code> checks the signed release
+            channel and installs only with <code>--apply</code>; it never touches the Controller or
+            Sparks.
+          </p>
         </div>
 
         <div className="agent-contract" aria-labelledby="agent-contract-title">
           <h3 id="agent-contract-title">Written for agents</h3>
           <ul>
-            <li><strong><code>--json</code></strong><span>One result or one structured error on stdout; progress and prompts go to stderr. Errors carry <code>usage</code> and <code>recovery_actions</code>.</span></li>
-            <li><strong><code>--review</code> then <code>--yes</code></strong><span>Read the plan without changing anything, then consent explicitly. Without a terminal, nothing is loaded unless <code>--yes</code> is given.</span></li>
-            <li><strong>Exit codes</strong><span><code>0</code> success or dry run · <code>1</code> awaited partial result · <code>2</code> failed, blocked, or invalid · <code>130</code> interrupted · <code>141</code> closed pipe. None cancels Controller work.</span></li>
-            <li><strong>Reconnectable</strong><span>Every mutation prints a request key; <code>progress --request-key KEY --follow</code> resumes observation after a lost response.</span></li>
+            <li>
+              <strong>
+                <code>--json</code>
+              </strong>
+              <span>
+                One result or one structured error on stdout; progress and prompts go to stderr.
+                Errors carry <code>usage</code> and <code>recovery_actions</code>.
+              </span>
+            </li>
+            <li>
+              <strong>
+                <code>--review</code> then <code>--yes</code>
+              </strong>
+              <span>
+                Read the plan without changing anything, then consent explicitly. Without a
+                terminal, nothing is loaded unless <code>--yes</code> is given.
+              </span>
+            </li>
+            <li>
+              <strong>Exit codes</strong>
+              <span>
+                <code>0</code> success or dry run · <code>1</code> awaited partial result ·{" "}
+                <code>2</code> failed, blocked, or invalid · <code>130</code> interrupted ·{" "}
+                <code>141</code> closed pipe. None cancels Controller work.
+              </span>
+            </li>
+            <li>
+              <strong>Reconnectable</strong>
+              <span>
+                Every mutation prints a request key;{" "}
+                <code>progress --request-key KEY --follow</code> resumes observation after a lost
+                response.
+              </span>
+            </li>
           </ul>
         </div>
 
         <div className="runbook-links">
-          <a href={`${repository}/blob/main/docs/runbooks/vonkctl.md`}>Complete CLI command reference on GitHub</a>
+          <a href={`${repository}/blob/main/docs/runbooks/vonkctl.md`}>
+            Complete CLI command reference on GitHub
+          </a>
           <a href={`${repository}/tree/main`}>Source and release history on GitHub</a>
         </div>
       </section>
 
-      <section id="connect-tools" className="control-guide connect-guide" aria-labelledby="connect-tools-title">
+      <section
+        id="connect-tools"
+        className="control-guide connect-guide"
+        aria-labelledby="connect-tools-title"
+      >
         <header>
-          <div><h2 id="connect-tools-title">Connect your tools</h2><span className="guide-meta">One address for everything a fleet serves</span></div>
+          <div>
+            <h2 id="connect-tools-title">Connect your tools</h2>
+            <span className="guide-meta">One address for everything a fleet serves</span>
+          </div>
           <code>/v1</code>
         </header>
         <p className="lane-intro">
-          Everything your fleet serves sits behind one OpenAI-compatible address on
-          your Controller, <code>https://&lt;controller&gt;/v1</code>. Give each model an
-          alias you choose, such as <code>assistant</code> or <code>coder</code>, and point
-          your editor, agent or script at that alias. Switching the model behind it
-          changes nothing in the tool. The Controller shows the same examples with your own
-          address and alias filled in.
+          Everything your fleet serves sits behind one OpenAI-compatible address on your Controller,{" "}
+          <code>https://&lt;controller&gt;/v1</code>. Give each model an alias you choose, such as{" "}
+          <code>assistant</code> or <code>coder</code>, and point your editor, agent or script at
+          that alias. Switching the model behind it changes nothing in the tool. The Controller
+          shows the same examples with your own address and alias filled in.
         </p>
         <p className="fleet-note">
           An alias comes from <code>vonkctl --profile 2 run RECIPE --as coder</code>;{" "}
@@ -216,29 +328,45 @@ response = client.chat.completions.create(
     messages=[{"role": "user", "content": "Hello"}],
 )
 print(response.choices[0].message.content)`}</CommandBlock>
-        <p className="fleet-note">Thinking and sampling settings are usually set per request, not in the recipe.</p>
+        <p className="fleet-note">
+          Thinking and sampling settings are usually set per request, not in the recipe.
+        </p>
       </section>
 
-      <section id="make-files" className="control-guide connect-guide" aria-labelledby="make-files-title">
+      <section
+        id="make-files"
+        className="control-guide connect-guide"
+        aria-labelledby="make-files-title"
+      >
         <header>
-          <div><h2 id="make-files-title">Make images, video, audio and 3D</h2><span className="guide-meta">Jobs: files in, files out</span></div>
+          <div>
+            <h2 id="make-files-title">Make images, video, audio and 3D</h2>
+            <span className="guide-meta">Jobs: files in, files out</span>
+          </div>
           <code>job</code>
         </header>
         <p className="lane-intro">
           A recipe that is not a chat model takes input files and returns output files. Load it,
           give it an alias, and run one job with <code>vonkctl job run</code>. It uploads your
-          inputs, waits for the result and downloads it into the folder you name. Running the
-          same command again reconnects to the same job. <code>vonkctl job contract</code> shows
-          the inputs, outputs and options a running recipe accepts; each recipe page lists them too.
+          inputs, waits for the result and downloads it into the folder you name. Running the same
+          command again reconnects to the same job. <code>vonkctl job contract</code> shows the
+          inputs, outputs and options a running recipe accepts; each recipe page lists them too.
         </p>
         <CommandBlock label="Run one job">{String.raw`vonkctl job run ALIAS --input prompt=prompt.txt --option steps=4 --output results`}</CommandBlock>
         <CommandBlock label="See what a running recipe accepts">{String.raw`vonkctl job contract --run RUN_UUID`}</CommandBlock>
-        <p className="fleet-note">Find ALIAS with <code>vonkctl profile endpoint</code> and the run id with <code>vonkctl fleet</code>.</p>
+        <p className="fleet-note">
+          Find ALIAS with <code>vonkctl profile endpoint</code> and the run id with{" "}
+          <code>vonkctl fleet</code>.
+        </p>
       </section>
 
       <section className="guide-cta" aria-labelledby="control-next-title">
-        <div><h2 id="control-next-title">Install the Forge, then choose either path.</h2></div>
-        <a className="button primary" href="/install">Open the install guide</a>
+        <div>
+          <h2 id="control-next-title">Install the Forge, then choose either path.</h2>
+        </div>
+        <a className="button primary" href="/install">
+          Open the install guide
+        </a>
       </section>
     </main>
   );

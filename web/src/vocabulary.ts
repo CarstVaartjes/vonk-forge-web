@@ -10,7 +10,12 @@ export type Vocabulary = CatalogVocabulary;
 // A model type is a capability category. A model can be several types (a vision-language
 // model is Language and Vision); a capability the vocabulary does not know is no type.
 export function typesOf(vocabulary: Vocabulary, capabilities: readonly string[]): string[] {
-  const categories = new Set(capabilities.flatMap((name) => vocabulary.capabilities.find((capability) => capability.name === name)?.category ?? []));
+  const categories = new Set(
+    capabilities.flatMap(
+      (name) =>
+        vocabulary.capabilities.find((capability) => capability.name === name)?.category ?? [],
+    ),
+  );
   return vocabulary.categories.map((category) => category.id).filter((id) => categories.has(id));
 }
 

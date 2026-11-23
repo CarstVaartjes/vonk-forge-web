@@ -5,8 +5,16 @@ import type { ReceiptFacts } from "./catalog-stats";
 import { EvidenceReceipt, evidenceLine } from "./evidence-receipt";
 
 const facts: ReceiptFacts = {
-  title: "Acme Coder two Sparks", creator: "Acme", status: "Working", tested: "2026-11-12T10:00:00Z", sparks: 2, hardwareClass: "GB10",
-  measuredBytes: 119_400_000_000, contentSha256: "ab".repeat(32), imageDigest: `sha256:${"cd".repeat(32)}`, evidenceRef: "ef".repeat(32),
+  title: "Acme Coder two Sparks",
+  creator: "Acme",
+  status: "Working",
+  tested: "2026-11-12T10:00:00Z",
+  sparks: 2,
+  hardwareClass: "GB10",
+  measuredBytes: 119_400_000_000,
+  contentSha256: "ab".repeat(32),
+  imageDigest: `sha256:${"cd".repeat(32)}`,
+  evidenceRef: "ef".repeat(32),
 };
 
 test("leads with one line, keeps the creator and puts the hashes behind Details", () => {
@@ -25,9 +33,22 @@ test("leads with one line, keeps the creator and puts the hashes behind Details"
 });
 
 test("leaves out what the catalog does not carry and never says measured without a measurement", () => {
-  render(<EvidenceReceipt facts={{ ...facts, hardwareClass: null, measuredBytes: null, imageDigest: null, evidenceRef: null, sparks: null }} verified={false} />);
+  render(
+    <EvidenceReceipt
+      facts={{
+        ...facts,
+        hardwareClass: null,
+        measuredBytes: null,
+        imageDigest: null,
+        evidenceRef: null,
+        sparks: null,
+      }}
+      verified={false}
+    />,
+  );
   expect(screen.getByText("Passed hardware checks")).toBeVisible();
-  for (const name of ["Hardware", "Runtime image", "Evidence record"]) expect(screen.queryByText(name)).toBeNull();
+  for (const name of ["Hardware", "Runtime image", "Evidence record"])
+    expect(screen.queryByText(name)).toBeNull();
   expect(document.body.textContent).not.toContain("measured");
 });
 

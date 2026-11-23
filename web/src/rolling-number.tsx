@@ -18,15 +18,19 @@ export function RollingNumber({ value }: { value: number }) {
   useLayoutEffect(() => {
     const from = FORMAT.format(previous.current);
     previous.current = value;
-    const reduced = typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const reduced =
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduced || from === FORMAT.format(value)) return;
     setRoll({ from, stage: "start" });
     let timer: number | undefined;
     // Two frames: the old digits must paint before the transition starts.
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      setRoll({ from, stage: "go" });
-      timer = window.setTimeout(() => setRoll(null), 1300);
-    }));
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        setRoll({ from, stage: "go" });
+        timer = window.setTimeout(() => setRoll(null), 1300);
+      }),
+    );
     return () => window.clearTimeout(timer);
   }, [value]);
 
@@ -35,19 +39,33 @@ export function RollingNumber({ value }: { value: number }) {
   const old = roll.from.replace(/\D/g, "").padStart(text.replace(/\D/g, "").length, "0");
   let column = 0;
   const digits = text.split("").map((character, position) => {
-    if (!/\d/.test(character)) return <span className="rolling-separator" key={position}>{character}</span>;
-    const start = Number(old.slice(-(text.replace(/\D/g, "").length))[column] ?? 0);
-    const style = { "--digit": roll.stage === "go" ? Number(character) : start, "--column": column++ } as React.CSSProperties;
+    if (!/\d/.test(character))
+      return (
+        <span className="rolling-separator" key={position}>
+          {character}
+        </span>
+      );
+    const start = Number(old.slice(-text.replace(/\D/g, "").length)[column] ?? 0);
+    const style = {
+      "--digit": roll.stage === "go" ? Number(character) : start,
+      "--column": column++,
+    } as React.CSSProperties;
     return (
       <span className="rolling-column" key={position}>
-        <span className="rolling-strip" style={style}>{DIGITS.map((digit) => <span key={digit}>{digit}</span>)}</span>
+        <span className="rolling-strip" style={style}>
+          {DIGITS.map((digit) => (
+            <span key={digit}>{digit}</span>
+          ))}
+        </span>
       </span>
     );
   });
   return (
     <span className="rolling-number" data-phase={roll.stage}>
       <span className="visually-hidden">{text}</span>
-      <span className="rolling-digits" aria-hidden="true">{digits}</span>
+      <span className="rolling-digits" aria-hidden="true">
+        {digits}
+      </span>
     </span>
   );
 }

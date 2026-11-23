@@ -10,7 +10,6 @@ import { useSiteMeta } from "../page-meta";
 import { controllerInstallCommand } from "../install-command";
 import { KeptCurrent, VerifiedOnHardware } from "../home-evidence";
 
-
 // What the Controller does for a Spark owner, in one sentence each. The
 // vonkctl calls that do the same things are the agent session below.
 const number = new Intl.NumberFormat("en");
@@ -35,15 +34,20 @@ const points = [
 // vonkctl runbook (docs/runbooks/vonkctl.md); the story ends where a client can connect.
 const agentSession = [
   { comment: "What does every Spark run, and what needs attention?", command: "vonkctl fleet" },
-  { comment: "Which recipes fit my Sparks? Working ones come first.", command: "vonkctl recipe library --fits-fleet --limit 5" },
-  { comment: "Put one in profile 2, review the plan, start it.", command: "vonkctl --profile 2 run \"Qwen Code\"" },
+  {
+    comment: "Which recipes fit my Sparks? Working ones come first.",
+    command: "vonkctl recipe library --fits-fleet --limit 5",
+  },
+  {
+    comment: "Put one in profile 2, review the plan, start it.",
+    command: 'vonkctl --profile 2 run "Qwen Code"',
+  },
   { comment: "API base and model name for your clients.", command: "vonkctl profile endpoint" },
 ];
 
 function StateDot({ tone = "ready" }: { tone?: "ready" | "source" }) {
   return <span className={`state-dot ${tone}`} aria-hidden="true" />;
 }
-
 
 function ProductShot({
   src,
@@ -59,7 +63,12 @@ function ProductShot({
   return (
     <figure className="product-shot">
       <div className="product-shot-frame">
-        <div className="product-shot-bar" aria-hidden="true"><i /><i /><i /><span>https://vonk-forge.local/overview</span></div>
+        <div className="product-shot-bar" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+          <span>https://vonk-forge.local/overview</span>
+        </div>
         {(["dark", "light"] as const).map((theme) => (
           <picture key={theme} className={`shot-${theme}`}>
             <source
@@ -86,9 +95,12 @@ function ProductShot({
   );
 }
 
-
 // "empty" is a valid release with nothing verified yet: there are no numbers to show.
-type CatalogState = { status: "loading" } | { status: "error" } | { status: "empty" } | { status: "ready"; summary: CatalogSummary };
+type CatalogState =
+  | { status: "loading" }
+  | { status: "error" }
+  | { status: "empty" }
+  | { status: "ready"; summary: CatalogSummary };
 
 // Everything live on this page comes from catalog-summary.json, the small file
 // the Pages build derived from the verified release (never the full index). A
@@ -99,11 +111,21 @@ function useCatalogSummary(): [CatalogState, () => void] {
   useEffect(() => {
     const controller = new AbortController();
     getCatalogSummary(controller.signal)
-      .then((summary) => setState(summary.verified === 0 ? { status: "empty" } : { status: "ready", summary }))
-      .catch(() => { if (!controller.signal.aborted) setState({ status: "error" }); });
+      .then((summary) =>
+        setState(summary.verified === 0 ? { status: "empty" } : { status: "ready", summary }),
+      )
+      .catch(() => {
+        if (!controller.signal.aborted) setState({ status: "error" });
+      });
     return () => controller.abort();
   }, [attempt]);
-  return [state, () => { setState({ status: "loading" }); setAttempt((value) => value + 1); }];
+  return [
+    state,
+    () => {
+      setState({ status: "loading" });
+      setAttempt((value) => value + 1);
+    },
+  ];
 }
 
 function joinNames(names: string[]): string {
@@ -113,7 +135,15 @@ function joinNames(names: string[]): string {
 
 // The sentence leads (owner 2026-11-12); the counts follow as proof. All three
 // counts are over recipes verified on a DGX Spark.
-function Hero({ state, pick, setPick }: { state: CatalogState; pick: MySparks; setPick: (next: Partial<MySparks>) => void }) {
+function Hero({
+  state,
+  pick,
+  setPick,
+}: {
+  state: CatalogState;
+  pick: MySparks;
+  setPick: (next: Partial<MySparks>) => void;
+}) {
   const summary = state.status === "ready" ? state.summary : null;
   const top = summary ? summary.topCreators.slice(0, 3).map((creator) => creator.name) : [];
   const showWall = state.status === "loading" || state.status === "ready";
@@ -122,62 +152,104 @@ function Hero({ state, pick, setPick }: { state: CatalogState; pick: MySparks; s
       <div className="home-hero-copy">
         <h1 id="home-title">Models that fit your Sparks, kept current.</h1>
         <p className="home-definition">
-          Vonk Forge is the open-source Controller for NVIDIA DGX Spark. It
-          checks every model and recipe against the Sparks you actually have,
-          keeps up with new models and recipe revisions for you, and runs the
-          mix you need in a few clicks or one <code>vonkctl</code> command your
-          agents can drive.
+          Vonk Forge is the open-source Controller for NVIDIA DGX Spark. It checks every model and
+          recipe against the Sparks you actually have, keeps up with new models and recipe revisions
+          for you, and runs the mix you need in a few clicks or one <code>vonkctl</code> command
+          your agents can drive.
         </p>
         {showWall ? (
           <section className="card picker" aria-label="Which recipes fit your Sparks">
             <SparkSegments value={pick.sparks} onChange={(sparks) => setPick({ sparks })} />
-            {summary ? <FitAnswerView summary={summary} pick={pick} /> : <div className="answer-placeholder" aria-hidden="true" />}
-            <CommandBlock compact label="Ask your own Sparks">{agentSession[1]!.command}</CommandBlock>
+            {summary ? (
+              <FitAnswerView summary={summary} pick={pick} />
+            ) : (
+              <div className="answer-placeholder" aria-hidden="true" />
+            )}
+            <CommandBlock compact label="Ask your own Sparks">
+              {agentSession[1]!.command}
+            </CommandBlock>
           </section>
         ) : null}
         <div className="hero-actions">
-          <a className="button primary" href="/install">Install</a>
-          <a className="button secondary" href="/recipes">Browse what runs</a>
+          <a className="button primary" href="/install">
+            Install
+          </a>
+          <a className="button secondary" href="/recipes">
+            Browse what runs
+          </a>
         </div>
         {top.length ? (
           <p className="home-creators">
-            Recipes from {joinNames(top)} and more, each shown with whether it passed hardware checks on a DGX Spark.
+            Recipes from {joinNames(top)} and more, each shown with whether it passed hardware
+            checks on a DGX Spark.
           </p>
         ) : null}
-        <p className="hero-cli"><a className="text-link" href="/control#local-cli">See the agent-friendly CLI</a></p>
+        <p className="hero-cli">
+          <a className="text-link" href="/control#local-cli">
+            See the agent-friendly CLI
+          </a>
+        </p>
         <ul className="home-facts" aria-label="Product facts">
-          <li><StateDot /> Runs on infrastructure you own</li>
+          <li>
+            <StateDot /> Runs on infrastructure you own
+          </li>
           <li>Web + CLI</li>
           <li>Open source · MIT</li>
         </ul>
       </div>
-      {showWall ? <div className="wall-slot">{summary ? (
-        <CatalogWall
-          summary={summary}
-          match={(row) => fitsPick(row, pick)}
-          before={<><p className="wall-lead">Every recipe in the catalog. Lit means it passed on a real Spark.</p><TypeChips summary={summary} pick={pick} onChange={(type) => setPick({ type })} /></>}
-          after={<FitResults summary={summary} pick={pick} />}
-        />
-      ) : null}</div> : null}
+      {showWall ? (
+        <div className="wall-slot">
+          {summary ? (
+            <CatalogWall
+              summary={summary}
+              match={(row) => fitsPick(row, pick)}
+              before={
+                <>
+                  <p className="wall-lead">
+                    Every recipe in the catalog. Lit means it passed on a real Spark.
+                  </p>
+                  <TypeChips summary={summary} pick={pick} onChange={(type) => setPick({ type })} />
+                </>
+              }
+              after={<FitResults summary={summary} pick={pick} />}
+            />
+          ) : null}
+        </div>
+      ) : null}
     </section>
   );
 }
 
 function CatalogSections({ state, retry }: { state: CatalogState; retry: () => void }) {
-  if (state.status === "empty") return <div className="status-panel" role="status">No recipe in this release has passed hardware checks on a DGX Spark yet, so there are no numbers to show. <a href="/recipes?verified=0">Browse every recipe</a></div>;
-  if (state.status === "loading") return <div className="status-panel" role="status">Reading the verified recipe library…</div>;
+  if (state.status === "empty")
+    return (
+      <div className="status-panel" role="status">
+        No recipe in this release has passed hardware checks on a DGX Spark yet, so there are no
+        numbers to show. <a href="/recipes?verified=0">Browse every recipe</a>
+      </div>
+    );
+  if (state.status === "loading")
+    return (
+      <div className="status-panel" role="status">
+        Reading the verified recipe library…
+      </div>
+    );
   if (state.status === "error") {
     return (
       <div className="status-panel error" role="alert">
         <h2>The recipe library could not be read.</h2>
-        <p>The live numbers are not shown rather than guessed. Try again, or open the recipes directly.</p>
-        <button className="button" type="button" onClick={retry}>Retry</button>
+        <p>
+          The live numbers are not shown rather than guessed. Try again, or open the recipes
+          directly.
+        </p>
+        <button className="button" type="button" onClick={retry}>
+          Retry
+        </button>
       </div>
     );
   }
   return null;
 }
-
 
 // Section 4: the same Controller from the browser and from a terminal (a scripted screenshot of the Overview), then the three things it does for you.
 function RunTheMix() {
@@ -186,9 +258,9 @@ function RunTheMix() {
       <div className="home-section-heading">
         <h2 id="mix-title">Click it, or hand it to your agent.</h2>
         <p>
-          The Controller shows what fits, what will change, what is running and
-          what needs attention. <code>vonkctl</code> gives scripts and agents the
-          same facts and the same actions, with nothing hidden behind a prompt.
+          The Controller shows what fits, what will change, what is running and what needs
+          attention. <code>vonkctl</code> gives scripts and agents the same facts and the same
+          actions, with nothing hidden behind a prompt.
         </p>
       </div>
       <div className="tour-grid">
@@ -200,23 +272,40 @@ function RunTheMix() {
         />
         <figure className="agent-session">
           <div className="agent-session-frame" aria-label="Example vonkctl session">
-            <span className="agent-session-label">vonkctl · the same Controller, from a terminal or an agent</span>
-            <pre tabIndex={0}><code>{agentSession.map((line) => (
-              <span key={line.command} className="agent-session-step">
-                <span className="agent-session-comment"># {line.comment}</span>{"\n"}
-                <span className="agent-session-command">{line.command}</span>{"\n\n"}
-              </span>
-            ))}<span className="agent-session-command"><i className="caret" aria-hidden="true" /></span></code></pre>
+            <span className="agent-session-label">
+              vonkctl · the same Controller, from a terminal or an agent
+            </span>
+            <pre tabIndex={0}>
+              <code>
+                {agentSession.map((line) => (
+                  <span key={line.command} className="agent-session-step">
+                    <span className="agent-session-comment"># {line.comment}</span>
+                    {"\n"}
+                    <span className="agent-session-command">{line.command}</span>
+                    {"\n\n"}
+                  </span>
+                ))}
+                <span className="agent-session-command">
+                  <i className="caret" aria-hidden="true" />
+                </span>
+              </code>
+            </pre>
           </div>
           <figcaption>
             <strong>Built for scripts and AI agents</strong>
-            <span>Stable JSON, a read-only review of every change, explicit consent, meaningful exit codes</span>
+            <span>
+              Stable JSON, a read-only review of every change, explicit consent, meaningful exit
+              codes
+            </span>
           </figcaption>
         </figure>
       </div>
       <ul className="tour-points">
         {points.map((point) => (
-          <li key={point.title}><h3>{point.title}</h3><p>{point.body}</p></li>
+          <li key={point.title}>
+            <h3>{point.title}</h3>
+            <p>{point.body}</p>
+          </li>
         ))}
       </ul>
     </section>
@@ -230,28 +319,45 @@ function Creators({ summary }: { summary: CatalogSummary }) {
   return (
     <section className="home-section" aria-labelledby="creators-title">
       <div className="home-section-heading">
-        <h2 id="creators-title">{number.format(summary.creators)} creators. One catalog. {number.format(summary.verified)} recipes proven on real Sparks.</h2>
+        <h2 id="creators-title">
+          {number.format(summary.creators)} creators. One catalog. {number.format(summary.verified)}{" "}
+          recipes proven on real Sparks.
+        </h2>
         <p>
-          The people who tune models for DGX Spark publish their recipes, across {number.format(summary.families)} model families so far.
-          Vonk Forge packages each one, tests it on real DGX Sparks, shows the result, and keeps their name and source on it.
+          The people who tune models for DGX Spark publish their recipes, across{" "}
+          {number.format(summary.families)} model families so far. Vonk Forge packages each one,
+          tests it on real DGX Sparks, shows the result, and keeps their name and source on it.
         </p>
       </div>
       <ul className="creators">
         {summary.topCreators.map((creator) => (
           <li key={creator.name}>
-            <a className="src" href={`/recipes?creator=${encodeURIComponent(creator.name)}`}>{creator.name}</a>
-            <span className="meter" role="meter" aria-label={`${creator.name}: verified recipes`} aria-valuenow={creator.verified} aria-valuemin={0} aria-valuemax={most}>
+            <a className="src" href={`/recipes?creator=${encodeURIComponent(creator.name)}`}>
+              {creator.name}
+            </a>
+            <span
+              className="meter"
+              role="meter"
+              aria-label={`${creator.name}: verified recipes`}
+              aria-valuenow={creator.verified}
+              aria-valuemin={0}
+              aria-valuemax={most}
+            >
               <i style={{ width: `${(creator.verified / most) * 100}%` }} />
             </span>
             <span className="creator-count">{number.format(creator.verified)}</span>
           </li>
         ))}
       </ul>
-      {summary.creators > summary.topCreators.length ? <p className="chart-sub">and {number.format(summary.creators - summary.topCreators.length)} more creators, each credited on every recipe with a link to their source.</p> : null}
+      {summary.creators > summary.topCreators.length ? (
+        <p className="chart-sub">
+          and {number.format(summary.creators - summary.topCreators.length)} more creators, each
+          credited on every recipe with a link to their source.
+        </p>
+      ) : null}
     </section>
   );
 }
-
 
 export function HomePage() {
   useSiteMeta();
@@ -262,32 +368,50 @@ export function HomePage() {
       <Hero state={state} pick={pick} setPick={setPick} />
       <CatalogSections state={state} retry={retry} />
       <RunTheMix />
-      {state.status === "ready" ? <><KeptCurrent summary={state.summary} /><VerifiedOnHardware summary={state.summary} /></> : null}
+      {state.status === "ready" ? (
+        <>
+          <KeptCurrent summary={state.summary} />
+          <VerifiedOnHardware summary={state.summary} />
+        </>
+      ) : null}
       {state.status === "ready" ? <Creators summary={state.summary} /> : null}
 
       <section className="quickstart" aria-labelledby="quickstart-title">
         <div className="quickstart-heading">
           <h2 id="quickstart-title">Start on the computer in front of you.</h2>
           <p>
-            One Controller on a laptop, a NAS or a local server (Docker Compose
-            is enough), then each Spark enrolls with one command. Your Controller
-            caches verified model files and images, and shows progress, recovery
-            and the next action.
+            One Controller on a laptop, a NAS or a local server (Docker Compose is enough), then
+            each Spark enrolls with one command. Your Controller caches verified model files and
+            images, and shows progress, recovery and the next action.
           </p>
         </div>
         <div className="quickstart-commands">
-          <CommandBlock label="1 · Controller, on your workstation">{controllerInstallCommand}</CommandBlock>
-          <p className="quickstart-note"><strong>2 · Each Spark.</strong> Choose <strong>Enroll Spark</strong> on the Controller&apos;s Overview; it shows the exact install command to copy and run on the Spark.</p>
+          <CommandBlock label="1 · Controller, on your workstation">
+            {controllerInstallCommand}
+          </CommandBlock>
+          <p className="quickstart-note">
+            <strong>2 · Each Spark.</strong> Choose <strong>Enroll Spark</strong> on the
+            Controller&apos;s Overview; it shows the exact install command to copy and run on the
+            Spark.
+          </p>
         </div>
-        <p className="quickstart-note"><a className="text-link" href="/install">Full install guide</a> · <a className="text-link" href="/models#model-recipe-explainer">See how models, recipes, and your Controller fit together</a></p>
+        <p className="quickstart-note">
+          <a className="text-link" href="/install">
+            Full install guide
+          </a>{" "}
+          ·{" "}
+          <a className="text-link" href="/models#model-recipe-explainer">
+            See how models, recipes, and your Controller fit together
+          </a>
+        </p>
       </section>
 
       <section className="security-section" aria-labelledby="security-title">
         <div className="home-section-heading">
           <h2 id="security-title">Private by architecture, not by promise.</h2>
           <p>
-            The public site helps you discover and verify recipes. It never becomes
-            your admin surface, and it never receives authority over your Sparks.
+            The public site helps you discover and verify recipes. It never becomes your admin
+            surface, and it never receives authority over your Sparks.
           </p>
         </div>
         <div className="security-map" aria-label="Security boundary flow">
@@ -296,13 +420,17 @@ export function HomePage() {
             <h3>Catalog + verified releases</h3>
             <p>Recipe metadata, verified source, installer and package identity.</p>
           </article>
-          <div className="security-link"><span>verified inputs</span></div>
+          <div className="security-link">
+            <span>verified inputs</span>
+          </div>
           <article className="local-zone">
             <span>Your local authority</span>
             <h3>Vonk Forge controller</h3>
             <p>Policy, identity, state, secrets, previews, and operator confirmation.</p>
           </article>
-          <div className="security-link"><span>policy + operations</span></div>
+          <div className="security-link">
+            <span>policy + operations</span>
+          </div>
           <article className="local-zone">
             <span>Your private compute</span>
             <h3>DGX Spark fleet</h3>
@@ -312,10 +440,18 @@ export function HomePage() {
         <div className="private-ledger">
           <strong>Never sent to this public website</strong>
           <ul>
-            <li><StateDot /> Runtime secrets</li>
-            <li><StateDot /> Fleet state</li>
-            <li><StateDot /> Controller authority</li>
-            <li><StateDot /> Model uploads</li>
+            <li>
+              <StateDot /> Runtime secrets
+            </li>
+            <li>
+              <StateDot /> Fleet state
+            </li>
+            <li>
+              <StateDot /> Controller authority
+            </li>
+            <li>
+              <StateDot /> Model uploads
+            </li>
           </ul>
           <a href="/architecture">Inspect the complete architecture</a>
         </div>
@@ -327,8 +463,12 @@ export function HomePage() {
           <p>Install the local controller, add one Spark, and let it show you what fits.</p>
         </div>
         <div className="hero-actions">
-          <a className="button" href="/install">Install Vonk Forge</a>
-          <a className="button secondary" href="/models">Browse models and recipes</a>
+          <a className="button" href="/install">
+            Install Vonk Forge
+          </a>
+          <a className="button secondary" href="/models">
+            Browse models and recipes
+          </a>
         </div>
       </section>
     </main>

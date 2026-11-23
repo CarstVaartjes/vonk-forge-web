@@ -17,7 +17,11 @@
 .setup-sparks legend {
   margin-bottom: 0.6rem;
   color: var(--faint);
-  font: 700 var(--t-label)/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font:
+    700 var(--t-label) / 1.4 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -98,7 +102,11 @@
 .setup-facet-label {
   padding-top: 0.55rem;
   color: var(--faint);
-  font: 700 var(--t-label)/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font:
+    700 var(--t-label) / 1.4 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -161,7 +169,6 @@
   .setup-facet-label {
     padding-top: 0;
   }
-
 }
 
 .home-facts li a {
@@ -177,7 +184,6 @@
 
 /* Hero numbers: the headline is three live counts; each digit is a column that can roll. */
 
-
 .rolling-number {
   display: inline-block;
   letter-spacing: 0;
@@ -186,7 +192,10 @@
   white-space: nowrap;
 }
 
-.rolling-digits { display: inline-block; white-space: nowrap; }
+.rolling-digits {
+  display: inline-block;
+  white-space: nowrap;
+}
 
 .rolling-column,
 .rolling-separator {
@@ -202,14 +211,19 @@
   text-align: center;
 }
 
-.rolling-separator { width: 0.28em; text-align: center; }
+.rolling-separator {
+  width: 0.28em;
+  text-align: center;
+}
 
 .rolling-strip {
   display: block;
   transform: translateY(calc(var(--digit) * -1em));
 }
 
-.rolling-number { position: relative; }
+.rolling-number {
+  position: relative;
+}
 
 .rolling-strip > span {
   display: block;
@@ -223,7 +237,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rolling-number .rolling-strip { transition: none !important; }
+  .rolling-number .rolling-strip {
+    transition: none !important;
+  }
 }
-
-
