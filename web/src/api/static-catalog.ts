@@ -1,5 +1,14 @@
-import type { JobSlot, License, LibraryRelease, ModelPage, ModelRuns, ModelSummary, ModelVersionSummary, RecipeDetail, RecipeSummary } from "./client";
-
+import type {
+  JobSlot,
+  License,
+  LibraryRelease,
+  ModelPage,
+  ModelRuns,
+  ModelSummary,
+  ModelVersionSummary,
+  RecipeDetail,
+  RecipeSummary,
+} from "./client";
 
 // The release build (web/scripts/recipe-release.mjs) loads this module under Node, so
 // its runtime imports carry explicit .ts extensions.
@@ -7,7 +16,6 @@ import { parseCatalogSummary, type CatalogSummary } from "../catalog-stats.ts";
 import { isVerified } from "../qualification-status.ts";
 import { isVerifiedStatus, typesOf, type Vocabulary } from "../vocabulary.ts";
 import type { CatalogIndex, CatalogModelEntry, CatalogRecipeEntry } from "./catalog-types.ts";
-
 
 // The index is read through the types generated from the schema the release ships
 // (catalog-types.ts), so a field the contract does not have is a `tsc` error and a
@@ -22,7 +30,7 @@ const cachedIndexes = new Map<string, Promise<LibraryIndex>>();
 const loadedIndexes = new Map<string, LibraryIndex>();
 
 function record(value: unknown): Record<string, unknown> {
-  return typeof value === "object" && value !== null ? value as Record<string, unknown> : {};
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
 }
 
 function text(value: unknown, fallback = ""): string {
@@ -32,7 +40,9 @@ function text(value: unknown, fallback = ""): string {
 // A display title with a dangling separator ("SkinTokens /") is a catalog
 // typo, not information; the page shows the name without it.
 export function displayTitle(value: unknown, fallback = ""): string {
-  const trimmed = text(value).replace(/[\s/|·:,-]+$/u, "").trim();
+  const trimmed = text(value)
+    .replace(/[\s/|·:,-]+$/u, "")
+    .trim();
   return trimmed || fallback;
 }
 
@@ -73,9 +83,13 @@ function declaredCapabilities(entity: CatalogModelEntry): string[] {
   return Array.from(new Set<string>(entity.display.capabilities));
 }
 
-function executionReadiness(recipeTags: string[]): "executable" | "integration-required" | "not-executable" | "not-declared" {
+function executionReadiness(
+  recipeTags: string[],
+): "executable" | "integration-required" | "not-executable" | "not-declared" {
   const executable = recipeTags.includes("executable");
-  const notExecutable = recipeTags.some((value) => ["non-executable", "metadata-only"].includes(value));
+  const notExecutable = recipeTags.some((value) =>
+    ["non-executable", "metadata-only"].includes(value),
+  );
   const integrationRequired = recipeTags.includes("integration-required");
   const declarations = Number(executable) + Number(notExecutable) + Number(integrationRequired);
   if (declarations > 1) return notExecutable ? "not-executable" : "integration-required";
@@ -88,7 +102,14 @@ function executionReadiness(recipeTags: string[]): "executable" | "integration-r
 function canonicalSource(sourceReference: string): { owner: string; repository: string } | null {
   try {
     const source = new URL(sourceReference);
-    if (source.protocol !== "https:" || source.username || source.password || (source.port && source.port !== "443") || source.search) return null;
+    if (
+      source.protocol !== "https:" ||
+      source.username ||
+      source.password ||
+      (source.port && source.port !== "443") ||
+      source.search
+    )
+      return null;
     const segments = source.pathname.split("/").filter(Boolean);
     let host = source.hostname.toLowerCase().replace(/^www\./, "");
     let canonical: string[];
@@ -114,9 +135,13 @@ function canonicalSource(sourceReference: string): { owner: string; repository: 
   }
 }
 
-
 // A recipe selects a model by kind, identity and content digest; the entity is that exact document.
-function referenceKey(kind: string | undefined, publisher: string, slug: string, sha256: string): string {
+function referenceKey(
+  kind: string | undefined,
+  publisher: string,
+  slug: string,
+  sha256: string,
+): string {
   return `${kind}\0${publisher}\0${slug}\0${sha256}`;
 }
 
@@ -136,7 +161,12 @@ function derived(index: LibraryIndex): Derived {
     const entities = new Map<string, CatalogModelEntry>();
     for (const entity of index.catalog_entities) {
       const { identity } = entity.document;
-      const key = referenceKey(entity.document.kind, identity.publisher, identity.slug, entity.content_sha256);
+      const key = referenceKey(
+        entity.document.kind,
+        identity.publisher,
+        identity.slug,
+        entity.content_sha256,
+      );
       if (!entities.has(key)) entities.set(key, entity);
     }
     found = { entities };
@@ -145,7 +175,11 @@ function derived(index: LibraryIndex): Derived {
   return found;
 }
 
-function selectedEntity(document: RecipeDefinition, index: LibraryIndex, selection = document.models[0]): CatalogModelEntry | undefined {
+function selectedEntity(
+  document: RecipeDefinition,
+  index: LibraryIndex,
+  selection = document.models[0],
+): CatalogModelEntry | undefined {
   if (!selection) return undefined;
   const { kind, publisher, slug, content_sha256: sha256 } = selection.model;
   return derived(index).entities.get(referenceKey(kind, publisher, slug, sha256));
@@ -161,9 +195,17 @@ function familyTitle(index: LibraryIndex, display: CatalogModelEntry["display"])
 // (the slug pattern allows "--", but no published slug contains it). Its page address and the catalog `model`
 // parameter are built from that key. A variant without lineage (a drafter, encoder or other helper) has no place in
 // the hierarchy: it is in no Model and has no row.
-interface ModelGroup { publisher: string; slug: string; title: string; entities: CatalogModelEntry[] }
+interface ModelGroup {
+  publisher: string;
+  slug: string;
+  title: string;
+  entities: CatalogModelEntry[];
+}
 
-const groupsByIndex = new WeakMap<LibraryIndex, { groups: ModelGroup[]; byEntity: Map<CatalogModelEntry, ModelGroup> }>();
+const groupsByIndex = new WeakMap<
+  LibraryIndex,
+  { groups: ModelGroup[]; byEntity: Map<CatalogModelEntry, ModelGroup> }
+>();
 
 function modelGroups(index: LibraryIndex): NonNullable<ReturnType<typeof groupsByIndex.get>> {
   const cached = groupsByIndex.get(index);
@@ -178,16 +220,37 @@ function modelGroups(index: LibraryIndex): NonNullable<ReturnType<typeof groupsB
   const groups = Array.from(keyed.values()).map((entities): ModelGroup => {
     const first = entities[0]!;
     const lineage = first.display.lineage!;
-    const named = index.families?.find((family) => family.slug === lineage.family)?.lines.find((line) => line.slug === lineage.line)?.models.find((model) => model.slug === lineage.model)?.title;
-    return { publisher: lineage.family, slug: `${lineage.line}--${lineage.model}`, title: displayTitle(named || first.display.model_title, lineage.model), entities };
+    const named = index.families
+      ?.find((family) => family.slug === lineage.family)
+      ?.lines.find((line) => line.slug === lineage.line)
+      ?.models.find((model) => model.slug === lineage.model)?.title;
+    return {
+      publisher: lineage.family,
+      slug: `${lineage.line}--${lineage.model}`,
+      title: displayTitle(named || first.display.model_title, lineage.model),
+      entities,
+    };
   });
-  const byEntity = new Map(groups.flatMap((group) => group.entities.map((entity) => [entity, group] as const)));
+  const byEntity = new Map(
+    groups.flatMap((group) => group.entities.map((entity) => [entity, group] as const)),
+  );
   const built = { groups, byEntity };
   groupsByIndex.set(index, built);
   return built;
 }
 
-function modelMetadata(document: RecipeDefinition, index: LibraryIndex): { publisher: string; slug: string; title: string; family: string; versionPublisher: string; versionSlug: string; versionTitle: string } {
+function modelMetadata(
+  document: RecipeDefinition,
+  index: LibraryIndex,
+): {
+  publisher: string;
+  slug: string;
+  title: string;
+  family: string;
+  versionPublisher: string;
+  versionSlug: string;
+  versionTitle: string;
+} {
   const entity = selectedEntity(document, index);
   const identity = entity?.document.identity;
   const versionSlug = identity?.slug ?? "unknown";
@@ -216,7 +279,11 @@ function modelSize(document: ModelDefinition, deduplicate: boolean): number {
 
 // An empty field is a missing one: the catalog writes "" where it has nothing to say.
 function licenseOf(display: CatalogModelEntry["display"]): License {
-  return { spdx: display.license.spdx || undefined, url: display.license.url || undefined, notice: display.license.territorial_restrictions?.notice || undefined };
+  return {
+    spdx: display.license.spdx || undefined,
+    url: display.license.url || undefined,
+    notice: display.license.territorial_restrictions?.notice || undefined,
+  };
 }
 
 // The literal "none" says the model is not quantized: no quantization, not one called NONE.
@@ -225,11 +292,30 @@ function quantizationOf(quantization: string | undefined): string | undefined {
 }
 
 // A job recipe's contract: its job interface's slots and its typed options, labelled by the display file.
-function jobContractOf(document: RecipeDefinition, display: CatalogRecipeEntry["display"]): RecipeDetail["job"] {
+function jobContractOf(
+  document: RecipeDefinition,
+  display: CatalogRecipeEntry["display"],
+): RecipeDetail["job"] {
   const { settings } = document;
   if (settings.kind !== "job") return undefined;
   const job = document.interfaces.find((entry) => entry.adapter !== "openai");
-  const slot = ({ id, label, description, media_types, extensions, min_files, max_files }: JobSlot): JobSlot => ({ id, label, description, media_types, extensions, min_files, max_files });
+  const slot = ({
+    id,
+    label,
+    description,
+    media_types,
+    extensions,
+    min_files,
+    max_files,
+  }: JobSlot): JobSlot => ({
+    id,
+    label,
+    description,
+    media_types,
+    extensions,
+    min_files,
+    max_files,
+  });
   return {
     inputs: (job?.input?.slots ?? []).map(slot),
     outputs: (job?.output.slots ?? []).map(slot),
@@ -262,8 +348,14 @@ function mapModelVersion(entity: CatalogModelEntry, recipeSlugs: string[]): Mode
     requires_token: document.requires_token,
     source_repository: source.repository || undefined,
     source_revision: ("revision" in source ? source.revision : "") || undefined,
-    format: { precision: format.precision || undefined, quantization: quantizationOf(format.quantization) },
-    sizes: { download_bytes: modelSize(document, true), installed_bytes: modelSize(document, false) },
+    format: {
+      precision: format.precision || undefined,
+      quantization: quantizationOf(format.quantization),
+    },
+    sizes: {
+      download_bytes: modelSize(document, true),
+      installed_bytes: modelSize(document, false),
+    },
     license: licenseOf(display),
     capabilities: declaredCapabilities(entity),
     recipe_slugs: recipeSlugs,
@@ -271,47 +363,65 @@ function mapModelVersion(entity: CatalogModelEntry, recipeSlugs: string[]): Mode
 }
 
 function runsOf(own: RecipeSummary[]): ModelRuns {
-  const unique = (values: Array<string | null>): string[] => Array.from(new Set(values.filter((value): value is string => Boolean(value)))).sort();
+  const unique = (values: Array<string | null>): string[] =>
+    Array.from(new Set(values.filter((value): value is string => Boolean(value)))).sort();
   return {
-    spark_counts: Array.from(new Set(own.map((recipe) => recipe.catalog.node_count))).sort((left, right) => left - right),
+    spark_counts: Array.from(new Set(own.map((recipe) => recipe.catalog.node_count))).sort(
+      (left, right) => left - right,
+    ),
     engines: unique(own.map((recipe) => recipe.catalog.runtime_distribution)),
     creators: unique(own.map((recipe) => recipe.catalog.source_owner)),
   };
 }
 
 function mapModels(index: LibraryIndex): ModelSummary[] {
-  const recipes = recipesFromIndex(index);
+  recipesFromIndex(index);
   const byAddress = derived(index).recipesByAddress!;
   // A recipe runs its first model; a drafter or companion does not make it run that Model.
   const slugsByEntity = new Map<CatalogModelEntry, string[]>();
   for (const recipe of index.recipes) {
     const entity = selectedEntity(recipe.document, index);
-    if (entity) slugsByEntity.set(entity, [...(slugsByEntity.get(entity) ?? []), `${recipe.document.identity.publisher}/${recipe.document.identity.slug}`]);
+    if (entity)
+      slugsByEntity.set(entity, [
+        ...(slugsByEntity.get(entity) ?? []),
+        `${recipe.document.identity.publisher}/${recipe.document.identity.slug}`,
+      ]);
   }
-  return modelGroups(index).groups.map(({ publisher, slug, title, entities }) => {
-    const first = entities[0]!;
-    const { display } = first;
-    const versionRows = entities.map((version) => mapModelVersion(version, (slugsByEntity.get(version) ?? []).sort())).sort((left, right) => left.title.localeCompare(right.title));
-    const slugs = new Set(versionRows.flatMap((version) => version.recipe_slugs));
-    const own = Array.from(slugs).flatMap((address) => byAddress.get(address) ?? []);
-    const verifiedRecipes = own.filter(isVerified);
-    return {
-      publisher,
-      slug,
-      title,
-      family: familyTitle(index, display) || undefined,
-      runs: runsOf(own),
-      verified_runs: runsOf(verifiedRecipes),
-      verified_recipe_count: verifiedRecipes.length,
-      tags: lowerTags(display.tags),
-      types: typesOf(index.vocabulary, versionRows.flatMap((version) => version.capabilities)),
-      versions: versionRows,
-      recipe_count: slugs.size,
-    };
-  }).sort((left, right) => left.title.localeCompare(right.title));
+  return modelGroups(index)
+    .groups.map(({ publisher, slug, title, entities }) => {
+      const first = entities[0]!;
+      const { display } = first;
+      const versionRows = entities
+        .map((version) => mapModelVersion(version, (slugsByEntity.get(version) ?? []).sort()))
+        .sort((left, right) => left.title.localeCompare(right.title));
+      const slugs = new Set(versionRows.flatMap((version) => version.recipe_slugs));
+      const own = Array.from(slugs).flatMap((address) => byAddress.get(address) ?? []);
+      const verifiedRecipes = own.filter(isVerified);
+      return {
+        publisher,
+        slug,
+        title,
+        family: familyTitle(index, display) || undefined,
+        runs: runsOf(own),
+        verified_runs: runsOf(verifiedRecipes),
+        verified_recipe_count: verifiedRecipes.length,
+        tags: lowerTags(display.tags),
+        types: typesOf(
+          index.vocabulary,
+          versionRows.flatMap((version) => version.capabilities),
+        ),
+        versions: versionRows,
+        recipe_count: slugs.size,
+      };
+    })
+    .sort((left, right) => left.title.localeCompare(right.title));
 }
 
-function publicMetadata(item: CatalogRecipeEntry, index: LibraryIndex, artifacts: RecipeSummary["artifacts"]): NonNullable<RecipeSummary["catalog"]> {
+function publicMetadata(
+  item: CatalogRecipeEntry,
+  index: LibraryIndex,
+  artifacts: RecipeSummary["artifacts"],
+): NonNullable<RecipeSummary["catalog"]> {
   const { document, display } = item;
   const recipeTags = lowerTags(display.tags);
   const model = modelMetadata(document, index);
@@ -342,7 +452,10 @@ function publicMetadata(item: CatalogRecipeEntry, index: LibraryIndex, artifacts
     precision: modelEntity?.document.format.precision || null,
     quantizations: quantization ? [quantization.toUpperCase()] : [],
     node_count: Math.max(1, document.topology.node_count),
-    expected_download_bytes: (artifacts ?? []).reduce((total, artifact) => total + (artifact.download_bytes ?? 0), 0),
+    expected_download_bytes: (artifacts ?? []).reduce(
+      (total, artifact) => total + (artifact.download_bytes ?? 0),
+      0,
+    ),
   };
 }
 
@@ -355,13 +468,15 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
   const artifacts = document.models.flatMap((selection) => {
     const entity = selectedEntity(document, index, selection);
     const selectedFiles = new Set(selection.files.map((file) => file.file_id));
-    return entity ? entity.document.files
-      .filter((file) => selectedFiles.has(file.id))
-      .map((file) => ({
-        repository: entity.document.source.repository,
-        revision: "revision" in entity.document.source ? entity.document.source.revision : "",
-        download_bytes: file.size_bytes,
-      })) : [];
+    return entity
+      ? entity.document.files
+          .filter((file) => selectedFiles.has(file.id))
+          .map((file) => ({
+            repository: entity.document.source.repository,
+            revision: "revision" in entity.document.source ? entity.document.source.revision : "",
+            download_bytes: file.size_bytes,
+          }))
+      : [];
   });
   const sourceUrl = `https://github.com/${index.repository}/blob/${index.source_commit}/${item.source_path}`;
   const packageName = item.package.path.startsWith(index.package_contract.path_prefix)
@@ -392,7 +507,9 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
       profile_node_counts: [nodeCount],
       maximum_installed_bytes_per_node: resources.disk || undefined,
       maximum_runtime_memory_bytes_per_node: resources.memory || undefined,
-      measured_memory_bytes_per_node: item.measured_memory ? Math.max(...item.measured_memory.roles.map((role) => role.measured_peak_bytes)) : undefined,
+      measured_memory_bytes_per_node: item.measured_memory
+        ? Math.max(...item.measured_memory.roles.map((role) => role.measured_peak_bytes))
+        : undefined,
     },
     moderation_warning: null,
     facts: {
@@ -405,7 +522,9 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
     },
     source: {
       recipe_url: sourceUrl,
-      bundle_url: contextPath ? `https://github.com/${index.repository}/tree/${index.source_commit}/${contextPath}` : undefined,
+      bundle_url: contextPath
+        ? `https://github.com/${index.repository}/tree/${index.source_commit}/${contextPath}`
+        : undefined,
     },
     package: {
       member: packageName,
@@ -414,15 +533,29 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
       media_type: item.package.media_type,
     },
     catalog: publicMetadata(item, index, artifacts),
-    evidence: lastPass ? {
-      tested_at: lastPass.tested_at,
-      spark_count: lastPass.platform.spark_count ?? undefined,
-      hardware_class: lastPass.platform.hardware_class,
-      evidence_ref: lastPass.evidence_refs?.[0],
-      image_digest: lastPass.identity.runtime_image?.image_digest,
-    } : null,
-    chat_api: chat ? { endpoints: chat.endpoints, streaming: chat.streaming, structured_output: chat.structured_output, image_input: chat.input_modalities.image, audio_input: chat.input_modalities.audio } : undefined,
-    served_names: document.interfaces.flatMap((entry) => (entry.adapter === "openai" ? entry.model_aliases : [])),
+    evidence: lastPass
+      ? {
+          tested_at: lastPass.tested_at,
+          spark_count: lastPass.platform.spark_count ?? undefined,
+          hardware_class: lastPass.platform.hardware_class,
+          evidence_ref: lastPass.evidence_refs?.[0],
+          image_digest: lastPass.identity.runtime_image?.image_digest,
+        }
+      : null,
+    ...(chat
+      ? {
+          chat_api: {
+            endpoints: chat.endpoints,
+            streaming: chat.streaming,
+            structured_output: chat.structured_output,
+            image_input: chat.input_modalities.image,
+            audio_input: chat.input_modalities.audio,
+          },
+        }
+      : {}),
+    served_names: document.interfaces.flatMap((entry) =>
+      entry.adapter === "openai" ? entry.model_aliases : [],
+    ),
     credits: document.provenance.attribution,
     job: jobContractOf(document, display),
     settings: {
@@ -449,7 +582,10 @@ interface ReleaseManifest {
 // The Pages build writes the verified release's index and a manifest naming
 // that release beside it; both are read from this site's own origin.
 async function readJson(url: string, signal?: AbortSignal): Promise<unknown> {
-  const response = await fetch(url, { headers: { Accept: "application/json" }, signal });
+  const response = await fetch(url, {
+    headers: { Accept: "application/json" },
+    ...(signal ? { signal } : {}),
+  });
   if (!response.ok) throw new Error(`Recipe library returned ${response.status}`);
   return response.json();
 }
@@ -460,14 +596,26 @@ function releaseUrl(indexUrl: string): string {
 
 function libraryRelease(value: unknown): LibraryRelease {
   const release = record(value) as Partial<ReleaseManifest>;
-  if (typeof release.tag !== "string" || !/^v\d+\.\d+\.\d+$/.test(release.tag) || typeof release.updated_at !== "string" || !/^[0-9a-f]{64}$/.test(release.catalog_index_sha256 ?? "")) {
+  if (
+    typeof release.tag !== "string" ||
+    !/^v\d+\.\d+\.\d+$/.test(release.tag) ||
+    typeof release.updated_at !== "string" ||
+    !/^[0-9a-f]{64}$/.test(release.catalog_index_sha256 ?? "")
+  ) {
     throw new Error("Recipe library returned an unsupported release manifest");
   }
-  return { version: release.tag, updated_at: release.updated_at, index_sha256: release.catalog_index_sha256! };
+  return {
+    version: release.tag,
+    updated_at: release.updated_at,
+    index_sha256: release.catalog_index_sha256!,
+  };
 }
 
 async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
-  const [rawBody, rawRelease] = await Promise.all([readJson(url, signal), readJson(releaseUrl(url), signal)]);
+  const [rawBody, rawRelease] = await Promise.all([
+    readJson(url, signal),
+    readJson(releaseUrl(url), signal),
+  ]);
   return parseLibraryIndex(rawBody, rawRelease);
 }
 
@@ -479,10 +627,21 @@ async function readIndex(url: string, signal?: AbortSignal): Promise<LibraryInde
 export function parseLibraryIndex(rawBody: unknown, rawRelease: unknown): LibraryIndex {
   const body = rawBody as Partial<LibraryIndex>;
   const release = record(rawRelease) as Partial<ReleaseManifest>;
-  if (!Array.isArray(body.catalog_entities) || body.catalog_entities.length === 0 || !Array.isArray(body.recipes) || !body.package_contract || !body.vocabulary) {
+  if (
+    !Array.isArray(body.catalog_entities) ||
+    body.catalog_entities.length === 0 ||
+    !Array.isArray(body.recipes) ||
+    !body.package_contract ||
+    !body.vocabulary
+  ) {
     throw new Error("Recipe library returned an unsupported catalog index");
   }
-  if (typeof release.tag !== "string" || !/^v\d+\.\d+\.\d+$/.test(release.tag) || release.repository !== body.repository || release.source_commit !== body.source_commit) {
+  if (
+    typeof release.tag !== "string" ||
+    !/^v\d+\.\d+\.\d+$/.test(release.tag) ||
+    release.repository !== body.repository ||
+    release.source_commit !== body.source_commit
+  ) {
     throw new Error("Recipe library returned an index that does not match its release");
   }
   return body as LibraryIndex;
@@ -493,13 +652,16 @@ export function parseLibraryIndex(rawBody: unknown, rawRelease: unknown): Librar
 function loadIndex(url: string, signal?: AbortSignal): Promise<LibraryIndex> {
   let shared = cachedIndexes.get(url);
   if (!shared) {
-    const pending: Promise<LibraryIndex> = readIndex(url).then((index) => {
-      loadedIndexes.set(url, index);
-      return index;
-    }, (error: unknown) => {
-      if (cachedIndexes.get(url) === pending) cachedIndexes.delete(url);
-      throw error;
-    });
+    const pending: Promise<LibraryIndex> = readIndex(url).then(
+      (index) => {
+        loadedIndexes.set(url, index);
+        return index;
+      },
+      (error: unknown) => {
+        if (cachedIndexes.get(url) === pending) cachedIndexes.delete(url);
+        throw error;
+      },
+    );
     cachedIndexes.set(url, pending);
     shared = pending;
   }
@@ -517,7 +679,10 @@ function raceAbort<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
 
 // The library version (its release tag, which is the contract version) and when
 // its content last changed. Reads only the small release manifest.
-export async function getStaticLibraryRelease(url: string, signal?: AbortSignal): Promise<LibraryRelease> {
+export async function getStaticLibraryRelease(
+  url: string,
+  signal?: AbortSignal,
+): Promise<LibraryRelease> {
   return libraryRelease(await readJson(releaseUrl(url), signal));
 }
 
@@ -537,8 +702,16 @@ export function recipesFromIndex(index: LibraryIndex): RecipeDetail[] {
 
 // The small summary the Pages build derived from the verified index
 // (catalog-summary.json beside release.json). The home page reads only this.
-export async function getStaticCatalogSummary(url: string, signal?: AbortSignal): Promise<CatalogSummary> {
-  return parseCatalogSummary(await readJson(new URL("catalog-summary.json", new URL(url, globalThis.location?.href)).toString(), signal));
+export async function getStaticCatalogSummary(
+  url: string,
+  signal?: AbortSignal,
+): Promise<CatalogSummary> {
+  return parseCatalogSummary(
+    await readJson(
+      new URL("catalog-summary.json", new URL(url, globalThis.location?.href)).toString(),
+      signal,
+    ),
+  );
 }
 
 // The words of the release the pages show, from the same index (one load).
@@ -560,12 +733,17 @@ function recipeFromIndex(index: LibraryIndex, publisher: string, slug: string): 
 }
 
 function modelFromIndex(index: LibraryIndex, publisher: string, slug: string): ModelSummary {
-  const model = modelsFromIndex(index).find((item) => item.publisher === publisher && item.slug === slug);
+  const model = modelsFromIndex(index).find(
+    (item) => item.publisher === publisher && item.slug === slug,
+  );
   if (!model) throw new Error("Model not found in the public library");
   return model;
 }
 
-export async function listStaticRecipeCatalog(url: string, signal?: AbortSignal): Promise<RecipeDetail[]> {
+export async function listStaticRecipeCatalog(
+  url: string,
+  signal?: AbortSignal,
+): Promise<RecipeDetail[]> {
   return recipesFromIndex(await loadIndex(url, signal));
 }
 
@@ -575,21 +753,38 @@ export async function listStaticModels(url: string, signal?: AbortSignal): Promi
 
 // A miss is a miss: the cached index may belong to an older release than the entry asked for, so it is
 // dropped before the error, and Retry or the next page reads the index again.
-async function fromIndex<T>(url: string, signal: AbortSignal | undefined, pick: (index: LibraryIndex) => T): Promise<T> {
+async function fromIndex<T>(
+  url: string,
+  signal: AbortSignal | undefined,
+  pick: (index: LibraryIndex) => T,
+): Promise<T> {
   const index = await loadIndex(url, signal);
   try {
     return pick(index);
   } catch (error) {
-    if (loadedIndexes.get(url) === index) { loadedIndexes.delete(url); cachedIndexes.delete(url); }
+    if (loadedIndexes.get(url) === index) {
+      loadedIndexes.delete(url);
+      cachedIndexes.delete(url);
+    }
     throw error;
   }
 }
 
-export function getStaticModel(url: string, publisher: string, slug: string, signal?: AbortSignal): Promise<ModelSummary> {
+export function getStaticModel(
+  url: string,
+  publisher: string,
+  slug: string,
+  signal?: AbortSignal,
+): Promise<ModelSummary> {
   return fromIndex(url, signal, (index) => modelFromIndex(index, publisher, slug));
 }
 
-export function getStaticRecipe(url: string, publisher: string, slug: string, signal?: AbortSignal): Promise<RecipeDetail> {
+export function getStaticRecipe(
+  url: string,
+  publisher: string,
+  slug: string,
+  signal?: AbortSignal,
+): Promise<RecipeDetail> {
   return fromIndex(url, signal, (index) => recipeFromIndex(index, publisher, slug));
 }
 
@@ -609,14 +804,26 @@ export function peekStaticModels(url: string): ModelPage | null {
   return index ? { items: modelsFromIndex(index) } : null;
 }
 
-export function peekStaticRecipe(url: string, publisher: string, slug: string): RecipeDetail | null {
+export function peekStaticRecipe(
+  url: string,
+  publisher: string,
+  slug: string,
+): RecipeDetail | null {
   const index = loadedIndexes.get(url);
-  try { return index ? recipeFromIndex(index, publisher, slug) : null; } catch { return null; }
+  try {
+    return index ? recipeFromIndex(index, publisher, slug) : null;
+  } catch {
+    return null;
+  }
 }
 
 export function peekStaticModel(url: string, publisher: string, slug: string): ModelSummary | null {
   const index = loadedIndexes.get(url);
-  try { return index ? modelFromIndex(index, publisher, slug) : null; } catch { return null; }
+  try {
+    return index ? modelFromIndex(index, publisher, slug) : null;
+  } catch {
+    return null;
+  }
 }
 
 export function resetStaticCatalogCacheForTests(): void {

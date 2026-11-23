@@ -32,22 +32,47 @@ function setCurrent(): void {
 }
 
 export function useLocationKey(): string {
-  return useSyncExternalStore((listener) => { listeners.add(listener); return () => { listeners.delete(listener); }; }, () => current, () => current);
+  return useSyncExternalStore(
+    (listener) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    () => current,
+    () => current,
+  );
 }
 
 function rememberScroll(): void {
-  window.history.replaceState({ ...(window.history.state as object | null), scrollY: window.scrollY }, "");
+  window.history.replaceState(
+    { ...(window.history.state as object | null), scrollY: window.scrollY },
+    "",
+  );
 }
 
 function linkTarget(event: MouseEvent): URL | null {
-  if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return null;
+  if (
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
+  )
+    return null;
   const anchor = (event.target as Element | null)?.closest?.("a");
-  if (!anchor || !anchor.hasAttribute("href") || anchor.hasAttribute("download")) return null;
+  if (!anchor?.hasAttribute("href") || anchor.hasAttribute("download")) return null;
   if (anchor.target && anchor.target !== "_self") return null;
   const url = new URL(anchor.href, window.location.href);
   if (url.origin !== window.location.origin || !matchRoute(url.pathname)) return null;
   // A link to a spot on the page we are on is the browser's own.
-  if (url.hash && url.pathname === window.location.pathname && url.search === window.location.search) return null;
+  if (
+    url.hash &&
+    url.pathname === window.location.pathname &&
+    url.search === window.location.search
+  )
+    return null;
   return url;
 }
 
@@ -58,7 +83,8 @@ export function settleNavigation(): void {
   if (!done) return;
   const main = document.getElementById("main-content");
   if (done.kind === "pop") restoreScroll(done.scrollY);
-  else if (done.hash && document.getElementById(decodeURIComponent(done.hash.slice(1)))) document.getElementById(decodeURIComponent(done.hash.slice(1)))!.scrollIntoView();
+  else if (done.hash && document.getElementById(decodeURIComponent(done.hash.slice(1))))
+    document.getElementById(decodeURIComponent(done.hash.slice(1)))!.scrollIntoView();
   else window.scrollTo(0, 0);
   focusHeading(main);
 }
@@ -82,9 +108,15 @@ function focusHeading(main: HTMLElement | null): void {
     const found = main.querySelector<HTMLElement>("h1");
     return found && (found.checkVisibility?.() ?? found.getClientRects().length > 0) ? found : null;
   };
-  const focus = (target: HTMLElement) => { target.tabIndex = -1; target.focus({ preventScroll: true }); };
+  const focus = (target: HTMLElement) => {
+    target.tabIndex = -1;
+    target.focus({ preventScroll: true });
+  };
   const first = visibleHeading();
-  if (first) { focus(first); return; }
+  if (first) {
+    focus(first);
+    return;
+  }
   focus(main);
   const watch = new MutationObserver(() => {
     const found = visibleHeading();
@@ -92,7 +124,12 @@ function focusHeading(main: HTMLElement | null): void {
     watch.disconnect();
     if (document.activeElement === main || document.activeElement === document.body) focus(found);
   });
-  watch.observe(main, { childList: true, subtree: true, attributes: true, attributeFilter: ["style", "hidden"] });
+  watch.observe(main, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ["style", "hidden"],
+  });
   window.setTimeout(() => watch.disconnect(), 10_000);
 }
 
@@ -103,7 +140,10 @@ export function startRouter(prepare: (pathname: string) => Promise<unknown>): ()
   window.history.scrollRestoration = "manual";
   // A page rewrites its own query with replaceState; keep the last address true.
   const replaceState = window.history.replaceState;
-  window.history.replaceState = function (this: History, ...args: Parameters<History["replaceState"]>) {
+  window.history.replaceState = function (
+    this: History,
+    ...args: Parameters<History["replaceState"]>
+  ) {
     replaceState.apply(this, args);
     lastAddress = locationKey();
   };
@@ -114,7 +154,8 @@ export function startRouter(prepare: (pathname: string) => Promise<unknown>): ()
       await prepare(url.pathname);
     } catch {
       if (mine !== ticket) return;
-      if (kind === "push") window.location.assign(url.href); else window.location.reload();
+      if (kind === "push") window.location.assign(url.href);
+      else window.location.reload();
       return;
     }
     if (mine !== ticket) return;
@@ -123,10 +164,14 @@ export function startRouter(prepare: (pathname: string) => Promise<unknown>): ()
     const samePage = kind === "push" && address === locationKey();
     if (kind === "push") {
       if (samePage) window.history.replaceState(window.history.state, "", `${address}${url.hash}`);
-      else { rememberScroll(); window.history.pushState({ scrollY: 0 }, "", `${address}${url.hash}`); }
+      else {
+        rememberScroll();
+        window.history.pushState({ scrollY: 0 }, "", `${address}${url.hash}`);
+      }
     }
     pending = { kind, hash: url.hash, scrollY };
-    if (samePage) settleNavigation(); else setCurrent();
+    if (samePage) settleNavigation();
+    else setCurrent();
   }
 
   const onClick = (event: MouseEvent) => {
@@ -140,7 +185,11 @@ export function startRouter(prepare: (pathname: string) => Promise<unknown>): ()
     lastAddress = locationKey();
     // A step that changes only the hash is the browser's own scroll to an anchor: nothing to show.
     if (lastAddress === before) return;
-    void show(new URL(window.location.href), "pop", (window.history.state as { scrollY?: number } | null)?.scrollY ?? 0);
+    void show(
+      new URL(window.location.href),
+      "pop",
+      (window.history.state as { scrollY?: number } | null)?.scrollY ?? 0,
+    );
   };
   document.addEventListener("click", onClick);
   window.addEventListener("popstate", onPopState);

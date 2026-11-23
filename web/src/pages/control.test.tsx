@@ -12,18 +12,24 @@ test("Connect your tools shows the Controller's curl and Python examples exactly
   render(<ControlPage />);
   const [example] = fixture.cases;
   const section = screen.getByRole("region", { name: "Connect your tools" });
-  const codes = [...section.querySelectorAll(".command-block code")].map((code) => code.textContent);
+  const codes = [...section.querySelectorAll(".command-block code")].map(
+    (code) => code.textContent,
+  );
 
   expect(codes).toEqual([example?.setup, example?.curl, example?.python]);
   expect(section.querySelectorAll("button")).toHaveLength(3);
-  expect([...section.querySelectorAll("button")].every((button) => button.textContent === "Copy")).toBe(true);
+  expect(
+    [...section.querySelectorAll("button")].every((button) => button.textContent === "Copy"),
+  ).toBe(true);
   expect(section.textContent).not.toMatch(/try (it|request)/i);
 });
 
 test("the Control page explains jobs with the runbook's job run and job contract commands", () => {
   render(<ControlPage />);
   const section = screen.getByRole("region", { name: "Make images, video, audio and 3D" });
-  const codes = [...section.querySelectorAll(".command-block code")].map((code) => code.textContent);
+  const codes = [...section.querySelectorAll(".command-block code")].map(
+    (code) => code.textContent,
+  );
   expect(codes).toEqual([
     "vonkctl job run ALIAS --input prompt=prompt.txt --option steps=4 --output results",
     "vonkctl job contract --run RUN_UUID",
@@ -33,7 +39,9 @@ test("the Control page explains jobs with the runbook's job run and job contract
 test("Connect your tools says where an alias comes from", () => {
   render(<ControlPage />);
   const section = screen.getByRole("region", { name: "Connect your tools" });
-  expect(section.textContent).toContain("An alias comes from vonkctl --profile 2 run RECIPE --as coder; vonkctl profile endpoint lists them.");
+  expect(section.textContent).toContain(
+    "An alias comes from vonkctl --profile 2 run RECIPE --as coder; vonkctl profile endpoint lists them.",
+  );
 });
 
 test("the site says load, not apply, for a profile", () => {

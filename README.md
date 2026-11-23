@@ -111,6 +111,7 @@ development with the real catalog, run `npm --prefix web run catalog`
 npm --prefix web ci
 npm --prefix web audit --audit-level=high
 npm --prefix web run catalog      # fetch the release, generate the types
+npm --prefix web run lint
 npm --prefix web run typecheck
 npm --prefix web test -- --run
 npm --prefix web run build

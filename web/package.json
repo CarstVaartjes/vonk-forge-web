@@ -6,7 +6,9 @@
   "scripts": {
     "preinstall": "node scripts/check-node-version.mjs",
     "build": "tsc -p tsconfig.build.json && vite build",
+    "lint": "biome ci .",
     "typecheck": "tsc -p tsconfig.json",
+    "pretypecheck": "npm run catalog",
     "catalog": "node scripts/recipe-release.mjs && node scripts/generate-catalog-types.mjs",
     "catalog:types": "node scripts/generate-catalog-types.mjs",
     "dev": "vite",
@@ -20,9 +22,11 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
+    "@biomejs/biome": "2.5.15",
     "@playwright/test": "1.65.1",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
+    "@types/node": "26.6.4",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.3.0",

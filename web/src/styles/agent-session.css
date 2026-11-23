@@ -1,4 +1,4 @@
-/* Agent session: the terminal counterpart of the Fleet screenshot. */.agent-session {
+/* Agent session: the terminal counterpart of the Fleet screenshot. */ .agent-session {
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -22,7 +22,11 @@
   padding: 0.75rem 1.25rem;
   border-bottom: 1px solid var(--line-strong);
   color: var(--faint);
-  font: 700 var(--t-label)/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font:
+    700 var(--t-label) / 1.4 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
@@ -36,7 +40,11 @@
   overflow-x: auto;
   scrollbar-color: var(--line-strong) transparent;
   scrollbar-width: thin;
-  font: 600 var(--t-lead)/1.75 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font:
+    600 var(--t-lead) / 1.75 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
 }
 
 .agent-session-frame code {
@@ -75,8 +83,8 @@
 }
 
 @media (max-width: 820px) {
-
-  /* Long commands wrap in the terminal panel instead of forcing horizontal scroll. */.agent-session-frame pre {
+  /* Long commands wrap in the terminal panel instead of forcing horizontal scroll. */ .agent-session-frame
+  pre {
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
@@ -85,8 +93,8 @@
 @media (max-width: 520px) {
   .agent-session-frame {
     aspect-ratio: auto;
-  border-radius: var(--r-card);
-}
+    border-radius: var(--r-card);
+  }
 
   .agent-session figcaption {
     grid-template-columns: 1fr;
@@ -94,11 +102,11 @@
   }
 }
 
-/* Secure remote intro: heading and lead-in before the Tailscale preflight. */.install-modes {
+/* Secure remote intro: heading and lead-in before the Tailscale preflight. */ .install-modes {
   padding: clamp(2.5rem, 5vw, 4rem) 0 0;
 }
 
-/* The CLI's contract for scripts and agents, stated once beside the commands. */.agent-contract {
+/* The CLI's contract for scripts and agents, stated once beside the commands. */ .agent-contract {
   margin-top: 2.5rem;
   padding: 1.5rem;
   border: 1px solid var(--green-dim);
@@ -151,9 +159,10 @@
   }
 }
 
-/* Inline code in CLI prose (URLs, env names) wraps instead of widening the column at 320 px. */.cli-section p code,
+/* Inline code in CLI prose (URLs, env names) wraps instead of widening the column at 320 px. */ .cli-section
+  p
+  code,
 .credential-warning code,
 .agent-contract code {
   overflow-wrap: anywhere;
 }
-

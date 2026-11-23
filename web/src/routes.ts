@@ -26,8 +26,14 @@ export function matchRoute(pathname: string): RouteMatch | null {
     const params = { publisher: "", slug: "" };
     const fits = pattern.every((part, index) => {
       const value = parts[index] ?? "";
-      if (part === ":publisher") { params.publisher = value; return true; }
-      if (part === ":slug") { params.slug = value; return true; }
+      if (part === ":publisher") {
+        params.publisher = value;
+        return true;
+      }
+      if (part === ":slug") {
+        params.slug = value;
+        return true;
+      }
       return part === value;
     });
     if (fits) return { route, params };

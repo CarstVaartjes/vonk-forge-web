@@ -8,7 +8,10 @@
   --raised: light-dark(#f6f4ee, #1a1d19);
   --line: light-dark(#e1ddd1, #262924);
   --line-strong: light-dark(#cbc5b6, #3a3e36);
-  --line-control: light-dark(#857f70, #666b5f); /* 3:1 on every surface: borders that identify a control */
+  --line-control: light-dark(
+    #857f70,
+    #666b5f
+  ); /* 3:1 on every surface: borders that identify a control */
   --edge: light-dark(rgb(255 255 255 / 0%), rgb(255 255 255 / 5%)); /* 1px top highlight on cards */
   /* ink */
   --ink: light-dark(#171813, #f2efe8);
@@ -40,7 +43,10 @@
   --track: light-dark(#e6e2d8, #2a2e27);
   /* the catalog wall (one cell per Spark) */
   --lit: light-dark(#1f201b, #f2efe8);
-  --tile: light-dark(var(--lit), rgb(245 240 228 / 78%)); /* the wall's lit cell: warm matte ivory, never pure white */
+  --tile: light-dark(
+    var(--lit),
+    rgb(245 240 228 / 78%)
+  ); /* the wall's lit cell: warm matte ivory, never pure white */
   --hollow: light-dark(rgb(23 24 19 / 55%), rgb(245 240 228 / 45%));
   --lit-glow: 0 0 7px rgb(242 239 232 / 28%);
   --cool: light-dark(rgb(23 24 19 / 12%), rgb(242 239 232 / 13%));
@@ -106,6 +112,5 @@
   --fast: 120ms;
   --base: 240ms;
   --slow: 600ms;
-  --ease: cubic-bezier(.2, .7, .2, 1);
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
-

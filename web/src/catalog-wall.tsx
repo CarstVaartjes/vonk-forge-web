@@ -1,5 +1,12 @@
 import { formatDate } from "./dates";
-import { useRef, useState, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from "react";
+import {
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+  type PointerEvent,
+  type ReactNode,
+} from "react";
 
 import { newestFirst, type CatalogSummary, type RecipeRow } from "./catalog-stats";
 import { gibLabel } from "./catalog-filters";
@@ -25,7 +32,12 @@ export function memoryLine(row: RecipeRow): string | null {
 }
 
 function WallCard({ row }: { row: RecipeRow | null }) {
-  if (!row) return <div className="wall-card" aria-hidden="true"><p className="wall-card-hint">Hover, focus or tap a mark for its details.</p></div>;
+  if (!row)
+    return (
+      <div className="wall-card" aria-hidden="true">
+        <p className="wall-card-hint">Hover, focus or tap a mark for its details.</p>
+      </div>
+    );
   const memory = memoryLine(row);
   return (
     <div className="wall-card">
@@ -33,8 +45,13 @@ function WallCard({ row }: { row: RecipeRow | null }) {
       {row.creator ? <span className="src">{row.creator}</span> : null}
       <span className="wall-card-status">{row.status}</span>
       <span>{row.tested ? `Tested ${formatDate(row.tested)}` : "No hardware pass on record"}</span>
-      <span>{row.sparks === 1 ? "1 Spark" : `${row.sparks} Sparks`}{memory ? ` · ${memory}` : ""}</span>
-      <a className="text-link" href={recipeHref(row)}>Open recipe</a>
+      <span>
+        {row.sparks === 1 ? "1 Spark" : `${row.sparks} Sparks`}
+        {memory ? ` · ${memory}` : ""}
+      </span>
+      <a className="text-link" href={recipeHref(row)}>
+        Open recipe
+      </a>
     </div>
   );
 }
@@ -42,8 +59,22 @@ function WallCard({ row }: { row: RecipeRow | null }) {
 // The whole catalog at a glance: shelves by Spark count, a mark per recipe (a joined mark per Spark),
 // one tab stop with arrow-key movement, Enter opens the recipe. The details of the hovered, focused or
 // tapped mark show in a reserved panel under the wall, so nothing moves when they change.
-export function CatalogWall({ summary, match = () => true, before, after }: { summary: CatalogSummary; match?: (row: RecipeRow) => boolean; before?: ReactNode; after?: ReactNode }) {
-  const shelves = summary.bySparks.map(({ sparks, total }) => ({ sparks, total, rows: summary.recipes.filter((row) => row.sparks === sparks).sort(newestFirst) }));
+export function CatalogWall({
+  summary,
+  match = () => true,
+  before,
+  after,
+}: {
+  summary: CatalogSummary;
+  match?: (row: RecipeRow) => boolean;
+  before?: ReactNode;
+  after?: ReactNode;
+}) {
+  const shelves = summary.bySparks.map(({ sparks, total }) => ({
+    sparks,
+    total,
+    rows: summary.recipes.filter((row) => row.sparks === sparks).sort(newestFirst),
+  }));
   const ordered = shelves.flatMap((shelf) => shelf.rows);
   const [active, setActive] = useState(0);
   const [shown, setShown] = useState<number | null>(null);
@@ -52,7 +83,9 @@ export function CatalogWall({ summary, match = () => true, before, after }: { su
 
   const counts = { verified: 0, before: 0, none: 0 };
   for (const row of ordered) counts[cellState(row)] += 1;
-  const verifiedLabel = [...new Set(ordered.filter((row) => row.verified).map((row) => row.status))].join(" / ");
+  const verifiedLabel = [
+    ...new Set(ordered.filter((row) => row.verified).map((row) => row.status)),
+  ].join(" / ");
 
   const select = (index: number, focus: boolean) => {
     setActive(index);
@@ -60,24 +93,43 @@ export function CatalogWall({ summary, match = () => true, before, after }: { su
     if (focus) cells.current[index]?.focus();
   };
 
-  const marks = () => cells.current.flatMap((cell, index) => (cell ? [{ index, rect: cell.getBoundingClientRect() }] : []));
-  const centre = (rect: DOMRect) => ({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 });
+  const marks = () =>
+    cells.current.flatMap((cell, index) =>
+      cell ? [{ index, rect: cell.getBoundingClientRect() }] : [],
+    );
+  const centre = (rect: DOMRect) => ({
+    x: rect.left + rect.width / 2,
+    y: rect.top + rect.height / 2,
+  });
   const closest = (candidates: ReturnType<typeof marks>, x: number, y: number, fallback: number) =>
-    candidates.reduce((best, { index, rect }) => {
-      const point = centre(rect);
-      const distance = Math.hypot(point.x - x, point.y - y);
-      return distance < best.distance ? { index, distance } : best;
-    }, { index: fallback, distance: Infinity }).index;
+    candidates.reduce(
+      (best, { index, rect }) => {
+        const point = centre(rect);
+        const distance = Math.hypot(point.x - x, point.y - y);
+        return distance < best.distance ? { index, distance } : best;
+      },
+      { index: fallback, distance: Infinity },
+    ).index;
 
   // The mark in the next row above (-1) or below (1) that sits nearest across.
   const neighbourRow = (direction: -1 | 1): number => {
     const all = marks();
     const here = all.find((mark) => mark.index === active)?.rect;
     if (!here) return active;
-    const beyond = all.filter(({ rect }) => (direction < 0 ? rect.top < here.top - 2 : rect.top > here.top + 2));
+    const beyond = all.filter(({ rect }) =>
+      direction < 0 ? rect.top < here.top - 2 : rect.top > here.top + 2,
+    );
     if (beyond.length === 0) return active;
-    const rowTop = direction < 0 ? Math.max(...beyond.map(({ rect }) => rect.top)) : Math.min(...beyond.map(({ rect }) => rect.top));
-    return closest(beyond.filter(({ rect }) => Math.abs(rect.top - rowTop) < 2), centre(here).x, rowTop, active);
+    const rowTop =
+      direction < 0
+        ? Math.max(...beyond.map(({ rect }) => rect.top))
+        : Math.min(...beyond.map(({ rect }) => rect.top));
+    return closest(
+      beyond.filter(({ rect }) => Math.abs(rect.top - rowTop) < 2),
+      centre(here).x,
+      rowTop,
+      active,
+    );
   };
 
   const onKeyDown = (event: KeyboardEvent) => {
@@ -104,19 +156,39 @@ export function CatalogWall({ summary, match = () => true, before, after }: { su
     event.preventDefault();
     select(closest(marks(), event.clientX, event.clientY, active), false);
   };
-  const onPointerDown = (event: PointerEvent) => { touch.current = event.pointerType === "touch"; };
+  const onPointerDown = (event: PointerEvent) => {
+    touch.current = event.pointerType === "touch";
+  };
 
   let index = -1;
   return (
     <div className="wall">
       {before}
       <p id="wall-summary" className="visually-hidden">
-        {number.format(ordered.length)} recipes: {number.format(counts.verified)} {verifiedLabel}, {number.format(counts.before)} passed before and are not verified now, {number.format(counts.none)} with no hardware pass yet.
+        {number.format(ordered.length)} recipes: {number.format(counts.verified)} {verifiedLabel},{" "}
+        {number.format(counts.before)} passed before and are not verified now,{" "}
+        {number.format(counts.none)} with no hardware pass yet.
       </p>
-      <div className="wall-shelves" role="group" aria-label="The recipe catalog, one mark per recipe" aria-describedby="wall-summary" onKeyDown={onKeyDown} onPointerDown={onPointerDown} onClick={onClick}>
+      {/* biome-ignore lint/a11y/useSemanticElements: role=group names a styled wrapper; fieldset would need a user-agent style reset */}
+      <div
+        className="wall-shelves"
+        role="group"
+        aria-label="The recipe catalog, one mark per recipe"
+        aria-describedby="wall-summary"
+        onKeyDown={onKeyDown}
+        onPointerDown={onPointerDown}
+        onClick={onClick}
+      >
         {shelves.map((shelf) => (
-          <section key={shelf.sparks} className="wall-shelf" aria-label={`${shelf.sparks} ${shelf.sparks === 1 ? "Spark" : "Sparks"}`}>
-            <h3 className="wall-shelf-title">{shelf.sparks} {shelf.sparks === 1 ? "Spark" : "Sparks"} <span>{number.format(shelf.total)}</span></h3>
+          <section
+            key={shelf.sparks}
+            className="wall-shelf"
+            aria-label={`${shelf.sparks} ${shelf.sparks === 1 ? "Spark" : "Sparks"}`}
+          >
+            <h3 className="wall-shelf-title">
+              {shelf.sparks} {shelf.sparks === 1 ? "Spark" : "Sparks"}{" "}
+              <span>{number.format(shelf.total)}</span>
+            </h3>
             <div className="wall-cells">
               {shelf.rows.map((row) => {
                 index += 1;
@@ -124,7 +196,9 @@ export function CatalogWall({ summary, match = () => true, before, after }: { su
                 return (
                   <a
                     key={`${row.publisher}/${row.slug}`}
-                    ref={(element) => { cells.current[mine] = element; }}
+                    ref={(element) => {
+                      cells.current[mine] = element;
+                    }}
                     className="wall-cell"
                     data-state={cellState(row)}
                     data-dim={match(row) ? undefined : ""}
@@ -135,7 +209,10 @@ export function CatalogWall({ summary, match = () => true, before, after }: { su
                     onFocus={() => select(mine, false)}
                     onMouseEnter={() => setShown(mine)}
                   >
-                    {Array.from({ length: row.sparks }, (_, spark) => <i key={spark} />)}
+                    {Array.from({ length: row.sparks }, (_, spark) => (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: one mark per Spark in a fixed row, identified by its position
+                      <i key={spark} />
+                    ))}
                   </a>
                 );
               })}
@@ -143,11 +220,20 @@ export function CatalogWall({ summary, match = () => true, before, after }: { su
           </section>
         ))}
       </div>
-      <WallCard key={shown ?? "none"} row={shown === null ? null : ordered[shown] ?? null} />
+      <WallCard key={shown ?? "none"} row={shown === null ? null : (ordered[shown] ?? null)} />
       <ul className="wall-legend" aria-label="What the marks mean">
-        <li><span className="wall-key" data-state="verified" aria-hidden="true" />{verifiedLabel} <b>{number.format(counts.verified)}</b></li>
-        <li><span className="wall-key" data-state="before" aria-hidden="true" />Passed before, not verified now <b>{number.format(counts.before)}</b></li>
-        <li><span className="wall-key" data-state="none" aria-hidden="true" />No hardware pass yet <b>{number.format(counts.none)}</b></li>
+        <li>
+          <span className="wall-key" data-state="verified" aria-hidden="true" />
+          {verifiedLabel} <b>{number.format(counts.verified)}</b>
+        </li>
+        <li>
+          <span className="wall-key" data-state="before" aria-hidden="true" />
+          Passed before, not verified now <b>{number.format(counts.before)}</b>
+        </li>
+        <li>
+          <span className="wall-key" data-state="none" aria-hidden="true" />
+          No hardware pass yet <b>{number.format(counts.none)}</b>
+        </li>
       </ul>
       {after}
     </div>

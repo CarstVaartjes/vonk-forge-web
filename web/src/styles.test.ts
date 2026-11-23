@@ -1,8 +1,15 @@
 import { expect, test } from "vitest";
 
 // Every module under styles/ as text (index.css only lists the import order); the token module is read on its own.
-const modules = import.meta.glob<string>("./styles/*.css", { query: "?raw", import: "default", eager: true });
-const css = Object.entries(modules).filter(([path]) => !path.endsWith("/index.css")).map(([, text]) => text).join("\n");
+const modules = import.meta.glob<string>("./styles/*.css", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+const css = Object.entries(modules)
+  .filter(([path]) => !path.endsWith("/index.css"))
+  .map(([, text]) => text)
+  .join("\n");
 const tokenCss = modules["./styles/tokens.css"]!;
 
 test("the stylesheet is read, not stubbed out", () => {
@@ -32,7 +39,12 @@ test("every font-size, and the size inside every font shorthand, is a scale toke
 function block(selector: string): Map<string, string> {
   const start = tokenCss.indexOf(`${selector} {`);
   const body = tokenCss.slice(start, tokenCss.indexOf("\n}\n", start));
-  return new Map([...body.matchAll(/(--[a-z0-9-]+): ([^;]+);/g)].map((m) => [m[1]!, m[2]!.trim()]));
+  return new Map(
+    [...body.matchAll(/(--[a-z0-9-]+): ([^;]+);/g)].map((m) => [
+      m[1]!,
+      m[2]!.replace(/\s+/g, " ").replace(/\( /g, "(").replace(/ \)/g, ")").trim(),
+    ]),
+  );
 }
 
 function channels(value: string, bg: number[]): number[] {
@@ -45,7 +57,10 @@ function channels(value: string, bg: number[]): number[] {
 }
 
 function luminance(c: number[]): number {
-  const [r, g, b] = c.map((v) => ((v /= 255) <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  const [r, g, b] = c.map((v) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
   return 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
 }
 
@@ -55,34 +70,63 @@ const contrast = (a: number[], b: number[]) => {
 };
 
 const TEXT: [string, string][] = [
-  ["--ink", "--bg"], ["--ink", "--panel"], ["--muted", "--bg"], ["--muted", "--panel"], ["--muted", "--recess"],
-  ["--faint", "--bg"], ["--faint", "--panel"], ["--green-text", "--bg"], ["--green-text", "--panel"],
-  ["--gold-soft", "--panel"], ["--ok", "--panel"], ["--warn", "--panel"], ["--bad", "--panel"], ["--info", "--panel"],
-  ["--green-ink", "--green"], ["--bg", "--ink"],
-  ["--link", "--bg"], ["--link", "--panel"], ["--link", "--recess"], ["--muted", "--raised"], ["--link-hover", "--panel"],
+  ["--ink", "--bg"],
+  ["--ink", "--panel"],
+  ["--muted", "--bg"],
+  ["--muted", "--panel"],
+  ["--muted", "--recess"],
+  ["--faint", "--bg"],
+  ["--faint", "--panel"],
+  ["--green-text", "--bg"],
+  ["--green-text", "--panel"],
+  ["--gold-soft", "--panel"],
+  ["--ok", "--panel"],
+  ["--warn", "--panel"],
+  ["--bad", "--panel"],
+  ["--info", "--panel"],
+  ["--green-ink", "--green"],
+  ["--bg", "--ink"],
+  ["--link", "--bg"],
+  ["--link", "--panel"],
+  ["--link", "--recess"],
+  ["--muted", "--raised"],
+  ["--link-hover", "--panel"],
 ];
-const MARKS: [string, string][] = [["--lit", "--panel"], ["--tile", "--panel"], ["--hollow", "--panel"], ["--cool", "--panel"], ["--line-control", "--panel"], ["--line-control", "--bg"], ["--focus", "--bg"], ["--focus", "--panel"], ["--focus", "--recess"]];
+const MARKS: [string, string][] = [
+  ["--lit", "--panel"],
+  ["--tile", "--panel"],
+  ["--hollow", "--panel"],
+  ["--cool", "--panel"],
+  ["--line-control", "--panel"],
+  ["--line-control", "--bg"],
+  ["--focus", "--bg"],
+  ["--focus", "--panel"],
+  ["--focus", "--recess"],
+];
 
-test.each(["dark", "light"])("token pairs meet contrast in the %s theme (text 4.5:1, marks 3:1)", (theme) => {
-  const tokens = block(":root");
-  // A light-dark(light, dark) pair resolves to the side of the theme under test (the values hold no commas of their own).
-  const side = (value: string) => {
-    const pair = /^light-dark\((.+), ([^,]+)\)$/.exec(value);
-    return pair ? pair[theme === "light" ? 1 : 2]!.trim() : value;
-  };
-  const resolve = (name: string): string => {
-    const value = tokens.get(name);
-    if (!value) throw new Error(`missing ${name} of ${[...tokens.keys()].length}`);
-    const alias = /^var\((--[a-z0-9-]+)\)$/.exec(side(value));
-    return alias ? resolve(alias[1]!) : side(value);
-  };
-  const colour = (name: string, under = [0, 0, 0]) => channels(resolve(name), under);
-  const over = (a: string, b: string) => contrast(colour(a, colour(b)), colour(b));
-  const failing = [...TEXT, ...MARKS.filter(([a]) => a !== "--cool")].filter(([a, b]) => {
-    const need = TEXT.some(([x, y]) => x === a && y === b) ? 4.5 : 3;
-    return over(a, b) < need;
-  });
-  // --cool is the dim state, exempt from 3:1: it only has to stay visible against the panel (>= 1.2:1).
-  const cool = contrast(colour("--cool", colour("--panel")), colour("--panel"));
-  expect({ failing, cool: cool >= 1.2 }).toEqual({ failing: [], cool: true });
-});
+test.each(["dark", "light"])(
+  "token pairs meet contrast in the %s theme (text 4.5:1, marks 3:1)",
+  (theme) => {
+    const tokens = block(":root");
+    // A light-dark(light, dark) pair resolves to the side of the theme under test (the values hold no commas of their own).
+    const side = (value: string) => {
+      const pair = /^light-dark\((.+), ([^,]+)\)$/.exec(value);
+      return pair ? pair[theme === "light" ? 1 : 2]!.trim() : value;
+    };
+    const resolve = (name: string): string => {
+      const value = tokens.get(name);
+      if (!value) throw new Error(`missing ${name} of ${[...tokens.keys()].length}`);
+      const alias = /^var\((--[a-z0-9-]+)\)$/.exec(side(value));
+      return alias ? resolve(alias[1]!) : side(value);
+    };
+    const colour = (name: string, under = [0, 0, 0]) => channels(resolve(name), under);
+    const over = (a: string, b: string) => contrast(colour(a, colour(b)), colour(b));
+    const failing = [...TEXT, ...MARKS.filter(([a]) => a !== "--cool")].filter(([a, b]) => {
+      const need = TEXT.some(([x, y]) => x === a && y === b) ? 4.5 : 3;
+      return over(a, b) < need;
+    });
+    // --cool is the dim state, exempt from 3:1: it only has to stay visible against the panel (>= 1.2:1).
+    const cool = contrast(colour("--cool", colour("--panel")), colour("--panel"));
+    expect({ failing, cool: cool >= 1.2 }).toEqual({ failing: [], cool: true });
+  },
+);

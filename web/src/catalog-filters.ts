@@ -2,7 +2,6 @@ import type { RecipeSummary } from "./api/client";
 // Loaded under Node by the release build (via catalog-summary.ts): runtime imports use .ts.
 import { isVerified } from "./qualification-status.ts";
 
-
 export const READINESS_OPTIONS = [
   { value: "executable", label: "Executable contract" },
   { value: "integration-required", label: "Integration required" },
@@ -14,7 +13,11 @@ export type SparkFilter = "" | "1" | "2" | "3" | "4+";
 
 // The Spark counts a visitor says they have. A count matches recipes that need that many or fewer
 // (nodeCountMatches); "4+" matches every recipe, the library having none for more than eight.
-export const SPARK_OPTIONS: ReadonlyArray<{ value: Exclude<SparkFilter, "">; numeral: string; label: string }> = [
+export const SPARK_OPTIONS: ReadonlyArray<{
+  value: Exclude<SparkFilter, "">;
+  numeral: string;
+  label: string;
+}> = [
   { value: "1", numeral: "1", label: "1 Spark" },
   { value: "2", numeral: "2", label: "2 Sparks" },
   { value: "3", numeral: "3", label: "3 Sparks" },
@@ -43,7 +46,9 @@ const ENGINE_LABELS: Record<string, string> = {
 
 // The visitor's Spark count as a sentence: "2 Sparks or fewer" (4+ is every recipe).
 export function sparksFewerLabel(sparks: Exclude<SparkFilter, "">): string {
-  return sparks === "4+" ? "Any number of Sparks" : `${sparks} ${sparks === "1" ? "Spark" : "Sparks"} or fewer`;
+  return sparks === "4+"
+    ? "Any number of Sparks"
+    : `${sparks} ${sparks === "1" ? "Spark" : "Sparks"} or fewer`;
 }
 
 export function engineLabel(value: string): string {
@@ -54,7 +59,24 @@ export type UpdatedFilter = "" | "7" | "30" | "90" | "365";
 export const COLUMN_SORTS = ["recipe", "sparks", "memory", "runtime", "qualification"] as const;
 export type RecipeSort = "catalog" | (typeof COLUMN_SORTS)[number];
 export type SortDirection = "asc" | "desc";
-export type FilterFacet = "type" | "verified" | "modelFamily" | "model" | "abliterated" | "sourceOwner" | "repository" | "sparks" | "runtime" | "quantization" | "updated" | "qualification" | "readiness" | "capability" | "download" | "disk" | "memory";
+export type FilterFacet =
+  | "type"
+  | "verified"
+  | "modelFamily"
+  | "model"
+  | "abliterated"
+  | "sourceOwner"
+  | "repository"
+  | "sparks"
+  | "runtime"
+  | "quantization"
+  | "updated"
+  | "qualification"
+  | "readiness"
+  | "capability"
+  | "download"
+  | "disk"
+  | "memory";
 
 interface CatalogFilters {
   query: string;
@@ -120,7 +142,7 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
   const readiness = parameters.get("readiness") ?? "";
   const abliterated = parameters.get("abliterated") ?? "";
   const requestedSort = parameters.get("sort") ?? "catalog";
-  const sort = VALID_SORTS.has(requestedSort) ? requestedSort as RecipeSort : "catalog";
+  const sort = VALID_SORTS.has(requestedSort) ? (requestedSort as RecipeSort) : "catalog";
   const direction = parameters.get("direction") ?? (sort === "catalog" ? "desc" : "asc");
   return {
     query: parameters.get("q") ?? "",
@@ -131,18 +153,24 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
     abliterated: abliterated === "true" || abliterated === "false" ? abliterated : "",
     sourceOwner: parameters.get("creator") ?? "",
     repository: parameters.get("repository") ?? "",
-    sparks: VALID_SPARKS.has(sparks) ? sparks as SparkFilter : "",
+    sparks: VALID_SPARKS.has(sparks) ? (sparks as SparkFilter) : "",
     uses: /^[1-9]\d?$/.test(parameters.get("uses") ?? "") ? Number(parameters.get("uses")) : 0,
     runtime: parameters.get("runtime") ?? "",
     quantization: parameters.get("quantization") ?? "",
-    updated: VALID_UPDATED.has(parameters.get("updated") ?? "") ? parameters.get("updated") as UpdatedFilter : "",
+    updated: VALID_UPDATED.has(parameters.get("updated") ?? "")
+      ? (parameters.get("updated") as UpdatedFilter)
+      : "",
     qualification,
-    readiness: VALID_READINESS.has(readiness) ? readiness as CatalogFilters["readiness"] : "",
+    readiness: VALID_READINESS.has(readiness) ? (readiness as CatalogFilters["readiness"]) : "",
     download: capacityParameter(parameters.get("download")),
     disk: capacityParameter(parameters.get("disk")),
     memory: capacityParameter(parameters.get("memory")),
     sort,
-    direction: VALID_DIRECTIONS.has(direction) ? direction as SortDirection : sort === "catalog" ? "desc" : "asc",
+    direction: VALID_DIRECTIONS.has(direction)
+      ? (direction as SortDirection)
+      : sort === "catalog"
+        ? "desc"
+        : "asc",
     capabilities: Array.from(new Set(parameters.getAll("capability").filter(Boolean))),
   };
 }
@@ -152,18 +180,26 @@ export function modelFamilyTitle(recipe: RecipeSummary): string {
   const title = recipe.catalog.model_title
     .replace(/\s+[0-9a-f]{8}$/i, "")
     .replace(/^NVIDIA\s+/i, "");
-  const variant = /\s+(?:NVFP4|BF16|FP16|FP8|FP4|INT8|INT4|EXL3|AQLM|AWQ|GPTQ|GGUF|TorchAO|DFlash\d*|Abliterated)(?:\s|$)/i.exec(title);
+  const variant =
+    /\s+(?:NVFP4|BF16|FP16|FP8|FP4|INT8|INT4|EXL3|AQLM|AWQ|GPTQ|GGUF|TorchAO|DFlash\d*|Abliterated)(?:\s|$)/i.exec(
+      title,
+    );
   return (variant ? title.slice(0, variant.index) : title).trim();
 }
 
 // GitHub owners differ only by case between recipes ("NVIDIA", "nvidia"); one creator.
-export function sameCreator(left: string | null | undefined, right: string | null | undefined): boolean {
+export function sameCreator(
+  left: string | null | undefined,
+  right: string | null | undefined,
+): boolean {
   return Boolean(left && right) && String(left).toLowerCase() === String(right).toLowerCase();
 }
 
 // One entry per creator regardless of letter case, named by its most common
 // spelling (ties: alphabetical), with how many of the given owners it covers.
-export function foldCreators(owners: ReadonlyArray<string | null | undefined>): Array<{ name: string; count: number }> {
+export function foldCreators(
+  owners: ReadonlyArray<string | null | undefined>,
+): Array<{ name: string; count: number }> {
   const groups = new Map<string, Map<string, number>>();
   for (const value of owners) {
     const owner = value?.trim();
@@ -173,7 +209,9 @@ export function foldCreators(owners: ReadonlyArray<string | null | undefined>): 
     groups.set(owner.toLowerCase(), spellings);
   }
   return Array.from(groups.values()).map((spellings) => ({
-    name: [...spellings.entries()].sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))[0]![0],
+    name: [...spellings.entries()].sort(
+      (left, right) => right[1] - left[1] || left[0].localeCompare(right[0]),
+    )[0]![0],
     count: [...spellings.values()].reduce((total, count) => total + count, 0),
   }));
 }
@@ -232,53 +270,86 @@ export function recipeIsAbliterated(recipe: RecipeSummary): boolean {
   return recipe.catalog.alignment === "abliterated";
 }
 
-export function updatedMatches(recipe: RecipeSummary, updated: UpdatedFilter, now = new Date()): boolean {
+export function updatedMatches(
+  recipe: RecipeSummary,
+  updated: UpdatedFilter,
+  now = new Date(),
+): boolean {
   if (!updated) return true;
   const released = releaseTime(recipe.published_at);
   return !Number.isNaN(released) && released >= now.getTime() - Number(updated) * 86_400_000;
 }
 
-export function recipeMatches(recipe: RecipeSummary, filters: CatalogFilters, omitted?: FilterFacet): boolean {
+export function recipeMatches(
+  recipe: RecipeSummary,
+  filters: CatalogFilters,
+  omitted?: FilterFacet,
+): boolean {
   const facts = recipe.catalog;
   const normalized = filters.query.trim().toLocaleLowerCase();
-  const queryMatches = !normalized || [
-    recipe.title,
-    recipe.slug,
-    facts.description,
-    modelFamilyTitle(recipe),
-    facts.model_title,
-    facts.model_slug,
-    facts.model_version_title,
-    facts.model_version_slug,
-    facts.source_owner ?? "",
-    facts.source_repository ?? "",
-    facts.runtime_distribution,
-    ...facts.quantizations,
-    ...facts.capabilities,
-    ...facts.tags,
-  ].some((value) => value.toLocaleLowerCase().includes(normalized));
-  return queryMatches
-    && (omitted === "verified" || !filters.verified || isVerified(recipe))
-    && (omitted === "type" || !filters.type || facts.types.includes(filters.type))
-    && (omitted === "modelFamily" || !filters.modelFamily || modelFamilyTitle(recipe) === filters.modelFamily)
-    && (omitted === "model" || !filters.model || modelKey(recipe) === filters.model)
-    && (omitted === "abliterated" || !filters.abliterated || recipeIsAbliterated(recipe) === (filters.abliterated === "true"))
-    && (omitted === "sourceOwner" || !filters.sourceOwner || sameCreator(facts.source_owner, filters.sourceOwner))
-    && (omitted === "repository" || !filters.repository || facts.source_repository === filters.repository)
-    && (omitted === "sparks" || sparksMatch(recipe, filters.sparks))
-    && (!filters.uses || facts.node_count === filters.uses)
-    && (omitted === "runtime" || !filters.runtime || facts.runtime_distribution === filters.runtime)
-    && (omitted === "quantization" || !filters.quantization || facts.quantizations.includes(filters.quantization))
-    && (omitted === "updated" || updatedMatches(recipe, filters.updated))
-    && (omitted === "qualification" || !filters.qualification || facts.qualification === filters.qualification)
-    && (omitted === "readiness" || !filters.readiness || facts.execution_readiness === filters.readiness)
-    && (omitted === "capability" || filters.capabilities.every((capability) => facts.capabilities.includes(capability)))
-    && (omitted === "download" || capacityBucketMatches(facts.expected_download_bytes, filters.download))
-    && (omitted === "disk" || capacityBucketMatches(recipe.capacity?.maximum_installed_bytes_per_node, filters.disk))
-    && (omitted === "memory" || capacityBucketMatches(recipe.capacity?.maximum_runtime_memory_bytes_per_node, filters.memory));
+  const queryMatches =
+    !normalized ||
+    [
+      recipe.title,
+      recipe.slug,
+      facts.description,
+      modelFamilyTitle(recipe),
+      facts.model_title,
+      facts.model_slug,
+      facts.model_version_title,
+      facts.model_version_slug,
+      facts.source_owner ?? "",
+      facts.source_repository ?? "",
+      facts.runtime_distribution,
+      ...facts.quantizations,
+      ...facts.capabilities,
+      ...facts.tags,
+    ].some((value) => value.toLocaleLowerCase().includes(normalized));
+  return (
+    queryMatches &&
+    (omitted === "verified" || !filters.verified || isVerified(recipe)) &&
+    (omitted === "type" || !filters.type || facts.types.includes(filters.type)) &&
+    (omitted === "modelFamily" ||
+      !filters.modelFamily ||
+      modelFamilyTitle(recipe) === filters.modelFamily) &&
+    (omitted === "model" || !filters.model || modelKey(recipe) === filters.model) &&
+    (omitted === "abliterated" ||
+      !filters.abliterated ||
+      recipeIsAbliterated(recipe) === (filters.abliterated === "true")) &&
+    (omitted === "sourceOwner" ||
+      !filters.sourceOwner ||
+      sameCreator(facts.source_owner, filters.sourceOwner)) &&
+    (omitted === "repository" ||
+      !filters.repository ||
+      facts.source_repository === filters.repository) &&
+    (omitted === "sparks" || sparksMatch(recipe, filters.sparks)) &&
+    (!filters.uses || facts.node_count === filters.uses) &&
+    (omitted === "runtime" || !filters.runtime || facts.runtime_distribution === filters.runtime) &&
+    (omitted === "quantization" ||
+      !filters.quantization ||
+      facts.quantizations.includes(filters.quantization)) &&
+    (omitted === "updated" || updatedMatches(recipe, filters.updated)) &&
+    (omitted === "qualification" ||
+      !filters.qualification ||
+      facts.qualification === filters.qualification) &&
+    (omitted === "readiness" ||
+      !filters.readiness ||
+      facts.execution_readiness === filters.readiness) &&
+    (omitted === "capability" ||
+      filters.capabilities.every((capability) => facts.capabilities.includes(capability))) &&
+    (omitted === "download" ||
+      capacityBucketMatches(facts.expected_download_bytes, filters.download)) &&
+    (omitted === "disk" ||
+      capacityBucketMatches(recipe.capacity?.maximum_installed_bytes_per_node, filters.disk)) &&
+    (omitted === "memory" ||
+      capacityBucketMatches(recipe.capacity?.maximum_runtime_memory_bytes_per_node, filters.memory))
+  );
 }
 
-const SORT_WORDS: Record<(typeof COLUMN_SORTS)[number], [name: string, ascending: string, descending: string]> = {
+const SORT_WORDS: Record<
+  (typeof COLUMN_SORTS)[number],
+  [name: string, ascending: string, descending: string]
+> = {
   recipe: ["Recipe", "A to Z", "Z to A"],
   sparks: ["Sparks", "fewest first", "most first"],
   memory: ["Memory", "low to high", "high to low"],
@@ -290,13 +361,19 @@ const SORT_WORDS: Record<(typeof COLUMN_SORTS)[number], [name: string, ascending
 // the phone's Sort select lists exactly these, so it always reflects the URL.
 export const SORT_CHOICES: ReadonlyArray<{ value: string; label: string }> = [
   { value: "catalog:desc", label: "Newest" },
-  ...COLUMN_SORTS.flatMap((sort) => (["asc", "desc"] as const).map((direction) => ({
-    value: `${sort}:${direction}`,
-    label: `${SORT_WORDS[sort][0]} ${SORT_WORDS[sort][direction === "asc" ? 1 : 2]}`,
-  }))),
+  ...COLUMN_SORTS.flatMap((sort) =>
+    (["asc", "desc"] as const).map((direction) => ({
+      value: `${sort}:${direction}`,
+      label: `${SORT_WORDS[sort][0]} ${SORT_WORDS[sort][direction === "asc" ? 1 : 2]}`,
+    })),
+  ),
 ];
 
-export function sortRecipes(recipes: RecipeSummary[], sort: RecipeSort, direction: SortDirection = sort === "catalog" ? "desc" : "asc"): RecipeSummary[] {
+export function sortRecipes(
+  recipes: RecipeSummary[],
+  sort: RecipeSort,
+  direction: SortDirection = sort === "catalog" ? "desc" : "asc",
+): RecipeSummary[] {
   const value = (recipe: RecipeSummary): string | number => {
     const facts = recipe.catalog;
     if (sort === "recipe") return recipe.title;
@@ -309,10 +386,17 @@ export function sortRecipes(recipes: RecipeSummary[], sort: RecipeSort, directio
   return [...recipes].sort((left, right) => {
     const leftValue = value(left);
     const rightValue = value(right);
-    const comparison = typeof leftValue === "number" && typeof rightValue === "number"
-      ? leftValue - rightValue
-      : String(leftValue).localeCompare(String(rightValue), undefined, {numeric: true, sensitivity: "base"});
-    const tieBreak = left.title.localeCompare(right.title, undefined, {numeric: true, sensitivity: "base"});
+    const comparison =
+      typeof leftValue === "number" && typeof rightValue === "number"
+        ? leftValue - rightValue
+        : String(leftValue).localeCompare(String(rightValue), undefined, {
+            numeric: true,
+            sensitivity: "base",
+          });
+    const tieBreak = left.title.localeCompare(right.title, undefined, {
+      numeric: true,
+      sensitivity: "base",
+    });
     const result = comparison || tieBreak;
     return direction === "desc" ? -result : result;
   });

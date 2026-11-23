@@ -2,8 +2,12 @@
 export function CatalogTabs({ current }: { current: "recipes" | "models" }) {
   return (
     <nav className="catalog-tabs" aria-label="Recipes and Models views">
-      <a href="/recipes" aria-current={current === "recipes" ? "page" : undefined}>Recipes</a>
-      <a href="/models" aria-current={current === "models" ? "page" : undefined}>Models</a>
+      <a href="/recipes" aria-current={current === "recipes" ? "page" : undefined}>
+        Recipes
+      </a>
+      <a href="/models" aria-current={current === "models" ? "page" : undefined}>
+        Models
+      </a>
     </nav>
   );
 }

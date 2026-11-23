@@ -17,9 +17,15 @@ test("Copy writes the exact command, announces Copied, and is a real button", as
 });
 
 test("the shell prompt is drawn by CSS, so the text stays the bare command, and code can opt out", () => {
-  const { container, rerender } = render(<CommandBlock label="Terminal">vonkctl fleet</CommandBlock>);
+  const { container, rerender } = render(
+    <CommandBlock label="Terminal">vonkctl fleet</CommandBlock>,
+  );
   expect(container.querySelector("code")).toHaveClass("prompted");
   expect(container.querySelector("code")).toHaveTextContent(/^vonkctl fleet$/);
-  rerender(<CommandBlock label="Python" prompt={false}>print(1)</CommandBlock>);
+  rerender(
+    <CommandBlock label="Python" prompt={false}>
+      print(1)
+    </CommandBlock>,
+  );
   expect(container.querySelector("code")).not.toHaveClass("prompted");
 });

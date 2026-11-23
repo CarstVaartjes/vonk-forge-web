@@ -1,11 +1,24 @@
 import { describe, expect, test } from "vitest";
 
 import type { RecipeSummary } from "./api/client";
-import { EMPTY_FILTERS, capacityBucketMatches, capacityBuckets, capacityLabel, filtersFromParameters, nodeCountMatches, recipeMatches, SORT_CHOICES, sortRecipes, sparksFewerLabel } from "./catalog-filters";
+import {
+  EMPTY_FILTERS,
+  capacityBucketMatches,
+  capacityBuckets,
+  capacityLabel,
+  filtersFromParameters,
+  nodeCountMatches,
+  recipeMatches,
+  SORT_CHOICES,
+  sortRecipes,
+  sparksFewerLabel,
+} from "./catalog-filters";
 import { catalogFacts } from "./vocabulary.fixture";
 
-
-function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["catalog"]>> = {}): RecipeSummary {
+function recipe(
+  slug: string,
+  overrides: Partial<NonNullable<RecipeSummary["catalog"]>> = {},
+): RecipeSummary {
   return {
     publisher: "vonk-forge",
     slug,
@@ -42,7 +55,12 @@ function recipe(slug: string, overrides: Partial<NonNullable<RecipeSummary["cata
 }
 
 test("a Spark count matches recipes that need that many or fewer; 4+ and none match every recipe", () => {
-  expect([1, 2, 3, 8].map((nodes) => nodeCountMatches(nodes, "2"))).toEqual([true, true, false, false]);
+  expect([1, 2, 3, 8].map((nodes) => nodeCountMatches(nodes, "2"))).toEqual([
+    true,
+    true,
+    false,
+    false,
+  ]);
   expect([1, 8].map((nodes) => nodeCountMatches(nodes, "4+"))).toEqual([true, true]);
   expect(nodeCountMatches(8, "")).toBe(true);
 });
@@ -51,8 +69,16 @@ test("uses=N lists exactly the recipes needing N Sparks; a malformed count is ig
   const [one, two] = [recipe("one", { node_count: 1 }), recipe("two", { node_count: 2 })];
   const both = filtersFromParameters(new URLSearchParams("sparks=2&uses=2"));
   expect(both).toMatchObject({ sparks: "2", uses: 2 });
-  expect([one, two].filter((item) => recipeMatches(item, both)).map((item) => item.slug)).toEqual(["two"]);
-  expect([one, two].filter((item) => recipeMatches(item, filtersFromParameters(new URLSearchParams("sparks=2&uses=1")))).map((item) => item.slug)).toEqual(["one"]);
+  expect([one, two].filter((item) => recipeMatches(item, both)).map((item) => item.slug)).toEqual([
+    "two",
+  ]);
+  expect(
+    [one, two]
+      .filter((item) =>
+        recipeMatches(item, filtersFromParameters(new URLSearchParams("sparks=2&uses=1"))),
+      )
+      .map((item) => item.slug),
+  ).toEqual(["one"]);
   expect(filtersFromParameters(new URLSearchParams("uses=x")).uses).toBe(0);
 });
 
@@ -80,7 +106,9 @@ describe("capacity buckets", () => {
   });
 
   test("the URL accepts only a bucket; an old exact-byte link means no filter", () => {
-    expect(filtersFromParameters(new URLSearchParams("memory=64&disk=unknown&download=21474836480"))).toMatchObject({ memory: "64", disk: "unknown", download: "" });
+    expect(
+      filtersFromParameters(new URLSearchParams("memory=64&disk=unknown&download=21474836480")),
+    ).toMatchObject({ memory: "64", disk: "unknown", download: "" });
   });
 
   test("the Spark count reads as 'or fewer'", () => {
@@ -91,25 +119,61 @@ describe("capacity buckets", () => {
 
 describe("public catalog Controller-parity filters", () => {
   test("parses the shared filter vocabulary and validates enumerated values", () => {
-    const filters = filtersFromParameters(new URLSearchParams("model_family=GLM+5.3+Flash&model=models%2Fboth-v1&abliterated=true&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&capability=chat&capability=reasoning&capability=chat&download=64&disk=unknown&memory=200&sort=memory&direction=desc"));
-    expect(filters).toMatchObject({ modelFamily: "GLM 5.3 Flash", model: "models/both-v1", abliterated: "true", sourceOwner: "owner", quantization: "NVFP4", updated: "30", sparks: "4+", capabilities: ["chat", "reasoning"], download: "64", disk: "unknown", memory: "", sort: "memory", direction: "desc" });
-    expect(filtersFromParameters(new URLSearchParams("abliterated=unknown&sort=bogus")).abliterated).toBe("");
+    const filters = filtersFromParameters(
+      new URLSearchParams(
+        "model_family=GLM+5.3+Flash&model=models%2Fboth-v1&abliterated=true&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&capability=chat&capability=reasoning&capability=chat&download=64&disk=unknown&memory=200&sort=memory&direction=desc",
+      ),
+    );
+    expect(filters).toMatchObject({
+      modelFamily: "GLM 5.3 Flash",
+      model: "models/both-v1",
+      abliterated: "true",
+      sourceOwner: "owner",
+      quantization: "NVFP4",
+      updated: "30",
+      sparks: "4+",
+      capabilities: ["chat", "reasoning"],
+      download: "64",
+      disk: "unknown",
+      memory: "",
+      sort: "memory",
+      direction: "desc",
+    });
+    expect(
+      filtersFromParameters(new URLSearchParams("abliterated=unknown&sort=bogus")).abliterated,
+    ).toBe("");
     expect(filtersFromParameters(new URLSearchParams("type=code")).type).toBe("code");
     // Type and capability names are the release vocabulary's, so the URL parser keeps them as given.
-    expect(filtersFromParameters(new URLSearchParams("capability=video-generation&capability=ocr&capability=ocr")).capabilities).toEqual(["video-generation", "ocr"]);
+    expect(
+      filtersFromParameters(
+        new URLSearchParams("capability=video-generation&capability=ocr&capability=ocr"),
+      ).capabilities,
+    ).toEqual(["video-generation", "ocr"]);
   });
 
   test("requires every selected capability and combines model, readiness, and Spark facets", () => {
     const both = recipe("both", { capabilities: ["chat", "reasoning"], node_count: 4 });
     const chat = recipe("chat", { capabilities: ["chat"], node_count: 4 });
-    const filters = { ...EMPTY_FILTERS, model: "models/both", quantization: "NVFP4", updated: "30" as const, sparks: "4+" as const, readiness: "executable" as const, capabilities: ["chat", "reasoning"] };
+    const filters = {
+      ...EMPTY_FILTERS,
+      model: "models/both",
+      quantization: "NVFP4",
+      updated: "30" as const,
+      sparks: "4+" as const,
+      readiness: "executable" as const,
+      capabilities: ["chat", "reasoning"],
+    };
     expect(recipeMatches(both, filters)).toBe(true);
     expect(recipeMatches(chat, filters)).toBe(false);
   });
 
   test("the model parameter matches every variant of a model", () => {
     const base = recipe("base");
-    const variant = recipe("variant", { model_slug: "base", model_version_slug: "base-q4", model_version_title: "base q4" });
+    const variant = recipe("variant", {
+      model_slug: "base",
+      model_version_slug: "base-q4",
+      model_version_title: "base q4",
+    });
     const filters = { ...EMPTY_FILTERS, model: "models/base" };
     expect(recipeMatches(base, filters)).toBe(true);
     expect(recipeMatches(variant, filters)).toBe(true);
@@ -120,7 +184,9 @@ describe("public catalog Controller-parity filters", () => {
     const unverified = recipe("unverified", { qualification: "Not yet verified" });
     expect(filtersFromParameters(new URLSearchParams("")).verified).toBe(true);
     expect(filtersFromParameters(new URLSearchParams("verified=0")).verified).toBe(false);
-    expect(filtersFromParameters(new URLSearchParams("qualification=Fix+to+verify")).verified).toBe(false);
+    expect(filtersFromParameters(new URLSearchParams("qualification=Fix+to+verify")).verified).toBe(
+      false,
+    );
     expect(recipeMatches(unverified, EMPTY_FILTERS)).toBe(false);
     expect(recipeMatches(unverified, { ...EMPTY_FILTERS, verified: false })).toBe(true);
   });
@@ -144,9 +210,27 @@ describe("public catalog Controller-parity filters", () => {
   test("sorts by the table's columns in both directions; the Sort choices are exactly those", () => {
     const large = recipe("zeta", { node_count: 4 });
     const small = recipe("alpha", { node_count: 1 });
-    expect(sortRecipes([large, small], "sparks").map((item) => item.slug)).toEqual(["alpha", "zeta"]);
-    expect(sortRecipes([large, small], "sparks", "desc").map((item) => item.slug)).toEqual(["zeta", "alpha"]);
-    expect(SORT_CHOICES.map((choice) => choice.value)).toEqual(["catalog:desc", "recipe:asc", "recipe:desc", "sparks:asc", "sparks:desc", "memory:asc", "memory:desc", "runtime:asc", "runtime:desc", "qualification:asc", "qualification:desc"]);
+    expect(sortRecipes([large, small], "sparks").map((item) => item.slug)).toEqual([
+      "alpha",
+      "zeta",
+    ]);
+    expect(sortRecipes([large, small], "sparks", "desc").map((item) => item.slug)).toEqual([
+      "zeta",
+      "alpha",
+    ]);
+    expect(SORT_CHOICES.map((choice) => choice.value)).toEqual([
+      "catalog:desc",
+      "recipe:asc",
+      "recipe:desc",
+      "sparks:asc",
+      "sparks:desc",
+      "memory:asc",
+      "memory:desc",
+      "runtime:asc",
+      "runtime:desc",
+      "qualification:asc",
+      "qualification:desc",
+    ]);
     expect(filtersFromParameters(new URLSearchParams("sort=creator")).sort).toBe("catalog");
   });
 });

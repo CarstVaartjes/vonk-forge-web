@@ -12,19 +12,40 @@ const weekRange = (start: string) => `${label(start)} to ${label(weekEnd(start))
 
 // Section 2: the catalog moves. Recipes released per week.
 export function KeptCurrent({ summary }: { summary: CatalogSummary }) {
-  const weeks: BarPoint[] = summary.releasedPerWeek.map((week) => ({ range: weekRange(week.start), count: week.count }));
+  const weeks: BarPoint[] = summary.releasedPerWeek.map((week) => ({
+    range: weekRange(week.start),
+    count: week.count,
+  }));
   const lastWeek = summary.releasedPerWeek.at(-1)?.count ?? 0;
   return (
     <section className="home-section" aria-labelledby="kept-current-title">
       <div className="home-section-heading">
         <h2 id="kept-current-title">New models and recipe revisions arrive every week.</h2>
-        <p>The catalog follows the creators&apos; releases and refreshes recipes in place. Your Controller syncs it on its own and tells you when a running install has a newer revision. You decide when to update.</p>
+        <p>
+          The catalog follows the creators&apos; releases and refreshes recipes in place. Your
+          Controller syncs it on its own and tells you when a running install has a newer revision.
+          You decide when to update.
+        </p>
       </div>
       <div className="home-pair">
         <div className="card">
-          <p className="fig"><RollingNumber value={lastWeek} /> <small>{lastWeek === 1 ? "recipe" : "recipes"} released in the 7 days to {label(weekEnd(summary.releasedPerWeek.at(-1)!.start))}</small></p>
+          <p className="fig">
+            <RollingNumber value={lastWeek} />{" "}
+            <small>
+              {lastWeek === 1 ? "recipe" : "recipes"} released in the 7 days to{" "}
+              {label(weekEnd(summary.releasedPerWeek.at(-1)!.start))}
+            </small>
+          </p>
           <p className="chart-sub">Recipes by release date, per week, last {weeks.length} weeks.</p>
-          <BarSeries title="Recipes released per week" noun={["recipe", "recipes"]} points={weeks} axis={[`week of ${label(summary.releasedPerWeek[0]!.start)}`, `week of ${label(summary.releasedPerWeek.at(-1)!.start)}`]} />
+          <BarSeries
+            title="Recipes released per week"
+            noun={["recipe", "recipes"]}
+            points={weeks}
+            axis={[
+              `week of ${label(summary.releasedPerWeek[0]!.start)}`,
+              `week of ${label(summary.releasedPerWeek.at(-1)!.start)}`,
+            ]}
+          />
         </div>
       </div>
     </section>
@@ -34,31 +55,59 @@ export function KeptCurrent({ summary }: { summary: CatalogSummary }) {
 // Section 3: the proof. How many recipes are verified, what every other status means, when the
 // hardware passes ran and one real receipt.
 export function VerifiedOnHardware({ summary }: { summary: CatalogSummary }) {
-  const days: BarPoint[] = summary.passesPerDay.map((day) => ({ range: label(day.day), count: day.count }));
+  const days: BarPoint[] = summary.passesPerDay.map((day) => ({
+    range: label(day.day),
+    count: day.count,
+  }));
   const dailyTitle = `Most recent hardware pass per recipe, by day, last ${days.length} days`;
-  const verifiedLabel = summary.statuses.filter((status) => status.verified).map((status) => status.status).join(" / ");
+  const verifiedLabel = summary.statuses
+    .filter((status) => status.verified)
+    .map((status) => status.status)
+    .join(" / ");
   return (
     <section className="home-section" aria-labelledby="verified-title">
       <div className="home-section-heading">
         <h2 id="verified-title">Not &quot;should work&quot;. Ran, on a real DGX Spark.</h2>
-        <p>A recipe counts as verified only after it passed on a real DGX Spark, for that exact recipe, runtime image and model. Change any of them and it is checked again. Everything else is shown as what it is.</p>
+        <p>
+          A recipe counts as verified only after it passed on a real DGX Spark, for that exact
+          recipe, runtime image and model. Change any of them and it is checked again. Everything
+          else is shown as what it is.
+        </p>
       </div>
       <div className="home-pair">
         <div className="card">
-          <p className="fig"><RollingNumber value={summary.verified} /> <small>of {number.format(summary.total)} recipes are {verifiedLabel}</small></p>
+          <p className="fig">
+            <RollingNumber value={summary.verified} />{" "}
+            <small>
+              of {number.format(summary.total)} recipes are {verifiedLabel}
+            </small>
+          </p>
           <div className="split" aria-hidden="true">
-            {summary.statuses.map((status) => <i key={status.status} data-verified={status.verified ? "" : undefined} style={{ flexGrow: status.count }} />)}
+            {summary.statuses.map((status) => (
+              <i
+                key={status.status}
+                data-verified={status.verified ? "" : undefined}
+                style={{ flexGrow: status.count }}
+              />
+            ))}
           </div>
           <ul className="meanings">
             {summary.statuses.map((status) => (
               <li key={status.status}>
-                <span className={`status ${status.verified ? "ok" : "off"}`}>{status.status} <b>{number.format(status.count)}</b></span>
+                <span className={`status ${status.verified ? "ok" : "off"}`}>
+                  {status.status} <b>{number.format(status.count)}</b>
+                </span>
                 <span>{status.meaning}</span>
               </li>
             ))}
           </ul>
           <p className="chart-title">{dailyTitle}</p>
-          <BarSeries title={dailyTitle} noun={["recipe", "recipes"]} points={days} axis={[label(summary.passesPerDay[0]!.day), label(summary.passesPerDay.at(-1)!.day)]} />
+          <BarSeries
+            title={dailyTitle}
+            noun={["recipe", "recipes"]}
+            points={days}
+            axis={[label(summary.passesPerDay[0]!.day), label(summary.passesPerDay.at(-1)!.day)]}
+          />
         </div>
         {summary.receipt ? <EvidenceReceipt facts={summary.receipt} verified /> : null}
       </div>

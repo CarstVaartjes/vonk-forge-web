@@ -1,13 +1,22 @@
-import { act, render } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { afterEach, describe, expect, test, vi } from "vitest";
 
 import { RollingNumber } from "./rolling-number";
 
-afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.useRealTimers();
+});
 
 function stubMotion(reduced: boolean) {
-  vi.stubGlobal("matchMedia", (query: string) => ({ matches: reduced && query.includes("reduce"), media: query }));
-  vi.stubGlobal("requestAnimationFrame", (callback: () => void) => { callback(); return 0; });
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: reduced && query.includes("reduce"),
+    media: query,
+  }));
+  vi.stubGlobal("requestAnimationFrame", (callback: () => void) => {
+    callback();
+    return 0;
+  });
 }
 
 describe("rolling number", () => {

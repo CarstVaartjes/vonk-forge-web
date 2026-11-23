@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# The same commands CI runs (web/package.json: `lint`, `typecheck`), on the staged
+# paths. Install with scripts/install-git-hooks.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+staged=()
+while IFS= read -r -d '' file; do
+  staged+=("$file")
+done < <(git diff --cached --name-only --diff-filter=ACMR -z -- web)
+((${#staged[@]})) || exit 0
+
+# Install what the lockfile pins when it is missing or changed since the last install, so the hook
+# checks with the versions CI uses. The stamp records which lockfile node_modules was installed from.
+stamp=web/node_modules/.lockfile-sha
+lock_sha=$(shasum web/package-lock.json | cut -d' ' -f1)
+if [[ ! -x web/node_modules/.bin/biome ]] || [[ "$(cat "$stamp" 2>/dev/null)" != "$lock_sha" ]]; then
+  npm --prefix web ci
+  echo "$lock_sha" > "$stamp"
+fi
+
+# Biome reads web/biome.json; its own file selection decides what it checks.
+(cd web && node_modules/.bin/biome ci --no-errors-on-unmatched "${staged[@]#web/}")
+
+# tsc is project-wide, so it runs whole, and only when TypeScript or its config is staged.
+for file in "${staged[@]}"; do
+  case "$file" in
+    *.ts | *.tsx | web/tsconfig*.json | web/package.json | web/package-lock.json)
+      npm --prefix web run typecheck
+      break
+      ;;
+  esac
+done

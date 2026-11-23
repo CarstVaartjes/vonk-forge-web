@@ -93,20 +93,26 @@ export interface CatalogStats {
 }
 
 // Newest release first, then by title: the order of the wall's shelves and of "newest that fit".
-export const newestFirst = (left: RecipeRow, right: RecipeRow): number => right.released.localeCompare(left.released) || left.title.localeCompare(right.title);
+export const newestFirst = (left: RecipeRow, right: RecipeRow): number =>
+  right.released.localeCompare(left.released) || left.title.localeCompare(right.title);
 
 export type StatsRecipe = RecipeSummary & { evidence?: RecipeDetail["evidence"] };
 
 // Not verified now, but the catalog holds an earlier hardware pass: the one rule for the wall's and
 // the matrix's amber mark.
-export const passedBefore = (recipe: StatsRecipe): boolean => !recipe.catalog.verified && Boolean(recipe.evidence);
+export const passedBefore = (recipe: StatsRecipe): boolean =>
+  !recipe.catalog.verified && Boolean(recipe.evidence);
 
 const DAY = 86_400_000;
 const dayKey = (time: number) => new Date(time).toISOString().slice(0, 10);
 const dayTime = (day: string) => Date.parse(`${day.slice(0, 10)}T00:00:00Z`);
 
 // A fixed window of `count` buckets of `span` days ending on `end` (a date), oldest first.
-function windows(end: string, count: number, span: number): Array<{ start: string; from: number; to: number }> {
+function windows(
+  end: string,
+  count: number,
+  span: number,
+): Array<{ start: string; from: number; to: number }> {
   const last = dayTime(end);
   return Array.from({ length: count }, (_, index) => {
     const to = last - (count - 1 - index) * span * DAY;
@@ -115,25 +121,55 @@ function windows(end: string, count: number, span: number): Array<{ start: strin
   });
 }
 
-function newestReceipt(verified: StatsRecipe[], nameOf: (owner: string | null | undefined) => string | null): ReceiptFacts | null {
+function newestReceipt(
+  verified: StatsRecipe[],
+  nameOf: (owner: string | null | undefined) => string | null,
+): ReceiptFacts | null {
   const candidates = verified
-    .filter((recipe) => recipe.catalog.node_count > 1 && recipe.capacity?.measured_memory_bytes_per_node !== undefined && recipe.evidence)
-    .sort((left, right) => right.evidence!.tested_at.localeCompare(left.evidence!.tested_at) || left.title.localeCompare(right.title));
-  return candidates[0] ? receiptFacts(candidates[0], nameOf(candidates[0].catalog.source_owner)) : null;
+    .filter(
+      (recipe) =>
+        recipe.catalog.node_count > 1 &&
+        recipe.capacity?.measured_memory_bytes_per_node !== undefined &&
+        recipe.evidence,
+    )
+    .sort(
+      (left, right) =>
+        right.evidence!.tested_at.localeCompare(left.evidence!.tested_at) ||
+        left.title.localeCompare(right.title),
+    );
+  return candidates[0]
+    ? receiptFacts(candidates[0], nameOf(candidates[0].catalog.source_owner))
+    : null;
 }
 
-export function deriveCatalogStats(recipes: StatsRecipe[], vocabulary: Vocabulary, updatedAt: string): CatalogStats {
+export function deriveCatalogStats(
+  recipes: StatsRecipe[],
+  vocabulary: Vocabulary,
+  updatedAt: string,
+): CatalogStats {
   const verified = recipes.filter(isVerified);
   // One fold over every recipe names each creator once, so the ledger and the rows spell it the same.
-  const names = new Map(foldCreators(recipes.map((recipe) => recipe.catalog.source_owner)).map(({ name }) => [name.toLowerCase(), name]));
-  const nameOf = (owner: string | null | undefined) => names.get(owner?.trim().toLowerCase() ?? "") ?? null;
+  const names = new Map(
+    foldCreators(recipes.map((recipe) => recipe.catalog.source_owner)).map(({ name }) => [
+      name.toLowerCase(),
+      name,
+    ]),
+  );
+  const nameOf = (owner: string | null | undefined) =>
+    names.get(owner?.trim().toLowerCase() ?? "") ?? null;
   const creators = new Map<string, number>();
   for (const recipe of verified) {
     const name = nameOf(recipe.catalog.source_owner);
     if (name) creators.set(name, (creators.get(name) ?? 0) + 1);
   }
-  const families = new Set(verified.map((recipe) => modelFamilyTitle(recipe).trim().toLowerCase()).filter(Boolean));
-  const types = vocabulary.categories.map(({ id, label }) => ({ id, label, verified: verified.filter((recipe) => recipe.catalog.types.includes(id)).length }));
+  const families = new Set(
+    verified.map((recipe) => modelFamilyTitle(recipe).trim().toLowerCase()).filter(Boolean),
+  );
+  const types = vocabulary.categories.map(({ id, label }) => ({
+    id,
+    label,
+    verified: verified.filter((recipe) => recipe.catalog.types.includes(id)).length,
+  }));
   const rows: RecipeRow[] = recipes.map((recipe) => {
     return {
       publisher: recipe.publisher,
@@ -160,19 +196,40 @@ export function deriveCatalogStats(recipes: StatsRecipe[], vocabulary: Vocabular
   return {
     total: recipes.length,
     statuses: vocabulary.statuses
-      .map(({ status, verified, meaning }) => ({ status, count: recipes.filter((recipe) => recipe.catalog.qualification === status).length, verified, meaning }))
+      .map(({ status, verified, meaning }) => ({
+        status,
+        count: recipes.filter((recipe) => recipe.catalog.qualification === status).length,
+        verified,
+        meaning,
+      }))
       .filter(({ count }) => count > 0),
-    bySparks: Array.from(new Set(rows.map((row) => row.sparks))).sort((left, right) => left - right)
-      .map((sparks) => ({ sparks, total: rows.filter((row) => row.sparks === sparks).length, verified: rows.filter((row) => row.sparks === sparks && row.verified).length })),
+    bySparks: Array.from(new Set(rows.map((row) => row.sparks)))
+      .sort((left, right) => left - right)
+      .map((sparks) => ({
+        sparks,
+        total: rows.filter((row) => row.sparks === sparks).length,
+        verified: rows.filter((row) => row.sparks === sparks && row.verified).length,
+      })),
     recipes: rows,
-    releasedPerWeek: perWeek.map(({ start, from, to }) => ({ start, count: releasedTimes.filter((time) => time >= from && time <= to).length })),
-    passesPerDay: perDay.map(({ start, from }) => ({ day: start, count: testedTimes.filter((time) => time === from).length })),
+    releasedPerWeek: perWeek.map(({ start, from, to }) => ({
+      start,
+      count: releasedTimes.filter((time) => time >= from && time <= to).length,
+    })),
+    passesPerDay: perDay.map(({ start, from }) => ({
+      day: start,
+      count: testedTimes.filter((time) => time === from).length,
+    })),
     receipt: newestReceipt(verified, nameOf),
     verified: verified.length,
     families: families.size,
     creators: creators.size,
-    topCreators: [...creators].map(([name, count]) => ({ name, verified: count }))
-      .sort((left, right) => right.verified - left.verified || left.name.localeCompare(right.name, undefined, { sensitivity: "base" }))
+    topCreators: [...creators]
+      .map(([name, count]) => ({ name, verified: count }))
+      .sort(
+        (left, right) =>
+          right.verified - left.verified ||
+          left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
+      )
       .slice(0, 10),
     types,
   };
@@ -184,35 +241,101 @@ export interface CatalogSummary extends CatalogStats {
   catalog_index_sha256: string;
 }
 
-const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === "object" && value !== null && !Array.isArray(value);
-const isCount = (value: unknown): value is number => typeof value === "number" && Number.isInteger(value) && value >= 0;
-const isList = (value: unknown, check: (item: Record<string, unknown>) => boolean): boolean => Array.isArray(value) && value.every((item) => isRecord(item) && check(item));
-const isNullable = (value: unknown, check: (value: unknown) => boolean): boolean => value === null || check(value);
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+const isCount = (value: unknown): value is number =>
+  typeof value === "number" && Number.isInteger(value) && value >= 0;
+const isList = (value: unknown, check: (item: Record<string, unknown>) => boolean): boolean =>
+  Array.isArray(value) && value.every((item) => isRecord(item) && check(item));
+const isNullable = (value: unknown, check: (value: unknown) => boolean): boolean =>
+  value === null || check(value);
 const isRow = (row: Record<string, unknown>): boolean =>
-  isText(row.publisher) && isText(row.slug) && isText(row.title) && isNullable(row.creator, isText) && isCount(row.sparks) && row.sparks > 0
-  && isText(row.status) && typeof row.verified === "boolean" && typeof row.passedBefore === "boolean"
-  && Array.isArray(row.types) && row.types.every(isText) && isNullable(row.engine, isText)
-  && isNullable(row.memoryBytes, isCount) && isNullable(row.measuredBytes, isCount) && isText(row.released) && isNullable(row.tested, isText);
+  isText(row.publisher) &&
+  isText(row.slug) &&
+  isText(row.title) &&
+  isNullable(row.creator, isText) &&
+  isCount(row.sparks) &&
+  row.sparks > 0 &&
+  isText(row.status) &&
+  typeof row.verified === "boolean" &&
+  typeof row.passedBefore === "boolean" &&
+  Array.isArray(row.types) &&
+  row.types.every(isText) &&
+  isNullable(row.engine, isText) &&
+  isNullable(row.memoryBytes, isCount) &&
+  isNullable(row.measuredBytes, isCount) &&
+  isText(row.released) &&
+  isNullable(row.tested, isText);
 const isReceipt = (receipt: Record<string, unknown>): boolean =>
-  isText(receipt.title) && isNullable(receipt.creator, isText) && isText(receipt.status) && isText(receipt.tested) && isNullable(receipt.sparks, isCount)
-  && isNullable(receipt.hardwareClass, isText) && isNullable(receipt.measuredBytes, isCount) && isText(receipt.contentSha256)
-  && isNullable(receipt.imageDigest, isText) && isNullable(receipt.evidenceRef, isText);
+  isText(receipt.title) &&
+  isNullable(receipt.creator, isText) &&
+  isText(receipt.status) &&
+  isText(receipt.tested) &&
+  isNullable(receipt.sparks, isCount) &&
+  isNullable(receipt.hardwareClass, isText) &&
+  isNullable(receipt.measuredBytes, isCount) &&
+  isText(receipt.contentSha256) &&
+  isNullable(receipt.imageDigest, isText) &&
+  isNullable(receipt.evidenceRef, isText);
 const isText = (value: unknown): value is string => typeof value === "string" && value.length > 0;
 
 // Accepts only a summary this site understands; a missing or malformed one is an
 // error, never zeros. A release with nothing verified is valid: the counts are
 // then genuinely zero and the home page shows no numbers for it.
 export function parseCatalogSummary(value: unknown): CatalogSummary {
-  const fail = (): never => { throw new Error("Recipe library returned an unsupported catalog summary"); };
-  if (!isRecord(value) || value.summary_version !== 2 || !isText(value.release) || !/^v\d+\.\d+\.\d+$/.test(value.release) || !isText(value.catalog_index_sha256)) return fail();
-  if (!isCount(value.verified) || !isCount(value.families) || !isCount(value.creators)) return fail();
-  if (!isCount(value.total) || !isList(value.statuses, (item) => isText(item.status) && isCount(item.count) && typeof item.verified === "boolean" && isText(item.meaning))) return fail();
-  if (!isList(value.bySparks, (item) => isCount(item.sparks) && isCount(item.total) && isCount(item.verified))) return fail();
-  if (!isList(value.releasedPerWeek, (item) => isText(item.start) && isCount(item.count))) return fail();
+  const fail = (): never => {
+    throw new Error("Recipe library returned an unsupported catalog summary");
+  };
+  if (
+    !isRecord(value) ||
+    value.summary_version !== 2 ||
+    !isText(value.release) ||
+    !/^v\d+\.\d+\.\d+$/.test(value.release) ||
+    !isText(value.catalog_index_sha256)
+  )
+    return fail();
+  if (!isCount(value.verified) || !isCount(value.families) || !isCount(value.creators))
+    return fail();
+  if (
+    !isCount(value.total) ||
+    !isList(
+      value.statuses,
+      (item) =>
+        isText(item.status) &&
+        isCount(item.count) &&
+        typeof item.verified === "boolean" &&
+        isText(item.meaning),
+    )
+  )
+    return fail();
+  if (
+    !isList(
+      value.bySparks,
+      (item) => isCount(item.sparks) && isCount(item.total) && isCount(item.verified),
+    )
+  )
+    return fail();
+  if (!isList(value.releasedPerWeek, (item) => isText(item.start) && isCount(item.count)))
+    return fail();
   if (!isList(value.passesPerDay, (item) => isText(item.day) && isCount(item.count))) return fail();
-  if (!isList(value.recipes, isRow) || (value.recipes as unknown[]).length !== value.total) return fail();
-  if (!isNullable(value.receipt, (receipt) => isRecord(receipt) && isReceipt(receipt))) return fail();
-  if (!Array.isArray(value.types) || value.types.some((type) => !isRecord(type) || !isText(type.id) || !isText(type.label) || !isCount(type.verified))) return fail();
-  if (!Array.isArray(value.topCreators) || value.topCreators.some((item) => !isRecord(item) || !isText(item.name) || !isCount(item.verified))) return fail();
+  if (!isList(value.recipes, isRow) || (value.recipes as unknown[]).length !== value.total)
+    return fail();
+  if (!isNullable(value.receipt, (receipt) => isRecord(receipt) && isReceipt(receipt)))
+    return fail();
+  if (
+    !Array.isArray(value.types) ||
+    value.types.some(
+      (type) =>
+        !isRecord(type) || !isText(type.id) || !isText(type.label) || !isCount(type.verified),
+    )
+  )
+    return fail();
+  if (
+    !Array.isArray(value.topCreators) ||
+    value.topCreators.some(
+      (item) => !isRecord(item) || !isText(item.name) || !isCount(item.verified),
+    )
+  )
+    return fail();
   return value as unknown as CatalogSummary;
 }

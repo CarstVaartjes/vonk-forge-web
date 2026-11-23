@@ -4,7 +4,11 @@ import { chooseTheme, currentTheme, THEME_KEY } from "./theme";
 import initScript from "../public/theme-init.js?raw";
 
 function systemPrefers(theme: "dark" | "light") {
-  vi.stubGlobal("matchMedia", (query: string) => ({ matches: theme === "light" && query.includes("light"), addEventListener: () => undefined, removeEventListener: () => undefined }));
+  vi.stubGlobal("matchMedia", (query: string) => ({
+    matches: theme === "light" && query.includes("light"),
+    addEventListener: () => undefined,
+    removeEventListener: () => undefined,
+  }));
 }
 
 afterEach(() => {

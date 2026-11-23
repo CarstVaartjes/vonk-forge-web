@@ -63,7 +63,8 @@ export function parseChecksums(text) {
   for (const line of text.split("\n")) {
     if (!line) continue;
     const match = line.match(/^([0-9a-f]{64}) [ *]([^/\\]+)$/);
-    if (!match || !ASSET_NAME.test(match[2])) fail(`malformed SHA256SUMS line: ${JSON.stringify(line)}`);
+    if (!match || !ASSET_NAME.test(match[2]))
+      fail(`malformed SHA256SUMS line: ${JSON.stringify(line)}`);
     if (digests.has(match[2])) fail(`SHA256SUMS lists ${match[2]} twice`);
     digests.set(match[2], match[1]);
   }
@@ -76,32 +77,55 @@ export function parseChecksums(text) {
 // signer workflow, the source ref, and that the attestation's subject is this
 // exact SHA256SUMS file.
 export async function verifyWithGh(checksumsPath, bundlePath) {
-  const { stdout } = await promisify(execFile)("gh", [
-    "attestation", "verify", checksumsPath,
-    "--bundle", bundlePath,
-    "--repo", RECIPE_REPOSITORY,
-    "--signer-workflow", SIGNER_WORKFLOW,
-    "--source-ref", SIGNER_REF,
-    "--deny-self-hosted-runners",
-    "--format", "json",
-  ], { maxBuffer: 16 * 1024 * 1024 });
+  const { stdout } = await promisify(execFile)(
+    "gh",
+    [
+      "attestation",
+      "verify",
+      checksumsPath,
+      "--bundle",
+      bundlePath,
+      "--repo",
+      RECIPE_REPOSITORY,
+      "--signer-workflow",
+      SIGNER_WORKFLOW,
+      "--source-ref",
+      SIGNER_REF,
+      "--deny-self-hosted-runners",
+      "--format",
+      "json",
+    ],
+    { maxBuffer: 16 * 1024 * 1024 },
+  );
   const results = JSON.parse(stdout);
-  if (!Array.isArray(results) || results.length !== 1) fail("expected exactly one verified attestation");
+  if (!Array.isArray(results) || results.length !== 1)
+    fail("expected exactly one verified attestation");
   return results[0].verificationResult.signature.certificate;
 }
 
 // The library marks its newest published release `--latest`; GitHub's "latest release" is that one.
 export function latestReleaseTag(release) {
-  if (release?.draft || release?.prerelease || typeof release?.tag_name !== "string" || !TAG.test(release.tag_name)) {
+  if (
+    release?.draft ||
+    release?.prerelease ||
+    typeof release?.tag_name !== "string" ||
+    !TAG.test(release.tag_name)
+  ) {
     fail(`latest release ${JSON.stringify(release?.tag_name)} is not a published release tag`);
   }
   return release.tag_name;
 }
 
 export async function resolveReleaseTag(fetchImpl = fetch, token = process.env.GH_TOKEN) {
-  const response = await fetchImpl(`https://api.github.com/repos/${RECIPE_REPOSITORY}/releases/latest`, {
-    headers: { Accept: "application/vnd.github+json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-  });
+  const response = await fetchImpl(
+    `https://api.github.com/repos/${RECIPE_REPOSITORY}/releases/latest`,
+    {
+      headers: {
+        Accept: "application/vnd.github+json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    },
+  );
   if (!response.ok) fail(`latest release lookup returned ${response.status}`);
   return latestReleaseTag(await response.json());
 }
@@ -109,13 +133,20 @@ export async function resolveReleaseTag(fetchImpl = fetch, token = process.env.G
 // Stream the release's single bundle asset to `destination`, bounded in size.
 export function downloadBundle(fetchImpl = fetch) {
   return async (tag, destination) => {
-    const response = await fetchImpl(`https://github.com/${RECIPE_REPOSITORY}/releases/download/${tag}/${BUNDLE_NAME}`);
+    const response = await fetchImpl(
+      `https://github.com/${RECIPE_REPOSITORY}/releases/download/${tag}/${BUNDLE_NAME}`,
+    );
     if (!response.ok || !response.body) fail(`${BUNDLE_NAME} download returned ${response.status}`);
     let received = 0;
     const bound = new Transform({
       transform(chunk, _encoding, callback) {
         received += chunk.length;
-        callback(received > MAX_BUNDLE_BYTES ? new Error(`recipe release rejected: ${BUNDLE_NAME} exceeds ${MAX_BUNDLE_BYTES} bytes`) : null, chunk);
+        callback(
+          received > MAX_BUNDLE_BYTES
+            ? new Error(`recipe release rejected: ${BUNDLE_NAME} exceeds ${MAX_BUNDLE_BYTES} bytes`)
+            : null,
+          chunk,
+        );
       },
     });
     await pipeline(Readable.fromWeb(response.body), bound, createWriteStream(destination));
@@ -134,7 +165,10 @@ function octal(field, what) {
  * for the small members the trust chain needs (SHA256SUMS, its Sigstore
  * bundle, the index). Nothing from the archive is written under its own name.
  */
-export async function readBundle(file, keep = new Set([CHECKSUMS_NAME, SIGNATURE_NAME, SCHEMA_NAME, "catalog-index.json"])) {
+export async function readBundle(
+  file,
+  keep = new Set([CHECKSUMS_NAME, SIGNATURE_NAME, SCHEMA_NAME, "catalog-index.json"]),
+) {
   const handle = await open(file, "r");
   try {
     const total = (await handle.stat()).size;
@@ -154,24 +188,36 @@ export async function readBundle(file, keep = new Set([CHECKSUMS_NAME, SIGNATURE
       if (header.every((byte) => byte === 0)) break;
       let sum = 0;
       for (let i = 0; i < BLOCK; i += 1) sum += i >= 148 && i < 156 ? 32 : header[i];
-      if (octal(header.subarray(148, 156), "checksum") !== sum) fail(`${BUNDLE_NAME} has a corrupt member header`);
+      if (octal(header.subarray(148, 156), "checksum") !== sum)
+        fail(`${BUNDLE_NAME} has a corrupt member header`);
       const name = header.subarray(0, 100).toString("latin1").replace(/\0.*$/s, "");
       const type = String.fromCharCode(header[156]);
-      if ((type !== "0" && type !== "\0") || header[345] !== 0 || !ASSET_NAME.test(name) || members.has(name) || members.size >= MAX_BUNDLE_MEMBERS) {
+      if (
+        (type !== "0" && type !== "\0") ||
+        header[345] !== 0 ||
+        !ASSET_NAME.test(name) ||
+        members.has(name) ||
+        members.size >= MAX_BUNDLE_MEMBERS
+      ) {
         fail(`bundle member ${JSON.stringify(name)} is not a unique flat regular file`);
       }
       const size = octal(header.subarray(124, 136), "size");
-      if (offset + size > total || (keep.has(name) && size > MAX_SMALL_BYTES)) fail(`bundle member ${name} has an invalid size`);
+      if (offset + size > total || (keep.has(name) && size > MAX_SMALL_BYTES))
+        fail(`bundle member ${name} has an invalid size`);
       const hash = createHash("sha256");
       const parts = [];
-      for (let done = 0; done < size;) {
+      for (let done = 0; done < size; ) {
         const length = Math.min(chunk.length, size - done);
         await readAt(chunk, length, offset + done);
         hash.update(chunk.subarray(0, length));
         if (keep.has(name)) parts.push(Buffer.from(chunk.subarray(0, length)));
         done += length;
       }
-      members.set(name, { size, digest: hash.digest("hex"), bytes: keep.has(name) ? Buffer.concat(parts) : null });
+      members.set(name, {
+        size,
+        digest: hash.digest("hex"),
+        bytes: keep.has(name) ? Buffer.concat(parts) : null,
+      });
       offset += Math.ceil(size / BLOCK) * BLOCK;
     }
     return members;
@@ -189,7 +235,8 @@ function envelopeConstants(schema) {
     kind: properties?.kind?.const,
     packageSchemaVersion: schemas?.PackageContract?.properties?.schema_version?.const,
   };
-  if (Object.values(constants).some((value) => value === undefined)) fail(`${SCHEMA_NAME} declares no envelope constants`);
+  if (Object.values(constants).some((value) => value === undefined))
+    fail(`${SCHEMA_NAME} declares no envelope constants`);
   return constants;
 }
 
@@ -198,7 +245,12 @@ function envelopeConstants(schema) {
  * `download(tag, destination)` writes the release's bundle tar to `destination`; `verifySignature(checksumsPath, bundlePath)`
  * returns the verified certificate claims or throws.
  */
-export async function publishRecipeRelease({ tag, outDir, download, verifySignature = verifyWithGh }) {
+export async function publishRecipeRelease({
+  tag,
+  outDir,
+  download,
+  verifySignature = verifyWithGh,
+}) {
   if (typeof tag !== "string" || !TAG.test(tag)) fail(`invalid release tag ${JSON.stringify(tag)}`);
   const parent = path.dirname(path.resolve(outDir));
   await mkdir(parent, { recursive: true });
@@ -214,12 +266,19 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
     await writeFile(path.join(staging, CHECKSUMS_NAME), checksums);
     await writeFile(path.join(staging, SIGNATURE_NAME), bundle);
 
-    const certificate = await verifySignature(path.join(staging, CHECKSUMS_NAME), path.join(staging, SIGNATURE_NAME));
-    if (certificate?.sourceRepositoryIdentifier !== RECIPE_REPOSITORY_ID) fail("attestation is from another repository");
-    if (certificate?.sourceRepositoryRef !== SIGNER_REF) fail("attestation is not from refs/heads/main");
-    if (certificate?.runnerEnvironment !== "github-hosted") fail("attestation was not built on a GitHub-hosted runner");
+    const certificate = await verifySignature(
+      path.join(staging, CHECKSUMS_NAME),
+      path.join(staging, SIGNATURE_NAME),
+    );
+    if (certificate?.sourceRepositoryIdentifier !== RECIPE_REPOSITORY_ID)
+      fail("attestation is from another repository");
+    if (certificate?.sourceRepositoryRef !== SIGNER_REF)
+      fail("attestation is not from refs/heads/main");
+    if (certificate?.runnerEnvironment !== "github-hosted")
+      fail("attestation was not built on a GitHub-hosted runner");
     const signedCommit = certificate?.sourceRepositoryDigest;
-    if (typeof signedCommit !== "string" || !COMMIT.test(signedCommit)) fail("attestation names no source commit");
+    if (typeof signedCommit !== "string" || !COMMIT.test(signedCommit))
+      fail("attestation names no source commit");
 
     const digests = parseChecksums(checksums.toString("utf8"));
     // Every listed file must be in the bundle with its signed digest, and the
@@ -230,27 +289,44 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
       if (member.digest !== digest) fail(`${name} does not match SHA256SUMS`);
     }
     for (const name of members.keys()) {
-      if (name !== CHECKSUMS_NAME && name !== SIGNATURE_NAME && !digests.has(name)) fail(`${name} is in ${BUNDLE_NAME} but not signed by SHA256SUMS`);
+      if (name !== CHECKSUMS_NAME && name !== SIGNATURE_NAME && !digests.has(name))
+        fail(`${name} is in ${BUNDLE_NAME} but not signed by SHA256SUMS`);
     }
     const indexBytes = members.get("catalog-index.json")?.bytes;
     if (!indexBytes) fail("catalog-index.json is missing from SHA256SUMS");
     const schemaBytes = members.get(SCHEMA_NAME)?.bytes;
-    if (!schemaBytes || !digests.has(SCHEMA_NAME)) fail(`${SCHEMA_NAME} is missing from SHA256SUMS`);
+    if (!schemaBytes || !digests.has(SCHEMA_NAME))
+      fail(`${SCHEMA_NAME} is missing from SHA256SUMS`);
     const constants = envelopeConstants(JSON.parse(schemaBytes.toString("utf8")));
     const index = JSON.parse(indexBytes.toString("utf8"));
-    if (index.kind !== constants.kind || index.schema_version !== constants.schemaVersion) fail("unsupported catalog index");
-    if (`v${index.contract_version}` !== tag) fail(`index contract_version ${JSON.stringify(index.contract_version)} is not release ${tag}`);
-    if (typeof index.updated_at !== "string" || Number.isNaN(Date.parse(index.updated_at))) fail("index has no updated_at");
+    if (index.kind !== constants.kind || index.schema_version !== constants.schemaVersion)
+      fail("unsupported catalog index");
+    if (`v${index.contract_version}` !== tag)
+      fail(
+        `index contract_version ${JSON.stringify(index.contract_version)} is not release ${tag}`,
+      );
+    if (typeof index.updated_at !== "string" || Number.isNaN(Date.parse(index.updated_at)))
+      fail("index has no updated_at");
     if (index.repository !== RECIPE_REPOSITORY) fail(`index names repository ${index.repository}`);
-    if (index.source_commit !== signedCommit) fail("index source_commit differs from the signed commit");
-    if (index.package_contract?.schema_version !== constants.packageSchemaVersion) fail("unsupported package contract");
+    if (index.source_commit !== signedCommit)
+      fail("index source_commit differs from the signed commit");
+    if (index.package_contract?.schema_version !== constants.packageSchemaVersion)
+      fail("unsupported package contract");
     const prefix = index.package_contract?.path_prefix;
-    if (typeof prefix !== "string" || !Array.isArray(index.recipes)) fail("index has no package contract");
+    if (typeof prefix !== "string" || !Array.isArray(index.recipes))
+      fail("index has no package contract");
     for (const recipe of index.recipes) {
       const packagePath = recipe?.package?.path;
-      const name = typeof packagePath === "string" && packagePath.startsWith(prefix) ? packagePath.slice(prefix.length) : "";
-      if (!ASSET_NAME.test(name)) fail(`package path ${JSON.stringify(packagePath)} is not a release asset`);
-      if (!DIGEST.test(recipe.package.sha256 ?? "") || digests.get(name) !== recipe.package.sha256) {
+      const name =
+        typeof packagePath === "string" && packagePath.startsWith(prefix)
+          ? packagePath.slice(prefix.length)
+          : "";
+      if (!ASSET_NAME.test(name))
+        fail(`package path ${JSON.stringify(packagePath)} is not a release asset`);
+      if (
+        !DIGEST.test(recipe.package.sha256 ?? "") ||
+        digests.get(name) !== recipe.package.sha256
+      ) {
         fail(`package ${name} is not signed with the digest the index declares`);
       }
     }
@@ -283,9 +359,11 @@ export async function publishRecipeRelease({ tag, outDir, download, verifySignat
 async function main() {
   const webRoot = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
   const outDir = path.join(webRoot, "public", "catalog");
-  const tag = process.env.VONK_RECIPE_RELEASE || await resolveReleaseTag();
+  const tag = process.env.VONK_RECIPE_RELEASE || (await resolveReleaseTag());
   await publishRecipeRelease({ tag, outDir, download: downloadBundle() });
-  console.log(`Verified ${RECIPE_REPOSITORY} ${tag} and wrote ${path.relative(process.cwd(), outDir)}`);
+  console.log(
+    `Verified ${RECIPE_REPOSITORY} ${tag} and wrote ${path.relative(process.cwd(), outDir)}`,
+  );
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

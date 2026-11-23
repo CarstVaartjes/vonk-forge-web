@@ -4,7 +4,8 @@ const paths: Record<string, string> = {
   all: "M4 4h6.5v6.5H4zM13.5 4H20v6.5h-6.5zM4 13.5h6.5V20H4zM13.5 13.5H20V20h-6.5z",
   language: "M4 5h16v11H11l-4.5 3.5V16H4z",
   code: "M9 7l-5 5 5 5M15 7l5 5-5 5",
-  vision: "M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12zM12 9.25a2.75 2.75 0 100 5.5 2.75 2.75 0 000-5.5z",
+  vision:
+    "M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12zM12 9.25a2.75 2.75 0 100 5.5 2.75 2.75 0 000-5.5z",
   image: "M4 5h16v14H4zM4 16l4.5-4.5 3.5 3.5 3-3 5 5M15.5 9.5h.01",
   video: "M3 6h18v12H3zM10 9.5v5l4.5-2.5z",
   audio: "M4 10v4M8 6v12M12 3v18M16 7v10M20 10v4",
@@ -14,7 +15,19 @@ const paths: Record<string, string> = {
 
 export function TypeIcon({ id }: { id: string }) {
   return (
-    <svg className="type-icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="square" strokeLinejoin="miter" aria-hidden="true" focusable="false">
+    <svg
+      className="type-icon"
+      viewBox="0 0 24 24"
+      width="24"
+      height="24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="square"
+      strokeLinejoin="miter"
+      aria-hidden="true"
+      focusable="false"
+    >
       <path d={paths[id] ?? paths.generic} />
     </svg>
   );
@@ -23,8 +36,22 @@ export function TypeIcon({ id }: { id: string }) {
 // Theme switch glyphs: the sun shows in the dark theme (switch to light), the moon in the light theme.
 export function ThemeIcon({ theme }: { theme: "dark" | "light" }) {
   return (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true" focusable="false">
-      {theme === "dark" ? <path d="M12 8a4 4 0 100 8 4 4 0 000-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /> : <path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z" />}
+    <svg
+      viewBox="0 0 24 24"
+      width="18"
+      height="18"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      {theme === "dark" ? (
+        <path d="M12 8a4 4 0 100 8 4 4 0 000-8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+      ) : (
+        <path d="M20 14.5A8 8 0 019.5 4 8 8 0 1020 14.5z" />
+      )}
     </svg>
   );
 }

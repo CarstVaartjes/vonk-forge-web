@@ -6,6 +6,12 @@ import { isVerifiedStatus, typesOf } from "./vocabulary";
 
 export const vocabularyFixture = catalogIndexFixture.vocabulary;
 
-export function catalogFacts(facts: Omit<RecipeSummary["catalog"], "types" | "verified">): RecipeSummary["catalog"] {
-  return { ...facts, types: typesOf(vocabularyFixture, facts.capabilities), verified: isVerifiedStatus(vocabularyFixture, facts.qualification) };
+export function catalogFacts(
+  facts: Omit<RecipeSummary["catalog"], "types" | "verified">,
+): RecipeSummary["catalog"] {
+  return {
+    ...facts,
+    types: typesOf(vocabularyFixture, facts.capabilities),
+    verified: isVerifiedStatus(vocabularyFixture, facts.qualification),
+  };
 }

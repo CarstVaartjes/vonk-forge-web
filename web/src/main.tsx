@@ -5,7 +5,6 @@ import "@fontsource-variable/onest";
 import { App, preparePage } from "./app";
 import "./styles/index.css";
 
-
 const root = document.getElementById("root");
 
 if (root === null) {
@@ -27,14 +26,22 @@ function reloadOnce(): boolean {
 }
 
 // The first page's code is loaded before the first render, so a direct visit draws no loading state either.
-preparePage(window.location.pathname).then(
-  () => { try { sessionStorage.removeItem(RELOADED); } catch { /* storage unavailable */ } },
-  () => !reloadOnce(),
-).then((render) => {
-  if (render === false) return;
-  createRoot(root).render(
-    <StrictMode>
-      <App />
-    </StrictMode>,
-  );
-});
+preparePage(window.location.pathname)
+  .then(
+    () => {
+      try {
+        sessionStorage.removeItem(RELOADED);
+      } catch {
+        /* storage unavailable */
+      }
+    },
+    () => !reloadOnce(),
+  )
+  .then((render) => {
+    if (render === false) return;
+    createRoot(root).render(
+      <StrictMode>
+        <App />
+      </StrictMode>,
+    );
+  });

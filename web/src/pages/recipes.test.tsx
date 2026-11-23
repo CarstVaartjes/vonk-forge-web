@@ -5,10 +5,19 @@ import { readMySparks, saveMySparks } from "../my-sparks";
 import { RecipesPage } from "./recipes";
 import { catalogFacts, vocabularyFixture } from "../vocabulary.fixture";
 
-
-const { loadRecipeCatalog, getVocabulary } = vi.hoisted(() => ({ loadRecipeCatalog: vi.fn(), getVocabulary: vi.fn() }));
-vi.mock("../api/client", () => ({ loadRecipeCatalog, getVocabulary, peekRecipe: () => null, peekRecipeCatalog: () => null, peekModel: () => null, peekModels: () => null, peekVocabulary: () => null }));
-
+const { loadRecipeCatalog, getVocabulary } = vi.hoisted(() => ({
+  loadRecipeCatalog: vi.fn(),
+  getVocabulary: vi.fn(),
+}));
+vi.mock("../api/client", () => ({
+  loadRecipeCatalog,
+  getVocabulary,
+  peekRecipe: () => null,
+  peekRecipeCatalog: () => null,
+  peekModel: () => null,
+  peekModels: () => null,
+  peekVocabulary: () => null,
+}));
 
 const recipe: RecipeSummary = {
   publisher: "vonk",
@@ -51,7 +60,6 @@ const recipe: RecipeSummary = {
   }),
 };
 
-
 beforeEach(() => {
   localStorage.clear();
   window.history.replaceState(null, "", "/recipes?runtime=vllm&verified=0");
@@ -59,13 +67,14 @@ beforeEach(() => {
   getVocabulary.mockReset().mockResolvedValue(vocabularyFixture);
 });
 
-
 test("shows sizing, immutable identity, and evidence provenance", async () => {
   render(<RecipesPage />);
   expect(await screen.findByRole("link", { name: "Qwen Fast" })).toBeVisible();
   expect(screen.getByRole("cell", { name: "48 GiB" })).toBeVisible();
   expect(screen.getByText(/Source verified/)).toBeVisible();
-  expect(within(screen.getByRole("table")).getByText(/Not yet verified/, { selector: ".status" })).toBeVisible();
+  expect(
+    within(screen.getByRole("table")).getByText(/Not yet verified/, { selector: ".status" }),
+  ).toBeVisible();
   expect(screen.getByText(/never tested/)).toBeVisible();
   expect(screen.getByText(/not a Vonk endorsement/i)).toBeVisible();
   // Hashes and slugs belong to the recipe page, and a recipe with no executable contract shows it.
@@ -75,7 +84,6 @@ test("shows sizing, immutable identity, and evidence provenance", async () => {
   expect(screen.getAllByRole("cell")).toHaveLength(6);
   expect(document.querySelector("td h2, td h3")).toBeNull();
 });
-
 
 test("the phone Sort select reflects the URL sort, in either direction", async () => {
   window.history.replaceState(null, "", "/recipes?verified=0&sort=recipe&direction=desc");
@@ -91,10 +99,14 @@ test("the phone Sort select reflects the URL sort, in either direction", async (
 });
 
 test("the executable-contract badge shows only on a row that deviates from it", async () => {
-  loadRecipeCatalog.mockResolvedValue([{ ...recipe, catalog: { ...recipe.catalog, execution_readiness: "executable" } }]);
+  loadRecipeCatalog.mockResolvedValue([
+    { ...recipe, catalog: { ...recipe.catalog, execution_readiness: "executable" } },
+  ]);
   render(<RecipesPage />);
   await screen.findByRole("link", { name: "Qwen Fast" });
-  expect(within(screen.getByRole("table")).queryByText("Executable contract")).not.toBeInTheDocument();
+  expect(
+    within(screen.getByRole("table")).queryByText("Executable contract"),
+  ).not.toBeInTheDocument();
 });
 
 test("keeps Controller-parity filters in the URL and applies them locally", async () => {
@@ -103,8 +115,19 @@ test("keeps Controller-parity filters in the URL and applies them locally", asyn
   fireEvent.change(screen.getByLabelText("Filter by abliterated"), { target: { value: "false" } });
   await waitFor(() => expect(window.location.search).toContain("abliterated=false"));
   const more = within(document.querySelector(".catalog-more") as HTMLElement);
-  for (const name of ["Family", "Engine", "Capabilities"]) expect(more.getByRole("group", { name })).toBeInTheDocument();
-  for (const label of ["Filter by model", "Filter by memory per spark", "Filter by disk per spark", "Filter by download size", "Filter by updated date", "Filter by execution readiness", "Filter by qualification", "Filter by original repository"]) expect(more.getByLabelText(label)).toBeInTheDocument();
+  for (const name of ["Family", "Engine", "Capabilities"])
+    expect(more.getByRole("group", { name })).toBeInTheDocument();
+  for (const label of [
+    "Filter by model",
+    "Filter by memory per spark",
+    "Filter by disk per spark",
+    "Filter by download size",
+    "Filter by updated date",
+    "Filter by execution readiness",
+    "Filter by qualification",
+    "Filter by original repository",
+  ])
+    expect(more.getByLabelText(label)).toBeInTheDocument();
   expect(screen.getByText(/status appear only in/i)).toBeVisible();
   expect(screen.queryByRole("button", { name: "Cards" })).not.toBeInTheDocument();
 });
@@ -119,10 +142,21 @@ test("starts from the visitor's Sparks and engine, in the same URL facets as the
   fireEvent.click(oneSpark);
   await waitFor(() => expect(window.location.search).toBe("?verified=0&sparks=1"));
   expect(oneSpark).toHaveAttribute("aria-pressed", "true");
-  fireEvent.click(within(screen.getByRole("group", { name: "Engine" })).getByRole("button", { name: "vLLM: 1" }));
+  fireEvent.click(
+    within(screen.getByRole("group", { name: "Engine" })).getByRole("button", { name: "vLLM: 1" }),
+  );
   await waitFor(() => expect(window.location.search).toContain("runtime=vllm"));
-  expect(within(screen.getByRole("group", { name: "Engine" })).getByRole("button", { name: "vLLM: 1" })).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getAllByRole("columnheader").map((header) => header.textContent?.trim())).toEqual(["Recipe", "Sparks", "Memory / Spark", "Engine", "Capabilities", "Status"]);
+  expect(
+    within(screen.getByRole("group", { name: "Engine" })).getByRole("button", { name: "vLLM: 1" }),
+  ).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getAllByRole("columnheader").map((header) => header.textContent?.trim())).toEqual([
+    "Recipe",
+    "Sparks",
+    "Memory / Spark",
+    "Engine",
+    "Capabilities",
+    "Status",
+  ]);
 });
 
 test("a header sorts ascending, then descending, then back to newest; a capacity bucket filters by at-most", async () => {
@@ -136,16 +170,32 @@ test("a header sorts ascending, then descending, then back to newest; a capacity
   fireEvent.click(memory());
   await waitFor(() => expect(window.location.search).not.toContain("sort="));
   // 48 GiB memory: only the "at most 64 GiB" bucket (and none below it) holds the recipe, so it is the one offered.
-  const labels = [...screen.getByLabelText("Filter by memory per spark").querySelectorAll("option")].map((option) => option.textContent);
+  const labels = [
+    ...screen.getByLabelText("Filter by memory per spark").querySelectorAll("option"),
+  ].map((option) => option.textContent);
   expect(labels).toEqual(["Any", "≤ 64 GiB (1)"]);
-  fireEvent.change(screen.getByLabelText("Filter by memory per spark"), { target: { value: "64" } });
+  fireEvent.change(screen.getByLabelText("Filter by memory per spark"), {
+    target: { value: "64" },
+  });
   await waitFor(() => expect(window.location.search).toContain("memory=64"));
   expect(screen.getByRole("link", { name: "Qwen Fast" })).toBeVisible();
 });
 
-
 function verifiedCoder(): RecipeSummary {
-  return { ...recipe, slug: "coder", title: "Coder", catalog: catalogFacts({ ...recipe.catalog, model_family: "Coder", model_version_slug: "coder", model_version_title: "coder", capabilities: ["code-generation"], qualification: "Working", qualification_reason: null }) };
+  return {
+    ...recipe,
+    slug: "coder",
+    title: "Coder",
+    catalog: catalogFacts({
+      ...recipe.catalog,
+      model_family: "Coder",
+      model_version_slug: "coder",
+      model_version_title: "coder",
+      capabilities: ["code-generation"],
+      qualification: "Working",
+      qualification_reason: null,
+    }),
+  };
 }
 
 describe("My Sparks", () => {
@@ -154,14 +204,20 @@ describe("My Sparks", () => {
     window.history.replaceState(null, "", "/recipes?verified=0");
     const first = render(<RecipesPage />);
     await screen.findByRole("link", { name: "Qwen Fast" });
-    expect(screen.getByRole("button", { name: "2 Sparks 1 recipe" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "2 Sparks 1 recipe" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     expect(window.location.search).toBe("?verified=0&sparks=2");
     first.unmount();
 
     window.history.replaceState(null, "", "/recipes?verified=0&sparks=1");
     render(<RecipesPage />);
     await screen.findByRole("link", { name: "Qwen Fast" });
-    expect(screen.getByRole("button", { name: "1 Spark 1 recipe" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: "1 Spark 1 recipe" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   test("picking on this page is remembered, and clearing the picker forgets it", async () => {
@@ -176,7 +232,9 @@ describe("My Sparks", () => {
 
   test("the Spark picker is the first control of the setup section", async () => {
     render(<RecipesPage />);
-    const setup = within(await screen.findByRole("region", { name: "Then narrow it to your setup." }));
+    const setup = within(
+      await screen.findByRole("region", { name: "Then narrow it to your setup." }),
+    );
     expect(setup.getAllByRole("group")[0]).toHaveAccessibleName("How many Sparks do you have?");
   });
 });
@@ -205,13 +263,38 @@ describe("type-first filtering", () => {
     render(<RecipesPage />);
     expect(await screen.findByRole("link", { name: "Coder" })).toBeVisible();
     const types = screen.getByRole("group", { name: "Model type" });
-    expect(within(types).getAllByRole("button").map((button) => button.textContent)).toEqual(["All 1", "Language 0", "Code 1", "Vision 0", "Image 0", "Video 0", "Audio 0", "3D 0", "Other 0"]);
-    expect(within(types).getByRole("button", { name: "Code 1" })).toHaveAttribute("aria-pressed", "true");
+    expect(
+      within(types)
+        .getAllByRole("button")
+        .map((button) => button.textContent),
+    ).toEqual([
+      "All 1",
+      "Language 0",
+      "Code 1",
+      "Vision 0",
+      "Image 0",
+      "Video 0",
+      "Audio 0",
+      "3D 0",
+      "Other 0",
+    ]);
+    expect(within(types).getByRole("button", { name: "Code 1" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
     // The type row precedes the setup refinements in the page order.
-    expect(types.compareDocumentPosition(screen.getByRole("group", { name: "How many Sparks do you have?" })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      types.compareDocumentPosition(
+        screen.getByRole("group", { name: "How many Sparks do you have?" }),
+      ) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     fireEvent.click(within(types).getByRole("button", { name: "All 1" }));
     await waitFor(() => expect(window.location.search).toBe(""));
-    fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "Code 1" }));
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Model type" })).getByRole("button", {
+        name: "Code 1",
+      }),
+    );
     await waitFor(() => expect(window.location.search).toBe("?type=code"));
   });
 
@@ -222,13 +305,36 @@ describe("type-first filtering", () => {
     expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked();
   });
 
-  function variant(slug: string, owner: string, nodes: number, capabilities: string[]): RecipeSummary {
+  function variant(
+    slug: string,
+    owner: string,
+    nodes: number,
+    capabilities: string[],
+  ): RecipeSummary {
     const base = verifiedCoder();
-    return { ...base, slug, title: slug, catalog: catalogFacts({ ...base.catalog, model_family: slug, model_version_slug: slug, model_version_title: slug, source_owner: owner, node_count: nodes, capabilities }) };
+    return {
+      ...base,
+      slug,
+      title: slug,
+      catalog: catalogFacts({
+        ...base.catalog,
+        model_family: slug,
+        model_version_slug: slug,
+        model_version_title: slug,
+        source_owner: owner,
+        node_count: nodes,
+        capabilities,
+      }),
+    };
   }
 
   test("Sparks and Creator refinements change the type counts, and an empty type chip is aria-disabled", async () => {
-    loadRecipeCatalog.mockReset().mockResolvedValue([variant("coder", "eugr", 1, ["code-generation"]), variant("chatter", "NVIDIA", 2, ["chat"])]);
+    loadRecipeCatalog
+      .mockReset()
+      .mockResolvedValue([
+        variant("coder", "eugr", 1, ["code-generation"]),
+        variant("chatter", "NVIDIA", 2, ["chat"]),
+      ]);
     window.history.replaceState(null, "", "/recipes");
     render(<RecipesPage />);
     await screen.findByRole("link", { name: "coder" });
@@ -237,7 +343,12 @@ describe("type-first filtering", () => {
     expect(types().getByRole("button", { name: "Language 1" })).toBeVisible();
 
     fireEvent.click(screen.getByRole("button", { name: "1 Spark 1 recipe" }));
-    await waitFor(() => expect(types().getByRole("button", { name: "Language 0" })).toHaveAttribute("aria-disabled", "true"));
+    await waitFor(() =>
+      expect(types().getByRole("button", { name: "Language 0" })).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      ),
+    );
     expect(types().getByRole("button", { name: "Code 1" })).toBeVisible();
     // An empty chip stays focusable but does nothing.
     fireEvent.click(types().getByRole("button", { name: "Language 0" }));
@@ -245,8 +356,17 @@ describe("type-first filtering", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Any 2 recipes" }));
     await waitFor(() => expect(window.location.search).toBe(""));
-    fireEvent.click(within(screen.getByRole("group", { name: "Creator" })).getByRole("button", { name: "eugr: 1" }));
-    await waitFor(() => expect(types().getByRole("button", { name: "Language 0" })).toHaveAttribute("aria-disabled", "true"));
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Creator" })).getByRole("button", {
+        name: "eugr: 1",
+      }),
+    );
+    await waitFor(() =>
+      expect(types().getByRole("button", { name: "Language 0" })).toHaveAttribute(
+        "aria-disabled",
+        "true",
+      ),
+    );
     expect(types().getByRole("button", { name: "Code 1" })).toBeVisible();
   });
 
@@ -254,7 +374,9 @@ describe("type-first filtering", () => {
     window.history.replaceState(null, "", "/recipes?type=vision");
     render(<RecipesPage />);
     const empty = await screen.findByText("No matching recipes.");
-    expect(empty.parentElement).toHaveTextContent(/Verified on Spark is on, so recipes that have not passed hardware checks/);
+    expect(empty.parentElement).toHaveTextContent(
+      /Verified on Spark is on, so recipes that have not passed hardware checks/,
+    );
     const applied = screen.getByLabelText("Applied filters");
     expect(within(applied).getByRole("button", { name: /Verified on Spark/ })).toBeVisible();
     expect(within(applied).getByRole("button", { name: /Type: Vision/ })).toBeVisible();
@@ -271,7 +393,11 @@ describe("type-first filtering", () => {
     await screen.findByRole("link", { name: "Coder" });
     expect(screen.getByLabelText("Applied filters")).toHaveTextContent("Verified on Spark");
     expect(screen.queryByRole("button", { name: /^Reset filters/ })).not.toBeInTheDocument();
-    fireEvent.click(within(screen.getByRole("group", { name: "Model type" })).getByRole("button", { name: "Code 1" }));
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Model type" })).getByRole("button", {
+        name: "Code 1",
+      }),
+    );
     const reset = await screen.findByRole("button", { name: /^Reset filters/ });
     expect(reset).toHaveTextContent("to Verified on Spark");
     fireEvent.click(reset);
@@ -281,11 +407,15 @@ describe("type-first filtering", () => {
   });
 });
 
-
 test("explains each status shown with the release's meaning, links every badge to the explanation, and lists only the published statuses", async () => {
   loadRecipeCatalog.mockResolvedValue([
     recipe,
-    { ...recipe, slug: "odd", title: "Odd", catalog: { ...recipe.catalog, qualification: "Status from a newer library" } },
+    {
+      ...recipe,
+      slug: "odd",
+      title: "Odd",
+      catalog: { ...recipe.catalog, qualification: "Status from a newer library" },
+    },
   ]);
   render(<RecipesPage />);
   await screen.findByRole("link", { name: "Odd" });
@@ -293,13 +423,20 @@ test("explains each status shown with the release's meaning, links every badge t
   expect(legend.getByText(/information to help you choose, never a gate/)).toBeInTheDocument();
   // The vocabulary's meaning, exactly as published; a status it has no entry for is listed by name alone.
   expect(legend.getAllByText("Status from a newer library")).toHaveLength(1);
-  expect(legend.getByText("No hardware verdict yet; the reason is shown under the badge.")).toBeInTheDocument();
+  expect(
+    legend.getByText("No hardware verdict yet; the reason is shown under the badge."),
+  ).toBeInTheDocument();
   expect(legend.queryByText("Working")).toBeNull();
   expect(legend.queryByRole("link")).toBeNull();
   const table = within(screen.getByRole("table"));
   const known = table.getByRole("link", { name: "Not yet verified" });
   const unknown = table.getByRole("link", { name: "Status from a newer library" });
-  expect(known).toHaveAttribute("title", "No hardware verdict yet; the reason is shown under the badge.");
+  expect(known).toHaveAttribute(
+    "title",
+    "No hardware verdict yet; the reason is shown under the badge.",
+  );
   expect(unknown).not.toHaveAttribute("title");
-  [known, unknown].forEach((link) => expect(link).toHaveAttribute("href", "#how-recipes-are-verified"));
+  for (const link of [known, unknown]) {
+    expect(link).toHaveAttribute("href", "#how-recipes-are-verified");
+  }
 });
