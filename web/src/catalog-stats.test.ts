@@ -28,7 +28,7 @@ function recipe(
           image_digest: `sha256:${"f".repeat(64)}`,
         }
       : null,
-    capacity: options.measured ? { measured_memory_bytes_per_node: options.measured } : undefined,
+    ...(options.measured ? { capacity: { measured_memory_bytes_per_node: options.measured } } : {}),
     publisher: "vonk-forge",
     slug,
     title: slug,

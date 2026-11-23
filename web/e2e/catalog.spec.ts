@@ -83,10 +83,15 @@ test("platform story stays navigable and bounded", async ({ page }) => {
         .map((channel) =>
           channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4,
         )
-        .reduce((total, channel, index) => total + channel * [0.2126, 0.7152, 0.0722][index], 0);
+        .reduce(
+          (total, channel, index) => total + channel * ([0.2126, 0.7152, 0.0722][index] ?? 0),
+          0,
+        );
     const contrast = (foreground: string, background: string) => {
-      const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
-      return (values[0] + 0.05) / (values[1] + 0.05);
+      const [lighter = 0, darker = 0] = [luminance(foreground), luminance(background)].sort(
+        (a, b) => b - a,
+      );
+      return (lighter + 0.05) / (darker + 0.05);
     };
     const probe = document.body.appendChild(document.createElement("i"));
     probe.style.transition = "none"; // a transition would report the previous token's colour

@@ -39,7 +39,12 @@ test("every font-size, and the size inside every font shorthand, is a scale toke
 function block(selector: string): Map<string, string> {
   const start = tokenCss.indexOf(`${selector} {`);
   const body = tokenCss.slice(start, tokenCss.indexOf("\n}\n", start));
-  return new Map([...body.matchAll(/(--[a-z0-9-]+): ([^;]+);/g)].map((m) => [m[1]!, m[2]!.trim()]));
+  return new Map(
+    [...body.matchAll(/(--[a-z0-9-]+): ([^;]+);/g)].map((m) => [
+      m[1]!,
+      m[2]!.replace(/\s+/g, " ").replace(/\( /g, "(").replace(/ \)/g, ")").trim(),
+    ]),
+  );
 }
 
 function channels(value: string, bg: number[]): number[] {

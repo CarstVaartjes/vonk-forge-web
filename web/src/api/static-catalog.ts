@@ -542,15 +542,17 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
           image_digest: lastPass.identity.runtime_image?.image_digest,
         }
       : null,
-    chat_api: chat
+    ...(chat
       ? {
-          endpoints: chat.endpoints,
-          streaming: chat.streaming,
-          structured_output: chat.structured_output,
-          image_input: chat.input_modalities.image,
-          audio_input: chat.input_modalities.audio,
+          chat_api: {
+            endpoints: chat.endpoints,
+            streaming: chat.streaming,
+            structured_output: chat.structured_output,
+            image_input: chat.input_modalities.image,
+            audio_input: chat.input_modalities.audio,
+          },
         }
-      : undefined,
+      : {}),
     served_names: document.interfaces.flatMap((entry) =>
       entry.adapter === "openai" ? entry.model_aliases : [],
     ),
@@ -580,7 +582,10 @@ interface ReleaseManifest {
 // The Pages build writes the verified release's index and a manifest naming
 // that release beside it; both are read from this site's own origin.
 async function readJson(url: string, signal?: AbortSignal): Promise<unknown> {
-  const response = await fetch(url, { headers: { Accept: "application/json" }, signal });
+  const response = await fetch(url, {
+    headers: { Accept: "application/json" },
+    ...(signal ? { signal } : {}),
+  });
   if (!response.ok) throw new Error(`Recipe library returned ${response.status}`);
   return response.json();
 }

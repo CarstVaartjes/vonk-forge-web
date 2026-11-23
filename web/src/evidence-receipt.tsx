@@ -30,7 +30,7 @@ export function EvidenceReceipt({
   facts: ReceiptFacts;
   verified: boolean;
   showTitle?: boolean;
-  meaning?: string;
+  meaning?: string | undefined;
 }) {
   const rows: Array<{ name: string; value: string; mono?: boolean }> = [];
   if (facts.hardwareClass) rows.push({ name: "Hardware", value: facts.hardwareClass });

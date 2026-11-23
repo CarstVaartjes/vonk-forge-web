@@ -17,10 +17,10 @@ import {
 
 // A model's license as the catalog published it: shown for information, never a gate.
 export interface License {
-  spdx?: string;
-  url?: string;
+  spdx?: string | undefined;
+  url?: string | undefined;
   // The regional notice the license carries (where it does not apply), shown as information.
-  notice?: string;
+  notice?: string | undefined;
 }
 
 // What a job recipe takes and gives, as the catalog published it: the slots a job fills and the options it accepts.
@@ -37,13 +37,13 @@ export interface JobSlot {
 export interface JobOption {
   key: string;
   label: string;
-  description?: string;
-  unit?: string;
+  description?: string | undefined;
+  unit?: string | undefined;
   default: string | number | boolean;
-  minimum?: number;
-  maximum?: number;
-  step?: number;
-  allowed_values?: (string | number | boolean)[];
+  minimum?: number | undefined;
+  maximum?: number | undefined;
+  step?: number | undefined;
+  allowed_values?: (string | number | boolean)[] | undefined;
 }
 
 export interface JobContract {
@@ -59,7 +59,7 @@ export interface RecipeSummary {
   official: boolean;
   content_sha256: string;
   published_at: string;
-  version?: string;
+  version?: string | undefined;
   runtime: { adapter?: string };
   build?: { dockerfile?: string };
   artifacts?: Array<{
@@ -69,17 +69,17 @@ export interface RecipeSummary {
   }>;
   capacity?: {
     profile_node_counts?: number[];
-    maximum_installed_bytes_per_node?: number;
-    maximum_runtime_memory_bytes_per_node?: number;
+    maximum_installed_bytes_per_node?: number | undefined;
+    maximum_runtime_memory_bytes_per_node?: number | undefined;
     // The largest per-role peak a hardware run measured; absent for a recipe with none.
-    measured_memory_bytes_per_node?: number;
+    measured_memory_bytes_per_node?: number | undefined;
   };
   moderation_warning?: string | null;
   facts?: {
     source_bundle_observed: boolean;
   };
   import?: { uri: string; instruction: string };
-  source?: { recipe_url?: string; bundle_url?: string };
+  source?: { recipe_url?: string; bundle_url?: string | undefined };
   package?: { member: string; sha256: string; bytes: number; media_type: string };
   catalog: {
     description: string;
@@ -117,10 +117,10 @@ export interface RecipeDetail extends RecipeSummary {
   // The newest hardware pass the library recorded for this recipe: when, and on how many Sparks.
   evidence: {
     tested_at: string;
-    spark_count?: number;
-    hardware_class?: string;
-    evidence_ref?: string;
-    image_digest?: string;
+    spark_count?: number | undefined;
+    hardware_class?: string | undefined;
+    evidence_ref?: string | undefined;
+    image_digest?: string | undefined;
   } | null;
   // What the recipe's chat API serves; absent for a recipe that is not a chat API.
   chat_api?: {
@@ -134,9 +134,9 @@ export interface RecipeDetail extends RecipeSummary {
   served_names: string[];
   credits: string[];
   // The recipe's own defaults for the settings the page shows.
-  settings: { context_tokens?: number; concurrency?: number };
+  settings: { context_tokens?: number | undefined; concurrency?: number | undefined };
   // Present only for a job recipe (images, video, audio, 3D): what goes in, what comes out, and its options.
-  job?: JobContract;
+  job?: JobContract | undefined;
   license: License;
   latest_revision: {
     content_sha256: string;
@@ -153,11 +153,11 @@ export interface ModelVersionSummary {
   // This variant's own description; a Model has none of its own.
   description: string;
   model_slug: string;
-  variant?: string;
-  requires_token?: boolean;
-  source_repository?: string;
-  source_revision?: string;
-  format?: { precision?: string; quantization?: string };
+  variant?: string | undefined;
+  requires_token?: boolean | undefined;
+  source_repository?: string | undefined;
+  source_revision?: string | undefined;
+  format?: { precision?: string | undefined; quantization?: string | undefined };
   sizes?: { download_bytes?: number; installed_bytes?: number };
   license?: License;
   capabilities: string[];
@@ -177,7 +177,7 @@ export interface ModelSummary {
   slug: string;
   title: string;
   // The lineage title (Qwen, GLM, DeepSeek Flash), falling back to its slug.
-  family?: string;
+  family?: string | undefined;
   runs: ModelRuns;
   // The same facts for recipes that passed hardware checks on a DGX Spark.
   verified_runs: ModelRuns;
