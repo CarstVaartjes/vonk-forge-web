@@ -241,3 +241,12 @@
     transition: none !important;
   }
 }
+
+/* A fieldset used as a plain labelled group: no border, padding or intrinsic minimum width.
+   Zero specificity, so the component's own rules win. */
+:where(.setup-group) {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}

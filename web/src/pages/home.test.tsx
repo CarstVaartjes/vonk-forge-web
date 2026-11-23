@@ -138,7 +138,7 @@ describe("home page", () => {
       await screen.findByRole("region", { name: /New models and recipe revisions/ }),
     );
     expect(
-      current.getByRole("group", { name: /^Recipes released per week: 1 recipe,/ }),
+      current.getByRole("figure", { name: /^Recipes released per week: 1 recipe,/ }),
     ).toBeVisible();
     expect(current.queryByRole("heading", { name: "Newest verified recipes" })).toBeNull();
     const story = screen.getByRole("heading", { name: "Click it, or hand it to your agent." });

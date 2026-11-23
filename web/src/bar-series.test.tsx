@@ -19,7 +19,7 @@ test("totals in the group's label, a table of every bar, and labels only on the 
     />,
   );
   expect(
-    screen.getByRole("group", {
+    screen.getByRole("figure", {
       name: "Recipes released per week: 15 recipes, peak 9 in 8 Nov to 14 Nov",
     }),
   ).toBeVisible();
@@ -49,7 +49,7 @@ test("one item reads in the singular", () => {
     />,
   );
   expect(
-    screen.getByRole("group", {
+    screen.getByRole("figure", {
       name: "Recipes released per week: 1 recipe, peak 1 in 1 Nov to 7 Nov",
     }),
   ).toBeVisible();

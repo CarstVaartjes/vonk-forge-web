@@ -125,7 +125,7 @@ npm --prefix web run test:e2e   # builds (locally; CI serves the dist it built e
 ```
 
 Run `scripts/install-git-hooks` once per clone: the pre-commit hook runs the same Biome
-(`web/biome.json`) and `typecheck` commands as CI, Biome on the staged paths and `tsc` whole. Biome
+(`web/biome.json`) and `typecheck` commands as CI, Biome on the staged paths and `tsc` whole. The hook installs the locked dependencies when they are missing or stale, and `typecheck` fetches the release and regenerates the types first, so a stale local file cannot pass. Biome
 is the one linter and formatter (recommended rules; `noNonNullAssertion`, `noDescendingSpecificity`
 and `noImportantStyles` are off); `tsc` runs the strict flag set in `web/tsconfig.json`. Fix a
 finding in the code; a `biome-ignore` comment needs a stated reason.

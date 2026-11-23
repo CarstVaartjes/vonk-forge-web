@@ -10,9 +10,13 @@ while IFS= read -r -d '' file; do
 done < <(git diff --cached --name-only --diff-filter=ACMR -z -- web)
 ((${#staged[@]})) || exit 0
 
-if [[ ! -x web/node_modules/.bin/biome ]]; then
-  echo "pre-commit: run 'npm --prefix web ci' first" >&2
-  exit 1
+# Install what the lockfile pins when it is missing or changed since the last install, so the hook
+# checks with the versions CI uses. The stamp records which lockfile node_modules was installed from.
+stamp=web/node_modules/.lockfile-sha
+lock_sha=$(shasum web/package-lock.json | cut -d' ' -f1)
+if [[ ! -x web/node_modules/.bin/biome ]] || [[ "$(cat "$stamp" 2>/dev/null)" != "$lock_sha" ]]; then
+  npm --prefix web ci
+  echo "$lock_sha" > "$stamp"
 fi
 
 # Biome reads web/biome.json; its own file selection decides what it checks.

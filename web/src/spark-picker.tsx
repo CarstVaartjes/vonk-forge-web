@@ -25,8 +25,7 @@ export function SparkSegments({
       <p className="picker-q" id="picker-question">
         How many Sparks do you have?
       </p>
-      {/* biome-ignore lint/a11y/useSemanticElements: role=group names a styled wrapper; fieldset would need a user-agent style reset */}
-      <div className="seg" role="group" aria-labelledby="picker-question">
+      <fieldset className="seg setup-group" aria-labelledby="picker-question">
         {SPARK_OPTIONS.map((option) => (
           <button
             key={option.value}
@@ -38,7 +37,7 @@ export function SparkSegments({
             {option.numeral}
           </button>
         ))}
-      </div>
+      </fieldset>
     </div>
   );
 }
@@ -74,8 +73,7 @@ export function TypeChips({
     })),
   ];
   return (
-    // biome-ignore lint/a11y/useSemanticElements: role=group names a styled wrapper; fieldset would need a user-agent style reset
-    <div className="type-chips" role="group" aria-label="Model type">
+    <fieldset className="type-chips setup-group" aria-label="Model type">
       {chips.map((chip) => (
         <button
           key={chip.id || "all"}
@@ -92,7 +90,7 @@ export function TypeChips({
           <small>{number.format(chip.count)}</small>
         </button>
       ))}
-    </div>
+    </fieldset>
   );
 }
 

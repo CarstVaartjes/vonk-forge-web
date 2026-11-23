@@ -47,7 +47,6 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
       .catch(() => undefined);
     return () => controller.abort();
   }, []);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt re-runs the load on Retry
   useEffect(() => {
     const controller = new AbortController();
     setError(false);

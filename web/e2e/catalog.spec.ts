@@ -136,9 +136,9 @@ test("home page shows the live numbers from the build-time summary and loads not
   ).toHaveCount(catalogSummary.total);
 
   // Kept current and verified on hardware draw from the same summary.
-  await expect(page.getByRole("group", { name: /^Recipes released per week: / })).toBeVisible();
+  await expect(page.getByRole("figure", { name: /^Recipes released per week: / })).toBeVisible();
   await expect(
-    page.getByRole("group", {
+    page.getByRole("figure", {
       name: /^Most recent hardware pass per recipe, by day, last 28 days: /,
     }),
   ).toBeVisible();

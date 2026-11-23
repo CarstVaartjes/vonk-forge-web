@@ -472,7 +472,6 @@ export function ModelsPage() {
   const [filters, setFilters] = useState(initialFilters);
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt re-runs the load on Retry
   useEffect(() => {
     const controller = new AbortController();
     setError(false);
@@ -964,7 +963,6 @@ export function ModelDetailPage({ publisher, slug }: { publisher: string; slug: 
       .catch(() => undefined);
     return () => controller.abort();
   }, []);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt re-runs the load on Retry
   useEffect(() => {
     const controller = new AbortController();
     setError(null);

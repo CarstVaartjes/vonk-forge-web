@@ -130,8 +130,6 @@ export function RecipesPage() {
   const [retry, setRetry] = useState(0);
   const filters = useMemo(() => filtersFromParameters(parameters), [parameters]);
   const offset = Math.max(0, Number.parseInt(parameters.get("cursor") ?? "0", 10) || 0);
-
-  // biome-ignore lint/correctness/useExhaustiveDependencies: retry re-runs the load on Retry
   useEffect(() => {
     const controller = new AbortController();
     setError(null);
@@ -582,8 +580,7 @@ export function RecipesPage() {
                     ),
                   }))}
                 />
-                {/* biome-ignore lint/a11y/useSemanticElements: role=group names a styled wrapper; fieldset would need a user-agent style reset */}
-                <div className="setup-facet" role="group" aria-label="Capabilities">
+                <fieldset className="setup-facet setup-group" aria-label="Capabilities">
                   <span className="setup-facet-label">Capabilities</span>
                   <div className="setup-chips">
                     {vocabulary.capabilities.map((option) => {
@@ -602,7 +599,7 @@ export function RecipesPage() {
                       );
                     })}
                   </div>
-                </div>
+                </fieldset>
               </div>
               <div className="catalog-more-fields">
                 {select(
@@ -776,8 +773,7 @@ export function RecipesPage() {
             </p>
           </div>
           {applied.length ? (
-            // biome-ignore lint/a11y/useSemanticElements: role=group names a styled wrapper; fieldset would need a user-agent style reset
-            <div className="catalog-applied" role="group" aria-label="Applied filters">
+            <fieldset className="catalog-applied setup-group" aria-label="Applied filters">
               {applied.map((item) => (
                 <button type="button" key={item.key} onClick={item.remove}>
                   {item.label}
@@ -785,7 +781,7 @@ export function RecipesPage() {
                   <span className="visually-hidden"> Remove filter</span>
                 </button>
               ))}
-            </div>
+            </fieldset>
           ) : null}
 
           <div className="catalog-table-scroll">

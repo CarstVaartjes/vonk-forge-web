@@ -108,7 +108,6 @@ type CatalogState =
 function useCatalogSummary(): [CatalogState, () => void] {
   const [state, setState] = useState<CatalogState>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: attempt re-runs the load on Retry
   useEffect(() => {
     const controller = new AbortController();
     getCatalogSummary(controller.signal)

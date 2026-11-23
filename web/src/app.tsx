@@ -192,7 +192,6 @@ export function App() {
   // The page shown follows the router's location, which only an in-app navigation or the back button changes.
   const location = useLocationKey();
   useEffect(() => startRouter(preparePage), []);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: a new location is the trigger to close the menu and settle navigation
   useLayoutEffect(() => {
     setMenuOpen(false);
     settleNavigation();
