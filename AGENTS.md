@@ -115,6 +115,7 @@ there, with no baseline allowance.
 npm --prefix web ci
 npm --prefix web audit --audit-level=high
 npm --prefix web run catalog      # fetch the release, generate the types
+npm --prefix web run lint         # Biome: lint and format check (biome ci), the whole tree
 npm --prefix web run typecheck
 npm --prefix web test -- --run
 git ls-files -z | node web/scripts/check-single-sources.mjs
@@ -122,6 +123,12 @@ npm --prefix web run build
 npx --prefix web playwright install chromium
 npm --prefix web run test:e2e   # builds (locally; CI serves the dist it built earlier) and serves web/dist with vite preview
 ```
+
+Run `scripts/install-git-hooks` once per clone: the pre-commit hook runs the same Biome
+(`web/biome.json`) and `typecheck` commands as CI, Biome on the staged paths and `tsc` whole. Biome
+is the one linter and formatter (recommended rules; `noNonNullAssertion`, `noDescendingSpecificity`
+and `noImportantStyles` are off); `tsc` runs the strict flag set in `web/tsconfig.json`. Fix a
+finding in the code; a `biome-ignore` comment needs a stated reason.
 
 The end-to-end suite includes an acceptance spec (`web/e2e/acceptance.spec.ts`): no horizontal
 overflow and no console error at 1440, 768, 400 and 320 px in both themes, an axe scan of every page (the routes in
