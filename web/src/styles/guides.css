@@ -211,14 +211,15 @@
 
 .spark-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.4rem 0.3rem;
   margin: 1.25rem 0;
 }
 
 .spark-row span {
-  min-width: 0;
-  padding: 0.5rem;
+  flex: none;
+  padding: 0.5rem 0.4rem;
   border: 1px solid rgb(127 216 160 / 35%);
   border-radius: 0.35rem;
   color: var(--green);
@@ -230,9 +231,9 @@
 }
 
 .spark-row i {
-  min-width: 0.5rem;
+  min-width: 0.25rem;
   height: 1px;
-  flex: 1;
+  flex: 1 1 0.5rem;
   background: var(--line-strong);
 }
 

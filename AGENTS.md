@@ -125,13 +125,13 @@ npm --prefix web run test:e2e   # builds (locally; CI serves the dist it built e
 ```
 
 Run `scripts/install-git-hooks` once per clone: the pre-commit hook runs the same Biome
-(`web/biome.json`) and `typecheck` commands as CI, Biome on the staged paths and `tsc` whole. The hook installs the locked dependencies when they are missing or stale, and `typecheck` fetches the release and regenerates the types first, so a stale local file cannot pass. Biome
+(`web/biome.json`) and `typecheck` commands as CI, Biome on the staged paths and `tsc` whole. The hook installs the locked dependencies when they are missing or stale. `typecheck` checks against the local `web/src/api/catalog.generated.d.ts` offline and fetches the release only when that file is missing (`npm --prefix web run catalog` regenerates it); CI regenerates the types from the release before it type-checks. Biome
 is the one linter and formatter (recommended rules; `noNonNullAssertion`, `noDescendingSpecificity`
 and `noImportantStyles` are off); `tsc` runs the strict flag set in `web/tsconfig.json`. Fix a
 finding in the code; a `biome-ignore` comment needs a stated reason.
 
 The end-to-end suite includes an acceptance spec (`web/e2e/acceptance.spec.ts`): no horizontal
-overflow and no console error at 1440, 768, 400 and 320 px in both themes, an axe scan of every page (the routes in
+overflow and no console error at 1440, 1100, 768, 400 and 320 px in both themes, an axe scan of every page (the routes in
 `web/src/routes.ts`, the one list `app.tsx` renders from; add a page there and it is covered) with no serious or critical issue, the home transfer budget (JavaScript and data under
 200 kB gzipped, never the full catalog index), no `fixture.invalid` address in any route's DOM, both hero actions above the fold at 1440x900 and Install at 390x844, and (`web/e2e/catalog.spec.ts`) a pick change that really rolls the count (a running transition) while first paint shows the real number with no roll, and (`web/e2e/install-models-detail.spec.ts`) the Install step-card grid (4/2/1 columns), the illustrative enrollment note, the compact Models picker with the first model above the fold, the recipe page's `--profile 1` Run it block and inline "What this means", the "More filters" badge counting a filter set in the URL, and 44px summaries. It serves a fixture release at `/catalog/` on the preview
 origin and blocks every other origin, so it exercises the production bundle

@@ -145,13 +145,6 @@
 .command-block.compact pre {
   padding: 0.6rem 1rem 0.6rem 0.9rem;
 }
-/* A short home command wraps at its spaces on a phone, so no option sits off-screen. */
-@media (max-width: 480px) {
-  .command-block.compact pre {
-    white-space: pre-wrap;
-    overflow-wrap: anywhere;
-  }
-}
 .wall-lead {
   margin: 0;
   font-weight: 700;

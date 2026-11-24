@@ -25,7 +25,12 @@
 .model-index-tools .catalog-toolbar {
   border-bottom: 0;
 }
+/* With More filters open the panel takes its own row below; the count stays beside the search. */
+.model-index-tools .catalog-more[open] {
+  order: 2;
+}
 .model-index-count {
+  order: 1;
   display: flex;
   align-self: center;
   flex-wrap: wrap;

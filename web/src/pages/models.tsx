@@ -751,8 +751,8 @@ export function ModelsPage() {
               </div>
             </div>
           </details>
-          <p className="model-index-count" aria-live="polite">
-            <span>
+          <p className="model-index-count">
+            <span aria-live="polite">
               {models
                 ? `${filtered.length} of ${models.length} models`
                 : error

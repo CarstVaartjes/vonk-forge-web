@@ -294,7 +294,7 @@ Moving between pages in the app does not reload the document, and a page that th
 
 ### Command Strip
 
-A command strip is a one-pixel green-bounded surface with the `control` radius. Its environment label is small neutral metadata; the command itself uses the monospace role in Ready Green and scrolls horizontally rather than wrapping into an invalid command. A shade at the edge that has more behind it shows that it scrolls. The short compact strip on the home page wraps at its spaces at 480px and below, so no option sits off-screen.
+A command strip is a one-pixel green-bounded surface with the `control` radius. Its environment label is small neutral metadata; the command itself uses the monospace role in Ready Green and scrolls horizontally rather than wrapping into an invalid command. A shade at the edge that has more behind it shows that it scrolls.
 
 ### Controller Preview
 
