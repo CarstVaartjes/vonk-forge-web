@@ -24,14 +24,19 @@ export function RollingNumber({ value }: { value: number }) {
     if (reduced || from === FORMAT.format(value)) return;
     setRoll({ from, stage: "start" });
     let timer: number | undefined;
+    let inner: number | undefined;
     // Two frames: the old digits must paint before the transition starts.
-    requestAnimationFrame(() =>
-      requestAnimationFrame(() => {
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => {
         setRoll({ from, stage: "go" });
         timer = window.setTimeout(() => setRoll(null), 1300);
-      }),
-    );
-    return () => window.clearTimeout(timer);
+      });
+    });
+    return () => {
+      cancelAnimationFrame(outer);
+      if (inner !== undefined) cancelAnimationFrame(inner);
+      window.clearTimeout(timer);
+    };
   }, [value]);
 
   if (!roll) return <span className="rolling-number">{text}</span>;

@@ -235,7 +235,7 @@ The site sits in a centered maximum-width work area (1220px) with fluid horizont
 
 Spacing follows a compact 1rem base rhythm inside components, with 1.5–2rem internal padding for primary structures and `section` spacing between major regions. The layout can be information-dense, but every dense block needs a clear alignment axis and a dominant reading order.
 
-At 1040px, evidence-heavy two-column compositions stack. At 720px, paired headings, paths, and choices resolve to one column and secondary table data may collapse. At 480px, controls become full-width, complex previews simplify, and card grids become a single reading stream. The system remains usable at 320px.
+These are the only three widths a media query may use: `max-width` 1040px, 720px and 480px, and `min-width` 1041px or 721px for their complements. At 1040px, evidence-heavy two-column compositions stack. At 720px, paired headings, paths, and choices resolve to one column and secondary table data may collapse. At 480px, controls become full-width, complex previews simplify, and card grids become a single reading stream. The system remains usable at 320px.
 
 **The Connected Grid Rule.** Inside a table or a grid of related cells, prefer shared rules and one-pixel gaps over isolated floating tiles; related items should visibly belong to one operating system.
 
@@ -286,7 +286,7 @@ Components feel firm, precise, and ready for real operation.
 
 ### Navigation
 
-Navigation is compact Onest text on the workbench ground: Catalog, Models, Controller, Docs. Default links use Ash Muted and become Forge Ivory on hover. On the right sit the release pill ("Catalog v4.8.0 · updated 12 Nov", read from `release.json` and left out when it cannot be read), the theme switch and Install, the one persistent green-outlined exception. Below 64rem the links collapse behind a Menu button and the pill is hidden (the footer carries the tag, the first 12 characters of the index digest and the date).
+Navigation is compact Onest text on the workbench ground: Recipes, Models, Controller, How it works. Default links use Ash Muted and become Forge Ivory on hover. On the right sit the release pill ("Catalog v5.3.0 · updated 24 Nov 2026", read from `release.json` and left out when it cannot be read), the theme switch and Install, the one persistent green-outlined exception. Below 1040px the links collapse behind a Menu button and the pill is hidden (the footer carries the tag, the first 12 characters of the index digest and the date).
 
 **The Theme Switch Rule.** The theme follows `prefers-color-scheme` until the visitor picks; the pick is remembered in `localStorage` (`vonk-theme`). `public/theme-init.js` sets `data-theme` (which sets `color-scheme`) before first paint (an external script, CSP stays `script-src 'self'`), and `src/theme.ts` owns the same rule in the app.
 
@@ -294,15 +294,11 @@ Moving between pages in the app does not reload the document, and a page that th
 
 ### Command Strip
 
-A command strip is a one-pixel green-bounded surface with the `control` radius. Its environment label is small neutral metadata; the command itself uses the monospace role in Ready Green and scrolls horizontally rather than wrapping into an invalid command.
+A command strip is a one-pixel green-bounded surface with the `control` radius. Its environment label is small neutral metadata; the command itself uses the monospace role in Ready Green and scrolls horizontally rather than wrapping into an invalid command. A shade at the edge that has more behind it shows that it scrolls. The short compact strip on the home page wraps at its spaces at 480px and below, so no option sits off-screen.
 
 ### Controller Preview
 
 The controller preview is the signature evidence component: a rounded window, explicit local-authority label, one connected internal grid, green applied/connected states, and the Card Shadow. It must look like a plausible operator surface, not dashboard decoration.
-
-### Promise Grid
-
-The home page opens its argument with four promises in one connected grid: know what fits your setup, stay current without the chase, run the mix you need, click it or script it. Each cell is a numbered mono index, a title, plain-spoken body copy, and a footer strip carrying the exact `vonkctl` command that does the same job, so the agent-friendly path is visible from the first screen. Cells share one-pixel rules; nothing floats.
 
 ### Agent Session
 
@@ -314,7 +310,7 @@ The home hero's signature: one mark per recipe from `catalog-summary.json`, in s
 
 ### Spark Picker
 
-The compact picker (Recipes and Models) is the same bar as the Controller Library's, aligned by values because the repos cannot share code: one group 50px high (1px `--line-strong` border, 2px padding on `--recess`, 44px segments at `--r-ctl`); each segment is its label (`--t-small`) with the count inline after it in `--muted` (`--t-label`), no numeral twice (the numeral is hidden when the label already carries it); the selected segment is `--raised` with `--ink` text and a 1px `--line-control` inset ring. The noun after the count is for screen readers only. Segments are 750 weight with a 400-weight count and sit 0.2rem apart, as on the Controller; segment width stays flexible here (the segments share the row), the one deliberate difference. Below 600px it becomes five numeral segments.
+The compact picker (Recipes and Models) is the same bar as the Controller Library's, aligned by values because the repos cannot share code: one group 50px high (1px `--line-strong` border, 2px padding on `--recess`, 44px segments at `--r-ctl`); each segment is its label (`--t-small`) with the count inline after it in `--muted` (`--t-label`), no numeral twice (the numeral is hidden when the label already carries it); the selected segment is `--raised` with `--ink` text and a 1px `--line-control` inset ring. The noun after the count is for screen readers only. Segments are 750 weight with a 400-weight count and sit 0.2rem apart, as on the Controller; segment width stays flexible here (the segments share the row), the one deliberate difference. At 720px and below it becomes five numeral segments.
 
 "How many Sparks do you have?" is a segmented control with the catalog page's choices (1, 2, 3, 4+); type chips come from the summary. The pick means "needs that many Sparks or fewer" (4+ matches every recipe), in one function (`nodeCountMatches`) used by the home picker, the catalog and the models page. The answer (a rolling number, one sentence, a breakdown by Spark count) sits in an `aria-live="polite"` region and counts recipes only: nothing on the page claims a memory fit, and the line says the Controller checks memory and disk. Non-matching wall marks are dimmed. The state lives in the URL (`?sparks=2&type=code`) and in `localStorage`, and the catalog link carries it. The catalog page opens with this same Spark picker as its first filter (My Sparks), pre-filled from the remembered pick when its URL has none, and its cards, tiles, chips and table take the dashboard radii.
 
@@ -322,7 +318,7 @@ The Models page uses the same compact picker as Recipes (one row, the rest behin
 
 ### Recipe Table
 
-The catalog's recipe list is six columns: Recipe (the name, with a mono subtitle of creator, format and version), Sparks, Memory / Spark, Engine, Capabilities and Status. Hashes, slugs and the other facts live on the recipe page. The "Executable contract" badge is the default and is never drawn; only a row whose readiness deviates shows its readiness. The table header holds sort buttons only (press once for ascending, again for descending, a third time for newest). All filters sit in one toolbar: search plus a "More filters" disclosure (its badge counts only what is set inside it); Memory, Disk and Download there are "at most" capacity buckets. "Reset filters" returns to the default Verified on Spark filter and says so. On a phone the table becomes cards, the lead paragraph is hidden (the one-line note that this is the public catalog and the Controller checks the fleet stays), the model types are one horizontally scrolling strip, the Spark choice is a five-segment control (1, 2, 3, 4+, Any; each segment's visible text starts its accessible name), More filters is a 44px button, and a Sort select appears in the disclosure.
+The catalog's recipe list is six columns: Recipe (the name, with a mono subtitle of creator, format and version), Sparks, Memory / Spark, Engine, Capabilities and Status. Hashes, slugs and the other facts live on the recipe page. The "Executable contract" badge is the default and is never drawn; only a row whose readiness deviates shows its readiness. The table header holds sort buttons only (press once for ascending, again for descending, a third time for newest). All filters sit in one toolbar: search plus a "More filters" disclosure (its badge counts only what is set inside it; the Models page uses the same toolbar, with Publisher, Capabilities, Recipe support and Sort inside the disclosure); Memory, Disk and Download there are "at most" capacity buckets. "Reset filters" returns to the default Verified on Spark filter and says so. On a phone the table becomes cards, the lead paragraph is hidden (the one-line note that this is the public catalog and the Controller checks the fleet stays), the model types are one horizontally scrolling strip, the Spark choice is a five-segment control (1, 2, 3, 4+, Any; each segment's visible text starts its accessible name), More filters is a 44px button, and a Sort select appears in the disclosure.
 
 ### Bar Series
 
@@ -344,7 +340,7 @@ The ten creators with the most verified recipes, from the summary's `topCreators
 
 ### Ways Matrix
 
-"Every way to run {family}" (`WaysMatrix`), on the recipe page and the model page: creators as rows (most recipes first), Spark counts as columns, one chip per recipe with the wall's mark (filled, outlined dot, dashed) and its status word for assistive technology. The current recipe has a heavier outline and `aria-current`. The scope is the recipe's family as `modelFamilyTitle` gives it; a family with one recipe draws nothing. Below 44rem each creator becomes a block with the Spark count as a label. The page reads the full recipe list (already loaded for the recipe); if it cannot be read the matrix is not shown.
+"Every way to run {family}" (`WaysMatrix`), on the recipe page and the model page: creators as rows (most recipes first), Spark counts as columns, one chip per recipe with the wall's mark (filled, outlined dot, dashed) and its status word for assistive technology. The current recipe has a heavier outline and `aria-current`. The scope is the recipe's family as `modelFamilyTitle` gives it; a family with one recipe draws nothing. At 720px and below each creator becomes a block with the Spark count as a label. The page reads the full recipe list (already loaded for the recipe); if it cannot be read the matrix is not shown.
 
 ### Motion
 

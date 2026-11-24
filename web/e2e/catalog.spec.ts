@@ -634,7 +634,9 @@ test("the first recipe is on the first screen on desktop and on a phone, with th
 
 test("the recipe table has few Tab stops before its first row, and its filters sit behind one disclosure", async ({
   page,
+  isMobile,
 }) => {
+  test.skip(isMobile, "desktop 1440px layout; the phone project covers 390px");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/recipes");
   const stops = await page.getByRole("region", { name: "Recipe results" }).evaluate((section) => {

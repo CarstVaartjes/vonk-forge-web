@@ -47,7 +47,12 @@ for (const width of [1440, 768, 400, 320]) {
   for (const scheme of ["dark", "light"] as const) {
     test(`every page at ${width}px in ${scheme}: no horizontal overflow, no console error`, async ({
       page,
+      isMobile,
     }) => {
+      test.skip(
+        isMobile && width === 1440,
+        "desktop 1440px layout; the phone project covers 390px",
+      );
       const errors = watch(page);
       await page.setViewportSize({ width, height: 900 });
       await page.emulateMedia({ colorScheme: scheme });
@@ -101,7 +106,11 @@ test("the catalog rows are not headings: the Recipes page has only its two secti
 });
 
 // The first screen at 1440x900: both hero actions sit above the fold with room to spare.
-test("home first screen at 1440x900: both hero actions are fully visible", async ({ page }) => {
+test("home first screen at 1440x900: both hero actions are fully visible", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, "desktop 1440px layout; the phone project covers 390px");
   await page.setViewportSize({ width: 1440, height: 900 });
   await load(page, "/");
   for (const name of ["Install", "Browse what runs"]) {
@@ -131,11 +140,18 @@ test("home transfers under 200 kB of JavaScript and data, gzipped, and never req
   const requests: string[] = [];
   let transferred = 0;
   page.on("request", (request) => requests.push(new URL(request.url()).pathname));
-  page.on("response", async (response) => {
+  const bodies: Promise<void>[] = [];
+  page.on("response", (response) => {
     const type = response.headers()["content-type"] ?? "";
-    if (/javascript|json/.test(type)) transferred += gzipSync(await response.body()).length;
+    if (/javascript|json/.test(type))
+      bodies.push(
+        response.body().then((body) => {
+          transferred += gzipSync(body).length;
+        }),
+      );
   });
   await page.goto("/", { waitUntil: "networkidle" });
+  await Promise.all(bodies);
   expect(requests).not.toContain("/catalog/catalog-index.json");
   expect(transferred).toBeLessThan(200_000);
 });

@@ -188,7 +188,7 @@ button.text-link {
   font-size: var(--t-small);
 }
 
-@media (max-width: 64rem) {
+@media (max-width: 1040px) {
   .release-pill {
     display: none;
   }

@@ -50,7 +50,7 @@
   font-size: var(--t-small);
   line-height: 1.6;
 }
-@media (max-width: 600px) {
+@media (max-width: 720px) {
   .recipes-page {
     padding-top: 0.5rem;
   }

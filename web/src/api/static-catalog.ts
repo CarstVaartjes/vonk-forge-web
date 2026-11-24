@@ -152,6 +152,7 @@ interface Derived {
   recipes?: RecipeDetail[];
   recipesByAddress?: Map<string, RecipeDetail>;
   models?: ModelSummary[];
+  modelsByAddress?: Map<string, ModelSummary>;
 }
 const derivedByIndex = new WeakMap<LibraryIndex, Derived>();
 
@@ -721,7 +722,12 @@ export async function getStaticVocabulary(url: string, signal?: AbortSignal): Pr
 
 function modelsFromIndex(index: LibraryIndex): ModelSummary[] {
   const built = derived(index);
-  built.models ??= mapModels(index);
+  if (!built.models) {
+    built.models = mapModels(index);
+    built.modelsByAddress = new Map(
+      built.models.map((model) => [`${model.publisher}/${model.slug}`, model]),
+    );
+  }
   return built.models;
 }
 
@@ -733,9 +739,8 @@ function recipeFromIndex(index: LibraryIndex, publisher: string, slug: string): 
 }
 
 function modelFromIndex(index: LibraryIndex, publisher: string, slug: string): ModelSummary {
-  const model = modelsFromIndex(index).find(
-    (item) => item.publisher === publisher && item.slug === slug,
-  );
+  modelsFromIndex(index);
+  const model = derived(index).modelsByAddress!.get(`${publisher}/${slug}`);
   if (!model) throw new Error("Model not found in the public library");
   return model;
 }

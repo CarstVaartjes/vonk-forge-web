@@ -33,7 +33,9 @@ async function stepRows(page: Page): Promise<{ rows: number; right: number }> {
 
 test("install: the four step cards fill the width in one row, two by two, then one column", async ({
   page,
+  isMobile,
 }) => {
+  test.skip(isMobile, "desktop 1440px layout; the phone project covers 390px");
   await at(page, 1440, 900, "/install");
   const wide = await stepRows(page);
   expect(wide.rows).toBe(1);
@@ -46,7 +48,9 @@ test("install: the four step cards fill the width in one row, two by two, then o
 
 test("install: the Spark enrollment snippet says it is an illustrative preview", async ({
   page,
+  isMobile,
 }) => {
+  test.skip(isMobile, "desktop 1440px layout; the phone project covers 390px");
   await at(page, 1440, 900, "/install");
   const note = page.getByText("Illustrative preview.");
   await expect(note).toBeVisible();
@@ -55,7 +59,9 @@ test("install: the Spark enrollment snippet says it is an illustrative preview",
 
 test("models: the Spark picker is one compact row and the first model starts on the first screen", async ({
   page,
+  isMobile,
 }) => {
+  test.skip(isMobile, "desktop 1440px layout; the phone project covers 390px");
   await at(page, 1440, 900, "/models");
   const group = page.getByRole("group", { name: "How many Sparks do you have?" });
   await expect(group).toBeVisible();
@@ -67,7 +73,9 @@ test("models: the Spark picker is one compact row and the first model starts on 
 
 test("models: a filter set in the URL is counted on More filters, and the summary is a 44px target", async ({
   page,
+  isMobile,
 }) => {
+  test.skip(isMobile, "desktop 1440px layout; the phone project covers 390px");
   await at(page, 1440, 900, "/models?engine=vllm&verified=0");
   const more = page.getByText("More filters");
   await expect(more).toContainText("(2 active)");
@@ -88,7 +96,9 @@ test("recipe page: Run it uses --profile 1 and explains it, with no horizontal o
 
 test("recipe page: What this means opens inside the hardware evidence card, and both summaries are 44px targets", async ({
   page,
+  isMobile,
 }) => {
+  test.skip(isMobile, "desktop 1440px layout; the phone project covers 390px");
   await openFirstRecipe(page, 1440);
   const card = page.getByRole("region", { name: "Hardware evidence" });
   const summary = card.getByText("What this means", { exact: true });
