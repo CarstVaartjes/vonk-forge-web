@@ -604,7 +604,9 @@ export function ModelsPage() {
       </header>
       {models ? (
         <section className="catalog-type" aria-labelledby="model-type-title">
-          <h2 id="model-type-title">What kind of model?</h2>
+          <h2 id="model-type-title" className="visually-hidden">
+            What kind of model?
+          </h2>
           <TypeTabs
             types={vocabulary?.categories ?? []}
             value={filters.type}
@@ -628,10 +630,31 @@ export function ModelsPage() {
             counts={sparkCounts}
             onChange={(value) => updateFilters({ sparks: value })}
           />
+        </section>
+      ) : null}
+      <section className="model-index-tools" aria-label="Model index controls">
+        <div className="catalog-toolbar">
+          <input
+            id="model-search"
+            type="search"
+            className="catalog-search"
+            aria-label="Search models"
+            value={filters.query}
+            onChange={(event) => updateFilters({ query: event.target.value })}
+            placeholder="Search models…"
+          />
           <details className="catalog-more">
             <MoreFiltersSummary
               active={
-                [filters.family, filters.engine].filter(Boolean).length + (filters.verified ? 0 : 1)
+                [
+                  filters.family,
+                  filters.engine,
+                  filters.publisher,
+                  filters.capability,
+                  filters.recipes,
+                ].filter(Boolean).length +
+                (filters.verified ? 0 : 1) +
+                (filters.sort !== "name" ? 1 : 0)
               }
             />
             <p className="catalog-more-note">
@@ -666,90 +689,92 @@ export function ModelsPage() {
                 }))}
               />
             </div>
+            <div className="catalog-more-fields">
+              <div className="catalog-more-field">
+                <label htmlFor="model-publisher">Publisher</label>
+                <select
+                  id="model-publisher"
+                  value={filters.publisher}
+                  onChange={(event) => updateFilters({ publisher: event.target.value })}
+                >
+                  <option value="">All publishers</option>
+                  {publishers.map((publisher) => (
+                    <option key={publisher} value={publisher}>
+                      {publisher}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="catalog-more-field">
+                <label htmlFor="model-capability">Capabilities</label>
+                <select
+                  id="model-capability"
+                  value={filters.capability}
+                  onChange={(event) => updateFilters({ capability: event.target.value })}
+                >
+                  <option value="">All declared capabilities</option>
+                  {(vocabulary?.capabilities ?? []).map((option) => (
+                    <option key={option.name} value={option.name} title={option.description}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="catalog-more-field">
+                <label htmlFor="model-recipes">Recipe support</label>
+                <select
+                  id="model-recipes"
+                  value={filters.recipes}
+                  onChange={(event) =>
+                    updateFilters({
+                      recipes: event.target.value,
+                      ...(event.target.value === "none" ? { verified: false } : {}),
+                    })
+                  }
+                >
+                  <option value="">All models</option>
+                  <option value="recipes">Has public recipes</option>
+                  <option value="none">No public recipes</option>
+                </select>
+              </div>
+              <div className="catalog-more-field">
+                <label htmlFor="model-sort">Sort</label>
+                <select
+                  id="model-sort"
+                  value={filters.sort}
+                  onChange={(event) => updateFilters({ sort: event.target.value })}
+                >
+                  <option value="name">Name</option>
+                  <option value="versions">Most versions</option>
+                  <option value="recipes">Most recipes</option>
+                </select>
+              </div>
+            </div>
           </details>
-        </section>
-      ) : null}
-      <section className="model-index-tools" aria-label="Model index controls">
-        <label htmlFor="model-search">Find a model</label>
-        <input
-          id="model-search"
-          type="search"
-          value={filters.query}
-          onChange={(event) => updateFilters({ query: event.target.value })}
-          placeholder="Search model, family, publisher, or tag"
-        />
-        <label htmlFor="model-publisher">Publisher</label>
-        <select
-          id="model-publisher"
-          value={filters.publisher}
-          onChange={(event) => updateFilters({ publisher: event.target.value })}
-        >
-          <option value="">All publishers</option>
-          {publishers.map((publisher) => (
-            <option key={publisher} value={publisher}>
-              {publisher}
-            </option>
-          ))}
-        </select>
-        <label htmlFor="model-capability">Capabilities</label>
-        <select
-          id="model-capability"
-          value={filters.capability}
-          onChange={(event) => updateFilters({ capability: event.target.value })}
-        >
-          <option value="">All declared capabilities</option>
-          {(vocabulary?.capabilities ?? []).map((option) => (
-            <option key={option.name} value={option.name} title={option.description}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <label htmlFor="model-recipes">Recipe support</label>
-        <select
-          id="model-recipes"
-          value={filters.recipes}
-          onChange={(event) =>
-            updateFilters({
-              recipes: event.target.value,
-              ...(event.target.value === "none" ? { verified: false } : {}),
-            })
-          }
-        >
-          <option value="">All models</option>
-          <option value="recipes">Has public recipes</option>
-          <option value="none">No public recipes</option>
-        </select>
-        <label htmlFor="model-sort">Sort</label>
-        <select
-          id="model-sort"
-          value={filters.sort}
-          onChange={(event) => updateFilters({ sort: event.target.value })}
-        >
-          <option value="name">Name</option>
-          <option value="versions">Most versions</option>
-          <option value="recipes">Most recipes</option>
-        </select>
-        <span aria-live="polite">
-          {models
-            ? `${filtered.length} of ${models.length} models`
-            : error
-              ? "Model index unavailable"
-              : "Loading models…"}
-        </span>
-        {filters.type ||
-        filters.query ||
-        filters.publisher ||
-        filters.capability ||
-        filters.recipes ||
-        filters.family ||
-        filters.engine ||
-        filters.sparks ||
-        !filters.verified ||
-        filters.sort !== "name" ? (
-          <button className="text-button" type="button" onClick={clearFilters}>
-            Clear filters
-          </button>
-        ) : null}
+          <p className="model-index-count">
+            <span aria-live="polite">
+              {models
+                ? `${filtered.length} of ${models.length} models`
+                : error
+                  ? "Model index unavailable"
+                  : "Loading models…"}
+            </span>
+            {filters.type ||
+            filters.query ||
+            filters.publisher ||
+            filters.capability ||
+            filters.recipes ||
+            filters.family ||
+            filters.engine ||
+            filters.sparks ||
+            !filters.verified ||
+            filters.sort !== "name" ? (
+              <button className="text-button" type="button" onClick={clearFilters}>
+                Clear filters
+              </button>
+            ) : null}
+          </p>
+        </div>
       </section>
       <PublicCatalogExplainer />
       {error ? (

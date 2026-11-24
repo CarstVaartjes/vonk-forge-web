@@ -634,7 +634,9 @@ test("the first recipe is on the first screen on desktop and on a phone, with th
 
 test("the recipe table has few Tab stops before its first row, and its filters sit behind one disclosure", async ({
   page,
+  isMobile,
 }) => {
+  test.skip(isMobile, "desktop 1440px layout; the phone project covers 390px");
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/recipes");
   const stops = await page.getByRole("region", { name: "Recipe results" }).evaluate((section) => {
@@ -710,4 +712,17 @@ test("the table fits its panel just above and below the phone breakpoint", async
     }));
     expect(fit.table, `${width}px`).toBeLessThanOrEqual(fit.panel);
   }
+});
+
+test("home at 375px: the compact command strip never breaks inside a flag", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 844 });
+  await page.goto("/", { waitUntil: "networkidle" });
+  const code = page.locator(".command-block.compact code").first();
+  await expect(code).toBeVisible();
+  const lines = await code.evaluate((element) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    return new Set([...range.getClientRects()].map((rect) => Math.round(rect.top))).size;
+  });
+  expect(lines, "the strip scrolls instead of wrapping").toBe(1);
 });

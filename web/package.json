@@ -8,7 +8,7 @@
     "build": "tsc -p tsconfig.build.json && vite build",
     "lint": "biome ci .",
     "typecheck": "tsc -p tsconfig.json",
-    "pretypecheck": "npm run catalog",
+    "pretypecheck": "test -f src/api/catalog.generated.d.ts || npm run catalog",
     "catalog": "node scripts/recipe-release.mjs && node scripts/generate-catalog-types.mjs",
     "catalog:types": "node scripts/generate-catalog-types.mjs",
     "dev": "vite",

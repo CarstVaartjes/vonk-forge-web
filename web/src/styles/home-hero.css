@@ -265,7 +265,7 @@
   font-size: var(--t-small);
   line-height: 1.5;
 }
-@media (max-width: 560px) {
+@media (max-width: 480px) {
   .status-legend-list div {
     grid-template-columns: 1fr;
   }

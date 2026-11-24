@@ -9,47 +9,34 @@
   margin-bottom: 1.25rem;
 }
 .models-intro h1 {
-  max-width: 12ch;
+  max-width: none;
 }
 .models-intro > p {
   max-width: 38rem;
   color: var(--muted);
   line-height: 1.65;
 }
+/* One toolbar like the recipe catalog's: search and "More filters"; the rest sits inside the disclosure. */
 .model-index-tools {
-  display: grid;
-  grid-template-columns: auto minmax(14rem, 1fr) auto minmax(8rem, 1fr) auto minmax(10rem, 1fr);
-  align-items: center;
-  gap: 0.75rem 1rem;
-  padding: 1rem 1.25rem;
   border: 1px solid var(--line);
   border-radius: var(--r-card);
   background: var(--panel);
 }
-.model-index-tools select {
-  min-width: 0;
-  max-width: 100%;
+.model-index-tools .catalog-toolbar {
+  border-bottom: 0;
 }
-@media (max-width: 64rem) {
-  .model-index-tools {
-    grid-template-columns: auto minmax(0, 1fr) auto minmax(0, 1fr);
-  }
+/* With More filters open the panel takes its own row below; the count stays beside the search. */
+.model-index-tools .catalog-more[open] {
+  order: 2;
 }
-.model-index-tools label {
-  color: var(--ink);
-  font-size: var(--t-small);
-  font-weight: 800;
-}
-.model-index-tools input {
-  min-height: 2.75rem;
-  padding: 0.5rem 0.7rem;
-  border: 1px solid var(--line-control);
-  border-radius: var(--r-ctl);
-  color: var(--ink);
-  background: var(--bg);
-}
-.model-index-tools span {
-  justify-self: end;
+.model-index-count {
+  order: 1;
+  display: flex;
+  align-self: center;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin: 0;
   color: var(--muted);
   font-size: var(--t-label);
   font-variant-numeric: tabular-nums;
@@ -192,7 +179,7 @@
   overflow-wrap: anywhere;
 }
 .public-contract-explainer {
-  margin: 0 0 3rem;
+  margin: 0.75rem 0 1rem;
   border: 1px solid var(--line);
   border-radius: var(--r-card);
   background: linear-gradient(145deg, rgb(217 181 111 / 6%), transparent 38%), var(--panel);

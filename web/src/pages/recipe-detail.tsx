@@ -434,7 +434,8 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
                 {recipe.package ? (
                   <small className="package-fact">
                     Package {recipe.package.member} · {recipe.package.media_type} ·{" "}
-                    {recipe.package.bytes.toLocaleString()} bytes · sha256:{recipe.package.sha256}
+                    {recipe.package.bytes.toLocaleString("en")} bytes · sha256:
+                    {recipe.package.sha256}
                   </small>
                 ) : null}
               </section>

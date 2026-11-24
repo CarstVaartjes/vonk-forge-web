@@ -49,8 +49,18 @@
   max-width: 100%;
   margin: 0;
   padding: 0.9rem;
-  padding-inline-end: 1rem;
+  padding-inline-end: 1.5rem;
   overflow-x: auto;
+  /* A long command scrolls, never wraps. The edge shade shows more is there and goes away at the end. */
+  background:
+    linear-gradient(to right, var(--recess), var(--recess)) left center / 1.5rem 100% no-repeat
+    local,
+    linear-gradient(to left, var(--recess), var(--recess)) right center / 1.5rem 100% no-repeat
+    local,
+    linear-gradient(to right, var(--line-strong), transparent) left center / 0.9rem 100% no-repeat
+    scroll,
+    linear-gradient(to left, var(--line-strong), transparent) right center / 0.9rem 100% no-repeat
+    scroll;
   color: var(--green-text);
   font: 500 var(--t-small) / 1.6 var(--mono);
   white-space: pre;
@@ -69,7 +79,7 @@
   user-select: none;
 }
 
-@media (pointer: coarse), (max-width: 42rem) {
+@media (pointer: coarse), (max-width: 720px) {
   .command-copy {
     min-height: 2.75rem;
   }
