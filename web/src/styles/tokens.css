@@ -89,6 +89,7 @@
   --t-body: 1rem;
   --t-small: 0.875rem;
   --t-label: 0.6875rem;
+  --t-code: 0.8125rem; /* the long Run it title command */
   --t-answer: clamp(2.75rem, 5vw, 3.75rem); /* the picker's number */
   /* space: 4px base */
   --s1: 0.25rem;
