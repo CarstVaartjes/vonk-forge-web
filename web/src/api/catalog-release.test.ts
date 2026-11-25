@@ -22,7 +22,7 @@ describe.runIf(Object.keys(files).length > 0 || import.meta.env.CI)(
       read("release.json"),
     ) as CatalogIndex;
 
-    test("every model whose display lists capabilities has them in the adapter output, and every recipe has a status", () => {
+    test("every recipe shows the capabilities the release publishes for it, and has a status", () => {
       const recipes = recipesFromIndex(index);
       expect(recipes).toHaveLength(index.recipes.length);
       for (const recipe of recipes) expect(recipe.catalog.qualification).not.toBe("");
@@ -30,17 +30,11 @@ describe.runIf(Object.keys(files).length > 0 || import.meta.env.CI)(
         recipes.map((recipe) => [`${recipe.publisher}/${recipe.slug}`, recipe]),
       );
       for (const entry of index.recipes) {
-        const entity = index.catalog_entities.find(
-          (candidate) =>
-            candidate.content_sha256 === entry.document.models[0]!.model.content_sha256,
-        )!;
         const recipe = mapped.get(
           `${entry.document.identity.publisher}/${entry.document.identity.slug}`,
         )!;
-        // Every capability the model declares is on its recipes.
-        expect(recipe.catalog.capabilities).toEqual(
-          expect.arrayContaining(entity.display.capabilities),
-        );
+        // The recipe shows what the release publishes it serves, nothing more or less.
+        expect(recipe.catalog.capabilities).toEqual(entry.served_capabilities ?? []);
       }
     });
 

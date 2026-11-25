@@ -61,6 +61,7 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   default Verified on Spark filter.
   `localStorage` by `web/src/my-sparks.ts`; the catalog page reads it when its URL carries neither,
   and saves a change to either, so home and catalog share one "My Sparks".
+- A recipe shows only the capabilities its launch serves: the release publishes them per recipe (`served_capabilities`, vocabulary names) and the site reads that key for recipe rows, recipe pages, search, the capability and Type filters and the home summary; it derives nothing. Model pages and the Models list keep the model's own capabilities.
 - A Model is the hierarchy's Model (Family → Line → Model → Variant), not a variant. The Models page counts
   and lists hierarchy Models only, with their variants inside. The variants of one `lineage` (family, line, model)
   are one Model; that triple is unique (the slug pattern allows `--`, but no published slug contains it), and the

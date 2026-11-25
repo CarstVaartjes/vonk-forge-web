@@ -84,6 +84,7 @@ function recipeEntry(options: {
   nodes: number;
   releasedAt: string;
   reference: string;
+  served: CatalogModelEntry["display"]["capabilities"];
   tags?: string[];
 }) {
   const selection = baseRecipe.document.models[0]!;
@@ -91,6 +92,7 @@ function recipeEntry(options: {
   return {
     ...baseRecipe,
     content_sha256: options.digest,
+    served_capabilities: options.served,
     source_path: `recipes/${options.slug}.json`,
     package: {
       ...baseRecipe.package,
@@ -245,6 +247,7 @@ export const e2eCatalogIndex = {
       nodes: 2,
       releasedAt: "2026-08-07",
       reference: "https://huggingface.co/Qwen/Qwen-Fast",
+      served: ["chat"],
       tags: ["candidate", "executable", "chat", "nvfp4"],
     }),
     recipeEntry({
@@ -258,6 +261,7 @@ export const e2eCatalogIndex = {
       nodes: 1,
       releasedAt: "2026-08-01",
       reference: "https://huggingface.co/qwen/Qwen-Code",
+      served: ["code-generation"],
     }),
     recipeEntry({
       digest: "9".repeat(64),
@@ -270,6 +274,7 @@ export const e2eCatalogIndex = {
       nodes: 1,
       releasedAt: today,
       reference: "https://github.com/Acme/Acme-Coder",
+      served: ["code-generation", "text-generation"],
     }),
     recipeEntry({
       digest: "2".repeat(64),
@@ -282,6 +287,7 @@ export const e2eCatalogIndex = {
       nodes: 1,
       releasedAt: "2026-08-03",
       reference: "https://github.com/Acme/Acme-Shapes",
+      served: ["3d-generation"],
     }),
     recipeEntry({
       digest: "1".repeat(64),
@@ -294,6 +300,7 @@ export const e2eCatalogIndex = {
       nodes: 1,
       releasedAt: "2026-08-02",
       reference: "https://github.com/Acme/Acme-Vision",
+      served: ["image-understanding", "text-generation"],
     }),
   ],
 } satisfies CatalogIndex;

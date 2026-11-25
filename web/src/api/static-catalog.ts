@@ -429,7 +429,9 @@ function publicMetadata(
   const source = canonicalSource(document.provenance.source_reference ?? "");
   const modelEntity = selectedEntity(document, index);
   const quantization = quantizationOf(modelEntity?.document.format.quantization);
-  const capabilities = modelEntity ? declaredCapabilities(modelEntity) : [];
+  // What the launch serves: the library publishes it per recipe (the model's capabilities where
+  // the recipe has no API document), so the site derives nothing.
+  const capabilities = item.served_capabilities ?? [];
   return {
     description: display.description,
     tags: recipeTags,

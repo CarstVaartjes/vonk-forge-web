@@ -160,14 +160,8 @@ describe("static recipe library adapter", () => {
         source_owner: "NVIDIA",
         source_repository: "https://github.com/NVIDIA/dgx-spark-playbooks",
         alignment: "unspecified",
-        capabilities: [
-          "audio-understanding",
-          "chat",
-          "image-understanding",
-          "reasoning",
-          "text-generation",
-          "tool-use",
-        ],
+        // What the launch serves, as the release publishes it: the model also reasons and uses tools.
+        capabilities: ["audio-understanding", "chat", "image-understanding", "text-generation"],
         types: ["language", "vision", "audio"],
         qualification: "Working",
         verified: true,
@@ -178,6 +172,20 @@ describe("static recipe library adapter", () => {
         node_count: 1,
       },
     });
+  });
+
+  test("a recipe shows only what its launch serves, while its Model keeps the model's capabilities", async () => {
+    const textOnly = structuredClone(index);
+    textOnly.recipes[0]!.served_capabilities = ["chat", "text-generation"];
+    serve(textOnly);
+    const recipe = await getStaticRecipe(indexUrl, "vonk-forge", nvidia);
+    expect(recipe.catalog.capabilities).toEqual(["chat", "text-generation"]);
+    expect(recipe.catalog.types).toEqual(["language"]);
+    const listed = (await listStaticRecipeCatalog(indexUrl)).find((item) => item.slug === nvidia)!;
+    expect(listed.catalog.types).toEqual(["language"]);
+    const model = await getStaticModel(indexUrl, "gemma", "gemma-e2b--gemma-4-e2b");
+    expect(model.types).toEqual(["language", "vision", "audio"]);
+    expect(model.versions[0]!.capabilities).toContain("image-understanding");
   });
 
   test("an eight-Spark recipe keeps the largest role peak and its published reason", async () => {
@@ -499,17 +507,7 @@ describe("static recipe library adapter", () => {
     wrong.display.model_title = "Wrong model";
     serve({ ...index, catalog_entities: [wrong, ...index.catalog_entities] });
     const recipe = await getStaticRecipe(indexUrl, "vonk-forge", nvidia);
-    expect(recipe.catalog).toMatchObject({
-      model_title: "Gemma 4 E2B",
-      capabilities: [
-        "audio-understanding",
-        "chat",
-        "image-understanding",
-        "reasoning",
-        "text-generation",
-        "tool-use",
-      ],
-    });
+    expect(recipe.catalog).toMatchObject({ model_title: "Gemma 4 E2B" });
   });
 
   test("a recipe counts for its first model only, not for a companion model it also lists", async () => {
