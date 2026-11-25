@@ -68,7 +68,7 @@ describe("single source values", () => {
     }
   });
 
-  test("the local runtime check follows a changed version owner", () => {
+  test("the local runtime check is a floor over the version owner", () => {
     const fixture = mkdtempSync(path.join(tmpdir(), "node-owner-"));
     try {
       mkdirSync(path.join(fixture, "web/scripts"), { recursive: true });
@@ -82,10 +82,19 @@ describe("single source values", () => {
       const rejected = spawnSync(process.execPath, [checker], { encoding: "utf8" });
       expect(rejected.status).toBe(1);
       expect(rejected.stderr).toContain(`Node ${changed.join(".")} is required by .node-version`);
+      const [major, minor, patch] = process.versions.node.split(".").map(Number);
+      const status = (required) => {
+        writeFileSync(path.join(fixture, ".node-version"), required);
+        return spawnSync(process.execPath, [checker]).status;
+      };
+      if (patch > 0) expect(status(`${major}.${minor}.${patch - 1}`)).toBe(0);
+      if (minor > 0) expect(status(`${major}.${minor - 1}.${patch + 9}`)).toBe(0);
+      expect(status(`${major + 1}.0.0`)).toBe(1);
+      expect(status(`${major - 1}.0.0`)).toBe(1);
     } finally {
       rmSync(fixture, { recursive: true, force: true });
     }
-  });
+  }, 30_000);
 
   test("rejects missing owners, duplicate registrations and stale consumer paths", () => {
     const files = new Map([

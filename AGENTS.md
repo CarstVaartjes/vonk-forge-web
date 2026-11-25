@@ -106,8 +106,9 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
 
 ## Toolchain and gates
 
-`.node-version` owns the Node version used by workflows and local tooling;
-select it before installing dependencies. `web/package-lock.json` is authoritative
+`.node-version` owns the Node version: CI installs exactly it, and the local
+`preinstall` check is a floor (same major, at least that version), so a newer local
+patch never blocks a commit. `web/package-lock.json` is authoritative
 for dependencies. The single-source guard runs as its own CI step over the tracked file list and reads
 owner-adjacent `*.single-source.json` registrations; register each repaired class
 there, with no baseline allowance.
