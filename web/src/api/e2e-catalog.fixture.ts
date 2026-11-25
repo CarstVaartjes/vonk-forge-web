@@ -1,17 +1,17 @@
 // The catalog the end-to-end suite serves at /catalog/. Built on real catalog entries (a Working
-// recipe and its model, from catalog.fixture.ts) so every field the contract requires is present;
+// recipe and its model, from catalog-factory.fixture.ts) so every field the contract requires is present;
 // each entry changes only what the pages show. It lives under src/ so `tsc` checks it against the
 // generated contract types.
 import type { CatalogIndex, CatalogModelEntry, CatalogRecipeEntry } from "./catalog-types";
-import { catalogIndexFixture } from "./catalog.fixture";
+import { makeCatalog, makeChatApi, makeModel, makeRecipe } from "./catalog-factory.fixture";
 
 export const sourceCommit = "f".repeat(40);
 export const recipeDigest = "a".repeat(64);
 const modelDigest = "3".repeat(64);
 const today = new Date().toISOString().slice(0, 10);
 
-const baseModel: CatalogModelEntry = catalogIndexFixture.catalog_entities[0]!;
-const baseRecipe: CatalogRecipeEntry = catalogIndexFixture.recipes[0]!;
+const baseModel: CatalogModelEntry = makeModel();
+const baseRecipe: CatalogRecipeEntry = makeRecipe();
 
 function modelEntity(options: {
   digest: string;
@@ -91,6 +91,7 @@ function recipeEntry(options: {
   const role = baseRecipe.document.topology.roles[0]!;
   return {
     ...baseRecipe,
+    api: makeChatApi(options.slug),
     content_sha256: options.digest,
     served_capabilities: options.served,
     source_path: `recipes/${options.slug}.json`,
@@ -165,7 +166,7 @@ function recipeEntry(options: {
 }
 
 export const e2eCatalogIndex = {
-  ...catalogIndexFixture,
+  ...makeCatalog(),
   source_commit: sourceCommit,
   families: [
     ["qwen", "Qwen"],

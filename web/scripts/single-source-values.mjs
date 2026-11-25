@@ -193,7 +193,7 @@ function checkContractVersions(files, entry, report) {
   for (const [file, text] of files) {
     if (
       !/^web\/(?:src|scripts)\/.*\.(?:[cm]?js|tsx?)$/.test(file) ||
-      /\.test\.[cm]?[jt]sx?$/.test(file)
+      /\.(?:test|fixture)\.[cm]?[jt]sx?$/.test(file)
     )
       continue;
     const ast = syntax(file, text);
