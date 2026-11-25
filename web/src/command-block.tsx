@@ -8,11 +8,13 @@ export function CommandBlock({
   label,
   prompt = true,
   compact = false,
+  small = false,
 }: {
   children: string;
   label: string;
   prompt?: boolean;
   compact?: boolean;
+  small?: boolean;
 }) {
   const [copied, setCopied] = useState(false);
   const timer = useRef<number | undefined>(undefined);
@@ -30,7 +32,11 @@ export function CommandBlock({
   };
 
   return (
-    <div className={compact ? "command-block compact" : "command-block"}>
+    <div
+      className={["command-block", compact && "compact", small && "small"]
+        .filter(Boolean)
+        .join(" ")}
+    >
       <div className="command-block-head">
         <span>{label}</span>
         <button type="button" className="command-copy" onClick={copy}>

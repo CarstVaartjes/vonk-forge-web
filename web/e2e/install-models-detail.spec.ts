@@ -89,14 +89,37 @@ test("recipe page: Run it uses --profile 1 and explains it, with no horizontal o
   const run = page.getByRole("region", { name: "Run it" });
   await expect(run.locator("pre").first()).toContainText("vonkctl --profile 1 run");
   await expect(run).toContainText("vonkctl profile list");
-  const box = run.locator("pre").first();
-  await box
-    .locator("code")
-    .last()
-    .evaluate((code) => {
-      code.append(" 'Sage S2.1 Flash Mixed NVFP4 TensorFold dual Spark (Bizuayeu)'");
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
+  ).toBeLessThanOrEqual(0);
+});
+
+test("recipe page: the Run it title command fits at desktop width and scrolls with end padding on a phone", async ({
+  page,
+  isMobile,
+}) => {
+  test.skip(isMobile, "sets its own widths");
+  const longCommand =
+    "vonkctl --profile 1 run 'Sage S2.1 Flash Mixed NVFP4 TensorFold dual Spark (Bizuayeu)'";
+  const measure = async (width: number) => {
+    await openFirstRecipe(page, width);
+    const box = page.getByRole("region", { name: "Run it" }).locator("pre").first();
+    await box.locator("code").evaluate((code, text) => {
+      code.textContent = text;
+    }, longCommand);
+    return box.evaluate((pre) => {
+      pre.scrollLeft = pre.scrollWidth;
+      const gap =
+        pre.getBoundingClientRect().right -
+        pre.querySelector("code")!.getBoundingClientRect().right;
+      return { scrolls: pre.scrollWidth > pre.clientWidth, gap };
     });
-  expect(await box.evaluate((pre) => pre.scrollWidth - pre.clientWidth)).toBeLessThanOrEqual(0);
+  };
+  const desktop = await measure(1280);
+  expect(desktop.scrolls).toBe(false);
+  const phone = await measure(320);
+  expect(phone.scrolls).toBe(true);
+  expect(phone.gap).toBeGreaterThanOrEqual(16);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth),
   ).toBeLessThanOrEqual(0);

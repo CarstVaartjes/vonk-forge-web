@@ -271,9 +271,7 @@
   }
 }
 
-/* A long recipe title wraps inside the command box; copy still takes the exact one-line command. */
-.run .command-block pre {
-  background: var(--recess);
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
+/* The title command is the long one: a slightly smaller mono size so a long name fits on desktop; it still scrolls on a phone. */
+.command-block.small pre {
+  font-size: 0.8125rem;
 }

@@ -148,7 +148,10 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
           </p>
           <section className="run" aria-labelledby="run-title">
             <h2 id="run-title">Run it</h2>
-            <CommandBlock label="Workstation terminal">{`vonkctl --profile 1 run ${shellQuote(recipe.title)}`}</CommandBlock>
+            <CommandBlock
+              label="Workstation terminal"
+              small
+            >{`vonkctl --profile 1 run ${shellQuote(recipe.title)}`}</CommandBlock>
             <div className="run-note">
               <p>
                 Profile <code>1</code> is your first profile; <code>vonkctl profile list</code>{" "}
