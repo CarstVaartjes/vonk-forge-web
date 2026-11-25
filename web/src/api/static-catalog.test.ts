@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 
-import { catalogIndexFixture } from "./catalog.fixture";
+import {
+  makeCatalog,
+  makeChatApi,
+  makeModel,
+  makeRecipe,
+  notYetVerified,
+} from "./catalog-factory.fixture";
 import type { CatalogIndex } from "./catalog-types";
 import {
   displayTitle,
@@ -13,9 +19,268 @@ import {
   resetStaticCatalogCacheForTests,
 } from "./static-catalog";
 
-// Real entries of the signed library (see catalog.fixture.ts): two single-Spark Working
-// gemma recipes, a Working 3D recipe and an eight-Spark recipe that needs more Sparks.
-const index = catalogIndexFixture as CatalogIndex;
+const nvidia = "gemma-4-e2b-it-nvidia-vllm-single";
+const eight = "inkling-975b-a41b-nvfp4-sglang-eight";
+
+// Two variants of one Gemma Model, an eight-Spark Inkling and a 3D job model.
+const gemma = makeModel({
+  document: {
+    identity: {
+      publisher: "google",
+      slug: "gemma-4-e2b-it-4adf1574",
+      model: { publisher: "google", slug: "gemma-4-e2b" },
+      variant: "IT 4adf1574",
+    },
+    source: {
+      repository: "https://huggingface.co/google/gemma-4-E2B-it",
+      revision: "4adf15748de9e1a0097b6274cee9c15836c41c37",
+    },
+  },
+  display: {
+    model_title: "Gemma 4 E2B",
+    description: "Exact public Google Gemma 4 E2B instruction-tuned checkpoint.",
+    capabilities: [
+      "audio-understanding",
+      "chat",
+      "image-understanding",
+      "reasoning",
+      "text-generation",
+      "tool-use",
+    ],
+    lineage: { family: "gemma", line: "gemma-e2b", model: "gemma-4-e2b", variant_kind: "base" },
+    license: { spdx: "Apache-2.0", url: "https://ai.google.dev/gemma/docs/gemma_4_license" },
+    tags: ["google", "gemma", "language", "instruction-tuned", "candidate"],
+  },
+});
+const gemmaQ8 = makeModel({
+  document: { identity: { publisher: "ggml-org", slug: "gemma-4-e2b-it-q8-0-63f6c6f2" } },
+  display: { lineage: { family: "gemma", line: "gemma-e2b", model: "gemma-4-e2b" } },
+});
+const inkling = makeModel({
+  document: {
+    identity: { publisher: "inkling", slug: "inkling-975b-a41b-nvfp4" },
+    format: { precision: "nvfp4", quantization: "nvfp4" },
+  },
+  display: {
+    model_title: "Inkling",
+    capabilities: ["audio-understanding", "chat", "image-understanding", "text-generation"],
+    lineage: {
+      family: "inkling",
+      line: "inkling-975b-a41b",
+      model: "inkling-975b-a41b",
+      variant_kind: "base",
+    },
+  },
+});
+const skintokens = makeModel({
+  document: { identity: { publisher: "vast-ai", slug: "skintokens" } },
+  display: {
+    model_title: "SkinTokens",
+    capabilities: ["3d-generation"],
+    lineage: {
+      family: "skintokens",
+      line: "skintokens",
+      model: "skintokens",
+      variant_kind: "base",
+    },
+  },
+});
+
+const index: CatalogIndex = makeCatalog({
+  models: [gemma, gemmaQ8, inkling, skintokens],
+  families: [
+    {
+      kind: "family-display",
+      slug: "gemma",
+      title: "Gemma",
+      lines: [
+        {
+          slug: "gemma-e2b",
+          title: "Gemma E2B",
+          models: [{ slug: "gemma-4-e2b", title: "Gemma 4 E2B" }],
+        },
+      ],
+    },
+    {
+      kind: "family-display",
+      slug: "inkling",
+      title: "Inkling",
+      lines: [
+        {
+          slug: "inkling-975b-a41b",
+          title: "Inkling 975B-A41B",
+          models: [{ slug: "inkling-975b-a41b", title: "Inkling" }],
+        },
+      ],
+    },
+    {
+      kind: "family-display",
+      slug: "skintokens",
+      title: "SkinTokens",
+      lines: [
+        {
+          slug: "skintokens",
+          title: "SkinTokens",
+          models: [{ slug: "skintokens", title: "SkinTokens" }],
+        },
+      ],
+    },
+  ],
+  recipes: [
+    // A Working single-Spark vLLM chat recipe with a chat API, a context setting and credits.
+    makeRecipe(
+      {
+        document: {
+          identity: { slug: nvidia },
+          release: { version: "1.0.6", released_at: "2026-11-03" },
+          provenance: {
+            source_reference: "https://github.com/NVIDIA/dgx-spark-playbooks/blob/main/vllm",
+            attribution: ["NVIDIA", "vLLM contributors", "Google DeepMind"],
+          },
+          interfaces: [
+            {
+              adapter: "openai",
+              health_path: "/v1/models",
+              model_aliases: ["gemma-4-e2b-it"],
+              port: 8000,
+            },
+          ],
+        },
+        display: { title: "Gemma 4 E2B IT vLLM single Spark (NVIDIA playbook)" },
+        release: { version: "1.0.6", released_at: "2026-11-03" },
+        served_capabilities: [
+          "audio-understanding",
+          "chat",
+          "image-understanding",
+          "text-generation",
+        ],
+        api: makeChatApi(nvidia),
+      },
+      { model: gemma },
+    ),
+    // A second Working recipe of the same Model, on llama.cpp, with a measured memory peak.
+    makeRecipe(
+      {
+        document: {
+          identity: { slug: "gemma-4-e2b-it-q8-0-ggml-org-llamacpp-single" },
+          runtime: { engine: "llama-cpp", entrypoint: ["llama-server"] },
+          provenance: { source_reference: "https://huggingface.co/ggml-org/gemma-4-E2B-it-GGUF" },
+        },
+        measured_memory: {
+          roles: [
+            {
+              role: "entrypoint",
+              peak_bytes: 10_735_910_912,
+              measured_peak_bytes: 10_735_910_912,
+              exceeds_admission_maximum: false,
+            },
+          ],
+        },
+      },
+      { model: gemmaQ8 },
+    ),
+    // Needs eight Sparks: no hardware verdict, and the largest role peak is the one that counts.
+    makeRecipe(
+      {
+        document: {
+          identity: { slug: eight },
+          runtime: { engine: "sglang", entrypoint: ["python", "-m", "sglang.launch_server"] },
+          topology: {
+            name: "eight",
+            node_count: 8,
+            parallelism: { backend: "local", data: 1, pipeline: 1, tensor: 8 },
+            roles: [
+              {
+                name: "head",
+                count: 1,
+                endpoint_owner: true,
+                resources: {
+                  disk: {
+                    artifact_bytes: 1,
+                    image_bytes: 1,
+                    safety_margin_bytes: 1,
+                    working_bytes: 1,
+                  },
+                  memory: { peak_bytes: 40_000_000_000, reserve_bytes: 8_000_000_000 },
+                },
+              },
+              {
+                name: "worker",
+                count: 7,
+                endpoint_owner: false,
+                resources: {
+                  disk: {
+                    artifact_bytes: 1_850_000_000_000,
+                    image_bytes: 20_000_000_000,
+                    safety_margin_bytes: 10_000_000_000,
+                    working_bytes: 36_112_011_354,
+                  },
+                  memory: { peak_bytes: 119_000_000_000, reserve_bytes: 8_000_000_000 },
+                },
+              },
+            ],
+            start_order: ["head", "worker"],
+          },
+        },
+        qualification: notYetVerified(8),
+      },
+      { model: inkling },
+    ),
+    // A Working 3D job recipe: a mesh in, a rigged mesh out.
+    makeRecipe(
+      {
+        document: {
+          identity: { slug: "skintokens-pytorch-single" },
+          runtime: { engine: "pytorch-pipeline", entrypoint: ["python", "/app/job.py"] },
+          settings: { kind: "job", concurrency: null, knobs: {} },
+          interfaces: [
+            {
+              adapter: "mesh-job",
+              input: {
+                max_bytes: 268_435_456,
+                media_types: ["model/gltf-binary"],
+                required: true,
+                slots: [
+                  {
+                    id: "mesh",
+                    label: "Character mesh",
+                    description: "One GLB character mesh to rig with SkinTokens.",
+                    extensions: [".glb"],
+                    max_file_bytes: 268_435_456,
+                    max_files: 1,
+                    max_total_bytes: 268_435_456,
+                    media_types: ["model/gltf-binary"],
+                    min_files: 1,
+                  },
+                ],
+              },
+              output: {
+                max_total_bytes: 536_870_912,
+                slots: [
+                  {
+                    id: "mesh",
+                    label: "Rigged mesh",
+                    description: "The rigged SkinTokens binary glTF mesh.",
+                    extensions: [".glb"],
+                    max_file_bytes: 536_870_912,
+                    max_files: 1,
+                    max_total_bytes: 536_870_912,
+                    media_types: ["model/gltf-binary"],
+                    min_files: 1,
+                  },
+                ],
+              },
+            },
+          ],
+          validation: { serving: { interface: "mesh-job", checks: [] } },
+        },
+        display: { title: "SkinTokens / TokenRig pytorch-pipeline single Spark" },
+        served_capabilities: ["3d-generation"],
+      },
+      { model: skintokens },
+    ),
+  ],
+});
 const release = {
   repository: index.repository,
   tag: "v4.8.0",
@@ -25,8 +290,6 @@ const release = {
   catalog_index_sha256: "a".repeat(64),
 };
 const indexUrl = "https://example.test/catalog/catalog-index.json";
-const nvidia = "gemma-4-e2b-it-nvidia-vllm-single";
-const eight = "inkling-975b-a41b-nvfp4-sglang-eight";
 
 // Serve the verified release the Pages build writes: the index and its manifest.
 function serve(indexBody: unknown, releaseBody: unknown = release) {
@@ -144,11 +407,11 @@ describe("static recipe library adapter", () => {
       version: "1.0.6",
       published_at: "2026-11-03",
       runtime: { adapter: "vllm" },
-      // peak 119063746765 per node; the 8 GB reserve is not added. Disk is the sum of the four disk fields.
+      // The factory's role peaks at 60 GB per node and the 8 GB reserve is not added; disk is the sum of its four disk fields.
       capacity: {
         profile_node_counts: [1],
-        maximum_installed_bytes_per_node: 60278835678,
-        maximum_runtime_memory_bytes_per_node: 119063746765,
+        maximum_installed_bytes_per_node: 50_000_000_000,
+        maximum_runtime_memory_bytes_per_node: 60_000_000_000,
       },
       catalog: {
         description: index.recipes[0]!.display.description,
@@ -192,8 +455,8 @@ describe("static recipe library adapter", () => {
     const recipe = (await listStaticRecipeCatalog(indexUrl)).find((item) => item.slug === eight)!;
     expect(recipe.capacity).toMatchObject({
       profile_node_counts: [8],
-      maximum_runtime_memory_bytes_per_node: 119000000000,
-      maximum_installed_bytes_per_node: 1916112011354,
+      maximum_runtime_memory_bytes_per_node: 119_000_000_000,
+      maximum_installed_bytes_per_node: 1_916_112_011_354,
     });
     expect(recipe.catalog).toMatchObject({
       node_count: 8,
@@ -239,7 +502,7 @@ describe("static recipe library adapter", () => {
       `https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${index.source_commit}/recipes/${nvidia}.json`,
     );
     expect(recipe.source?.bundle_url).toBe(
-      `https://github.com/CarstVaartjes/vonk-forge-recipes/tree/${index.source_commit}/adapters/nvidia/${nvidia}`,
+      `https://github.com/CarstVaartjes/vonk-forge-recipes/tree/${index.source_commit}/adapters/${nvidia}`,
     );
     expect(recipe.package).toMatchObject({
       member: `${nvidia}.tar.gz`,

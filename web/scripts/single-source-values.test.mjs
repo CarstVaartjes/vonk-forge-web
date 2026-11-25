@@ -141,13 +141,13 @@ describe("single source values", () => {
     const entry = {
       id: "catalog.vocabulary",
       kind: "published-vocabulary",
-      owner: { file: "web/src/api/catalog.fixture.ts", selector: "vocabulary" },
+      owner: { file: "web/src/api/catalog-factory.fixture.ts", selector: "vocabulary" },
       derive: "read index.vocabulary",
     };
     const owner =
-      'export const catalogIndexFixture = { "vocabulary": { "capabilities": [{ "name": "chat", "label": "Chat" }], "statuses": [{ "status": "Working", "meaning": "m", "verified": true }] } };';
+      'export const catalogEnvelope = { "vocabulary": { "capabilities": [{ "name": "chat", "label": "Chat" }], "statuses": [{ "status": "Working", "meaning": "m", "verified": true }] } };';
     const check = (...extra) =>
-      checkSingleSources(new Map([["web/src/api/catalog.fixture.ts", owner], ...extra]), [
+      checkSingleSources(new Map([["web/src/api/catalog-factory.fixture.ts", owner], ...extra]), [
         entry,
       ]).join("\n");
 
@@ -179,9 +179,10 @@ describe("single source values", () => {
 
     test("needs an owner that holds a vocabulary", () => {
       expect(
-        checkSingleSources(new Map([["web/src/api/catalog.fixture.ts", "export const a = 1;"]]), [
-          entry,
-        ]).join(),
+        checkSingleSources(
+          new Map([["web/src/api/catalog-factory.fixture.ts", "export const a = 1;"]]),
+          [entry],
+        ).join(),
       ).toContain("expected a vocabulary object");
     });
   });
@@ -222,6 +223,12 @@ describe("single source values", () => {
     ])("rejects a second copy: %s", (source) => {
       expect(check(source)).toContain("web/src/x.ts:1:");
       expect(check(source, "web/scripts/x.mjs")).toContain("web/scripts/x.mjs:1:");
+    });
+
+    test("allows a test or fixture to build an index with the contract's constants", () => {
+      const source = "const index = { schema_version: 2 };";
+      expect(check(source, "web/src/api/x.fixture.ts")).toBe("");
+      expect(check(source, "web/src/api/x.test.ts")).toBe("");
     });
 
     test.each([
