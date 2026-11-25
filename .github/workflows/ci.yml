@@ -47,6 +47,7 @@ jobs:
         shell: bash
         run: git ls-files -z | node web/scripts/check-single-sources.mjs
       - run: npm --prefix web audit --audit-level=high
+      - run: npm --prefix web/tools/ts-api audit --audit-level=high
       # The same fetch-and-verify step the Pages deployment runs, against the
       # real current signed recipe-library release.
       - name: Verify the current recipe library release

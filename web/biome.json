@@ -22,10 +22,6 @@
   "css": { "linter": { "enabled": true } },
   "overrides": [
     {
-      "includes": ["src/api/catalog.fixture.ts"],
-      "javascript": { "formatter": { "quoteProperties": "preserve" } }
-    },
-    {
       "includes": ["**/*.test.ts", "**/*.test.tsx"],
       "linter": { "rules": { "suspicious": { "noDocumentCookie": "off" } } }
     }

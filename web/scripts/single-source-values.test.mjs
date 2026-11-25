@@ -68,7 +68,7 @@ describe("single source values", () => {
     }
   });
 
-  test("the local runtime check follows a changed version owner", () => {
+  test("the local runtime check is a floor over the version owner", () => {
     const fixture = mkdtempSync(path.join(tmpdir(), "node-owner-"));
     try {
       mkdirSync(path.join(fixture, "web/scripts"), { recursive: true });
@@ -82,10 +82,19 @@ describe("single source values", () => {
       const rejected = spawnSync(process.execPath, [checker], { encoding: "utf8" });
       expect(rejected.status).toBe(1);
       expect(rejected.stderr).toContain(`Node ${changed.join(".")} is required by .node-version`);
+      const [major, minor, patch] = process.versions.node.split(".").map(Number);
+      const status = (required) => {
+        writeFileSync(path.join(fixture, ".node-version"), required);
+        return spawnSync(process.execPath, [checker]).status;
+      };
+      if (patch > 0) expect(status(`${major}.${minor}.${patch - 1}`)).toBe(0);
+      if (minor > 0) expect(status(`${major}.${minor - 1}.${patch + 9}`)).toBe(0);
+      expect(status(`${major + 1}.0.0`)).toBe(1);
+      expect(status(`${major - 1}.0.0`)).toBe(1);
     } finally {
       rmSync(fixture, { recursive: true, force: true });
     }
-  });
+  }, 30_000);
 
   test("rejects missing owners, duplicate registrations and stale consumer paths", () => {
     const files = new Map([
@@ -141,13 +150,13 @@ describe("single source values", () => {
     const entry = {
       id: "catalog.vocabulary",
       kind: "published-vocabulary",
-      owner: { file: "web/src/api/catalog.fixture.ts", selector: "vocabulary" },
+      owner: { file: "web/src/api/catalog-factory.fixture.ts", selector: "vocabulary" },
       derive: "read index.vocabulary",
     };
     const owner =
-      'export const catalogIndexFixture = { "vocabulary": { "capabilities": [{ "name": "chat", "label": "Chat" }], "statuses": [{ "status": "Working", "meaning": "m", "verified": true }] } };';
+      'export const catalogEnvelope = { "vocabulary": { "capabilities": [{ "name": "chat", "label": "Chat" }], "statuses": [{ "status": "Working", "meaning": "m", "verified": true }] } };';
     const check = (...extra) =>
-      checkSingleSources(new Map([["web/src/api/catalog.fixture.ts", owner], ...extra]), [
+      checkSingleSources(new Map([["web/src/api/catalog-factory.fixture.ts", owner], ...extra]), [
         entry,
       ]).join("\n");
 
@@ -179,9 +188,10 @@ describe("single source values", () => {
 
     test("needs an owner that holds a vocabulary", () => {
       expect(
-        checkSingleSources(new Map([["web/src/api/catalog.fixture.ts", "export const a = 1;"]]), [
-          entry,
-        ]).join(),
+        checkSingleSources(
+          new Map([["web/src/api/catalog-factory.fixture.ts", "export const a = 1;"]]),
+          [entry],
+        ).join(),
       ).toContain("expected a vocabulary object");
     });
   });
@@ -222,6 +232,12 @@ describe("single source values", () => {
     ])("rejects a second copy: %s", (source) => {
       expect(check(source)).toContain("web/src/x.ts:1:");
       expect(check(source, "web/scripts/x.mjs")).toContain("web/scripts/x.mjs:1:");
+    });
+
+    test("allows a test or fixture to build an index with the contract's constants", () => {
+      const source = "const index = { schema_version: 2 };";
+      expect(check(source, "web/src/api/x.fixture.ts")).toBe("");
+      expect(check(source, "web/src/api/x.test.ts")).toBe("");
     });
 
     test.each([

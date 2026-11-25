@@ -19,6 +19,12 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
 
 - Styles live in `web/src/styles/` (module map in `DESIGN.md`, "Where styles live"). `index.css` imports the modules in cascade order; add a rule after the rules it overrides, in the module that holds them; never reorder the imports, and keep tokens in `tokens.css`.
 
+- TypeScript: `web/` type-checks and builds with typescript 7. The compiler API and
+  `openapi-typescript` (which peers typescript 5) live in the nested `web/tools/ts-api`
+  package (typescript 5, installed by `web`'s `postinstall`). Scripts import
+  `openapiTS`, `astToString` and `ts` from `web/tools/ts-api/index.mjs`, never from
+  `typescript` or `openapi-typescript` directly; do not add either to `web/package.json`'s
+  dev dependencies. Move `ts-api` to typescript 7 once openapi-typescript supports it.
 - Start from current `origin/main` in an isolated branch or worktree. Preserve
   other agents' changes.
 - Maintain one current catalog source and one current execution path. The
@@ -37,8 +43,10 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   fetches the release and generates `web/src/api/catalog.generated.d.ts` from that
   schema (git-ignored; CI and Pages generate it after the fetch). Read contract
   fields only through those types: no `record()`/`text()` defaults on them, and
-  declare every fixture `satisfies` them (`web/src/api/catalog.fixture.ts` holds the
-  real entries the tests share), so a field the contract lacks fails `tsc`.
+  build every fixture entry against them with the factory in
+  `web/src/api/catalog-factory.fixture.ts` (`makeModel`, `makeRecipe`, `makeCatalog`: a valid default
+  per kind, deep overrides; a test builds only the entries it asserts on, never a snapshot of a
+  release), so a field the contract lacks fails `tsc`.
   Reject an index the adapter does not understand instead of rendering an empty
   or defaulted catalog.
 - The words belong to the contract too. Capability labels and descriptions, model
@@ -106,8 +114,9 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
 
 ## Toolchain and gates
 
-`.node-version` owns the Node version used by workflows and local tooling;
-select it before installing dependencies. `web/package-lock.json` is authoritative
+`.node-version` owns the Node version: CI installs exactly it, and the local
+`preinstall` check is a floor (same major, at least that version), so a newer local
+patch never blocks a commit. `web/package-lock.json` is authoritative
 for dependencies. The single-source guard runs as its own CI step over the tracked file list and reads
 owner-adjacent `*.single-source.json` registrations; register each repaired class
 there, with no baseline allowance.
