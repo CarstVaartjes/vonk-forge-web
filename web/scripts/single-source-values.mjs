@@ -1,5 +1,5 @@
 import path from "node:path";
-import ts from "typescript";
+import { ts } from "../tools/ts-api/index.mjs";
 
 export function registrations(files) {
   return [...files]

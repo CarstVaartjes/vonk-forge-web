@@ -9,7 +9,7 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import openapiTS, { astToString } from "openapi-typescript";
+import { astToString, openapiTS } from "../tools/ts-api/index.mjs";
 
 import { SCHEMA_NAME } from "./recipe-release.mjs";
 

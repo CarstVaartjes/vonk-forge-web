@@ -19,6 +19,12 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
 
 - Styles live in `web/src/styles/` (module map in `DESIGN.md`, "Where styles live"). `index.css` imports the modules in cascade order; add a rule after the rules it overrides, in the module that holds them; never reorder the imports, and keep tokens in `tokens.css`.
 
+- TypeScript: `web/` type-checks and builds with typescript 7. The compiler API and
+  `openapi-typescript` (which peers typescript 5) live in the nested `web/tools/ts-api`
+  package (typescript 5.9.3, installed by `web`'s `postinstall`). Scripts import
+  `openapiTS`, `astToString` and `ts` from `web/tools/ts-api/index.mjs`, never from
+  `typescript` or `openapi-typescript` directly; do not add either to `web/package.json`'s
+  dev dependencies. Move `ts-api` to typescript 7 once openapi-typescript supports it.
 - Start from current `origin/main` in an isolated branch or worktree. Preserve
   other agents' changes.
 - Maintain one current catalog source and one current execution path. The
