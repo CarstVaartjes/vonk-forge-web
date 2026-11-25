@@ -194,7 +194,7 @@ The catalog wall adds these tokens: `--tile` (a verified wall cell: warm matte i
 
 ### Hierarchy
 
-The stylesheet uses these sizes and only these (`--t-display`, `--t-h2`, `--t-h3`, `--t-lead`, `--t-body`, `--t-small`, `--t-label`), plus `2rem` for a large figure and `0.9em` for inline code.
+The stylesheet uses these sizes and only these (`--t-display`, `--t-h2`, `--t-h3`, `--t-lead`, `--t-body`, `--t-small`, `--t-label`, `--t-code`), plus `2rem` for a large figure and `0.9em` for inline code.
 
 - **Display** (700, `display`): The home hero sentence only.
 - **Headline** (700, `headline`): Section headings and page titles, balanced into compact blocks.
@@ -328,7 +328,7 @@ One small bar chart for a date series from the summary (`BarSeries`): a single s
 
 The ticket for one hardware pass (`EvidenceReceipt`): status (shape and word), the evidence sentence, then only the fields the catalog holds for that pass (hardware class and Spark count, measured memory peak, recipe digest, runtime image digest, evidence record). A field the release does not carry is left out, never filled in. Home shows one, chosen by rule (the newest verified multi-Spark recipe with a measured peak); the recipe page uses the same component.
 
-On the recipe page the receipt carries its status meaning as an inline "What this means" disclosure; nothing navigates away. The "Run it" command uses `--profile 1` (`vonkctl run` always needs `--profile`) with a note on choosing the number, and its strip scrolls sideways with end padding so long names never touch the border; its title command uses a slightly smaller mono size (13px) so a long name fits at desktop widths.
+On the recipe page the receipt carries its status meaning as an inline "What this means" disclosure; nothing navigates away. The "Run it" command uses `--profile 1` (`vonkctl run` always needs `--profile`) with a note on choosing the number, and its strip scrolls sideways with end padding so long names never touch the border; its title command uses a slightly smaller mono size (`--t-code`) so a long name fits at desktop widths.
 
 ### Creators Ledger
 

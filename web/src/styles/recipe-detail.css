@@ -273,5 +273,5 @@
 
 /* The title command is the long one: a slightly smaller mono size so a long name fits on desktop; it still scrolls on a phone. */
 .command-block.small pre {
-  font-size: 0.8125rem;
+  font-size: var(--t-code);
 }
