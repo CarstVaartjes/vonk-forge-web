@@ -1343,6 +1343,12 @@ export const catalogIndexFixture = {
         "version": "1.0.6",
       },
       "source_bundle_sha256": "ace6a27c5ef3e51409ee3b5793e3afd3178574c102987401912abf1aa3febf68",
+      "served_capabilities": [
+        "audio-understanding",
+        "chat",
+        "image-understanding",
+        "text-generation",
+      ],
       "source_path": "recipes/gemma-4-e2b-it-nvidia-vllm-single.json",
     },
     {
@@ -1699,6 +1705,15 @@ export const catalogIndexFixture = {
         "version": "0.6.2",
       },
       "source_bundle_sha256": "356d68104f547f414620e473f1d879cd16b6117b1f50d30c81a483a81cf1d518",
+      "served_capabilities": [
+        "audio-understanding",
+        "chat",
+        "image-understanding",
+        "reasoning",
+        "text-generation",
+        "tool-use",
+        "video-understanding",
+      ],
       "source_path": "recipes/gemma-4-e2b-it-q8-0-ggml-org-llamacpp-single.json",
     },
     {
@@ -2382,6 +2397,7 @@ export const catalogIndexFixture = {
         "version": "0.5.20",
       },
       "source_bundle_sha256": "c20327467ef6404faf4cad5b664801aa5009365181aa58584c863beb8a589208",
+      "served_capabilities": ["audio-understanding", "image-understanding", "text-generation"],
       "source_path": "recipes/inkling-975b-a41b-nvfp4-sglang-eight.json",
     },
     {
@@ -2697,6 +2713,7 @@ export const catalogIndexFixture = {
         "version": "2.0.16",
       },
       "source_bundle_sha256": "4744684d8ba00c3a6a629815d251033d94475dc8c0eebd1952424a1ff8014466",
+      "served_capabilities": ["3d-generation"],
       "source_path": "recipes/skintokens-pytorch-single.json",
     },
   ],
