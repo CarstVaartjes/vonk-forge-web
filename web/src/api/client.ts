@@ -1,4 +1,5 @@
 import type { CatalogSummary } from "../catalog-stats";
+import type { ServedFact } from "../served";
 import type { Vocabulary } from "../vocabulary";
 import {
   getStaticCatalogSummary,
@@ -96,8 +97,9 @@ export interface RecipeSummary {
     source_repository: string | null;
     // As published (standard, abliterated, ...); a value a newer contract adds is shown as is.
     alignment: string;
-    capabilities: string[];
-    // The model types (capability categories) of those capabilities, in vocabulary order.
+    // What this recipe's launch serves (its API facts or job media), never the model's full capabilities.
+    served: ServedFact[];
+    // The model types (capability categories) of the model's declared capabilities, in vocabulary order.
     types: string[];
     // Published by the recipe library, shown as written.
     qualification: string;

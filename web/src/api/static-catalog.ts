@@ -14,6 +14,7 @@ import type {
 // its runtime imports carry explicit .ts extensions.
 import { parseCatalogSummary, type CatalogSummary } from "../catalog-stats.ts";
 import { isVerified } from "../qualification-status.ts";
+import { servedFacts, type ServedFact } from "../served.ts";
 import { isVerifiedStatus, typesOf, type Vocabulary } from "../vocabulary.ts";
 import type { CatalogIndex, CatalogModelEntry, CatalogRecipeEntry } from "./catalog-types.ts";
 
@@ -422,6 +423,7 @@ function publicMetadata(
   item: CatalogRecipeEntry,
   index: LibraryIndex,
   artifacts: RecipeSummary["artifacts"],
+  served: ServedFact[],
 ): NonNullable<RecipeSummary["catalog"]> {
   const { document, display } = item;
   const recipeTags = lowerTags(display.tags);
@@ -443,7 +445,7 @@ function publicMetadata(
     source_owner: source?.owner ?? null,
     source_repository: source?.repository ?? null,
     alignment: display.alignment ?? "unspecified",
-    capabilities,
+    served,
     types: typesOf(index.vocabulary, capabilities),
     qualification: item.qualification.status,
     verified: isVerifiedStatus(index.vocabulary, item.qualification.status),
@@ -488,6 +490,7 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
   const api = item.api?.api;
   // Only a chat-shaped API has endpoints and streaming facts.
   const chat = api && "endpoints" in api ? api : null;
+  const job = jobContractOf(document, display);
   const settings = document.settings;
   const modelEntity = selectedEntity(document, index);
 
@@ -533,7 +536,7 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
       bytes: item.package.expected_bytes,
       media_type: item.package.media_type,
     },
-    catalog: publicMetadata(item, index, artifacts),
+    catalog: publicMetadata(item, index, artifacts, servedFacts({ api, job })),
     evidence: lastPass
       ? {
           tested_at: lastPass.tested_at,
@@ -558,7 +561,7 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
       entry.adapter === "openai" ? entry.model_aliases : [],
     ),
     credits: document.provenance.attribution,
-    job: jobContractOf(document, display),
+    job,
     settings: {
       context_tokens: "context_tokens" in settings ? settings.context_tokens.value : undefined,
       concurrency: "concurrency" in settings ? settings.concurrency?.value : undefined,

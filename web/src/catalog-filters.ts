@@ -1,6 +1,7 @@
 import type { RecipeSummary } from "./api/client";
 // Loaded under Node by the release build (via catalog-summary.ts): runtime imports use .ts.
 import { isVerified } from "./qualification-status.ts";
+import { servedLabel } from "./served.ts";
 
 export const READINESS_OPTIONS = [
   { value: "executable", label: "Executable contract" },
@@ -73,7 +74,7 @@ export type FilterFacet =
   | "updated"
   | "qualification"
   | "readiness"
-  | "capability"
+  | "serves"
   | "download"
   | "disk"
   | "memory";
@@ -102,7 +103,8 @@ interface CatalogFilters {
   memory: string;
   sort: RecipeSort;
   direction: SortDirection;
-  capabilities: string[];
+  // Served facts (`ServedFact`) the recipe launch must all serve.
+  serves: string[];
 }
 
 export const EMPTY_FILTERS: CatalogFilters = {
@@ -126,7 +128,7 @@ export const EMPTY_FILTERS: CatalogFilters = {
   memory: "",
   sort: "catalog",
   direction: "desc",
-  capabilities: [],
+  serves: [],
 };
 
 const VALID_SPARKS = new Set<string>(["1", "2", "3", "4+"]);
@@ -171,7 +173,7 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
       : sort === "catalog"
         ? "desc"
         : "asc",
-    capabilities: Array.from(new Set(parameters.getAll("capability").filter(Boolean))),
+    serves: Array.from(new Set(parameters.getAll("serves").filter(Boolean))),
   };
 }
 
@@ -302,7 +304,7 @@ export function recipeMatches(
       facts.source_repository ?? "",
       facts.runtime_distribution,
       ...facts.quantizations,
-      ...facts.capabilities,
+      ...facts.served.map(servedLabel),
       ...facts.tags,
     ].some((value) => value.toLocaleLowerCase().includes(normalized));
   return (
@@ -335,8 +337,8 @@ export function recipeMatches(
     (omitted === "readiness" ||
       !filters.readiness ||
       facts.execution_readiness === filters.readiness) &&
-    (omitted === "capability" ||
-      filters.capabilities.every((capability) => facts.capabilities.includes(capability))) &&
+    (omitted === "serves" ||
+      filters.serves.every((fact) => facts.served.some((s) => s === fact))) &&
     (omitted === "download" ||
       capacityBucketMatches(facts.expected_download_bytes, filters.download)) &&
     (omitted === "disk" ||

@@ -449,7 +449,7 @@ test("architecture, installation, and control guides stay navigable at 1…N sca
 });
 
 test("facets remain in the URL and exact trust facts survive navigation", async ({ page }) => {
-  await page.goto("/recipes?sparks=2&abliterated=false&capability=chat");
+  await page.goto("/recipes?sparks=2&abliterated=false&serves=in_text");
   await expect(
     page
       .getByRole("group", { name: "How many Sparks do you have?" })
@@ -553,10 +553,10 @@ test("the model type is the first choice on the recipes and models pages", async
     "aria-pressed",
     "true",
   );
-  // The words come from the release vocabulary: all 26 capabilities are offered, and the legend gives a status its published meaning.
+  // Every served fact is offered, and the legend gives a status its published meaning.
   await page.getByText("More filters").click();
   await expect(page.getByRole("group", { name: "Capabilities" }).getByRole("button")).toHaveCount(
-    26,
+    13,
   );
   await expect(page.locator("#how-recipes-are-verified")).toContainText(
     "Passed on a real DGX Spark for this exact recipe, runtime image and model.",

@@ -37,10 +37,17 @@ describe.runIf(Object.keys(files).length > 0 || import.meta.env.CI)(
         const recipe = mapped.get(
           `${entry.document.identity.publisher}/${entry.document.identity.slug}`,
         )!;
-        // Every capability the model declares is on its recipes.
-        expect(recipe.catalog.capabilities).toEqual(
-          expect.arrayContaining(entity.display.capabilities),
-        );
+        // A launch serves no more than its own API facts say, whatever the model can do.
+        const served: string[] = recipe.catalog.served;
+        const input =
+          entry.api?.api && "input_modalities" in entry.api.api
+            ? entry.api.api.input_modalities
+            : null;
+        if (input) {
+          expect(served.includes("in_image")).toBe(input.image);
+          expect(served.includes("in_audio")).toBe(input.audio);
+        }
+        expect(entity.display.capabilities).toBeDefined();
       }
     });
 

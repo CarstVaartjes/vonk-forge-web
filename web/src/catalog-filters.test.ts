@@ -17,7 +17,7 @@ import { catalogFacts } from "./vocabulary.fixture";
 
 function recipe(
   slug: string,
-  overrides: Partial<NonNullable<RecipeSummary["catalog"]>> = {},
+  overrides: Partial<NonNullable<RecipeSummary["catalog"]>> & { capabilities?: string[] } = {},
 ): RecipeSummary {
   return {
     publisher: "vonk-forge",
@@ -121,7 +121,7 @@ describe("public catalog Controller-parity filters", () => {
   test("parses the shared filter vocabulary and validates enumerated values", () => {
     const filters = filtersFromParameters(
       new URLSearchParams(
-        "model_family=GLM+5.3+Flash&model=models%2Fboth-v1&abliterated=true&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&capability=chat&capability=reasoning&capability=chat&download=64&disk=unknown&memory=200&sort=memory&direction=desc",
+        "model_family=GLM+5.3+Flash&model=models%2Fboth-v1&abliterated=true&creator=owner&quantization=NVFP4&updated=30&sparks=4%2B&serves=tools&serves=thinking&serves=tools&download=64&disk=unknown&memory=200&sort=memory&direction=desc",
       ),
     );
     expect(filters).toMatchObject({
@@ -132,7 +132,7 @@ describe("public catalog Controller-parity filters", () => {
       quantization: "NVFP4",
       updated: "30",
       sparks: "4+",
-      capabilities: ["chat", "reasoning"],
+      serves: ["tools", "thinking"],
       download: "64",
       disk: "unknown",
       memory: "",
@@ -143,17 +143,14 @@ describe("public catalog Controller-parity filters", () => {
       filtersFromParameters(new URLSearchParams("abliterated=unknown&sort=bogus")).abliterated,
     ).toBe("");
     expect(filtersFromParameters(new URLSearchParams("type=code")).type).toBe("code");
-    // Type and capability names are the release vocabulary's, so the URL parser keeps them as given.
     expect(
-      filtersFromParameters(
-        new URLSearchParams("capability=video-generation&capability=ocr&capability=ocr"),
-      ).capabilities,
-    ).toEqual(["video-generation", "ocr"]);
+      filtersFromParameters(new URLSearchParams("serves=in_image&serves=json&serves=json")).serves,
+    ).toEqual(["in_image", "json"]);
   });
 
-  test("requires every selected capability and combines model, readiness, and Spark facets", () => {
-    const both = recipe("both", { capabilities: ["chat", "reasoning"], node_count: 4 });
-    const chat = recipe("chat", { capabilities: ["chat"], node_count: 4 });
+  test("requires every selected served fact and combines model, readiness, and Spark facets", () => {
+    const both = recipe("both", { served: ["tools", "thinking"], node_count: 4 });
+    const chat = recipe("chat", { served: ["tools"], node_count: 4 });
     const filters = {
       ...EMPTY_FILTERS,
       model: "models/both",
@@ -161,7 +158,7 @@ describe("public catalog Controller-parity filters", () => {
       updated: "30" as const,
       sparks: "4+" as const,
       readiness: "executable" as const,
-      capabilities: ["chat", "reasoning"],
+      serves: ["tools", "thinking"],
     };
     expect(recipeMatches(both, filters)).toBe(true);
     expect(recipeMatches(chat, filters)).toBe(false);
@@ -189,6 +186,17 @@ describe("public catalog Controller-parity filters", () => {
     );
     expect(recipeMatches(unverified, EMPTY_FILTERS)).toBe(false);
     expect(recipeMatches(unverified, { ...EMPTY_FILTERS, verified: false })).toBe(true);
+  });
+
+  test("a served-fact filter reads what the launch serves, not the model's capabilities", () => {
+    const textOnly = recipe("text-only", {
+      capabilities: ["chat", "image-understanding"],
+      served: ["in_text"],
+    });
+    const withImages = recipe("images", { served: ["in_text", "in_image"] });
+    const filters = { ...EMPTY_FILTERS, serves: ["in_image"] };
+    expect(recipeMatches(textOnly, filters)).toBe(false);
+    expect(recipeMatches(withImages, filters)).toBe(true);
   });
 
   test("a type matches a recipe with any of its capabilities", () => {

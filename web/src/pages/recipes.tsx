@@ -8,7 +8,8 @@ import {
   peekVocabulary,
   type RecipeSummary,
 } from "../api/client";
-import { capabilityLabel, statusMeaning, typeLabel, type Vocabulary } from "../vocabulary";
+import { SERVED_FACTS, servedLabel } from "../served";
+import { statusMeaning, typeLabel, type Vocabulary } from "../vocabulary";
 import { CatalogTabs } from "../catalog-tabs";
 import { readMySparks, saveMySparks } from "../my-sparks";
 import { STATUS_LEGEND_ID, StatusLegend } from "../status-legend";
@@ -193,15 +194,15 @@ export function RecipesPage() {
     replace(next);
   }
 
-  function toggleCapability(capability: string) {
-    if (!capability) return;
+  function toggleServed(fact: string) {
+    if (!fact) return;
     const next = new URLSearchParams(parameters);
-    const values = next.getAll("capability");
-    next.delete("capability");
-    for (const value of values.includes(capability)
-      ? values.filter((value) => value !== capability)
-      : [...values, capability])
-      next.append("capability", value);
+    const values = next.getAll("serves");
+    next.delete("serves");
+    for (const value of values.includes(fact)
+      ? values.filter((value) => value !== fact)
+      : [...values, fact])
+      next.append("serves", value);
     next.delete("cursor");
     replace(next);
   }
@@ -222,14 +223,14 @@ export function RecipesPage() {
     [available, filters],
   );
 
-  function capabilityCount(capability: string): number {
-    const otherCapabilities = filters.capabilities.filter((value) => value !== capability);
+  function servedCount(fact: string): number {
+    const others = filters.serves.filter((value) => value !== fact);
     return available.filter((recipe) => {
-      const facts = recipe.catalog;
+      const served: string[] = recipe.catalog.served;
       return (
-        recipeMatches(recipe, filters, "capability") &&
-        otherCapabilities.every((value) => facts.capabilities.includes(value)) &&
-        facts.capabilities.includes(capability)
+        recipeMatches(recipe, filters, "serves") &&
+        others.every((value) => served.includes(value)) &&
+        served.includes(fact)
       );
     }).length;
   }
@@ -318,8 +319,6 @@ export function RecipesPage() {
       ),
     [vocabulary, count],
   );
-  const capabilityName = (name: string) =>
-    vocabulary ? capabilityLabel(vocabulary, name) : humanize(name);
   const sparkCounts = useMemo(
     () =>
       Object.fromEntries(
@@ -376,11 +375,11 @@ export function RecipesPage() {
       `Readiness: ${READINESS_OPTIONS.find((option) => option.value === filters.readiness)?.label ?? filters.readiness}`,
       "readiness",
     );
-  for (const capability of filters.capabilities)
+  for (const fact of filters.serves)
     applied.push({
-      key: `capability:${capability}`,
-      label: `Capabilities: ${capabilityName(capability)}`,
-      remove: () => toggleCapability(capability),
+      key: `serves:${fact}`,
+      label: `Capabilities: ${servedLabel(fact)}`,
+      remove: () => toggleServed(fact),
     });
   if (filters.qualification)
     addApplied("qualification", `Qualification: ${filters.qualification}`, "qualification");
@@ -583,18 +582,17 @@ export function RecipesPage() {
                 <fieldset className="setup-facet setup-group" aria-label="Capabilities">
                   <span className="setup-facet-label">Capabilities</span>
                   <div className="setup-chips">
-                    {vocabulary.capabilities.map((option) => {
-                      const on = filters.capabilities.includes(option.name);
+                    {SERVED_FACTS.map((fact) => {
+                      const on = filters.serves.includes(fact);
                       return (
                         <button
-                          key={option.name}
+                          key={fact}
                           type="button"
                           aria-pressed={on}
-                          title={option.description}
-                          disabled={capabilityCount(option.name) === 0 && !on}
-                          onClick={() => toggleCapability(option.name)}
+                          disabled={servedCount(fact) === 0 && !on}
+                          onClick={() => toggleServed(fact)}
                         >
-                          {option.label}
+                          {servedLabel(fact)}
                         </button>
                       );
                     })}
@@ -826,9 +824,7 @@ export function RecipesPage() {
                       </td>
                       <td data-label="Engine">{engineLabel(facts.runtime_distribution)}</td>
                       <td className="catalog-table-capabilities" data-label="Capabilities">
-                        {facts.capabilities.length
-                          ? facts.capabilities.map(capabilityName).join(" · ")
-                          : "—"}
+                        {facts.served.length ? facts.served.map(servedLabel).join(" · ") : "—"}
                       </td>
                       <td className="catalog-table-status">
                         <a

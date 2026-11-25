@@ -160,14 +160,8 @@ describe("static recipe library adapter", () => {
         source_owner: "NVIDIA",
         source_repository: "https://github.com/NVIDIA/dgx-spark-playbooks",
         alignment: "unspecified",
-        capabilities: [
-          "audio-understanding",
-          "chat",
-          "image-understanding",
-          "reasoning",
-          "text-generation",
-          "tool-use",
-        ],
+        // What the launch serves: its API facts, not the model's reasoning and tool-use.
+        served: ["in_text", "in_image", "in_audio", "json"],
         types: ["language", "vision", "audio"],
         qualification: "Working",
         verified: true,
@@ -501,15 +495,25 @@ describe("static recipe library adapter", () => {
     const recipe = await getStaticRecipe(indexUrl, "vonk-forge", nvidia);
     expect(recipe.catalog).toMatchObject({
       model_title: "Gemma 4 E2B",
-      capabilities: [
-        "audio-understanding",
-        "chat",
-        "image-understanding",
-        "reasoning",
-        "text-generation",
-        "tool-use",
-      ],
+      types: ["language", "vision", "audio"],
     });
+  });
+
+  test("a recipe of a vision model that serves text only shows text only, and its model keeps the vision", async () => {
+    const copy = structuredClone(index);
+    const entry = copy.recipes.find((recipe) => recipe.document.identity.slug === nvidia)!;
+    const api = entry.api!.api;
+    if (!("input_modalities" in api)) throw new Error("expected a chat recipe API");
+    api.input_modalities = { ...api.input_modalities, image: false, audio: false };
+    serve(copy);
+    const recipe = await getStaticRecipe(indexUrl, "vonk-forge", nvidia);
+    expect(recipe.catalog.served).toEqual(["in_text", "json"]);
+    const model = (await listStaticModels(indexUrl)).items.find(
+      (item) => item.publisher === "gemma",
+    )!;
+    expect(model.versions.flatMap((version) => version.capabilities)).toContain(
+      "image-understanding",
+    );
   });
 
   test("a recipe counts for its first model only, not for a companion model it also lists", async () => {

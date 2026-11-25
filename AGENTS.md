@@ -48,7 +48,13 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   build derived from it). Never type a contract capability name or status string in
   `web/src` outside tests and fixtures: `check-single-sources` rejects an added
   literal (`web/src/vocabulary.single-source.json`).
-- The site's Spark-count filter means "needs that many Sparks or fewer" (4+ matches every
+- A recipe row, card, detail list and filter show what that recipe's launch serves, never the model's full
+  capabilities (a text-only recipe of a vision model shows text only). The words are `web/src/served.ts`, derived
+  from the recipe's own API facts (input modalities, tools, reasoning, structured output) or its job slots' media;
+  the `serves=` URL parameter filters on them. The Model pages keep the model's declared capabilities, and the
+  model type (`catalog.types`) stays model-level until the recipe library publishes a per-recipe capability
+  list. A recipe with neither API facts nor a job contract shows none.
+ "needs that many Sparks or fewer" (4+ matches every
   recipe), in one function (`nodeCountMatches` in `web/src/catalog-filters.ts`) shared by the home
   picker, the catalog and the models page. The Controller's filter still matches the exact count;
   a Controller follow-up will match this meaning. The exact count is the catalog's `uses=N` parameter

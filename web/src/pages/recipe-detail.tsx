@@ -18,7 +18,8 @@ import { receiptFacts } from "../catalog-stats";
 import { EvidenceReceipt } from "../evidence-receipt";
 import { SparkUnit } from "../spark-unit";
 import { usePageMeta } from "../page-meta";
-import { capabilityLabel, statusMeaning, type Vocabulary } from "../vocabulary";
+import { servedLabel } from "../served";
+import { statusMeaning, type Vocabulary } from "../vocabulary";
 
 const recipeAuthoringGuide = "https://github.com/CarstVaartjes/vonk-forge-recipes#recipe-contract";
 
@@ -105,9 +106,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
   const receipt = receiptFacts(recipe, catalog.source_owner);
   const sparksLabel = sparks === 1 ? "single Spark" : `${sparks} Sparks`;
   const meaning = vocabulary ? statusMeaning(vocabulary, catalog.qualification) : undefined;
-  const capabilities = catalog.capabilities.map((name) =>
-    vocabulary ? capabilityLabel(vocabulary, name) : name,
-  );
+  const served = catalog.served.map(servedLabel);
   const model = [
     catalog.model_title,
     catalog.quantizations[0] ? `${catalog.quantizations[0]} quantization` : catalog.precision,
@@ -326,14 +325,13 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
             What it can do
           </h2>
           <ul className="caps">
-            {capabilities.map((label) => (
+            {served.map((label) => (
               <li key={label}>
                 {check}
                 {label}
               </li>
             ))}
             {chat?.streaming ? <li>{check}Streaming</li> : null}
-            {chat?.structured_output ? <li>{check}Structured output</li> : null}
             {chat && !chat.image_input ? <li className="no">No image input</li> : null}
             {chat && !chat.audio_input ? <li className="no">No audio input</li> : null}
           </ul>
