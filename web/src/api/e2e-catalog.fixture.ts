@@ -1,9 +1,15 @@
-// The catalog the end-to-end suite serves at /catalog/. Built on real catalog entries (a Working
+// The catalog the end-to-end suite serves at /catalog/. Built on the factory defaults (a Working
 // recipe and its model, from catalog-factory.fixture.ts) so every field the contract requires is present;
 // each entry changes only what the pages show. It lives under src/ so `tsc` checks it against the
 // generated contract types.
 import type { CatalogIndex, CatalogModelEntry, CatalogRecipeEntry } from "./catalog-types";
-import { makeCatalog, makeChatApi, makeModel, makeRecipe } from "./catalog-factory.fixture";
+import {
+  makeCatalog,
+  makeChatApi,
+  makeModel,
+  makeRecipe,
+  notYetVerified,
+} from "./catalog-factory.fixture";
 
 export const sourceCommit = "f".repeat(40);
 export const recipeDigest = "a".repeat(64);
@@ -65,13 +71,6 @@ function modelEntity(options: {
     },
   } satisfies CatalogModelEntry;
 }
-
-const notYetVerified = (nodes: number): CatalogRecipeEntry["qualification"] => ({
-  changed: [],
-  reason: "needs more Sparks",
-  required_sparks: nodes,
-  status: "Not yet verified",
-});
 
 function recipeEntry(options: {
   digest: string;
