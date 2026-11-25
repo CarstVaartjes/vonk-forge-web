@@ -4,7 +4,7 @@ updates:
     directory: /web
     schedule:
       interval: weekly
-  # typescript 5.9.3 + openapi-typescript for the generator scripts; typescript stays
+  # typescript 5 + openapi-typescript for the generator scripts; typescript stays
   # on 5.x here (openapi-typescript peers ^5), unlike the typescript 7 in /web.
   - package-ecosystem: npm
     directory: /web/tools/ts-api

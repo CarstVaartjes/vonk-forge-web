@@ -21,7 +21,7 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
 
 - TypeScript: `web/` type-checks and builds with typescript 7. The compiler API and
   `openapi-typescript` (which peers typescript 5) live in the nested `web/tools/ts-api`
-  package (typescript 5.9.3, installed by `web`'s `postinstall`). Scripts import
+  package (typescript 5, installed by `web`'s `postinstall`). Scripts import
   `openapiTS`, `astToString` and `ts` from `web/tools/ts-api/index.mjs`, never from
   `typescript` or `openapi-typescript` directly; do not add either to `web/package.json`'s
   dev dependencies. Move `ts-api` to typescript 7 once openapi-typescript supports it.
