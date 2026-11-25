@@ -49,7 +49,7 @@ test("picking 2 Sparks links the one-Spark choice to its exact catalog list and 
   const [choice, newest] = within(item!).getAllByRole("link");
   expect(choice).toHaveAttribute("href", "/recipes?sparks=2&uses=1");
   expect(choice).toHaveTextContent("3 run on one Spark (keep the others free)");
-  expect(newest).toHaveTextContent("Gemma 4 E2B IT Q8_0 llama.cpp single Spark (ggml-org)");
+  expect(newest).toHaveTextContent("Gemma llama.cpp single Spark");
 });
 
 test("the choice lands in the URL and is remembered; a type narrows the answer and links the filtered catalog", () => {

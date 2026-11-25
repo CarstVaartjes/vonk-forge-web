@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
 
-import { catalogIndexFixture } from "../src/api/catalog.fixture.ts";
+import { catalogEnvelope, makeModel, makeRecipe } from "../src/api/catalog-factory.fixture.ts";
 import {
   SCHEMA_NAME,
   latestReleaseTag,
@@ -43,13 +43,17 @@ const commit = "a".repeat(40);
 const tag = "v4.8.0";
 const updatedAt = "2026-09-28T20:04:06Z";
 
-// One model and one verified recipe: the smallest catalog the site accepts, taken from the
-// real entries the adapter tests share (the first recipe is Working and selects the first model).
-const [fixtureModel] = catalogIndexFixture.catalog_entities;
+// One model and one verified recipe: the smallest catalog the site accepts.
+const fixtureModel = makeModel({
+  display: {
+    capabilities: ["audio-understanding", "chat", "image-understanding", "text-generation"],
+  },
+});
+const baseRecipe = makeRecipe({}, { model: fixtureModel });
 const fixtureRecipe = (packageBytes, overrides = {}) => ({
-  ...catalogIndexFixture.recipes[0],
+  ...baseRecipe,
   package: {
-    ...catalogIndexFixture.recipes[0].package,
+    ...baseRecipe.package,
     path: "packages/qwen-fast-single.tar.gz",
     sha256: sha256(packageBytes),
     expected_bytes: packageBytes.length,
@@ -82,7 +86,7 @@ function fixtureRelease({
 } = {}) {
   const packageBytes = Buffer.from("fixture package");
   const index = {
-    ...catalogIndexFixture,
+    ...catalogEnvelope,
     updated_at: updatedAt,
     source_commit: commit,
     catalog_entities: [fixtureModel],
@@ -169,7 +173,7 @@ describe("recipe release publication", () => {
     expect(JSON.parse(await readFile(path.join(outDir, "release.json"), "utf8"))).toEqual({
       repository: "CarstVaartjes/vonk-forge-recipes",
       tag,
-      contract_version: catalogIndexFixture.contract_version,
+      contract_version: catalogEnvelope.contract_version,
       updated_at: updatedAt,
       source_commit: commit,
       sha256sums_sha256: sha256(assets.SHA256SUMS),
@@ -235,7 +239,7 @@ describe("recipe release publication", () => {
       publish(
         fixtureRelease({
           index: {
-            package_contract: { ...catalogIndexFixture.package_contract, schema_version: 3 },
+            package_contract: { ...catalogEnvelope.package_contract, schema_version: 3 },
           },
         }),
       ),
@@ -393,7 +397,7 @@ describe("recipe release publication", () => {
       contract_version: "5.0.0",
     });
     await expect(publish(fixtureRelease(), { releaseTag: "v5.0.0" })).rejects.toThrow(
-      `index contract_version "${catalogIndexFixture.contract_version}" is not release v5.0.0`,
+      `index contract_version "${catalogEnvelope.contract_version}" is not release v5.0.0`,
     );
   });
 

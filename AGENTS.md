@@ -37,8 +37,10 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   fetches the release and generates `web/src/api/catalog.generated.d.ts` from that
   schema (git-ignored; CI and Pages generate it after the fetch). Read contract
   fields only through those types: no `record()`/`text()` defaults on them, and
-  declare every fixture `satisfies` them (`web/src/api/catalog.fixture.ts` holds the
-  real entries the tests share), so a field the contract lacks fails `tsc`.
+  build every fixture entry against them with the factory in
+  `web/src/api/catalog-factory.fixture.ts` (`makeModel`, `makeRecipe`, `makeCatalog`: a valid default
+  per kind, deep overrides; a test builds only the entries it asserts on, never a snapshot of a
+  release), so a field the contract lacks fails `tsc`.
   Reject an index the adapter does not understand instead of rendering an empty
   or defaulted catalog.
 - The words belong to the contract too. Capability labels and descriptions, model
