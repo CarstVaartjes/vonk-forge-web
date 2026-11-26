@@ -194,7 +194,7 @@ The catalog wall adds these tokens: `--tile` (a verified wall cell: warm matte i
 
 ### Hierarchy
 
-The stylesheet uses these sizes and only these (`--t-display`, `--t-h2`, `--t-h3`, `--t-lead`, `--t-body`, `--t-small`, `--t-label`, `--t-code`), plus `2rem` for a large figure and `0.9em` for inline code.
+The stylesheet uses these sizes and only these (`--t-display`, `--t-h2`, `--t-h3`, `--t-lead`, `--t-body`, `--t-small`, `--t-label`, `--t-code`, `--t-answer` for the picker's number), plus `2rem` for a large figure and `0.9em` for inline code.
 
 - **Display** (700, `display`): The home hero sentence only.
 - **Headline** (700, `headline`): Section headings and page titles, balanced into compact blocks.

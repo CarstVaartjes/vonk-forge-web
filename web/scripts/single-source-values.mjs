@@ -286,6 +286,19 @@ function checkPublishedVocabulary(files, entry, report) {
       continue;
     const ast = syntax(file, text);
     visit(ast, (node) => {
+      // Shipped code never imports a fixture (test data stays out of the bundle).
+      const specifier =
+        (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier
+          ? node.moduleSpecifier
+          : ts.isCallExpression(node) &&
+              node.expression.kind === ts.SyntaxKind.ImportKeyword &&
+              ts.isStringLiteralLike(node.arguments[0])
+            ? node.arguments[0]
+            : undefined;
+      if (specifier && /\.fixture(?:\.[cm]?[jt]sx?|\.json)?$/.test(specifier.text)) {
+        const at = ast.getLineAndCharacterOfPosition(node.getStart(ast)).line + 1;
+        report(file, at, `shipped code must not import the fixture ${specifier.text}`);
+      }
       // String, template (with or without substitutions) and JSX text forms.
       const written =
         ts.isStringLiteral(node) ||
