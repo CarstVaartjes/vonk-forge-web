@@ -225,7 +225,7 @@ test("a recipe opens from the picker's results, and a creator opens the catalog 
   await page.goto("/");
   const creator = page.locator(".creators a").first();
   const name = (await creator.textContent())!;
-  await expect(page.getByRole("meter", { name: `${name}: verified recipes` })).toBeVisible();
+  await expect(page.getByRole("meter", { name: `${name}: recipes` })).toBeVisible();
   await creator.click();
   await expect(page).toHaveURL(/\/recipes\?creator=/);
   await expect(page.getByText(`Creator: ${name}`)).toBeVisible();
@@ -244,7 +244,7 @@ test("the summary the build wrote is small enough to read on the home page", () 
   );
 });
 
-test("home page never shows numbers when the summary is missing, malformed or empty", async ({
+test("home page shows no numbers when the summary is missing, and every recipe when nothing is verified", async ({
   page,
 }) => {
   await page.route("**/catalog/catalog-summary.json", (route) =>
@@ -259,10 +259,11 @@ test("home page never shows numbers when the summary is missing, malformed or em
     route.fulfill({ json: { ...catalogSummary, verified: 0 } }),
   );
   await page.reload();
-  // A release with nothing verified is valid, and shows no numbers.
-  await expect(page.getByRole("status").filter({ hasText: "no numbers to show" })).toBeVisible();
-  await expect(page.locator(".rolling-number")).toHaveCount(0);
-  await expect(page.locator(".answer")).toHaveCount(0);
+  // A release with nothing verified is valid: every recipe is still an option on the wall and in the picker.
+  await expect(page.locator(".answer")).toHaveText(ANSWER);
+  await expect(
+    page.getByRole("group", { name: /The recipe catalog/ }).getByRole("link"),
+  ).toHaveCount(catalogSummary.total);
 });
 
 test("the count is the real number on first paint, with no roll from zero", async ({ page }) => {
