@@ -53,7 +53,9 @@ jobs:
         with:
           node-version-file: .node-version
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: |
+            web/package-lock.json
+            web/tools/ts-api/package-lock.json
       - name: Install frontend dependencies
         run: npm --prefix web ci
       # Downloads the newest signed recipe-library release, whatever its contract
@@ -125,7 +127,9 @@ jobs:
         with:
           node-version-file: .node-version
           cache: npm
-          cache-dependency-path: web/package-lock.json
+          cache-dependency-path: |
+            web/package-lock.json
+            web/tools/ts-api/package-lock.json
       - run: npm --prefix web ci
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
