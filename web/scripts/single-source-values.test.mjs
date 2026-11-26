@@ -186,6 +186,15 @@ describe("single source values", () => {
       ).toBe("");
     });
 
+    test.each([
+      'import { makeModel } from "./api/catalog-factory.fixture";',
+      'export { x } from "./vocabulary.fixture";',
+      'const m = await import("./api/e2e-catalog.fixture");',
+    ])("rejects a fixture import in shipped code: %s", (source) => {
+      expect(check(["web/src/x.tsx", source])).toContain("must not import the fixture");
+      expect(check(["web/src/x.test.tsx", source], ["web/src/y.fixture.ts", source])).toBe("");
+    });
+
     test("needs an owner that holds a vocabulary", () => {
       expect(
         checkSingleSources(
