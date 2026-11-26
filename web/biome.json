@@ -29,6 +29,26 @@
   "css": { "linter": { "enabled": true } },
   "overrides": [
     {
+      "includes": ["src/**", "!**/*.test.ts", "!**/*.test.tsx", "!**/*.fixture.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": ["**/*.fixture", "**/*.fixture.ts"],
+                    "message": "Shipped code must not import test fixtures."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "includes": ["**/*.test.ts", "**/*.test.tsx"],
       "linter": { "rules": { "suspicious": { "noDocumentCookie": "off" } } }
     }

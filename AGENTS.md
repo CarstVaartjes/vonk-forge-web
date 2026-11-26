@@ -49,6 +49,7 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   release), so a field the contract lacks fails `tsc`.
   Reject an index the adapter does not understand instead of rendering an empty
   or defaulted catalog.
+- Shipped code never imports a `*.fixture.*` file: biome's `noRestrictedImports` (`web/biome.json`) fails `npm --prefix web run lint` for any file under `web/src` that is not a test or a fixture. Biome also lints `web/tools/ts-api/*.mjs`.
 - The words belong to the contract too. Capability labels and descriptions, model
   types (the capability categories), and what a qualification status means and
   whether it counts as verified come from the release's `CatalogIndex.vocabulary`
