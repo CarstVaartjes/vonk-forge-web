@@ -346,7 +346,7 @@ function mapModelVersion(entity: CatalogModelEntry, recipeSlugs: string[]): Mode
     description: display.description,
     model_slug: identity.model.slug,
     variant: identity.variant || undefined,
-    requires_token: document.requires_token,
+    requires_token: document.requires_token ?? undefined,
     source_repository: source.repository || undefined,
     source_revision: ("revision" in source ? source.revision : "") || undefined,
     format: {
