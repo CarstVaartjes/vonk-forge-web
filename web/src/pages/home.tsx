@@ -95,11 +95,10 @@ function ProductShot({
   );
 }
 
-// "empty" is a valid release with nothing verified yet: there are no numbers to show.
+// A release with nothing verified yet is still ready: the picker and the wall count every recipe.
 type CatalogState =
   | { status: "loading" }
   | { status: "error" }
-  | { status: "empty" }
   | { status: "ready"; summary: CatalogSummary };
 
 // Everything live on this page comes from catalog-summary.json, the small file
@@ -111,9 +110,7 @@ function useCatalogSummary(): [CatalogState, () => void] {
   useEffect(() => {
     const controller = new AbortController();
     getCatalogSummary(controller.signal)
-      .then((summary) =>
-        setState(summary.verified === 0 ? { status: "empty" } : { status: "ready", summary }),
-      )
+      .then((summary) => setState({ status: "ready", summary }))
       .catch(() => {
         if (!controller.signal.aborted) setState({ status: "error" });
       });
@@ -221,13 +218,6 @@ function Hero({
 }
 
 function CatalogSections({ state, retry }: { state: CatalogState; retry: () => void }) {
-  if (state.status === "empty")
-    return (
-      <div className="status-panel" role="status">
-        No recipe in this release has passed hardware checks on a DGX Spark yet, so there are no
-        numbers to show. <a href="/recipes?verified=0">Browse every recipe</a>
-      </div>
-    );
   if (state.status === "loading")
     return (
       <div className="status-panel" role="status">
@@ -313,10 +303,10 @@ function RunTheMix() {
   );
 }
 
-// Section 5: credit is the product. The ten creators with the most verified recipes, each linking to the
-// catalog filtered to them, then how many more there are.
+// Section 5: credit is the product. The ten creators with the most recipes (whatever their status, so
+// each count matches the catalog filtered to them, which the name links to), then how many more there are.
 function Creators({ summary }: { summary: CatalogSummary }) {
-  const most = Math.max(...summary.topCreators.map((creator) => creator.verified));
+  const most = Math.max(...summary.topCreators.map((creator) => creator.recipes));
   return (
     <section className="home-section" aria-labelledby="creators-title">
       <div className="home-section-heading">
@@ -340,14 +330,14 @@ function Creators({ summary }: { summary: CatalogSummary }) {
             <span
               className="meter"
               role="meter"
-              aria-label={`${creator.name}: verified recipes`}
-              aria-valuenow={creator.verified}
+              aria-label={`${creator.name}: recipes`}
+              aria-valuenow={creator.recipes}
               aria-valuemin={0}
               aria-valuemax={most}
             >
-              <i style={{ width: `${(creator.verified / most) * 100}%` }} />
+              <i style={{ width: `${(creator.recipes / most) * 100}%` }} />
             </span>
-            <span className="creator-count">{number.format(creator.verified)}</span>
+            <span className="creator-count">{number.format(creator.recipes)}</span>
           </li>
         ))}
       </ul>
@@ -373,7 +363,8 @@ export function HomePage() {
       {state.status === "ready" ? (
         <>
           <KeptCurrent summary={state.summary} />
-          <VerifiedOnHardware summary={state.summary} />
+          {/* The proof section is about verified recipes; with none yet it has nothing to show. */}
+          {state.summary.verified > 0 ? <VerifiedOnHardware summary={state.summary} /> : null}
         </>
       ) : null}
       {state.status === "ready" ? <Creators summary={state.summary} /> : null}

@@ -86,16 +86,13 @@ describe("home page", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Models that fit your Sparks, kept current.",
     );
-    await waitFor(() =>
-      expect(document.querySelector(".answer")?.textContent).toBe(
-        "2recipes verified on a real DGX Spark, out of 4 in the catalog.",
-      ),
-    );
+    await waitFor(() => expect(document.querySelector(".answer")?.textContent).toMatch(/^4\D/));
     expect(screen.queryByLabelText("Catalog counts")).toBeNull();
     expect(
       screen.getByText(/Vonk Forge is the open-source Controller for NVIDIA DGX Spark/),
     ).toBeVisible();
-    expect(screen.getByText(/Recipes from nvidia and more/i)).toBeVisible();
+    // The top creators by all their recipes, unverified ones included.
+    expect(document.querySelector(".home-creators")).toHaveTextContent(/NVIDIA.*eugr/);
     expect(screen.getByRole("link", { name: "See the agent-friendly CLI" })).toHaveAttribute(
       "href",
       "/control#local-cli",
@@ -115,11 +112,11 @@ describe("home page", () => {
       "href",
       "/recipes?creator=NVIDIA",
     );
-    expect(ledger.getByRole("meter", { name: "NVIDIA: verified recipes" })).toHaveAttribute(
+    expect(ledger.getByRole("meter", { name: "NVIDIA: recipes" })).toHaveAttribute(
       "aria-valuenow",
-      "2",
+      "3",
     );
-    expect(ledger.getByText(/^and 2 more creators/)).toBeVisible();
+    expect(ledger.getByText(/^and 1 more creators/)).toBeVisible();
   });
 
   test("shows the Controller install command with a Copy button and the Enroll Spark step", async () => {
@@ -160,13 +157,12 @@ describe("home page", () => {
     expect(proof.queryByLabelText("Hardware evidence")).toBeNull();
   });
 
-  test("a release with nothing verified shows the empty state and no wall", async () => {
+  test("a release with nothing verified still shows every recipe in the picker and the wall", async () => {
     getCatalogSummary.mockResolvedValue({ ...summary(), verified: 0 });
     render(<HomePage />);
-    expect(
-      await screen.findByText(/No recipe in this release has passed hardware checks/),
-    ).toBeVisible();
-    expect(screen.queryByRole("group", { name: /The recipe catalog/ })).toBeNull();
+    // Every recipe is still an option: the picker and the wall show them all.
+    expect(await screen.findByRole("group", { name: /The recipe catalog/ })).toBeVisible();
+    expect(document.querySelector(".answer")?.textContent).toMatch(/^4\D/);
     expect(screen.queryByRole("region", { name: /Ran, on a real DGX Spark/ })).toBeNull();
   });
 

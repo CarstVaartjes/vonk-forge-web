@@ -82,7 +82,8 @@ interface CatalogFilters {
   query: string;
   // A model type (capability category) id from the release vocabulary; "" is every type.
   type: string;
-  // "Verified on Spark": on unless turned off (verified=0) or an explicit qualification is chosen.
+  // "Verified on Spark": off by default (every recipe is listed with its status); on with
+  // verified=1 unless an explicit qualification is chosen.
   verified: boolean;
   modelFamily: string;
   model: string;
@@ -108,7 +109,7 @@ interface CatalogFilters {
 export const EMPTY_FILTERS: CatalogFilters = {
   query: "",
   type: "",
-  verified: true,
+  verified: false,
   modelFamily: "",
   model: "",
   abliterated: "",
@@ -147,7 +148,7 @@ export function filtersFromParameters(parameters: URLSearchParams): CatalogFilte
   return {
     query: parameters.get("q") ?? "",
     type: parameters.get("type") ?? "",
-    verified: parameters.get("verified") !== "0" && !qualification,
+    verified: parameters.get("verified") === "1" && !qualification,
     modelFamily: parameters.get("model_family") ?? "",
     model: parameters.get("model") ?? "",
     abliterated: abliterated === "true" || abliterated === "false" ? abliterated : "",

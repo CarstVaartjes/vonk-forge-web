@@ -76,7 +76,7 @@ test("models: a filter set in the URL is counted on More filters, and the summar
   isMobile,
 }) => {
   test.skip(isMobile, "desktop 1440px layout; the phone project covers 390px");
-  await at(page, 1440, 900, "/models?engine=vllm&verified=0");
+  await at(page, 1440, 900, "/models?engine=vllm&verified=1");
   const more = page.getByText("More filters");
   await expect(more).toContainText("(2 active)");
   expect((await more.boundingBox())!.height).toBeGreaterThanOrEqual(44);

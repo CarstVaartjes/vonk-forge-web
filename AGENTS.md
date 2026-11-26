@@ -67,9 +67,14 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   `web/src/catalog-filters.ts` is the one owner of the bounds, the matching, the labels and the offered set (the URL
   carries the bound, or `unknown` for a size not declared; an exact-byte value is not a filter). The table's filters live
   in one toolbar (search plus a "More filters" disclosure), not in the table header; "Reset filters" returns to the
-  default Verified on Spark filter.
+  full catalog.
   `localStorage` by `web/src/my-sparks.ts`; the catalog page reads it when its URL carries neither,
   and saves a change to either, so home and catalog share one "My Sparks".
+- Every option is listed by default, whatever its qualification status (owner 2026-11-26): the catalog, the Models
+  page, a Model page, the home picker's counts, links and shortlists, and the creators ledger include unverified,
+  untested and re-check recipes, each with its status where it is listed. The home page has no "nothing verified"
+  empty state. "Verified on Spark" is an opt-in filter (`verified=1`); a sort may put verified recipes first
+  (the home shortlists do), but nothing is hidden until the visitor chooses a filter.
 - A recipe shows only the capabilities its launch serves: the release publishes them per recipe (`served_capabilities`, vocabulary names) and the site reads that key for recipe rows, recipe pages, search, the capability and Type filters and the home summary; it derives nothing. Model pages and the Models list keep the model's own capabilities.
 - A Model is the hierarchy's Model (Family → Line → Model → Variant), not a variant. The Models page counts
   and lists hierarchy Models only, with their variants inside. The variants of one `lineage` (family, line, model)

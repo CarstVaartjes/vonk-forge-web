@@ -42,8 +42,8 @@ export function SparkSegments({
   );
 }
 
-// The kind of model: chips from the summary's types, each with the verified recipes that fit the
-// Spark pick. A type nothing fits stays visible but does nothing.
+// The kind of model: chips from the summary's types, each with the recipes that fit the Spark pick,
+// whatever their status. A type nothing fits stays visible but does nothing.
 export function TypeChips({
   summary,
   pick,
@@ -56,13 +56,11 @@ export function TypeChips({
   const counts = Object.fromEntries(
     summary.types.map((type) => [
       type.id,
-      summary.recipes.filter(
-        (row) => row.verified && fitsPick(row, { sparks: pick.sparks, type: type.id }),
-      ).length,
+      summary.recipes.filter((row) => fitsPick(row, { sparks: pick.sparks, type: type.id })).length,
     ]),
   );
-  const all = summary.recipes.filter(
-    (row) => row.verified && fitsPick(row, { sparks: pick.sparks, type: "" }),
+  const all = summary.recipes.filter((row) =>
+    fitsPick(row, { sparks: pick.sparks, type: "" }),
   ).length;
   const chips = [
     { id: "", label: "All", count: all },
@@ -106,13 +104,11 @@ export function FitAnswerView({ summary, pick }: { summary: CatalogSummary; pick
       : pick.sparks === "4+"
         ? "4 or more Sparks"
         : `${pick.sparks} Sparks`;
+  const recipes = `${typeLabel ? `${typeLabel} ` : ""}recipes`;
+  const verified = `${number.format(answer.verified)} verified on a real DGX Spark.`;
   const sentence = option
-    ? `verified ${typeLabel ? `${typeLabel} ` : ""}recipes run on ${where}.`
-    : `${typeLabel ? `${typeLabel} ` : ""}recipes verified on a real DGX Spark, out of ${number.format(summary.recipes.filter((row) => fitsPick(row, pick)).length)} in the catalog.`;
-  const moreUnverified =
-    answer.moreUnverified > 0
-      ? `${number.format(answer.moreUnverified)} more published for your Sparks, not verified yet. `
-      : "";
+    ? `${recipes} run on ${where}.`
+    : `${recipes} in the catalog, ${verified}`;
   const pickedMany = option !== undefined && pick.sparks !== "1" && answer.byUse.length > 0;
   return (
     <div className="answer" aria-live="polite" aria-atomic="true">
@@ -141,7 +137,8 @@ export function FitAnswerView({ summary, pick }: { summary: CatalogSummary; pick
                     Newest:{" "}
                     <a href={`/recipes/${use.newest.publisher}/${use.newest.slug}`}>
                       {use.newest.title}
-                    </a>
+                    </a>{" "}
+                    · {use.newest.status}
                   </span>
                 </li>
               );
@@ -158,8 +155,7 @@ export function FitAnswerView({ summary, pick }: { summary: CatalogSummary; pick
       )}
       {option ? (
         <p className="answer-breakdown">
-          {moreUnverified}Your Controller checks the exact memory and disk fit before it runs
-          anything.
+          {verified} Your Controller checks the exact memory and disk fit before it runs anything.
         </p>
       ) : null}
     </div>
@@ -181,7 +177,8 @@ function Pips({ uses, of }: { uses: number; of: number }) {
   );
 }
 
-// The five newest verified recipes that fit, each with how many of the picked Sparks it uses.
+// The five newest recipes that fit (verified first), each with how many of the picked Sparks it uses
+// and its status, since unverified recipes are listed too.
 export function FitResults({ summary, pick }: { summary: CatalogSummary; pick: MySparks }) {
   const answer = fitAnswer(summary, pick);
   if (answer.count === 0) return null;
@@ -218,6 +215,7 @@ export function FitResults({ summary, pick }: { summary: CatalogSummary; pick: M
                 ) : null}
                 {row.engine ? ` · ${engineLabel(row.engine)}` : ""}
                 {memoryLine(row) ? ` · ${memoryLine(row)}` : ""}
+                {` · ${row.status}`}
               </span>
             </div>
             <span className="fit-date">released {formatDate(row.released)}</span>

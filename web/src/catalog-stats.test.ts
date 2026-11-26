@@ -63,7 +63,7 @@ function recipe(
 }
 
 describe("home page numbers", () => {
-  test("all three headline counts are over verified recipes only", () => {
+  test("verified and families count verified recipes; creators count every recipe's creator", () => {
     const stats = deriveCatalogStats(
       [
         recipe("a", { family: "Qwen", owner: "NVIDIA" }),
@@ -81,7 +81,7 @@ describe("home page numbers", () => {
     );
     expect(stats.verified).toBe(3);
     expect(stats.families).toBe(2);
-    expect(stats.creators).toBe(2);
+    expect(stats.creators).toBe(4);
   });
 
   test("folds creators that differ only by case and names them by their commonest spelling", () => {
@@ -98,8 +98,8 @@ describe("home page numbers", () => {
       UPDATED,
     );
     expect(stats.topCreators).toEqual([
-      { name: "NVIDIA", verified: 3 },
-      { name: "eugr", verified: 1 },
+      { name: "NVIDIA", recipes: 3 },
+      { name: "eugr", recipes: 2 },
     ]);
   });
 
@@ -113,11 +113,11 @@ describe("home page numbers", () => {
       vocabularyFixture,
       UPDATED,
     );
-    expect(stats.topCreators).toEqual([{ name: "NVIDIA", verified: 1 }]);
+    expect(stats.topCreators).toEqual([{ name: "NVIDIA", recipes: 3 }]);
     expect(stats.recipes.map((row) => row.creator)).toEqual(["NVIDIA", "NVIDIA", "NVIDIA"]);
   });
 
-  test("ranks creators by verified recipes and leaves out those with none", () => {
+  test("ranks creators by all their recipes, verified or not", () => {
     const stats = deriveCatalogStats(
       [
         recipe("a", { owner: "many", status: "Not yet verified" }),
@@ -127,7 +127,10 @@ describe("home page numbers", () => {
       vocabularyFixture,
       UPDATED,
     );
-    expect(stats.topCreators).toEqual([{ name: "few", verified: 1 }]);
+    expect(stats.topCreators).toEqual([
+      { name: "many", recipes: 2 },
+      { name: "few", recipes: 1 },
+    ]);
   });
 
   test("counts verified recipes per type through the one capability mapping", () => {
@@ -307,8 +310,8 @@ describe("catalog summary file", () => {
     expect(parseCatalogSummary(JSON.parse(JSON.stringify(empty)))).toMatchObject({
       verified: 0,
       families: 0,
-      creators: 0,
-      topCreators: [],
+      creators: 1,
+      topCreators: [{ recipes: 1 }],
     });
   });
 

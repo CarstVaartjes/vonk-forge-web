@@ -180,15 +180,15 @@ describe("public catalog Controller-parity filters", () => {
     expect(recipeMatches(recipe("other"), filters)).toBe(false);
   });
 
-  test("Verified on Spark is on by default and off with verified=0 or an explicit qualification", () => {
+  test("Verified on Spark is off by default, on with verified=1, and an explicit qualification wins", () => {
     const unverified = recipe("unverified", { qualification: "Not yet verified" });
-    expect(filtersFromParameters(new URLSearchParams("")).verified).toBe(true);
-    expect(filtersFromParameters(new URLSearchParams("verified=0")).verified).toBe(false);
-    expect(filtersFromParameters(new URLSearchParams("qualification=Fix+to+verify")).verified).toBe(
-      false,
-    );
-    expect(recipeMatches(unverified, EMPTY_FILTERS)).toBe(false);
-    expect(recipeMatches(unverified, { ...EMPTY_FILTERS, verified: false })).toBe(true);
+    expect(filtersFromParameters(new URLSearchParams("")).verified).toBe(false);
+    expect(filtersFromParameters(new URLSearchParams("verified=1")).verified).toBe(true);
+    expect(
+      filtersFromParameters(new URLSearchParams("verified=1&qualification=Fix+to+verify")).verified,
+    ).toBe(false);
+    expect(recipeMatches(unverified, EMPTY_FILTERS)).toBe(true);
+    expect(recipeMatches(unverified, { ...EMPTY_FILTERS, verified: true })).toBe(false);
   });
 
   test("a type matches a recipe with any of its capabilities", () => {
