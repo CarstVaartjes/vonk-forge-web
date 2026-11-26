@@ -332,7 +332,7 @@ On the recipe page the receipt carries its status meaning as an inline "What thi
 
 ### Creators Ledger
 
-The ten creators with the most verified recipes, from the summary's `topCreators`: the name (gold, a link to the catalog filtered to that creator), a `role="meter"` bar scaled to the largest count, the count, then "and N more creators". Credit is the product, so the ledger sits above the install commands. The home page runs in this order: hero (sentence, picker, wall), kept current, verified on hardware, run the mix (Controller screenshot beside the `vonkctl` session with a caret, then the three points), creators, install, security boundary, closing. The three hero count stats are gone: the picker's answer is the one number in the hero.
+The ten creators with the most recipes (whatever their status, so each count matches the catalog filtered to that creator), from the summary's `topCreators`: the name (gold, a link to the catalog filtered to that creator), a `role="meter"` bar scaled to the largest count, the count, then "and N more creators". Credit is the product, so the ledger sits above the install commands. The home page runs in this order: hero (sentence, picker, wall), kept current, verified on hardware, run the mix (Controller screenshot beside the `vonkctl` session with a caret, then the three points), creators, install, security boundary, closing. The three hero count stats are gone: the picker's answer is the one number in the hero.
 
 ### Spark Unit
 

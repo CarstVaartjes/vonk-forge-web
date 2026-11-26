@@ -87,11 +87,13 @@ against its Sigstore attestation from the library's `publish.yml` on `main`,
 checks every bundle file and the index against `SHA256SUMS`, and writes
 `web/public/catalog/` (`catalog-index.json`, `release.json`, `catalog-index-v2.schema.json`, `SHA256SUMS` and its
 bundle), plus `catalog-summary.json` (about 3 KB): the home page numbers (verified
-recipes, model families and creators over verified recipes, verified recipes per model
-type, the top creators and the most recently updated recipes). The build derives it from
+recipes and the model families among them, verified recipes per model type, every creator
+and the top creators by their recipe count whatever its status, and every recipe's row for
+the picker and the wall). The build derives it from
 the verified index with the same adapter, vocabulary reader (`web/src/vocabulary.ts`) and
 derivation the pages use (`web/src/catalog-summary.ts`), validates it with the browser's own
-check, and fails if the index is refused or nothing in it is verified. The home page reads
+check, and fails if the index is refused; a release with nothing verified is a valid
+summary of zeros, and the home page then still lists every recipe. The home page reads
 only that file, never the full index; there is no hard-coded count. The browser reads only those same-origin files. `npm --prefix web run catalog` then compiles the release schema to `web/src/api/catalog.generated.d.ts`, and the adapter and every fixture are typed against it. Capability labels, model types and status meanings are read from the release's `vocabulary`, not typed in the site. The site offers no package
 download (packages are not copied to Pages: some exceed its 25 MiB per-file limit); recipe
 pages link "View source" (and "View adapter source") to the recipe files in the library

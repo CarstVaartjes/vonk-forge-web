@@ -31,12 +31,19 @@ test("answers with every recipe in the catalog, unverified ones included, in a p
   fireEvent.click(one);
   expect(one).toHaveAttribute("aria-pressed", "true");
   fireEvent.click(screen.getByRole("button", { name: "4+ Sparks" }));
-  // The unverified eight-Spark recipe is an option of its own, linked to its exact list.
+  // The unverified eight-Spark recipe is an option of its own, linked to its exact list, with its status.
+  const uses = within(screen.getByRole("list", { name: "How to use your Sparks" }));
+  expect(uses.getAllByRole("link").map((link) => link.getAttribute("href"))).toContain(
+    "/recipes?sparks=4%2B&uses=8",
+  );
+  const unverified = summaryFixture.recipes.find((row) => !row.verified)!;
+  const item = uses.getByRole("link", { name: unverified.title }).closest("li")!;
+  expect(item).toHaveTextContent(unverified.status);
   expect(
-    within(screen.getByRole("list", { name: "How to use your Sparks" }))
-      .getAllByRole("link")
-      .map((link) => link.getAttribute("href")),
-  ).toContain("/recipes?sparks=4%2B&uses=8");
+    within(screen.getByRole("region", { name: "Newest that fit" }))
+      .getByRole("link", { name: unverified.title })
+      .closest("li"),
+  ).toHaveTextContent(unverified.status);
 });
 
 test("picking 2 Sparks links the one-Spark choice to its exact catalog list and names the newest recipe", () => {

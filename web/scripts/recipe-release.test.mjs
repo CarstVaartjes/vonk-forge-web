@@ -194,7 +194,7 @@ describe("recipe release publication", () => {
       verified: 1,
       families: 1,
       creators: 1,
-      topCreators: [{ name: "NVIDIA", verified: 1 }],
+      topCreators: [{ name: "NVIDIA", recipes: 1 }],
       types: [
         { id: "language", label: "Language", verified: 1 },
         { id: "code", label: "Code", verified: 0 },
@@ -218,7 +218,7 @@ describe("recipe release publication", () => {
     await publish(assets);
     expect(
       JSON.parse(await readFile(path.join(outDir, "catalog-summary.json"), "utf8")),
-    ).toMatchObject({ verified: 0, families: 0, creators: 0, topCreators: [] });
+    ).toMatchObject({ verified: 0, families: 0, total: 1 });
   });
 
   test("still refuses an index the adapter cannot parse, keeping the previous catalog", async () => {

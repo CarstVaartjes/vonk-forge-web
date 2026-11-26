@@ -137,7 +137,8 @@ export function FitAnswerView({ summary, pick }: { summary: CatalogSummary; pick
                     Newest:{" "}
                     <a href={`/recipes/${use.newest.publisher}/${use.newest.slug}`}>
                       {use.newest.title}
-                    </a>
+                    </a>{" "}
+                    · {use.newest.status}
                   </span>
                 </li>
               );
@@ -176,7 +177,8 @@ function Pips({ uses, of }: { uses: number; of: number }) {
   );
 }
 
-// The five newest recipes that fit (verified first), each with how many of the picked Sparks it uses.
+// The five newest recipes that fit (verified first), each with how many of the picked Sparks it uses
+// and its status, since unverified recipes are listed too.
 export function FitResults({ summary, pick }: { summary: CatalogSummary; pick: MySparks }) {
   const answer = fitAnswer(summary, pick);
   if (answer.count === 0) return null;
@@ -213,6 +215,7 @@ export function FitResults({ summary, pick }: { summary: CatalogSummary; pick: M
                 ) : null}
                 {row.engine ? ` · ${engineLabel(row.engine)}` : ""}
                 {memoryLine(row) ? ` · ${memoryLine(row)}` : ""}
+                {` · ${row.status}`}
               </span>
             </div>
             <span className="fit-date">released {formatDate(row.released)}</span>

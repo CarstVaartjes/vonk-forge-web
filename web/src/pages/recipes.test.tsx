@@ -62,7 +62,7 @@ const recipe: RecipeSummary = {
 
 beforeEach(() => {
   localStorage.clear();
-  window.history.replaceState(null, "", "/recipes?runtime=vllm&verified=0");
+  window.history.replaceState(null, "", "/recipes?runtime=vllm");
   loadRecipeCatalog.mockReset().mockResolvedValue([recipe]);
   getVocabulary.mockReset().mockResolvedValue(vocabularyFixture);
 });
@@ -86,7 +86,7 @@ test("shows sizing, immutable identity, and evidence provenance", async () => {
 });
 
 test("the phone Sort select reflects the URL sort, in either direction", async () => {
-  window.history.replaceState(null, "", "/recipes?verified=0&sort=recipe&direction=desc");
+  window.history.replaceState(null, "", "/recipes?sort=recipe&direction=desc");
   render(<RecipesPage />);
   await screen.findByRole("link", { name: "Qwen Fast" });
   const sort = screen.getByLabelText("Sort by") as HTMLSelectElement;
@@ -133,14 +133,14 @@ test("keeps Controller-parity filters in the URL and applies them locally", asyn
 });
 
 test("starts from the visitor's Sparks and engine, in the same URL facets as the columns", async () => {
-  window.history.replaceState(null, "", "/recipes?verified=0");
+  window.history.replaceState(null, "", "/recipes");
   render(<RecipesPage />);
   await screen.findByRole("link", { name: "Qwen Fast" });
   const oneSpark = screen.getByRole("button", { name: "1 Spark 1 recipe" });
   // "I have 2 Sparks" also runs the one-Spark recipe: a count means "that many or fewer".
   expect(screen.getByRole("button", { name: "2 Sparks 1 recipe" })).toBeEnabled();
   fireEvent.click(oneSpark);
-  await waitFor(() => expect(window.location.search).toBe("?verified=0&sparks=1"));
+  await waitFor(() => expect(window.location.search).toBe("?sparks=1"));
   expect(oneSpark).toHaveAttribute("aria-pressed", "true");
   fireEvent.click(
     within(screen.getByRole("group", { name: "Engine" })).getByRole("button", { name: "vLLM: 1" }),
@@ -201,17 +201,17 @@ function verifiedCoder(): RecipeSummary {
 describe("My Sparks", () => {
   test("a pick remembered from the home page fills in the Spark count, and the URL wins over it", async () => {
     saveMySparks({ sparks: "2", type: "" });
-    window.history.replaceState(null, "", "/recipes?verified=0");
+    window.history.replaceState(null, "", "/recipes");
     const first = render(<RecipesPage />);
     await screen.findByRole("link", { name: "Qwen Fast" });
     expect(screen.getByRole("button", { name: "2 Sparks 1 recipe" })).toHaveAttribute(
       "aria-pressed",
       "true",
     );
-    expect(window.location.search).toBe("?verified=0&sparks=2");
+    expect(window.location.search).toBe("?sparks=2");
     first.unmount();
 
-    window.history.replaceState(null, "", "/recipes?verified=0&sparks=1");
+    window.history.replaceState(null, "", "/recipes?sparks=1");
     render(<RecipesPage />);
     await screen.findByRole("link", { name: "Qwen Fast" });
     expect(screen.getByRole("button", { name: "1 Spark 1 recipe" })).toHaveAttribute(
@@ -221,7 +221,7 @@ describe("My Sparks", () => {
   });
 
   test("picking on this page is remembered, and clearing the picker forgets it", async () => {
-    window.history.replaceState(null, "", "/recipes?verified=0");
+    window.history.replaceState(null, "", "/recipes");
     render(<RecipesPage />);
     await screen.findByRole("link", { name: "Qwen Fast" });
     fireEvent.click(screen.getByRole("button", { name: "2 Sparks 1 recipe" }));

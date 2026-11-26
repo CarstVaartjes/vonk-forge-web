@@ -8,7 +8,8 @@ import type { Vocabulary } from "./vocabulary.ts";
 
 export interface CreatorCount {
   name: string;
-  verified: number;
+  // Every recipe of this creator, whatever its status: the count the catalog's creator filter shows.
+  recipes: number;
 }
 
 // One recipe as the wall and the picker need it. Everything is a catalog fact; the status is the
@@ -83,9 +84,10 @@ export interface CatalogStats {
   // The receipt shown on the home page: the newest verified recipe on more than one Spark that has a
   // measured peak (chosen by that rule, not by name); null when no recipe qualifies.
   receipt: ReceiptFacts | null;
-  // The three counts below are over verified recipes (published as Working).
+  // Verified recipes (published as Working), and the model families among them.
   verified: number;
   families: number;
+  // Creators over every recipe, and the ten with the most recipes.
   creators: number;
   topCreators: CreatorCount[];
   // Verified recipes per model type, with the label the release vocabulary gives it.
@@ -158,7 +160,7 @@ export function deriveCatalogStats(
   const nameOf = (owner: string | null | undefined) =>
     names.get(owner?.trim().toLowerCase() ?? "") ?? null;
   const creators = new Map<string, number>();
-  for (const recipe of verified) {
+  for (const recipe of recipes) {
     const name = nameOf(recipe.catalog.source_owner);
     if (name) creators.set(name, (creators.get(name) ?? 0) + 1);
   }
@@ -224,10 +226,10 @@ export function deriveCatalogStats(
     families: families.size,
     creators: creators.size,
     topCreators: [...creators]
-      .map(([name, count]) => ({ name, verified: count }))
+      .map(([name, count]) => ({ name, recipes: count }))
       .sort(
         (left, right) =>
-          right.verified - left.verified ||
+          right.recipes - left.recipes ||
           left.name.localeCompare(right.name, undefined, { sensitivity: "base" }),
       )
       .slice(0, 10),
@@ -333,7 +335,7 @@ export function parseCatalogSummary(value: unknown): CatalogSummary {
   if (
     !Array.isArray(value.topCreators) ||
     value.topCreators.some(
-      (item) => !isRecord(item) || !isText(item.name) || !isCount(item.verified),
+      (item) => !isRecord(item) || !isText(item.name) || !isCount(item.recipes),
     )
   )
     return fail();
