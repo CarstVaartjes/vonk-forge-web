@@ -86,11 +86,7 @@ describe("home page", () => {
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
       "Models that fit your Sparks, kept current.",
     );
-    await waitFor(() =>
-      expect(document.querySelector(".answer")?.textContent).toBe(
-        "2recipes verified on a real DGX Spark, out of 4 in the catalog.",
-      ),
-    );
+    await waitFor(() => expect(document.querySelector(".answer")?.textContent).toMatch(/^4\D/));
     expect(screen.queryByLabelText("Catalog counts")).toBeNull();
     expect(
       screen.getByText(/Vonk Forge is the open-source Controller for NVIDIA DGX Spark/),

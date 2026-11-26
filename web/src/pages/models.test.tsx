@@ -136,12 +136,9 @@ describe("public model browse", () => {
     expect(screen.getByText("7 of 13 models")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(window.location.search).toBe("");
-    fireEvent.click(screen.getByText("More filters"));
-    fireEvent.click(screen.getByRole("checkbox", { name: /Verified on Spark/ }));
-    expect(window.location.search).toBe("?verified=0");
     await waitFor(() => expect(screen.getByText("13 of 13 models")).toBeVisible());
     fireEvent.click(screen.getByRole("button", { name: "Next" }));
-    expect(window.location.search).toBe("?verified=0&page=2");
+    expect(window.location.search).toBe("?page=2");
     await waitFor(() => expect(screen.getByText("Model 13")).toBeVisible());
   });
 
@@ -275,23 +272,23 @@ describe("type-first model filtering", () => {
   test("type chips come first, count with the other filters applied, and live in the URL", async () => {
     render(<ModelsPage />);
     const types = await screen.findByRole("group", { name: "Model type" });
-    expect(within(types).getByRole("button", { name: "All 2" })).toBeVisible();
-    expect(within(types).getByRole("button", { name: "Code 1" })).toBeVisible();
-    fireEvent.click(within(types).getByRole("button", { name: "Code 1" }));
+    expect(within(types).getByRole("button", { name: "All 3" })).toBeVisible();
+    expect(within(types).getByRole("button", { name: "Code 2" })).toBeVisible();
+    fireEvent.click(within(types).getByRole("button", { name: "Code 2" }));
     await waitFor(() => expect(window.location.search).toBe("?type=code"));
-    expect(screen.getByText("1 of 3 models")).toBeVisible();
-    expect(screen.getByRole("link", { name: /coder/ })).toBeVisible();
+    expect(screen.getByText("2 of 3 models")).toBeVisible();
+    expect(screen.getByRole("link", { name: /untested-coder/ })).toBeVisible();
     expect(screen.queryByRole("link", { name: /painter/ })).not.toBeInTheDocument();
   });
 
-  test("Verified on Spark is on by default and turning it off shows models without a verified recipe", async () => {
+  test("lists every model by default; Verified on Spark hides models without a verified recipe", async () => {
     render(<ModelsPage />);
     await screen.findByRole("group", { name: "Model type" });
-    expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).toBeChecked();
-    expect(screen.queryByRole("link", { name: /untested-coder/ })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole("checkbox", { name: /Verified on Spark/ }));
-    await waitFor(() => expect(window.location.search).toBe("?verified=0"));
+    expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked();
     expect(screen.getByRole("link", { name: /untested-coder/ })).toBeVisible();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Verified on Spark/ }));
+    await waitFor(() => expect(window.location.search).toBe("?verified=1"));
+    expect(screen.queryByRole("link", { name: /untested-coder/ })).not.toBeInTheDocument();
   });
 
   test("with Verified on, the recipe count, support filter and Most recipes sort count verified recipes only", async () => {
@@ -314,6 +311,7 @@ describe("type-first model filtering", () => {
       verified_recipe_count: 0,
     };
     listModels.mockResolvedValue({ items: [alpha, beta, gamma] });
+    window.history.replaceState({}, "", "/models?verified=1");
     render(<ModelsPage />);
     await screen.findByRole("group", { name: "Model type" });
     fireEvent.change(screen.getByLabelText("Sort"), { target: { value: "recipes" } });
@@ -326,33 +324,33 @@ describe("type-first model filtering", () => {
     expect(rows()[1]).toContain("1 verified recipe");
     fireEvent.change(screen.getByLabelText("Recipe support"), { target: { value: "recipes" } });
     await waitFor(() => expect(rows()).toHaveLength(2));
-    // "No public recipes" can only match with Verified off, so choosing it turns the default off.
+    // "No public recipes" can only match with Verified off, so choosing it turns Verified off.
     fireEvent.change(screen.getByLabelText("Recipe support"), { target: { value: "none" } });
     await waitFor(() =>
       expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked(),
     );
-    expect(window.location.search).toBe("?verified=0&recipes=none&sort=recipes");
+    expect(window.location.search).toBe("?recipes=none&sort=recipes");
     fireEvent.change(screen.getByLabelText("Recipe support"), { target: { value: "" } });
     await waitFor(() => expect(rows()[0]).toContain("Alpha"));
     expect(rows()[0]).toContain("5 recipes");
   });
 
-  test("Clear filters has one rule: hidden while only the default applies, and it restores the default", async () => {
+  test("Clear filters has one rule: hidden until a filter is set, and it returns to every model", async () => {
     render(<ModelsPage />);
     await screen.findByRole("group", { name: "Model type" });
     expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument();
     fireEvent.click(
       within(screen.getByRole("group", { name: "Model type" })).getByRole("button", {
-        name: "Code 1",
+        name: "Code 2",
       }),
     );
     await waitFor(() => expect(window.location.search).toBe("?type=code"));
     fireEvent.click(screen.getByRole("button", { name: "Clear filters" }));
     await waitFor(() => expect(window.location.search).toBe(""));
     fireEvent.click(screen.getByText("More filters"));
-    expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked();
     expect(screen.queryByRole("button", { name: "Clear filters" })).not.toBeInTheDocument();
-    // Turning the default off is itself a filter: it is counted in the badge and can be cleared.
+    // Verified on Spark is a filter like any other: counted in the badge and cleared by Clear filters.
     fireEvent.click(screen.getByRole("checkbox", { name: /Verified on Spark/ }));
     expect(screen.getByText("(1 active)")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Clear filters" })).toBeInTheDocument();
@@ -426,7 +424,7 @@ describe("model page leads with its recipes", () => {
     expect(within(section).getAllByRole("listitem")).toHaveLength(2);
     expect(within(section).getByRole("link", { name: "Compare recipes" })).toHaveAttribute(
       "href",
-      "/recipes?model=publisher%2Fmodel-1&verified=0",
+      "/recipes?model=publisher%2Fmodel-1",
     );
     expect(screen.queryByText(/Immutable model identity/)).not.toBeInTheDocument();
   });
@@ -453,7 +451,7 @@ describe("model page leads with its recipes", () => {
     expect(within(section).getByText("1 of 2 recipes, fitting 1 Spark.")).toBeVisible();
     expect(within(section).getByRole("link", { name: "Compare recipes" })).toHaveAttribute(
       "href",
-      "/recipes?model=publisher%2Fmodel-1&verified=0&sparks=1",
+      "/recipes?model=publisher%2Fmodel-1&sparks=1",
     );
   });
 });

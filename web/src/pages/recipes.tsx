@@ -209,8 +209,8 @@ export function RecipesPage() {
   function setVerified(on: boolean) {
     const next = new URLSearchParams(parameters);
     next.delete("qualification");
-    if (on) next.delete("verified");
-    else next.set("verified", "0");
+    if (on) next.set("verified", "1");
+    else next.delete("verified");
     next.delete("cursor");
     replace(next);
   }
@@ -416,13 +416,12 @@ export function RecipesPage() {
           {capacityLabel(option.bucket)} ({option.count})
         </option>
       ));
-  // Reset restores the defaults, Verified on Spark included; it is offered when anything differs from them.
-  const clearable = applied.filter((item) => item.key !== "verified");
-  const resettable = clearable.length > 0 || !filters.verified;
+  // Reset clears every filter, back to the full catalog; it is offered when a filter is set.
+  const resettable = applied.length > 0;
   // The badge counts what is set inside the disclosure; search, type and Sparks sit outside it.
-  const inMore =
-    clearable.filter((item) => !["query", "type", "sparks", "uses"].includes(item.key)).length +
-    (filters.verified ? 0 : 1);
+  const inMore = applied.filter(
+    (item) => !["query", "type", "sparks", "uses"].includes(item.key),
+  ).length;
   const resetFilters = () => replace(new URLSearchParams());
 
   const select = (
@@ -764,7 +763,7 @@ export function RecipesPage() {
             </p>
             {resettable ? (
               <button type="button" className="catalog-clear" onClick={resetFilters}>
-                Reset filters <small>to Verified on Spark</small>
+                Reset filters <small>to every recipe</small>
               </button>
             ) : null}
             <p className="catalog-local-note">
@@ -871,8 +870,7 @@ export function RecipesPage() {
                 {filters.verified
                   ? "Verified on Spark is on, so recipes that have not passed hardware checks on a DGX Spark are hidden. "
                   : ""}
-                Reset the filters to start again from Verified on Spark, or include recipes that are
-                not yet verified.
+                Reset the filters to start again from every recipe.
               </p>
               {filters.verified ? (
                 <button type="button" className="button" onClick={() => setVerified(false)}>

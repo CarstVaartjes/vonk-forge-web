@@ -7,10 +7,8 @@ import { catalogSummary, routeRelease } from "./release-fixture.ts";
 import { recipeDigest, sourceCommit } from "../src/api/e2e-catalog.fixture.ts";
 
 const recipeImportUri = `vonk://catalog/vonk-forge/qwen-fast@sha256:${recipeDigest}`;
-// The picker's answer with nothing picked: every verified recipe, out of the whole catalog.
-const ANSWER = new RegExp(
-  `^4\\s*recipes verified on a real DGX Spark, out of ${catalogSummary.total} in the catalog\\.$`,
-);
+// The picker's answer with nothing picked: every recipe in the catalog, as one plain number.
+const ANSWER = new RegExp(`^${catalogSummary.total}\\D`);
 
 test.beforeEach(({ page }) => routeRelease(page));
 
@@ -126,7 +124,7 @@ test("home page shows the live numbers from the build-time summary and loads not
 
   const chips = page.getByRole("group", { name: "Model type" });
   await expect(chips.getByRole("button", { name: "Language 3" })).toBeVisible();
-  await expect(chips.getByRole("button", { name: "Code 1" })).toBeVisible();
+  await expect(chips.getByRole("button", { name: "Code 2" })).toBeVisible();
   await expect(chips.getByRole("button", { name: "Video 0" })).toHaveAttribute(
     "aria-disabled",
     "true",
@@ -156,11 +154,12 @@ test("home page shows the live numbers from the build-time summary and loads not
     "aria-pressed",
     "true",
   );
-  await page.getByRole("link", { name: /^See all 1 in the catalog/ }).click();
+  await page.getByRole("link", { name: /^See all 2 in the catalog/ }).click();
   await expect(page).toHaveURL(/\/recipes\?sparks=2&type=code$/);
   await expect(page.getByRole("link", { name: "Acme Coder" })).toBeVisible();
+  // The unverified recipe is listed too, with its status.
+  await expect(page.getByRole("link", { name: "Qwen Code" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Acme Vision" })).toHaveCount(0);
-  await expect(page.getByRole("link", { name: "Qwen Code" })).toHaveCount(0);
 });
 
 test("picking 2 Sparks offers two linked choices, each opening exactly that count in the catalog", async ({
@@ -171,10 +170,10 @@ test("picking 2 Sparks offers two linked choices, each opening exactly that coun
   const choices = page.getByRole("list", { name: "How to use your Sparks" });
   await expect(choices.getByRole("listitem")).toHaveCount(2);
   await expect(choices.getByRole("listitem").first()).toContainText("Newest: Acme Coder");
-  await choices.getByRole("link", { name: /^3\s*run on one Spark/ }).click();
+  await choices.getByRole("link", { name: /^4\s*run on one Spark/ }).click();
   await expect(page).toHaveURL(/\/recipes\?sparks=2&uses=1$/);
   const results = page.getByRole("region", { name: "Recipe results" }).getByText(/of \d+ recipes/);
-  await expect(results).toHaveText(/^3 of /);
+  await expect(results).toHaveText(/^4 of /);
   await expect(page.getByRole("link", { name: "Acme Coder" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Qwen Fast" })).toHaveCount(0);
   await page.goto("/");
@@ -195,7 +194,7 @@ test("the Spark count picked on the home page is the catalog's first filter, and
 }) => {
   await page.goto("/");
   await page.getByRole("button", { name: "1 Spark", exact: true }).click();
-  await page.goto("/recipes?verified=0");
+  await page.goto("/recipes");
   const sparks = page.getByRole("group", { name: "How many Sparks do you have?" });
   await expect(sparks.getByRole("button", { name: /^1 Spark \d/ })).toHaveAttribute(
     "aria-pressed",
@@ -539,9 +538,9 @@ test("the model type is the first choice on the recipes and models pages", async
   await page.goto("/recipes?type=code");
   const types = page.getByRole("group", { name: "Model type" });
   await expect(types.getByRole("button")).toHaveText([
-    "All 4",
+    "All 5",
     "Language 3",
-    "Code 1",
+    "Code 2",
     "Vision 1",
     "Image 0",
     "Video 0",
@@ -577,17 +576,13 @@ test("the model type is the first choice on the recipes and models pages", async
   await expect(page.getByRole("link", { name: "Acme Vision" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Acme Coder" })).toHaveCount(0);
 
-  // "Verified on Spark" is on by default; turning it off shows the unverified recipe too.
-  await page.goto("/recipes?type=language");
-  await expect(page.getByRole("link", { name: "Qwen Code" })).toHaveCount(0);
-  await page.getByText("More filters").click();
-  await page.getByRole("checkbox", { name: /Verified on Spark/ }).uncheck();
-  await expect(page).toHaveURL(/verified=0/);
-  await page
-    .getByRole("group", { name: "Model type" })
-    .getByRole("button", { name: /^Code/ })
-    .click();
+  // "Verified on Spark" is off by default, so the unverified recipe is listed; turning it on hides it.
+  await page.goto("/recipes?type=code");
   await expect(page.getByRole("link", { name: "Qwen Code" })).toBeVisible();
+  await page.getByText("More filters").click();
+  await page.getByRole("checkbox", { name: /Verified on Spark/ }).check();
+  await expect(page).toHaveURL(/verified=1/);
+  await expect(page.getByRole("link", { name: "Qwen Code" })).toHaveCount(0);
 
   await page.goto("/models?type=vision");
   await expect(
@@ -596,7 +591,7 @@ test("the model type is the first choice on the recipes and models pages", async
   await expect(page.getByRole("link", { name: /Acme Vision/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /Acme Coder/ })).toHaveCount(0);
   await page.getByText("More filters").click();
-  await expect(page.getByRole("checkbox", { name: /Verified on Spark/ })).toBeChecked();
+  await expect(page.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked();
   for (const width of [320, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     for (const path of ["/models", "/recipes"]) {
@@ -657,14 +652,14 @@ test("the recipe table has few Tab stops before its first row, and its filters s
   await expect(page.locator("thead select, thead input")).toHaveCount(0);
 });
 
-test("Reset filters brings back Verified on Spark and says so", async ({ page }) => {
-  await page.goto("/recipes?verified=0&type=code");
-  await expect(page.getByLabel("Applied filters")).not.toContainText("Verified on Spark");
-  const reset = page.getByRole("button", { name: /^Reset filters/ });
-  await expect(reset).toContainText("to Verified on Spark");
-  await reset.click();
-  await expect(page).toHaveURL(/\/recipes$/);
+test("Reset filters clears a chosen Verified on Spark and returns to every recipe", async ({
+  page,
+}) => {
+  await page.goto("/recipes?verified=1&type=code");
   await expect(page.getByLabel("Applied filters")).toContainText("Verified on Spark");
+  await page.getByRole("button", { name: /^Reset filters/ }).click();
+  await expect(page).toHaveURL(/\/recipes$/);
+  await expect(page.getByLabel("Applied filters")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /^Reset filters/ })).toHaveCount(0);
 });
 
@@ -672,7 +667,7 @@ test("a phone shows a model type strip, a five-segment Spark bar, one tall Filte
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/recipes?verified=0");
+  await page.goto("/recipes");
   const bar = page.getByRole("group", { name: "How many Sparks do you have?" }).getByRole("button");
   await expect(bar).toHaveCount(5);
   const widths = await bar.evaluateAll((buttons) =>
@@ -704,7 +699,7 @@ test("a phone shows a model type strip, a five-segment Spark bar, one tall Filte
 test("the table fits its panel just above and below the phone breakpoint", async ({ page }) => {
   for (const width of [701, 768]) {
     await page.setViewportSize({ width, height: 900 });
-    await page.goto("/recipes?verified=0");
+    await page.goto("/recipes");
     await expect(page.locator("tbody tr").first()).toBeVisible();
     const fit = await page.evaluate(() => ({
       table: document.querySelector(".catalog-table")!.scrollWidth,

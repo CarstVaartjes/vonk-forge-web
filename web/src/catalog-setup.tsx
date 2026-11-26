@@ -192,7 +192,8 @@ export function TypeTabs({
   );
 }
 
-// "Verified on Spark": a recipe passed hardware checks on a DGX Spark. On by default.
+// "Verified on Spark": a recipe passed hardware checks on a DGX Spark. Off by default: every
+// recipe is listed with its status, and the visitor narrows to verified ones when they choose.
 export function VerifiedToggle({
   checked,
   onChange,

@@ -63,28 +63,31 @@ export function fitsPick(row: Pick<RecipeRow, "sparks" | "types">, pick: MySpark
 }
 
 export interface FitAnswer {
-  // Verified recipes that fit.
+  // Every recipe that fits, whatever its status: the catalog it links to lists them all.
   count: number;
-  // Of those, how many need each Spark count, ascending.
+  // Of those, how many are verified on a DGX Spark.
+  verified: number;
+  // How many need each Spark count, ascending.
   byUse: Array<{ sparks: number; count: number; newest: RecipeRow }>;
-  // Recipes that fit but are not verified (including those that passed before).
-  moreUnverified: number;
-  // The newest verified recipes that fit.
+  // The newest recipes that fit, verified ones first.
   newest: RecipeRow[];
 }
 
+// Verified recipes lead the shortlists; within each, newest first.
+const verifiedThenNewest = (left: RecipeRow, right: RecipeRow): number =>
+  Number(right.verified) - Number(left.verified) || newestFirst(left, right);
+
 export function fitAnswer(summary: CatalogSummary, pick: MySparks, newest = 5): FitAnswer {
   const fitting = summary.recipes.filter((row) => fitsPick(row, pick));
-  const verified = fitting.filter((row) => row.verified);
   return {
-    count: verified.length,
-    byUse: Array.from(new Set(verified.map((row) => row.sparks)))
+    count: fitting.length,
+    verified: fitting.filter((row) => row.verified).length,
+    byUse: Array.from(new Set(fitting.map((row) => row.sparks)))
       .sort((left, right) => left - right)
       .map((sparks) => {
-        const group = verified.filter((row) => row.sparks === sparks).sort(newestFirst);
+        const group = fitting.filter((row) => row.sparks === sparks).sort(verifiedThenNewest);
         return { sparks, count: group.length, newest: group[0]! };
       }),
-    moreUnverified: fitting.length - verified.length,
-    newest: [...verified].sort(newestFirst).slice(0, newest),
+    newest: [...fitting].sort(verifiedThenNewest).slice(0, newest),
   };
 }

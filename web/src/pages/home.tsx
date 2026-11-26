@@ -225,7 +225,7 @@ function CatalogSections({ state, retry }: { state: CatalogState; retry: () => v
     return (
       <div className="status-panel" role="status">
         No recipe in this release has passed hardware checks on a DGX Spark yet, so there are no
-        numbers to show. <a href="/recipes?verified=0">Browse every recipe</a>
+        numbers to show. <a href="/recipes">Browse every recipe</a>
       </div>
     );
   if (state.status === "loading")

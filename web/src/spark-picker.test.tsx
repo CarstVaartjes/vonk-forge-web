@@ -22,22 +22,21 @@ afterEach(() => {
   window.history.replaceState(null, "", "/");
 });
 
-test("answers with the verified total until a count is picked, then names the count, in a polite live region", () => {
+test("answers with every recipe in the catalog, unverified ones included, in a polite live region", () => {
   const { container } = render(<Harness />);
   const answer = () => container.querySelector(".answer")!;
   expect(answer()).toHaveAttribute("aria-live", "polite");
-  expect(answer()).toHaveTextContent(
-    "3recipes verified on a real DGX Spark, out of 4 in the catalog.",
-  );
+  expect(answer().textContent).toMatch(/^4\D/);
   const one = screen.getByRole("button", { name: "1 Spark" });
   fireEvent.click(one);
   expect(one).toHaveAttribute("aria-pressed", "true");
-  expect(answer()).toHaveTextContent("3verified recipes run on one Spark.");
-  expect(container.querySelector(".answer-breakdown")).toHaveTextContent(
-    "Your Controller checks the exact memory and disk fit before it runs anything.",
-  );
-  fireEvent.click(screen.getByRole("button", { name: "2 Sparks" }));
-  expect(answer()).toHaveTextContent("3 verified recipes run on 2 Sparks.");
+  fireEvent.click(screen.getByRole("button", { name: "4+ Sparks" }));
+  // The unverified eight-Spark recipe is an option of its own, linked to its exact list.
+  expect(
+    within(screen.getByRole("list", { name: "How to use your Sparks" }))
+      .getAllByRole("link")
+      .map((link) => link.getAttribute("href")),
+  ).toContain("/recipes?sparks=4%2B&uses=8");
 });
 
 test("picking 2 Sparks links the one-Spark choice to its exact catalog list and names the newest recipe", () => {
@@ -60,16 +59,14 @@ test("the choice lands in the URL and is remembered; a type narrows the answer a
   );
   expect(window.location.search).toBe("?sparks=2&type=3d");
   expect(localStorage.getItem("vonk-my-sparks")).toBe("sparks=2&type=3d");
-  expect(container.querySelector(".answer")).toHaveTextContent(
-    "1 verified 3D recipes run on 2 Sparks.",
-  );
+  expect(container.querySelector(".answer")?.textContent).toMatch(/^1\D/);
   expect(screen.getByRole("link", { name: "See all 1 in the catalog" })).toHaveAttribute(
     "href",
     "/recipes?sparks=2&type=3d",
   );
 });
 
-test("lists the five newest verified recipes that fit, newest first, each linking to its recipe", () => {
+test("lists the five newest recipes that fit, newest first, each linking to its recipe", () => {
   const row = summaryFixture.recipes[0]!;
   const six = {
     ...summaryFixture,

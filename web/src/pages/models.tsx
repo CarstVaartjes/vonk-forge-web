@@ -449,7 +449,7 @@ function initialFilters() {
   const { sparks, type } = readMySparks(window.location.search);
   return {
     type,
-    verified: params.get("verified") !== "0",
+    verified: params.get("verified") === "1",
     query: params.get("q") ?? "",
     publisher: params.get("publisher") ?? "",
     capability: params.get("capability") ?? "",
@@ -563,7 +563,7 @@ export function ModelsPage() {
       saveMySparks({ sparks: updated.sparks, type: updated.type });
     const params = new URLSearchParams();
     if (updated.type) params.set("type", updated.type);
-    if (!updated.verified) params.set("verified", "0");
+    if (updated.verified) params.set("verified", "1");
     if (updated.query) params.set("q", updated.query);
     if (updated.publisher) params.set("publisher", updated.publisher);
     if (updated.capability) params.set("capability", updated.capability);
@@ -578,7 +578,7 @@ export function ModelsPage() {
   function clearFilters() {
     updateFilters({
       type: "",
-      verified: true,
+      verified: false,
       query: "",
       publisher: "",
       capability: "",
@@ -653,7 +653,7 @@ export function ModelsPage() {
                   filters.capability,
                   filters.recipes,
                 ].filter(Boolean).length +
-                (filters.verified ? 0 : 1) +
+                (filters.verified ? 1 : 0) +
                 (filters.sort !== "name" ? 1 : 0)
               }
             />
@@ -767,7 +767,7 @@ export function ModelsPage() {
             filters.family ||
             filters.engine ||
             filters.sparks ||
-            !filters.verified ||
+            filters.verified ||
             filters.sort !== "name" ? (
               <button className="text-button" type="button" onClick={clearFilters}>
                 Clear filters
@@ -921,16 +921,12 @@ export function ModelsPage() {
 function ModelRecipes({ model, recipes }: { model: ModelSummary; recipes: RecipeDetail[] }) {
   const key = `${model.publisher}/${model.slug}`;
   const { sparks } = readMySparks(window.location.search);
-  const own = recipes.filter((recipe) =>
-    recipeMatches(recipe, { ...EMPTY_FILTERS, verified: false, model: key }),
-  );
+  const own = recipes.filter((recipe) => recipeMatches(recipe, { ...EMPTY_FILTERS, model: key }));
   const shown = sortRecipes(
-    own.filter((recipe) =>
-      recipeMatches(recipe, { ...EMPTY_FILTERS, verified: false, model: key, sparks }),
-    ),
+    own.filter((recipe) => recipeMatches(recipe, { ...EMPTY_FILTERS, model: key, sparks })),
     "catalog",
   );
-  const compare = new URLSearchParams({ model: key, verified: "0" });
+  const compare = new URLSearchParams({ model: key });
   if (sparks) compare.set("sparks", sparks);
   const pick = SPARK_OPTIONS.find((option) => option.value === sparks);
   if (!own.length)

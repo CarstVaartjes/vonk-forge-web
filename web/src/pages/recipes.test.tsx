@@ -244,18 +244,19 @@ describe("type-first filtering", () => {
     loadRecipeCatalog.mockReset().mockResolvedValue([recipe, verifiedCoder()]);
   });
 
-  test("shows only verified recipes until the toggle is turned off", async () => {
+  test("lists every recipe by default; Verified on Spark narrows to verified ones", async () => {
     window.history.replaceState(null, "", "/recipes");
     render(<RecipesPage />);
     expect(await screen.findByRole("link", { name: "Coder" })).toBeVisible();
-    expect(screen.queryByRole("link", { name: "Qwen Fast" })).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Qwen Fast" })).toBeVisible();
     const toggle = screen.getByRole("checkbox", { name: /Verified on Spark/ });
-    expect(toggle).toBeChecked();
+    expect(toggle).not.toBeChecked();
     fireEvent.click(toggle);
-    await waitFor(() => expect(window.location.search).toBe("?verified=0"));
-    expect(await screen.findByRole("link", { name: "Qwen Fast" })).toBeVisible();
+    await waitFor(() => expect(window.location.search).toBe("?verified=1"));
+    expect(screen.queryByRole("link", { name: "Qwen Fast" })).not.toBeInTheDocument();
     fireEvent.click(toggle);
     await waitFor(() => expect(window.location.search).toBe(""));
+    expect(await screen.findByRole("link", { name: "Qwen Fast" })).toBeVisible();
   });
 
   test("the type row comes first, counts with the other filters applied, and lives in the URL", async () => {
@@ -268,8 +269,8 @@ describe("type-first filtering", () => {
         .getAllByRole("button")
         .map((button) => button.textContent),
     ).toEqual([
-      "All 1",
-      "Language 0",
+      "All 2",
+      "Language 1",
       "Code 1",
       "Vision 0",
       "Image 0",
@@ -288,7 +289,7 @@ describe("type-first filtering", () => {
         screen.getByRole("group", { name: "How many Sparks do you have?" }),
       ) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
-    fireEvent.click(within(types).getByRole("button", { name: "All 1" }));
+    fireEvent.click(within(types).getByRole("button", { name: "All 2" }));
     await waitFor(() => expect(window.location.search).toBe(""));
     fireEvent.click(
       within(screen.getByRole("group", { name: "Model type" })).getByRole("button", {
@@ -298,8 +299,8 @@ describe("type-first filtering", () => {
     await waitFor(() => expect(window.location.search).toBe("?type=code"));
   });
 
-  test("an explicit qualification turns the default off", async () => {
-    window.history.replaceState(null, "", "/recipes?qualification=Not+yet+verified");
+  test("an explicit qualification wins over Verified on Spark", async () => {
+    window.history.replaceState(null, "", "/recipes?verified=1&qualification=Not+yet+verified");
     render(<RecipesPage />);
     expect(await screen.findByRole("link", { name: "Qwen Fast" })).toBeVisible();
     expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked();
@@ -370,39 +371,35 @@ describe("type-first filtering", () => {
     expect(types().getByRole("button", { name: "Code 1" })).toBeVisible();
   });
 
-  test("the default Verified on Spark filter is an applied chip and is named in the empty state", async () => {
-    window.history.replaceState(null, "", "/recipes?type=vision");
+  test("a chosen Verified on Spark filter is an applied chip, and the empty state can lift it", async () => {
+    window.history.replaceState(null, "", "/recipes?type=vision&verified=1");
     render(<RecipesPage />);
-    const empty = await screen.findByText("No matching recipes.");
-    expect(empty.parentElement).toHaveTextContent(
-      /Verified on Spark is on, so recipes that have not passed hardware checks/,
-    );
+    await screen.findByText("No matching recipes.");
     const applied = screen.getByLabelText("Applied filters");
     expect(within(applied).getByRole("button", { name: /Verified on Spark/ })).toBeVisible();
     expect(within(applied).getByRole("button", { name: /Type: Vision/ })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Include recipes not yet verified" }));
-    await waitFor(() => expect(window.location.search).toBe("?type=vision&verified=0"));
+    await waitFor(() => expect(window.location.search).toBe("?type=vision"));
     fireEvent.click(screen.getAllByRole("button", { name: /^Reset filters/ })[0]!);
     await waitFor(() => expect(window.location.search).toBe(""));
-    expect(screen.getByLabelText("Applied filters")).toHaveTextContent("Verified on Spark");
+    expect(screen.queryByLabelText("Applied filters")).not.toBeInTheDocument();
   });
 
-  test("Reset counts only what the visitor chose, and restores the default Verified on Spark", async () => {
+  test("Reset is offered only once a filter is set, and returns to every recipe", async () => {
     window.history.replaceState(null, "", "/recipes");
     render(<RecipesPage />);
     await screen.findByRole("link", { name: "Coder" });
-    expect(screen.getByLabelText("Applied filters")).toHaveTextContent("Verified on Spark");
+    expect(screen.queryByLabelText("Applied filters")).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /^Reset filters/ })).not.toBeInTheDocument();
     fireEvent.click(
       within(screen.getByRole("group", { name: "Model type" })).getByRole("button", {
         name: "Code 1",
       }),
     );
-    const reset = await screen.findByRole("button", { name: /^Reset filters/ });
-    expect(reset).toHaveTextContent("to Verified on Spark");
-    fireEvent.click(reset);
+    fireEvent.click(await screen.findByRole("button", { name: /^Reset filters/ }));
     await waitFor(() => expect(window.location.search).toBe(""));
-    expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).toBeChecked();
+    expect(screen.getByRole("checkbox", { name: /Verified on Spark/ })).not.toBeChecked();
+    expect(screen.getByRole("link", { name: "Qwen Fast" })).toBeVisible();
     expect(screen.queryByRole("button", { name: /^Reset filters/ })).not.toBeInTheDocument();
   });
 });
