@@ -56,6 +56,7 @@ origins and in node-local caches.
 | `/install` | Explain the signed controller and Spark installation path, in lab or secure remote mode |
 | `/architecture` | Show public, controller, network, identity, and runtime boundaries |
 | `/control` | Tour the private Web Controller and the agent-friendly `vonkctl` path |
+| `/example-setup` | Show one example setup: 3D game generation on two Sparks, with the models and recipes it uses |
 | `/models` | Browse public models and the recipes that run them |
 | `/recipes` | Filter public immutable recipes by model, quantization, runtime, Spark count, creator, readiness, capability, and size |
 | `/publish` | Point recipe authors to the reviewed GitHub workflow |
@@ -132,8 +133,8 @@ it with Wrangler. `web/public/_headers` and `web/public/_redirects` supply the
 security headers, asset caching, and SPA fallback. See
 [`docs/operations/cloudflare-pages.md`](docs/operations/cloudflare-pages.md).
 
-Signed controller packages and installers are published from `vonk-forge` at
-`packages.vonkforge.ai`, not from this repository.
+Signed installers (`install.vonkforge.ai`) and the Spark APT packages
+(`packages.vonkforge.ai`) are published from `vonk-forge`, not from this repository.
 
 ## Related repositories
 

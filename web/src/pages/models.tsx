@@ -53,9 +53,10 @@ function modelCapabilities(model: ModelSummary): string[] {
   return Array.from(new Set(model.versions.flatMap((version) => version.capabilities)));
 }
 
-function accessLabel(version?: ModelVersionSummary): string {
-  if (version?.requires_token === undefined) return "Access not declared";
-  return version.requires_token ? "Token required" : "Public access";
+// `requires_token` is retired in the recipe library: newer catalogs leave it
+// out, so access is shown only when a catalog still declares it.
+function accessLabel(requiresToken: boolean): string {
+  return requiresToken ? "Token required" : "Public access";
 }
 
 // A version the library names (1.0, 2512) stays; a bare commit hash reads as
@@ -306,10 +307,12 @@ function VersionRow({
           <dt>Variant</dt>
           <dd>{version.variant || "Not declared"}</dd>
         </div>
-        <div>
-          <dt>Access</dt>
-          <dd>{accessLabel(version)}</dd>
-        </div>
+        {version.requires_token === undefined ? null : (
+          <div>
+            <dt>Access</dt>
+            <dd>{accessLabel(version.requires_token)}</dd>
+          </div>
+        )}
         <div>
           <dt>Format</dt>
           <dd>

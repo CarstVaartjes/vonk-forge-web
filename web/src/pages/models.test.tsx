@@ -455,6 +455,20 @@ describe("model page leads with its recipes", () => {
     expect(within(line).queryByRole("link")).toBeNull();
   });
 
+  test("access shows only when the catalog declares requires_token", async () => {
+    const base = model(1);
+    const { requires_token: _retired, ...undeclared } = base.versions[0]!;
+    const facts = async (versions: ModelSummary["versions"]) => {
+      getModel.mockResolvedValue({ ...base, versions });
+      render(<ModelDetailPage publisher="publisher" slug="model-1" />);
+      await screen.findByRole("heading", { name: "Recipes that run this model" });
+      const count = document.querySelectorAll(".model-fact-grid dt").length;
+      cleanup();
+      return count;
+    };
+    expect(await facts(base.versions)).toBe((await facts([undeclared])) + 1);
+  });
+
   test("the remembered Spark pick narrows the list and the Compare link", async () => {
     window.localStorage.setItem("vonk-my-sparks", "sparks=1");
     render(<ModelDetailPage publisher="publisher" slug="model-1" />);

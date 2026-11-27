@@ -7,7 +7,8 @@ const tailscaleRunbook = `${repository}/docs/runbooks/tailscale.md`;
 const uninstallRunbook = `${repository}/docs/operations/uninstall.md`;
 
 // The Lab commands are carried verbatim from vonk-forge docs/QUICKSTART.md, and the start
-// commands from vonk-forge README.md:127-129; those runbooks are the one source.
+// commands from the vonk-forge README ("Start it on your chosen Docker Compose host"); those
+// runbooks are the one source.
 const composeStartCommand = `cd vonk-forge
 sudo docker compose pull
 sudo docker compose up -d --wait --remove-orphans`;
