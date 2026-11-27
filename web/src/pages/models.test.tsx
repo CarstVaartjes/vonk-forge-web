@@ -441,6 +441,21 @@ describe("model page leads with its recipes", () => {
     expect(within(line).queryByRole("link")).toBeNull();
   });
 
+  test("access shows only when the catalog declares requires_token", async () => {
+    const base = model(1);
+    const { requires_token: _retired, ...undeclared } = base.versions[0]!;
+    getModel.mockResolvedValue({ ...base, versions: [undeclared] });
+    render(<ModelDetailPage publisher="publisher" slug="model-1" />);
+    await screen.findByRole("heading", { name: "Recipes that run this model" });
+    expect(screen.queryByText("Access", { selector: "dt" })).toBeNull();
+    cleanup();
+
+    getModel.mockResolvedValue(base);
+    render(<ModelDetailPage publisher="publisher" slug="model-1" />);
+    await screen.findByRole("heading", { name: "Recipes that run this model" });
+    expect(screen.getByText("Access", { selector: "dt" })).toBeInTheDocument();
+  });
+
   test("the remembered Spark pick narrows the list and the Compare link", async () => {
     window.localStorage.setItem("vonk-my-sparks", "sparks=1");
     render(<ModelDetailPage publisher="publisher" slug="model-1" />);
