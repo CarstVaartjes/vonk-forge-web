@@ -122,7 +122,8 @@
   .publishing-boundary {
     grid-template-columns: 1fr;
   }
-  .publishing-path ol {
+  .publishing-path ol,
+  .publishing-fork ul {
     grid-template-columns: 1fr;
   }
   .publishing-path li {
