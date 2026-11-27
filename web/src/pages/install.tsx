@@ -95,7 +95,7 @@ export function InstallPage() {
               <p>
                 On Intel or ARM macOS or Linux, provide <code>curl</code>, <code>openssl</code> and
                 an installed <code>uv</code>, then run the installer. It verifies one portable
-                Python setup wheel and its payload; <code>uv</code> manages the isolated Python 3.14
+                Python setup wheel and its payload; <code>uv</code> manages the isolated Python 3.15
                 runtime.
               </p>
             </div>
@@ -131,11 +131,11 @@ export function InstallPage() {
               <h3>Add LAN DNS records</h3>
               <p>
                 Add LAN DNS records for <code>vonk-forge.local</code>,{" "}
-                <code>enroll.vonk-forge.local</code>, <code>agents.vonk-forge.local</code>, and{" "}
-                <code>registry.vonk-forge.local</code>, all pointing to the controller host&apos;s
-                address. On a small lab network, equivalent host-file entries can be used. The Spark
-                management network defaults to the controller host&apos;s own /24; to narrow it,
-                edit <code>VONK_MANAGEMENT_CIDRS</code> in <code>.env</code>.
+                <code>enroll.vonk-forge.local</code> and <code>agents.vonk-forge.local</code>, all
+                pointing to the controller host&apos;s address. On a small lab network, equivalent
+                host-file entries can be used. The Spark management network defaults to the
+                controller host&apos;s own /24; to narrow it, edit{" "}
+                <code>VONK_MANAGEMENT_CIDRS</code> in <code>.env</code>.
               </p>
             </div>
           </li>
@@ -166,12 +166,12 @@ export function InstallPage() {
           </li>
         </ol>
         <div className="control-note install-update-note">
-          <strong>Keep the LAN listener on the LAN</strong>
+          <strong>Keep the Controller on a trusted LAN</strong>
           <p>
-            The LAN listener is bound to the address you entered. Keep the host firewall limited to
-            your trusted LAN and do not forward port 8443 from the internet. Upgrades use the same
-            installer command; the public URL retains <code>/nas</code>, but the generated Compose
-            project is not NAS-specific.
+            Port 8443 is published on all of the host&apos;s interfaces, and Docker-published ports
+            bypass the host&apos;s INPUT firewall rules. Keep the host on a trusted LAN and do not
+            forward port 8443 from the internet. Upgrades use the same installer command; the public
+            URL retains <code>/nas</code>, but the generated Compose project is not NAS-specific.
           </p>
         </div>
         <a className="text-link" href={`${repository}/docs/QUICKSTART.md`}>
@@ -443,8 +443,8 @@ curl --fail --show-error --silent \\
             </h3>
             <span className="guide-meta">Local and scriptable</span>
             <p>
-              One signed installer, a token file downloaded from the Web Controller, then the same
-              lists, fit checks, reviews, and operations as JSON for scripts and AI agents.
+              One signed installer, <code>vonkctl auth login</code> once, then the same lists, fit
+              checks, reviews, and operations as JSON for scripts and AI agents.
             </p>
             <a className="button secondary" href="/control#local-cli">
               CLI install + usage
@@ -486,10 +486,9 @@ vonkctl fleet enrollment status GRANT_UUID`}</CommandBlock>
               <p>
                 Reserve a fixed address for your laptop, NAS, or other controller host. The
                 controller hostnames remain in place for TLS while the installer creates the local
-                mapping. In Lab mode the Spark must resolve the <code>enroll</code>,{" "}
-                <code>agents</code>, and <code>registry</code> hostnames to that same address, and
-                any client that connects to Spark-facing HTTPS endpoints needs the local CA
-                certificate imported.
+                mapping. In Lab mode the Spark must resolve the <code>enroll</code> and{" "}
+                <code>agents</code> hostnames to that same address, and any client that connects to
+                Spark-facing HTTPS endpoints needs the local CA certificate imported.
               </p>
             </div>
           </li>
@@ -560,8 +559,8 @@ vonkctl fleet enrollment status GRANT_UUID`}</CommandBlock>
         <p className="lane-intro">
           The controller is one Docker Compose project in a <code>vonk-forge/</code> directory (
           <code>.env</code>, <code>secrets/</code>, backups) with named volumes for its database,
-          model cache and registry. A Spark gets the <code>vonk-forge-agent</code> package: a
-          service account, systemd units, firewall rules, configuration and a local model cache.
+          model cache and state. A Spark gets the <code>vonk-forge-agent</code> package: a service
+          account, systemd units, firewall rules, configuration and a local model cache.
         </p>
         <p className="fleet-note">
           The <a href={uninstallRunbook}>removal runbook on GitHub</a> lists the removal steps, what
@@ -590,9 +589,7 @@ vonkctl fleet enrollment status GRANT_UUID`}</CommandBlock>
           </li>
           <li>
             <strong>Control paths</strong>
-            <span>
-              Browser login or a protected CLI bearer-token file reaches the same HTTPS API.
-            </span>
+            <span>Browser login or the CLI&apos;s login token reaches the same HTTPS API.</span>
           </li>
           <li>
             <strong>Spark agents</strong>

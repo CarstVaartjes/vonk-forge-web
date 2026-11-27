@@ -64,10 +64,12 @@ export function ControlPage() {
             </p>
             <ul>
               <li>
-                Installed by the signed installer; <code>uv</code> manages Python 3.14
+                Installed by the signed installer; <code>uv</code> manages Python 3.15
               </li>
               <li>Best for repeatable work, automation, and agent tool use</li>
-              <li>Authenticates with a downloaded token file, never a pasted token</li>
+              <li>
+                Signs in with <code>vonkctl auth login</code>; the password is never stored
+              </li>
             </ul>
             <a className="text-link" href="#local-cli">
               Install the CLI
@@ -144,7 +146,7 @@ export function ControlPage() {
             {" "}
             <code>uv</code>
           </a>
-          , which manages the isolated Python 3.14 environment the CLI runs in.
+          , which manages the isolated Python 3.15 environment the CLI runs in.
         </p>
 
         <section className="cli-section" aria-labelledby="cli-install-title">
@@ -310,7 +312,7 @@ uv tool uninstall vonk-cluster-profiles`}</CommandBlock>
           shows the same examples with your own address and alias filled in.
         </p>
         <p className="fleet-note">
-          An alias comes from <code>vonkctl --profile 2 run RECIPE --as coder</code>;{" "}
+          An alias comes from <code>vonkctl --profile 2 run RECIPE --as qwen-code</code>;{" "}
           <code>vonkctl profile endpoint</code> lists them.
         </p>
         <CommandBlock label="Create a key and set the address">{`vonkctl key create NAME --output CLIENT_KEY_FILE
