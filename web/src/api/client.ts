@@ -79,7 +79,7 @@ export interface RecipeSummary {
     source_bundle_observed: boolean;
   };
   import?: { uri: string; instruction: string };
-  source?: { recipe_url?: string; bundle_url?: string | undefined };
+  source?: { recipe_url?: string; bundle_url?: string | undefined; notice_url?: string };
   package?: { member: string; sha256: string; bytes: number; media_type: string };
   catalog: {
     description: string;

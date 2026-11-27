@@ -291,14 +291,14 @@ test("a failed load offers Retry, which loads again, and a way back to Recipes",
   expect(getRecipe).toHaveBeenCalledTimes(2);
 });
 
-test("the adapter license row links to the adapter source the recipe builds from", async () => {
-  const bundle = "https://github.com/acme/recipes/tree/abc/adapters/qwen/fast";
+test("the adapter license row links to the recipes NOTICE", async () => {
+  const notice = "https://github.com/acme/recipes/blob/abc/NOTICE";
   getRecipe.mockResolvedValue({
     ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"),
-    source: { bundle_url: bundle },
+    source: { notice_url: notice },
   });
   render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
   const row = (await screen.findByText("Adapter license")).closest("div");
   expect(row).not.toBeNull();
-  expect(within(row as HTMLElement).getByRole("link")).toHaveAttribute("href", bundle);
+  expect(within(row as HTMLElement).getByRole("link")).toHaveAttribute("href", notice);
 });

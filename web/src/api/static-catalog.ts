@@ -528,6 +528,8 @@ function mapRecipe(item: CatalogRecipeEntry, index: LibraryIndex): RecipeDetail 
       bundle_url: contextPath
         ? `https://github.com/${index.repository}/tree/${index.source_commit}/${contextPath}`
         : undefined,
+      // Third-party licences of the files adapters copy (recipes NOTICE at this commit).
+      notice_url: `https://github.com/${index.repository}/blob/${index.source_commit}/NOTICE`,
     },
     package: {
       member: packageName,

@@ -504,6 +504,9 @@ describe("static recipe library adapter", () => {
     expect(recipe.source?.bundle_url).toBe(
       `https://github.com/CarstVaartjes/vonk-forge-recipes/tree/${index.source_commit}/adapters/${nvidia}`,
     );
+    expect(recipe.source?.notice_url).toBe(
+      `https://github.com/CarstVaartjes/vonk-forge-recipes/blob/${index.source_commit}/NOTICE`,
+    );
     expect(recipe.package).toMatchObject({
       member: `${nvidia}.tar.gz`,
       sha256: index.recipes[0]!.package.sha256,

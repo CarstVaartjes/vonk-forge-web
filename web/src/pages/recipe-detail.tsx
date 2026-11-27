@@ -375,14 +375,14 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
                 <span className="kv-note">Shown for information. Use is your call.</span>
               </dd>
             </div>
-            {recipe.source?.bundle_url ? (
+            {recipe.source?.notice_url ? (
               <div>
                 <dt>Adapter license</dt>
                 <dd>
-                  <a href={recipe.source.bundle_url}>in the adapter source</a>
+                  <a href={recipe.source.notice_url}>Third-party licenses</a>
                   <span className="kv-note">
-                    Files copied from a creator keep the creator's license; the adapter's
-                    vendored-upstream.json names the upstream.
+                    Files an adapter copies from a creator keep the creator's license. Shown for
+                    information.
                   </span>
                 </dd>
               </div>
