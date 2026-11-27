@@ -1,7 +1,8 @@
 import { usePageMeta } from "../page-meta";
+import { PAGE_META } from "../route-meta";
 
 export function PrivacyPage() {
-  usePageMeta("Privacy", "What the Vonk Forge site measures and what it never collects.");
+  usePageMeta(PAGE_META["/privacy"]);
   return (
     <main className="guide-page privacy-page">
       <section className="guide-hero" aria-labelledby="privacy-title">

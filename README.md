@@ -128,8 +128,9 @@ serves a fixture release at `/catalog/` in place of the verified one.
 Cloudflare Pages serves `web/dist` at [`vonkforge.ai`](https://vonkforge.ai)
 (default hostname `vonk-forge-web.pages.dev`). Every push to `main` runs
 [`pages.yml`](.github/workflows/pages.yml), which runs CI ([`ci.yml`](.github/workflows/ci.yml)) and, once it passes, builds the frontend and uploads
-it with Wrangler. `web/public/_headers` and `web/public/_redirects` supply the
-security headers, asset caching, and SPA fallback. See
+it with Wrangler. `web/public/_headers` supplies the
+security headers and asset caching; the build writes one HTML file per address,
+the sitemap and the 404 page (`web/scripts/route-pages.mjs`). See
 [`docs/operations/cloudflare-pages.md`](docs/operations/cloudflare-pages.md).
 
 Signed controller packages and installers are published from `vonk-forge` at

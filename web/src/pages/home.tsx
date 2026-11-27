@@ -6,7 +6,8 @@ import { CatalogWall } from "../catalog-wall";
 import { fitsPick, useMySparks, type MySparks } from "../my-sparks";
 import { FitAnswerView, FitResults, SparkSegments, TypeChips } from "../spark-picker";
 import { CommandBlock } from "../command-block";
-import { useSiteMeta } from "../page-meta";
+import { usePageMeta } from "../page-meta";
+import { PAGE_META } from "../route-meta";
 import { controllerInstallCommand } from "../install-command";
 import { KeptCurrent, VerifiedOnHardware } from "../home-evidence";
 
@@ -352,7 +353,7 @@ function Creators({ summary }: { summary: CatalogSummary }) {
 }
 
 export function HomePage() {
-  useSiteMeta();
+  usePageMeta(PAGE_META["/"]);
   const [state, retry] = useCatalogSummary();
   const [pick, setPick] = useMySparks();
   return (

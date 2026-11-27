@@ -397,6 +397,7 @@ test("each route sets its own tab title and description", async () => {
     const seen = [
       document.title,
       document.querySelector('meta[name="description"]')?.getAttribute("content"),
+      document.querySelector<HTMLLinkElement>('link[rel="canonical"]')?.href,
     ];
     view.unmount();
     return seen;
@@ -418,6 +419,11 @@ test("each route sets its own tab title and description", async () => {
     ),
   );
   expect(new Set(pages.map(([, description]) => description)).size).toBe(pages.length);
+  expect(pages.map(([, , canonical]) => canonical)).toEqual(
+    ["/recipes", "/install", "/control", "/architecture", "/publish", "/example-setup"].map(
+      (path) => `https://vonkforge.ai${path}`,
+    ),
+  );
 });
 
 test("shared links get a large card with the share image", () => {

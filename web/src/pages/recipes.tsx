@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { usePageMeta } from "../page-meta";
+import { PAGE_META } from "../route-meta";
 
 import {
   getVocabulary,
@@ -98,10 +99,7 @@ const diskOf = (recipe: RecipeSummary) => recipe.capacity?.maximum_installed_byt
 const memoryOf = (recipe: RecipeSummary) => recipe.capacity?.maximum_runtime_memory_bytes_per_node;
 
 export function RecipesPage() {
-  usePageMeta(
-    "Recipes",
-    "Browse recipes for NVIDIA DGX Spark, each shown with whether it passed hardware checks, its memory and Spark count.",
-  );
+  usePageMeta(PAGE_META["/recipes"]);
   // The URL wins; without a Spark count or type in it, the pick remembered from the home page fills them in.
   const [parameters, setParameters] = useState(() => {
     const start = new URLSearchParams(window.location.search);

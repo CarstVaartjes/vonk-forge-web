@@ -286,7 +286,9 @@ test("a failed load offers Retry, which loads again, and a way back to Recipes",
   render(<RecipeDetailPage publisher="someone" slug="qwen-fast" />);
   expect(await screen.findByRole("heading", { name: "Recipe unavailable" })).toBeVisible();
   expect(screen.getByRole("link", { name: "Back to Recipes" })).toHaveAttribute("href", "/recipes");
+  expect(document.querySelector('meta[name="robots"]')).toHaveAttribute("content", "noindex");
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
   expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
+  expect(document.querySelector('meta[name="robots"]')).toBeNull();
   expect(getRecipe).toHaveBeenCalledTimes(2);
 });

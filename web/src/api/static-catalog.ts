@@ -722,7 +722,7 @@ export async function getStaticVocabulary(url: string, signal?: AbortSignal): Pr
   return (await loadIndex(url, signal)).vocabulary;
 }
 
-function modelsFromIndex(index: LibraryIndex): ModelSummary[] {
+export function modelsFromIndex(index: LibraryIndex): ModelSummary[] {
   const built = derived(index);
   if (!built.models) {
     built.models = mapModels(index);

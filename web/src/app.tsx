@@ -16,11 +16,12 @@ import { HomePage } from "./pages/home";
 import { ThemeIcon } from "./icons";
 import { matchRoute, type Route, type RouteMatch } from "./routes";
 import { useNoindex, usePageMeta } from "./page-meta";
+import { NOT_FOUND_META } from "./route-meta";
 import { settleNavigation, startRouter, useLocationKey } from "./router";
 import { applyTheme, chooseTheme, currentTheme, followSystem, type Theme } from "./theme";
 
 function NotFoundPage() {
-  usePageMeta("Not found", "This page does not exist on the Vonk Forge site.");
+  usePageMeta(NOT_FOUND_META);
   useNoindex();
   return (
     <main className="status-panel">

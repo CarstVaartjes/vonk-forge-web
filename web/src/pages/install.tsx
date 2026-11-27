@@ -1,6 +1,7 @@
 import { CommandBlock } from "../command-block";
 import { controllerInstallCommand } from "../install-command";
 import { usePageMeta } from "../page-meta";
+import { PAGE_META } from "../route-meta";
 
 const repository = "https://github.com/CarstVaartjes/vonk-forge/blob/main";
 const tailscaleRunbook = `${repository}/docs/runbooks/tailscale.md`;
@@ -13,10 +14,7 @@ sudo docker compose pull
 sudo docker compose up -d --wait --remove-orphans`;
 
 export function InstallPage() {
-  usePageMeta(
-    "Install",
-    "Install the Vonk Forge Controller on a laptop, NAS or local server with one signed command, then enroll your DGX Sparks.",
-  );
+  usePageMeta(PAGE_META["/install"]);
   return (
     <main className="guide-page install-page">
       <section className="guide-hero" aria-labelledby="install-title">

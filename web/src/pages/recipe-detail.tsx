@@ -17,7 +17,8 @@ import { WaysMatrix } from "../ways-matrix";
 import { receiptFacts } from "../catalog-stats";
 import { EvidenceReceipt } from "../evidence-receipt";
 import { SparkUnit } from "../spark-unit";
-import { usePageMeta } from "../page-meta";
+import { useNoindex, usePageMeta } from "../page-meta";
+import { recipeMeta } from "../route-meta";
 import { capabilityLabel, statusMeaning, type Vocabulary } from "../vocabulary";
 
 const recipeAuthoringGuide = "https://github.com/CarstVaartjes/vonk-forge-recipes#recipe-contract";
@@ -57,27 +58,8 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
       });
     return () => controller.abort();
   }, [publisher, slug, attempt]);
-  usePageMeta(
-    recipe?.title ?? "Recipe",
-    recipe
-      ? `${recipe.title}: a recipe for NVIDIA DGX Spark, with its published verification status and install contract.`
-      : "A Vonk Forge recipe for NVIDIA DGX Spark.",
-  );
-  useEffect(() => {
-    if (!recipe) return;
-    let canonical = document.querySelector<HTMLLinkElement>('link[rel="canonical"]');
-    if (!canonical) {
-      canonical = document.createElement("link");
-      canonical.rel = "canonical";
-      document.head.append(canonical);
-    }
-    const before = canonical.href;
-    canonical.href = `${window.location.origin}/recipes/${recipe.publisher}/${recipe.slug}`;
-    // Leaving the page puts back the address that was there.
-    return () => {
-      canonical.href = before;
-    };
-  }, [recipe]);
+  usePageMeta(recipeMeta(recipe?.title));
+  useNoindex(error);
   if (error)
     return (
       <main className="status-panel error">
