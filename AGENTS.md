@@ -104,6 +104,12 @@ Keep repository, CI, deployment, and physical Spark evidence separate.
   (the router remounts it on every navigation that changes the path or the query, even back to the same list address), writes its own filters with `history.replaceState` only, and an in-app link is a
   plain `<a href>`: do not add click handlers that navigate. `e2e/client-routing.spec.ts` covers one index request,
   no loading text, focus on the heading, scroll on Back, and modified clicks.
+- Each address describes itself from one owner, `web/src/route-meta.ts` (title, description, canonical on
+  `https://vonkforge.ai`): pages call `usePageMeta` with it at runtime, and `web/scripts/route-pages.mjs` (run by
+  `npm run build`) writes the same values into one HTML file per route and per catalog recipe and Model, plus
+  `sitemap.xml`, `robots.txt`, `404.html` and the per-route `no-cache` rules (runbook: Cloudflare Pages). A new
+  route with parameters fails the build until that script lists its addresses. `index.html` carries no page meta.
+  An entry that is not in the index (the recipe and Model "unavailable" views) calls `useNoindex`.
 - The public site never builds or executes a container, accepts model weights,
   stores visitor data, or holds controller authority. Weights stay at immutable
   origins; container layers stay in registries; runtime authority, secrets, and

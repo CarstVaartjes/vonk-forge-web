@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { usePageMeta } from "../page-meta";
+import { PAGE_META } from "../route-meta";
 
 import { loadRecipeCatalog, peekRecipeCatalog, type RecipeSummary } from "../api/client";
 import { gibLabel } from "../catalog-filters";
@@ -88,10 +89,7 @@ function showcaseRecipes(items: RecipeSummary[] | null): Catalog {
 }
 
 export function ShowcasePage() {
-  usePageMeta(
-    "Example setup",
-    "An example setup: 3D game generation on two DGX Sparks, with the models and recipes it uses.",
-  );
+  usePageMeta(PAGE_META["/example-setup"]);
   const [recipes, setRecipes] = useState<Catalog>(() => showcaseRecipes(peekRecipeCatalog()));
   const [error, setError] = useState<string | null>(null);
 

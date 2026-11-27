@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePageMeta } from "../page-meta";
+import { useNoindex, usePageMeta } from "../page-meta";
+import { modelMeta, PAGE_META } from "../route-meta";
 
 import {
   getModel,
@@ -466,10 +467,7 @@ function initialFilters() {
 }
 
 export function ModelsPage() {
-  usePageMeta(
-    "Models",
-    "Browse models with their exact versions, variants and the recipes that run them on DGX Spark.",
-  );
+  usePageMeta(PAGE_META["/models"]);
   const [models, setModels] = useState<ModelSummary[] | null>(peekModels);
   const [vocabulary, setVocabulary] = useState<Vocabulary | null>(peekVocabulary);
   const [filters, setFilters] = useState(initialFilters);
@@ -1002,12 +1000,8 @@ export function ModelDetailPage({ publisher, slug }: { publisher: string; slug: 
       });
     return () => controller.abort();
   }, [publisher, slug, attempt]);
-  usePageMeta(
-    model ? `${model.title} · Models` : "Model",
-    model
-      ? `${model.title}: published versions, variants and the recipes that run it on NVIDIA DGX Spark.`
-      : "A model in the Vonk Forge catalog.",
-  );
+  usePageMeta(modelMeta(model?.title));
+  useNoindex(error !== null);
   if (error)
     return (
       <main className="status-panel error">

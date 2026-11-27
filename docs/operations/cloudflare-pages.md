@@ -162,9 +162,21 @@ the verified release's signed source commit. Packages are not copied into the
 Pages deployment because some exceed Cloudflare Pages' 25 MiB per-file limit;
 the Controller fetches packages itself.
 
-The `_headers` and `_redirects` files under `web/public` provide the security
-headers (the Content Security Policy's `connect-src` allows only this origin and
-the Cloudflare analytics endpoint), immutable asset caching, and SPA fallback.
+`web/public/_headers` provides the security headers (the Content Security
+Policy's `connect-src` allows only this origin and the Cloudflare analytics
+endpoint), immutable asset caching and `no-cache` for `/catalog/*`. After
+`vite build`, `web/scripts/route-pages.mjs` (part of `npm run build`) writes one
+HTML file per address: each route in `web/src/routes.ts`, and every recipe and
+Model page in the verified index, each with its own title, description,
+canonical and Open Graph tags from `web/src/route-meta.ts`, since link previews
+run no JavaScript. Pages serves `/install` from `install.html`. The same step
+writes `sitemap.xml`, `robots.txt` (with the Sitemap line), `404.html` (the app
+with `noindex`, served with status 404 for any other address) and a
+`Cache-Control: no-cache` rule per route, appended to `_headers` (rules match
+the request path, which has no `.html`). There is no `_redirects`: Pages
+applies a redirect before a matching file, so a catch-all rewrite would hide
+the per-route files. `npx wrangler pages dev web/dist` serves the build the way
+Pages does.
 
 ## Content Security Policy
 

@@ -1,47 +1,54 @@
 import { useEffect } from "react";
 
-export const SITE_NAME = "Vonk Forge";
+import { canonicalUrl, type PageMeta } from "./route-meta";
 
-// The site-wide title and description index.html ships, read before any page changes them: the home page
-// puts them back when a visitor navigates to it from another page.
-const SITE_TITLE = document.title;
-const SITE_DESCRIPTION =
-  document.querySelector<HTMLMetaElement>('meta[name="description"]')?.content ?? "";
-
-function descriptionTag(): HTMLMetaElement {
-  let tag = document.querySelector<HTMLMetaElement>('meta[name="description"]');
+function headTag<T extends HTMLElement>(selector: string, create: () => T): T {
+  let tag = document.head.querySelector<T>(selector);
   if (!tag) {
-    tag = document.createElement("meta");
-    tag.name = "description";
+    tag = create();
     document.head.append(tag);
   }
   return tag;
 }
 
-// Each route names itself: the tab title ("Install · Vonk Forge") and the
-// description a search result or a pasted link may show. The home page does not
-// call it: index.html owns the site-wide title and description.
-export function usePageMeta(page: string, description: string) {
-  useEffect(() => {
-    document.title = `${page} · ${SITE_NAME}`;
-    descriptionTag().content = description;
-  }, [page, description]);
+function metaTag(attribute: "name" | "property", key: string): HTMLMetaElement {
+  return headTag(`meta[${attribute}="${key}"]`, () => {
+    const tag = document.createElement("meta");
+    tag.setAttribute(attribute, key);
+    return tag;
+  });
 }
 
-export function useSiteMeta() {
+// Each route names itself (route-meta.ts): the tab title, the description a search result or a
+// pasted link may show, and its own canonical address. The build writes the same values into the
+// address's HTML file; this keeps them right when a visitor moves between pages.
+export function usePageMeta({ title, description }: PageMeta) {
   useEffect(() => {
-    document.title = SITE_TITLE;
-    if (SITE_DESCRIPTION) descriptionTag().content = SITE_DESCRIPTION;
-  }, []);
+    const url = canonicalUrl(window.location.pathname);
+    document.title = title;
+    metaTag("name", "description").content = description;
+    metaTag("property", "og:title").content = title;
+    metaTag("property", "og:description").content = description;
+    metaTag("property", "og:url").content = url;
+    metaTag("name", "twitter:title").content = title;
+    metaTag("name", "twitter:description").content = description;
+    headTag<HTMLLinkElement>('link[rel="canonical"]', () => {
+      const link = document.createElement("link");
+      link.rel = "canonical";
+      return link;
+    }).href = url;
+  }, [title, description]);
 }
 
-// A page that is not part of the site (the not-found view) asks search engines to skip it.
-export function useNoindex() {
+// A page that is not part of the site (the not-found view, an entry that is not in the index) asks
+// search engines to skip it.
+export function useNoindex(active = true) {
   useEffect(() => {
+    if (!active) return;
     const tag = document.createElement("meta");
     tag.name = "robots";
     tag.content = "noindex";
     document.head.append(tag);
     return () => tag.remove();
-  }, []);
+  }, [active]);
 }
