@@ -166,7 +166,8 @@ merging on its own.
 `web/public/_headers` carries the Content Security Policy. `connect-src` allows
 only this origin and the Cloudflare analytics endpoint; keep the catalog
 same-origin rather than adding a host there, and a new analytics or third-party script needs a privacy review
-and an update to `/privacy`.
+and an update to `/privacy`. So does a new
+`localStorage` or `sessionStorage` key: `/privacy` lists each one under "Stored on your device".
 
 ## Entry points
 

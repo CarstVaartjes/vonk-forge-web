@@ -67,6 +67,45 @@ export function PrivacyPage() {
           .
         </p>
       </section>
+
+      <section className="privacy-content" aria-labelledby="device-title">
+        <div>
+          <h2 id="device-title">Stored on your device.</h2>
+        </div>
+        <div className="privacy-details">
+          <article>
+            <h3>
+              <code>vonk-theme</code>
+            </h3>
+            <p>The light or dark theme you chose, in local storage.</p>
+          </article>
+          <article>
+            <h3>
+              <code>vonk-my-sparks</code>
+            </h3>
+            <p>
+              Your Spark count and model type from the setup picker, in local storage, so the recipe
+              list starts from them next time.
+            </p>
+          </article>
+          <article>
+            <h3>
+              <code>vonk-chunk-reload</code>
+            </h3>
+            <p>
+              A flag in session storage that lets the site reload once after an update, and only
+              once. It is gone when you close the tab.
+            </p>
+          </article>
+          <article>
+            <h3>Never sent</h3>
+            <p>
+              None of these leaves your browser. Clearing this site&apos;s data in your browser
+              removes them.
+            </p>
+          </article>
+        </div>
+      </section>
     </main>
   );
 }
