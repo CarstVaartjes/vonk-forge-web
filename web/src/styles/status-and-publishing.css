@@ -189,6 +189,25 @@
   color: var(--muted);
   line-height: 1.65;
 }
+.publishing-fork ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: clamp(2.5rem, 6vw, 4rem) 0 0;
+  padding: 1px;
+  background: var(--line);
+  list-style: none;
+}
+.publishing-fork li {
+  display: block;
+  min-height: auto;
+  padding: clamp(1.4rem, 3vw, 2rem);
+  background: var(--panel);
+}
+.publishing-fork h3 {
+  margin: 0 0 0.75rem;
+  font-size: var(--t-h3);
+}
 .publishing-boundary {
   align-items: end;
   border-bottom: 0;

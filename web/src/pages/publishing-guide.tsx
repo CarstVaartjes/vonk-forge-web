@@ -2,6 +2,7 @@ import { usePageMeta } from "../page-meta";
 
 const recipeLibrary = "https://github.com/CarstVaartjes/vonk-forge-recipes";
 const authoringGuide = `${recipeLibrary}/blob/main/docs/recipe-authoring.md`;
+const forkGuide = `${authoringGuide}#pull-requests-from-a-fork`;
 
 export function PublishingGuidePage() {
   usePageMeta(
@@ -48,8 +49,8 @@ export function PublishingGuidePage() {
             <div>
               <h3>Check the recipe</h3>
               <p>
-                Rebuild the catalog index and run the repository checks before opening a pull
-                request.
+                Run the <a href={`${recipeLibrary}#local-checks`}>local checks from the README</a>{" "}
+                before opening a pull request.
               </p>
             </div>
           </li>
@@ -63,6 +64,35 @@ export function PublishingGuidePage() {
             </div>
           </li>
         </ol>
+      </section>
+
+      <section className="publishing-path publishing-fork" aria-labelledby="publishing-fork-title">
+        <header>
+          <h2 id="publishing-fork-title">Contributing from a fork.</h2>
+          <p>
+            Most pull requests from a fork finish CI on their own. Two changes need a maintainer,
+            who carries them for you.{" "}
+            <a className="text-link" href={forkGuide}>
+              How fork pull requests are carried
+            </a>
+          </p>
+        </header>
+        <ul>
+          <li>
+            <h3>A runtime image change</h3>
+            <p>
+              CI proves a changed image by pushing a candidate, which a fork cannot. A maintainer
+              pushes your branch to the recipe repository and CI then completes.
+            </p>
+          </li>
+          <li>
+            <h3>An adapter source over 1 MiB</h3>
+            <p>
+              Large files stay out of Git. A maintainer adds the file with{" "}
+              <code>tools/adapter-sources add</code>.
+            </p>
+          </li>
+        </ul>
       </section>
 
       <section className="publishing-boundary" aria-labelledby="publishing-boundary-title">
