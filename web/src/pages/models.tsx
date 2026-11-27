@@ -828,6 +828,7 @@ export function ModelsPage() {
         <ul className="model-list" aria-label="Models">
           {visible.map((model) => {
             const capabilities = modelCapabilities(model);
+            const runs = runsOf(model, filters);
             const key = `${model.publisher}/${model.slug}`;
             return (
               <li key={key}>
@@ -845,8 +846,8 @@ export function ModelsPage() {
                     <RowFact
                       label="Runs on"
                       value={
-                        model.runs.spark_counts.length
-                          ? model.runs.spark_counts
+                        runs.spark_counts.length
+                          ? runs.spark_counts
                               .map((count) => `${count} Spark${count === 1 ? "" : "s"}`)
                               .join(" · ")
                           : "No public recipe"
@@ -854,11 +855,7 @@ export function ModelsPage() {
                     />
                     <RowFact
                       label="Engines"
-                      value={
-                        model.runs.engines.length
-                          ? model.runs.engines.map(engineLabel).join(" · ")
-                          : "—"
-                      }
+                      value={runs.engines.length ? runs.engines.map(engineLabel).join(" · ") : "—"}
                     />
                     <RowFact
                       label={model.versions.length === 1 ? "Version" : "Versions"}

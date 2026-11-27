@@ -291,6 +291,20 @@ describe("type-first model filtering", () => {
     expect(screen.queryByRole("link", { name: /untested-coder/ })).not.toBeInTheDocument();
   });
 
+  test("with Verified on, a row's Spark counts and engines are those of its verified recipes", async () => {
+    const mixed = {
+      ...typed("mixed", ["chat"], true),
+      runs: { spark_counts: [1, 2], engines: ["vllm", "sglang"], creators: [] },
+    };
+    listModels.mockResolvedValue({ items: [mixed] });
+    window.history.replaceState({}, "", "/models?verified=1");
+    render(<ModelsPage />);
+    const row = (await screen.findByRole("link", { name: /mixed/ })).textContent;
+    expect(row).toContain("1 Spark");
+    expect(row).not.toContain("2 Sparks");
+    expect(row).not.toMatch(/sglang/i);
+  });
+
   test("with Verified on, the recipe count, support filter and Most recipes sort count verified recipes only", async () => {
     const alpha = {
       ...typed("alpha", ["chat"], true),
