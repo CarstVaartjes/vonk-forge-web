@@ -381,8 +381,8 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
                 <dd>
                   <a href={recipe.source.bundle_url}>in the adapter source</a>
                   <span className="kv-note">
-                    Code copied from the creator keeps the creator's license (LICENSE or NOTICE
-                    there).
+                    Files copied from a creator keep the creator's license; the adapter's
+                    vendored-upstream.json names the upstream.
                   </span>
                 </dd>
               </div>
