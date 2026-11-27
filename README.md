@@ -59,7 +59,7 @@ origins and in node-local caches.
 | `/models` | Browse public models and the recipes that run them |
 | `/recipes` | Filter public immutable recipes by model, quantization, runtime, Spark count, creator, readiness, capability, and size |
 | `/publish` | Point recipe authors to the reviewed GitHub workflow |
-| `/privacy` | Disclose aggregate, cookie-free website analytics |
+| `/privacy` | Disclose the aggregate, cookie-free website analytics and what the site stores on the visitor's device |
 
 ## Run the frontend
 
