@@ -290,3 +290,15 @@ test("a failed load offers Retry, which loads again, and a way back to Recipes",
   expect(await screen.findByRole("heading", { name: "Qwen Fast" })).toBeVisible();
   expect(getRecipe).toHaveBeenCalledTimes(2);
 });
+
+test("the adapter license row links to the adapter source the recipe builds from", async () => {
+  const bundle = "https://github.com/acme/recipes/tree/abc/adapters/qwen/fast";
+  getRecipe.mockResolvedValue({
+    ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"),
+    source: { bundle_url: bundle },
+  });
+  render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
+  const row = (await screen.findByText("Adapter license")).closest("div");
+  expect(row).not.toBeNull();
+  expect(within(row as HTMLElement).getByRole("link")).toHaveAttribute("href", bundle);
+});

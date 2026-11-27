@@ -362,7 +362,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
               </div>
             ) : null}
             <div>
-              <dt>License</dt>
+              <dt>Model license</dt>
               <dd>
                 {license.spdx ?? "Not declared"}
                 {license.url ? (
@@ -375,6 +375,18 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
                 <span className="kv-note">Shown for information. Use is your call.</span>
               </dd>
             </div>
+            {recipe.source?.bundle_url ? (
+              <div>
+                <dt>Adapter license</dt>
+                <dd>
+                  <a href={recipe.source.bundle_url}>in the adapter source</a>
+                  <span className="kv-note">
+                    Code copied from the creator keeps the creator's license (LICENSE or NOTICE
+                    there).
+                  </span>
+                </dd>
+              </div>
+            ) : null}
             <div>
               <dt>Source</dt>
               <dd>
