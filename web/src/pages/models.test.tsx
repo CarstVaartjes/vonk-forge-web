@@ -444,16 +444,15 @@ describe("model page leads with its recipes", () => {
   test("access shows only when the catalog declares requires_token", async () => {
     const base = model(1);
     const { requires_token: _retired, ...undeclared } = base.versions[0]!;
-    getModel.mockResolvedValue({ ...base, versions: [undeclared] });
-    render(<ModelDetailPage publisher="publisher" slug="model-1" />);
-    await screen.findByRole("heading", { name: "Recipes that run this model" });
-    expect(screen.queryByText("Access", { selector: "dt" })).toBeNull();
-    cleanup();
-
-    getModel.mockResolvedValue(base);
-    render(<ModelDetailPage publisher="publisher" slug="model-1" />);
-    await screen.findByRole("heading", { name: "Recipes that run this model" });
-    expect(screen.getByText("Access", { selector: "dt" })).toBeInTheDocument();
+    const facts = async (versions: ModelSummary["versions"]) => {
+      getModel.mockResolvedValue({ ...base, versions });
+      render(<ModelDetailPage publisher="publisher" slug="model-1" />);
+      await screen.findByRole("heading", { name: "Recipes that run this model" });
+      const count = document.querySelectorAll(".model-fact-grid dt").length;
+      cleanup();
+      return count;
+    };
+    expect(await facts(base.versions)).toBe((await facts([undeclared])) + 1);
   });
 
   test("the remembered Spark pick narrows the list and the Compare link", async () => {
