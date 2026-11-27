@@ -69,7 +69,6 @@ export function ArchitecturePage() {
             </p>
             <ul>
               <li>Browser + Tailscale</li>
-              <li>1Password</li>
               <li>Local project files</li>
             </ul>
           </article>
@@ -179,8 +178,8 @@ export function ArchitecturePage() {
         </div>
         <p className="contract-intro">
           The controller describes the exact outcome. The runtime decides how to produce it. Between
-          them is a small, versioned interface—not a shell script, a Docker socket, or MIA-specific
-          control code.
+          them is a small, versioned interface—not a shell script, a Docker socket, or
+          wrapper-specific control code.
         </p>
 
         <ol className="contract-pipeline" aria-label="Control to runtime handoff">
@@ -215,8 +214,8 @@ export function ArchitecturePage() {
             <span>04 · adapts</span>
             <h3>Runtime adapter</h3>
             <p>
-              MIA, vLLM, llama.cpp, or another reviewed wrapper translates standard inputs into its
-              own launch details.
+              SGLang, vLLM, llama.cpp, or a creator's reviewed wrapper translates standard inputs
+              into its own launch details.
             </p>
             <code>working endpoint</code>
           </li>
@@ -267,10 +266,10 @@ export function ArchitecturePage() {
             </div>
           </article>
 
-          <aside className="contract-example" aria-labelledby="mia-change-title">
-            <h3 id="mia-change-title">MIA adds a thinking budget</h3>
+          <aside className="contract-example" aria-labelledby="wrapper-change-title">
+            <h3 id="wrapper-change-title">A creator's wrapper adds a thinking budget</h3>
             <p>
-              MIA changes how reasoning tokens are handled inside its reviewed wrapper. It still
+              The creator's wrapper changes how reasoning tokens are handled inside it. It still
               consumes the same rank, model, fabric, mounts, and endpoint contract.
             </p>
             <div className="change-result">

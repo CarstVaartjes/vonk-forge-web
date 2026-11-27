@@ -20,7 +20,8 @@ import { SparkUnit } from "../spark-unit";
 import { usePageMeta } from "../page-meta";
 import { capabilityLabel, statusMeaning, type Vocabulary } from "../vocabulary";
 
-const recipeAuthoringGuide = "https://github.com/CarstVaartjes/vonk-forge-recipes#recipe-contract";
+const recipeAuthoringGuide =
+  "https://github.com/CarstVaartjes/vonk-forge-recipes/blob/main/docs/recipe-authoring.md";
 
 export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug: string }) {
   const [recipe, setRecipe] = useState<RecipeDetail | null>(() => peekRecipe(publisher, slug));
@@ -177,7 +178,7 @@ export function RecipeDetailPage({ publisher, slug }: { publisher: string; slug:
               <p>
                 No Controller yet?{" "}
                 <a className="text-link" href="/install">
-                  Install in two commands
+                  Install a Controller
                 </a>
               </p>
             </div>

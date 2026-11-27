@@ -213,7 +213,7 @@ test("explains the operator-owned architecture for one to many Sparks", async ()
   expect(screen.getByText(/Prepared assets are distributed as needed/i)).toBeVisible();
 });
 
-test("explains the control to runtime contract without MIA-specific control logic", async () => {
+test("explains the control to runtime contract without wrapper-specific control logic", async () => {
   await go("/architecture");
   render(<App />);
   await shown();
@@ -226,7 +226,9 @@ test("explains the control to runtime contract without MIA-specific control logi
   }
   expect(screen.getByText("VONK_RANK", { selector: "code" })).toBeVisible();
   expect(screen.getByText("/run/vonk/runtime.json", { selector: "code" })).toBeVisible();
-  expect(screen.getByText(/MIA changes how reasoning tokens are handled/i)).toBeVisible();
+  expect(
+    screen.getByText(/The creator's wrapper changes how reasoning tokens are handled/i),
+  ).toBeVisible();
   expect(screen.getByText(/No control-plane change/i)).toBeVisible();
 });
 
