@@ -4,10 +4,10 @@ import { expect, test } from "vitest";
 import fixture from "./connection-examples.fixture.json";
 import { ControlPage } from "./control";
 
-// connection-examples.fixture.json is a verbatim copy of
-// tests/fixtures/connection-examples.json in vonk-forge, the examples the
-// Controller shows. Refresh the copy when that file changes; this test then
-// fails until the page text matches again.
+// connection-examples.fixture.json holds what the Controller's own connection examples
+// (vonk-forge control/web/src/components/ui/connection-examples.tsx, connectionSnippets)
+// produce for its first case. Refresh it when that function changes; this test then fails
+// until the page text matches again.
 test("Connect your tools shows the Controller's curl and Python examples exactly, with copy buttons and no try-it control", () => {
   render(<ControlPage />);
   const [example] = fixture.cases;
@@ -40,7 +40,7 @@ test("Connect your tools says where an alias comes from", () => {
   render(<ControlPage />);
   const section = screen.getByRole("region", { name: "Connect your tools" });
   expect(section.textContent).toContain(
-    "An alias comes from vonkctl --profile 2 run RECIPE --as coder; vonkctl profile endpoint lists them.",
+    "An alias comes from vonkctl --profile 2 run RECIPE --as qwen-code; vonkctl profile endpoint lists them.",
   );
 });
 
