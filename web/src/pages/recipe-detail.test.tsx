@@ -292,3 +292,15 @@ test("a failed load offers Retry, which loads again, and a way back to Recipes",
   expect(document.querySelector('meta[name="robots"]')).toBeNull();
   expect(getRecipe).toHaveBeenCalledTimes(2);
 });
+
+test("the adapter license row links to the recipes NOTICE", async () => {
+  const notice = "https://github.com/acme/recipes/blob/abc/NOTICE";
+  getRecipe.mockResolvedValue({
+    ...recipe("vonk-forge", "https://github.com/acme/qwen-fast", "acme"),
+    source: { notice_url: notice },
+  });
+  render(<RecipeDetailPage publisher="vonk-forge" slug="qwen-fast" />);
+  const row = (await screen.findByText("Adapter license")).closest("div");
+  expect(row).not.toBeNull();
+  expect(within(row as HTMLElement).getByRole("link")).toHaveAttribute("href", notice);
+});
